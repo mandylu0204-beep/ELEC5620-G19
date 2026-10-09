@@ -1,0 +1,4974 @@
+{
+  "schema_version": "1.0",
+  "serialization": {
+    "$defs": {
+      "AllowedAction": {
+        "enum": [
+          "EDIT_INPUT",
+          "RETRY",
+          "REQUEST_REVISION",
+          "REFRESH",
+          "WAIT_FOR_REVIEW",
+          "CONTACT_OPERATOR"
+        ],
+        "title": "AllowedAction",
+        "type": "string"
+      },
+      "Artifact": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Uncertainties",
+            "type": "array"
+          }
+        },
+        "required": [
+          "execution_mode"
+        ],
+        "title": "Artifact",
+        "type": "object"
+      },
+      "AssessmentKind": {
+        "enum": [
+          "LOGISTICS",
+          "SAFETY"
+        ],
+        "title": "AssessmentKind",
+        "type": "string"
+      },
+      "AssessmentOutcome": {
+        "enum": [
+          "PASSED",
+          "REVISION",
+          "REVIEW",
+          "BLOCKED"
+        ],
+        "title": "AssessmentOutcome",
+        "type": "string"
+      },
+      "Blocker": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "Blocker",
+        "type": "object"
+      },
+      "CampsiteCandidate": {
+        "additionalProperties": false,
+        "properties": {
+          "campsite_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Campsite Id",
+            "type": "string"
+          },
+          "material_uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Material Uncertainties",
+            "type": "array"
+          },
+          "rank": {
+            "exclusiveMinimum": 0,
+            "title": "Rank",
+            "type": "integer"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "campsite_id",
+          "rank",
+          "reasons"
+        ],
+        "title": "CampsiteCandidate",
+        "type": "object"
+      },
+      "Clarification": {
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "question",
+          "reason"
+        ],
+        "title": "Clarification",
+        "type": "object"
+      },
+      "Confidence": {
+        "enum": [
+          "LOW",
+          "MEDIUM",
+          "HIGH",
+          "UNKNOWN"
+        ],
+        "title": "Confidence",
+        "type": "string"
+      },
+      "ConfirmedContext": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmed_at": {
+            "format": "date-time",
+            "title": "Confirmed At",
+            "type": "string"
+          },
+          "dataset_context": {
+            "$ref": "#/$defs/DatasetContext"
+          },
+          "demo_context": {
+            "$ref": "#/$defs/DemoContext"
+          },
+          "profile_snapshot": {
+            "$ref": "#/$defs/ProfileSnapshot"
+          },
+          "request_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "requirements": {
+            "$ref": "#/$defs/ConfirmedRequirements"
+          }
+        },
+        "required": [
+          "request_id",
+          "confirmed_at",
+          "requirements",
+          "profile_snapshot",
+          "demo_context",
+          "dataset_context"
+        ],
+        "title": "ConfirmedContext",
+        "type": "object"
+      },
+      "ConfirmedRequirements": {
+        "additionalProperties": false,
+        "properties": {
+          "budget_cents": {
+            "exclusiveMinimum": 0,
+            "title": "Budget Cents",
+            "type": "integer"
+          },
+          "currency": {
+            "const": "AUD",
+            "default": "AUD",
+            "title": "Currency",
+            "type": "string"
+          },
+          "destination": {
+            "minLength": 1,
+            "title": "Destination",
+            "type": "string"
+          },
+          "duration_days": {
+            "exclusiveMinimum": 0,
+            "title": "Duration Days",
+            "type": "integer"
+          },
+          "duration_nights": {
+            "exclusiveMinimum": 0,
+            "title": "Duration Nights",
+            "type": "integer"
+          },
+          "end_date": {
+            "format": "date",
+            "title": "End Date",
+            "type": "string"
+          },
+          "mandatory_constraints": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Mandatory Constraints",
+            "type": "array"
+          },
+          "preferences": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Preferences",
+            "type": "array"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "destination",
+          "start_date",
+          "duration_nights",
+          "end_date",
+          "duration_days",
+          "budget_cents"
+        ],
+        "title": "ConfirmedRequirements",
+        "type": "object"
+      },
+      "ContractError": {
+        "additionalProperties": false,
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/$defs/AllowedAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "code": {
+            "$ref": "#/$defs/ErrorCode"
+          },
+          "context": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Context",
+            "type": "object"
+          },
+          "field_errors": {
+            "items": {
+              "$ref": "#/$defs/FieldError"
+            },
+            "title": "Field Errors",
+            "type": "array"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "recoverable": {
+            "default": false,
+            "title": "Recoverable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ContractError",
+        "type": "object"
+      },
+      "CostLine": {
+        "additionalProperties": false,
+        "properties": {
+          "assumption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Assumption"
+          },
+          "category": {
+            "enum": [
+              "CAMPSITE",
+              "TRANSPORT",
+              "FOOD",
+              "WATER",
+              "ADDITIONAL_GEAR"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "item_key": {
+            "title": "Item Key",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "source_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/SourceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subtotal_cents": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtotal Cents"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "unit_price_cents": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Price Cents"
+          }
+        },
+        "required": [
+          "category",
+          "item_key",
+          "quantity",
+          "unit",
+          "unit_price_cents",
+          "subtotal_cents",
+          "source_ref"
+        ],
+        "title": "CostLine",
+        "type": "object"
+      },
+      "DataQuality": {
+        "enum": [
+          "AVAILABLE",
+          "MISSING",
+          "STALE",
+          "CONFLICTING"
+        ],
+        "title": "DataQuality",
+        "type": "string"
+      },
+      "DatasetContext": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_version": {
+            "title": "Dataset Version",
+            "type": "string"
+          },
+          "file_digests": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "File Digests",
+            "type": "object"
+          },
+          "fixture_digests": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Fixture Digests",
+            "type": "object"
+          },
+          "rules_version": {
+            "title": "Rules Version",
+            "type": "string"
+          },
+          "selection_config": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Selection Config",
+            "type": "object"
+          }
+        },
+        "required": [
+          "dataset_version",
+          "file_digests",
+          "rules_version"
+        ],
+        "title": "DatasetContext",
+        "type": "object"
+      },
+      "DemoContext": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_version": {
+            "default": "v1",
+            "title": "Dataset Version",
+            "type": "string"
+          },
+          "demo_today": {
+            "format": "date",
+            "title": "Demo Today",
+            "type": "string"
+          },
+          "mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "demo_today"
+        ],
+        "title": "DemoContext",
+        "type": "object"
+      },
+      "Eligibility": {
+        "additionalProperties": false,
+        "properties": {
+          "active_run_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Active Run Id",
+            "type": "string"
+          },
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/$defs/AllowedAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "blocking_reasons": {
+            "items": {
+              "$ref": "#/$defs/Blocker"
+            },
+            "title": "Blocking Reasons",
+            "type": "array"
+          },
+          "current_version_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Current Version Id",
+            "type": "string"
+          },
+          "eligible": {
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "review_required": {
+            "title": "Review Required",
+            "type": "boolean"
+          },
+          "valid_review_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Review Id"
+          }
+        },
+        "required": [
+          "eligible",
+          "current_version_id",
+          "active_run_id",
+          "blocking_reasons",
+          "review_required",
+          "valid_review_id",
+          "allowed_actions"
+        ],
+        "title": "Eligibility",
+        "type": "object"
+      },
+      "EquipmentItem": {
+        "additionalProperties": false,
+        "properties": {
+          "capacity_persons": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Capacity Persons"
+          },
+          "confirmed": {
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "item_key": {
+            "title": "Item Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Quantity"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_key",
+          "label",
+          "unit",
+          "confirmed"
+        ],
+        "title": "EquipmentItem",
+        "type": "object"
+      },
+      "ErrorCode": {
+        "enum": [
+          "UNAUTHENTICATED",
+          "FORBIDDEN",
+          "NOT_FOUND",
+          "INPUT_INVALID",
+          "REQUEST_NOT_CONFIRMED",
+          "STALE_CONTEXT",
+          "VERSION_CONFLICT",
+          "IDEMPOTENCY_CONFLICT",
+          "INVALID_STATE",
+          "FINALISATION_BLOCKED",
+          "CONTRACT_INVALID",
+          "ADAPTER_FAILURE",
+          "AGENT_FAILURE",
+          "PERSISTENCE_FAILURE"
+        ],
+        "title": "ErrorCode",
+        "type": "string"
+      },
+      "ErrorEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "$ref": "#/$defs/ContractError"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "error",
+          "trace_id"
+        ],
+        "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "Evidence": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "enum": [
+              "WEATHER",
+              "FIRE",
+              "ROAD",
+              "RESTRICTION"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "road_state": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/RoadState"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "source_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Date"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/$defs/DataQuality"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          }
+        },
+        "required": [
+          "kind",
+          "summary",
+          "source_date",
+          "status",
+          "valid_from",
+          "valid_to",
+          "source_refs"
+        ],
+        "title": "Evidence",
+        "type": "object"
+      },
+      "ExcludedCandidate": {
+        "additionalProperties": false,
+        "properties": {
+          "campsite_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Campsite Id",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "campsite_id",
+          "reasons"
+        ],
+        "title": "ExcludedCandidate",
+        "type": "object"
+      },
+      "ExecutionMode": {
+        "enum": [
+          "stub",
+          "deterministic_demo",
+          "agent"
+        ],
+        "title": "ExecutionMode",
+        "type": "string"
+      },
+      "FieldError": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "$ref": "#/$defs/FieldErrorCode"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "code",
+          "message"
+        ],
+        "title": "FieldError",
+        "type": "object"
+      },
+      "FieldErrorCode": {
+        "enum": [
+          "MISSING",
+          "INVALID",
+          "AMBIGUOUS",
+          "CONFLICTING",
+          "UNSUPPORTED"
+        ],
+        "title": "FieldErrorCode",
+        "type": "string"
+      },
+      "GearItem": {
+        "additionalProperties": false,
+        "properties": {
+          "arrangement_status": {
+            "enum": [
+              "OWNED",
+              "CONFIRMED_RENTAL",
+              "UNCONFIRMED",
+              "MISSING"
+            ],
+            "title": "Arrangement Status",
+            "type": "string"
+          },
+          "available_quantity": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Quantity"
+          },
+          "capacity_requirement": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Capacity Requirement"
+          },
+          "essential": {
+            "title": "Essential",
+            "type": "boolean"
+          },
+          "item_key": {
+            "title": "Item Key",
+            "type": "string"
+          },
+          "missing_quantity": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Missing Quantity"
+          },
+          "required_quantity": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Quantity"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_key",
+          "required_quantity",
+          "available_quantity",
+          "missing_quantity",
+          "unit",
+          "arrangement_status",
+          "essential"
+        ],
+        "title": "GearItem",
+        "type": "object"
+      },
+      "InterpretRequestInput": {
+        "additionalProperties": false,
+        "properties": {
+          "demo_context": {
+            "$ref": "#/$defs/DemoContext"
+          },
+          "explicit_fields": {
+            "$ref": "#/$defs/TripRequirements"
+          },
+          "profile_snapshot": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ProfileSnapshot"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "raw_text": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Raw Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "raw_text",
+          "demo_context"
+        ],
+        "title": "InterpretRequestInput",
+        "type": "object"
+      },
+      "InterpretRequestResult": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "clarifications": {
+            "items": {
+              "$ref": "#/$defs/Clarification"
+            },
+            "title": "Clarifications",
+            "type": "array"
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "extracted_requirements": {
+            "$ref": "#/$defs/TripRequirements"
+          },
+          "field_errors": {
+            "items": {
+              "$ref": "#/$defs/FieldError"
+            },
+            "title": "Field Errors",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Uncertainties",
+            "type": "array"
+          }
+        },
+        "required": [
+          "execution_mode",
+          "extracted_requirements"
+        ],
+        "title": "InterpretRequestResult",
+        "type": "object"
+      },
+      "ItineraryEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "campsite_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Campsite Id"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "end_at": {
+            "format": "date-time",
+            "title": "End At",
+            "type": "string"
+          },
+          "entry_kind": {
+            "enum": [
+              "TRAVEL",
+              "CAMP",
+              "ACTIVITY"
+            ],
+            "title": "Entry Kind",
+            "type": "string"
+          },
+          "start_at": {
+            "format": "date-time",
+            "title": "Start At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entry_kind",
+          "start_at",
+          "end_at",
+          "description"
+        ],
+        "title": "ItineraryEntry",
+        "type": "object"
+      },
+      "ItineraryInput": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmed_requirements": {
+            "$ref": "#/$defs/ConfirmedRequirements"
+          },
+          "demo_context": {
+            "$ref": "#/$defs/DemoContext"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Feedback"
+          },
+          "previous_version": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/StoredVersion"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "profile_snapshot": {
+            "$ref": "#/$defs/ProfileSnapshot"
+          },
+          "recommendations": {
+            "$ref": "#/$defs/RecommendCampsitesResult"
+          }
+        },
+        "required": [
+          "confirmed_requirements",
+          "profile_snapshot",
+          "recommendations",
+          "demo_context"
+        ],
+        "title": "ItineraryInput",
+        "type": "object"
+      },
+      "ItineraryResult": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "itinerary_entries": {
+            "items": {
+              "$ref": "#/$defs/ItineraryEntry"
+            },
+            "title": "Itinerary Entries",
+            "type": "array"
+          },
+          "requested_requirement_changes": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TripRequirements"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "revision_reason": {
+            "title": "Revision Reason",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "selected_campsite_ids": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Selected Campsite Ids",
+            "type": "array"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Uncertainties",
+            "type": "array"
+          }
+        },
+        "required": [
+          "execution_mode",
+          "itinerary_entries",
+          "selected_campsite_ids",
+          "revision_reason"
+        ],
+        "title": "ItineraryResult",
+        "type": "object"
+      },
+      "LogisticsInput": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmed_requirements": {
+            "$ref": "#/$defs/ConfirmedRequirements"
+          },
+          "demo_context": {
+            "$ref": "#/$defs/DemoContext"
+          },
+          "profile_snapshot": {
+            "$ref": "#/$defs/ProfileSnapshot"
+          },
+          "saved_itinerary": {
+            "$ref": "#/$defs/ItineraryResult"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          }
+        },
+        "required": [
+          "version_context",
+          "saved_itinerary",
+          "confirmed_requirements",
+          "profile_snapshot",
+          "demo_context"
+        ],
+        "title": "LogisticsInput",
+        "type": "object"
+      },
+      "LogisticsResult": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "budget_difference_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Difference Cents"
+          },
+          "clarifications": {
+            "items": {
+              "$ref": "#/$defs/Clarification"
+            },
+            "title": "Clarifications",
+            "type": "array"
+          },
+          "cost_breakdown": {
+            "items": {
+              "$ref": "#/$defs/CostLine"
+            },
+            "title": "Cost Breakdown",
+            "type": "array"
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "gear_checklist": {
+            "items": {
+              "$ref": "#/$defs/GearItem"
+            },
+            "title": "Gear Checklist",
+            "type": "array"
+          },
+          "known_subtotal_cents": {
+            "minimum": 0,
+            "title": "Known Subtotal Cents",
+            "type": "integer"
+          },
+          "mandatory_blockers": {
+            "items": {
+              "$ref": "#/$defs/Blocker"
+            },
+            "title": "Mandatory Blockers",
+            "type": "array"
+          },
+          "outcome": {
+            "$ref": "#/$defs/AssessmentOutcome"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "total_cents": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Cents"
+          },
+          "transport_feasible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transport Feasible"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Uncertainties",
+            "type": "array"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          }
+        },
+        "required": [
+          "execution_mode",
+          "version_context",
+          "gear_checklist",
+          "transport_feasible",
+          "cost_breakdown",
+          "total_cents",
+          "known_subtotal_cents",
+          "budget_difference_cents",
+          "outcome"
+        ],
+        "title": "LogisticsResult",
+        "type": "object"
+      },
+      "OrchestrateInput": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmed_context": {
+            "$ref": "#/$defs/ConfirmedContext"
+          },
+          "previous_version": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/StoredVersion"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "run_scope": {
+            "$ref": "#/$defs/RunScope"
+          }
+        },
+        "required": [
+          "run_scope",
+          "confirmed_context"
+        ],
+        "title": "OrchestrateInput",
+        "type": "object"
+      },
+      "PlanVersionStatus": {
+        "enum": [
+          "DRAFT",
+          "ASSESSING",
+          "REVISION_REQUIRED",
+          "ESCALATED",
+          "BLOCKED",
+          "ELIGIBLE_FOR_FINALISATION",
+          "REJECTED",
+          "FINALISED"
+        ],
+        "title": "PlanVersionStatus",
+        "type": "string"
+      },
+      "ProfileSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "accessibility_requirements": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Accessibility Requirements",
+            "type": "array"
+          },
+          "children_count": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Children Count"
+          },
+          "equipment": {
+            "items": {
+              "$ref": "#/$defs/EquipmentItem"
+            },
+            "title": "Equipment",
+            "type": "array"
+          },
+          "experience_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Experience Level"
+          },
+          "group_size": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Group Size"
+          },
+          "has_children": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Has Children"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Profile Id"
+          },
+          "transport": {
+            "$ref": "#/$defs/Transport"
+          }
+        },
+        "title": "ProfileSnapshot",
+        "type": "object"
+      },
+      "Provenance": {
+        "additionalProperties": false,
+        "properties": {
+          "demo_only": {
+            "const": true,
+            "default": true,
+            "title": "Demo Only",
+            "type": "boolean"
+          },
+          "source_date": {
+            "const": "2026-10-07",
+            "default": "2026-10-07",
+            "title": "Source Date",
+            "type": "string"
+          },
+          "source_name": {
+            "const": "CampMate Synthetic Demo Dataset v1",
+            "default": "CampMate Synthetic Demo Dataset v1",
+            "title": "Source Name",
+            "type": "string"
+          },
+          "source_type": {
+            "const": "SYNTHETIC",
+            "default": "SYNTHETIC",
+            "title": "Source Type",
+            "type": "string"
+          }
+        },
+        "title": "Provenance",
+        "type": "object"
+      },
+      "RecommendCampsitesInput": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmed_requirements": {
+            "$ref": "#/$defs/ConfirmedRequirements"
+          },
+          "demo_context": {
+            "$ref": "#/$defs/DemoContext"
+          },
+          "profile_snapshot": {
+            "$ref": "#/$defs/ProfileSnapshot"
+          }
+        },
+        "required": [
+          "confirmed_requirements",
+          "profile_snapshot",
+          "demo_context"
+        ],
+        "title": "RecommendCampsitesInput",
+        "type": "object"
+      },
+      "RecommendCampsitesResult": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/$defs/CampsiteCandidate"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "excluded_candidates": {
+            "items": {
+              "$ref": "#/$defs/ExcludedCandidate"
+            },
+            "title": "Excluded Candidates",
+            "type": "array"
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "search_outcome": {
+            "enum": [
+              "MATCHES",
+              "NO_MATCH"
+            ],
+            "title": "Search Outcome",
+            "type": "string"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Uncertainties",
+            "type": "array"
+          }
+        },
+        "required": [
+          "execution_mode",
+          "search_outcome",
+          "candidates"
+        ],
+        "title": "RecommendCampsitesResult",
+        "type": "object"
+      },
+      "ReviewDecision": {
+        "enum": [
+          "APPROVE",
+          "REJECT",
+          "REQUEST_REVISION"
+        ],
+        "title": "ReviewDecision",
+        "type": "string"
+      },
+      "RiskLevel": {
+        "enum": [
+          "LOW",
+          "MEDIUM",
+          "HIGH",
+          "UNKNOWN"
+        ],
+        "title": "RiskLevel",
+        "type": "string"
+      },
+      "RoadState": {
+        "enum": [
+          "OPEN",
+          "CLOSED",
+          "UNKNOWN"
+        ],
+        "title": "RoadState",
+        "type": "string"
+      },
+      "RouteResult": {
+        "additionalProperties": false,
+        "properties": {
+          "eligibility": {
+            "$ref": "#/$defs/Eligibility"
+          },
+          "status": {
+            "$ref": "#/$defs/PlanVersionStatus"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          }
+        },
+        "required": [
+          "version_context",
+          "status",
+          "eligibility"
+        ],
+        "title": "RouteResult",
+        "type": "object"
+      },
+      "RunResult": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_refs": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Artifact Refs",
+            "type": "object"
+          },
+          "blockers": {
+            "items": {
+              "$ref": "#/$defs/Blocker"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ContractError"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/PlanVersionStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "run_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_status": {
+            "$ref": "#/$defs/RunStatus"
+          },
+          "stage": {
+            "$ref": "#/$defs/RunStage"
+          }
+        },
+        "required": [
+          "run_id",
+          "execution_mode",
+          "run_status",
+          "stage"
+        ],
+        "title": "RunResult",
+        "type": "object"
+      },
+      "RunScope": {
+        "additionalProperties": false,
+        "properties": {
+          "command_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "dataset_context": {
+            "$ref": "#/$defs/DatasetContext"
+          },
+          "demo_context": {
+            "$ref": "#/$defs/DemoContext"
+          },
+          "expected_current_version_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Current Version Id"
+          },
+          "operation": {
+            "enum": [
+              "PLAN",
+              "REVISE",
+              "REASSESS"
+            ],
+            "title": "Operation",
+            "type": "string"
+          },
+          "plan_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Plan Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "write_keys": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Write Keys",
+            "type": "object"
+          }
+        },
+        "required": [
+          "command_id",
+          "run_id",
+          "plan_id",
+          "request_id",
+          "operation",
+          "expected_current_version_id",
+          "demo_context",
+          "dataset_context",
+          "write_keys"
+        ],
+        "title": "RunScope",
+        "type": "object"
+      },
+      "RunSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_refs": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Artifact Refs",
+            "type": "object"
+          },
+          "blockers": {
+            "items": {
+              "$ref": "#/$defs/Blocker"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ContractError"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "revision": {
+            "minimum": 0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/PlanVersionStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "run_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_status": {
+            "$ref": "#/$defs/RunStatus"
+          },
+          "stage": {
+            "$ref": "#/$defs/RunStage"
+          }
+        },
+        "required": [
+          "run_id",
+          "execution_mode",
+          "run_status",
+          "stage",
+          "revision"
+        ],
+        "title": "RunSnapshot",
+        "type": "object"
+      },
+      "RunStage": {
+        "enum": [
+          "RECOMMENDING",
+          "GENERATING",
+          "SAVING_VERSION",
+          "ASSESSING_LOGISTICS",
+          "ASSESSING_SAFETY",
+          "ROUTING",
+          "COMPLETED"
+        ],
+        "title": "RunStage",
+        "type": "string"
+      },
+      "RunStatus": {
+        "enum": [
+          "PENDING",
+          "RUNNING",
+          "SUCCEEDED",
+          "FAILED",
+          "CANCELLED",
+          "SUPERSEDED"
+        ],
+        "title": "RunStatus",
+        "type": "string"
+      },
+      "SafetyInput": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmed_requirements": {
+            "$ref": "#/$defs/ConfirmedRequirements"
+          },
+          "demo_context": {
+            "$ref": "#/$defs/DemoContext"
+          },
+          "saved_itinerary": {
+            "$ref": "#/$defs/ItineraryResult"
+          },
+          "saved_logistics_assessment": {
+            "$ref": "#/$defs/StoredAssessment"
+          },
+          "scenario_context": {
+            "$ref": "#/$defs/ScenarioContext"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          }
+        },
+        "required": [
+          "version_context",
+          "saved_itinerary",
+          "confirmed_requirements",
+          "saved_logistics_assessment",
+          "scenario_context",
+          "demo_context"
+        ],
+        "title": "SafetyInput",
+        "type": "object"
+      },
+      "SafetyResult": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "confidence": {
+            "$ref": "#/$defs/Confidence"
+          },
+          "data_quality": {
+            "additionalProperties": {
+              "$ref": "#/$defs/DataQuality"
+            },
+            "title": "Data Quality",
+            "type": "object"
+          },
+          "depends_on_assessment_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Depends On Assessment Id",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/$defs/Evidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "hazards": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Hazards",
+            "type": "array"
+          },
+          "mandatory_blockers": {
+            "items": {
+              "$ref": "#/$defs/Blocker"
+            },
+            "title": "Mandatory Blockers",
+            "type": "array"
+          },
+          "outcome": {
+            "$ref": "#/$defs/AssessmentOutcome"
+          },
+          "recommended_actions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recommended Actions",
+            "type": "array"
+          },
+          "requires_human_review": {
+            "title": "Requires Human Review",
+            "type": "boolean"
+          },
+          "risk_level": {
+            "$ref": "#/$defs/RiskLevel"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Uncertainties",
+            "type": "array"
+          },
+          "unresolved_conflicts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unresolved Conflicts",
+            "type": "array"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          }
+        },
+        "required": [
+          "execution_mode",
+          "version_context",
+          "depends_on_assessment_id",
+          "risk_level",
+          "confidence",
+          "data_quality",
+          "evidence",
+          "hazards",
+          "mandatory_blockers",
+          "recommended_actions",
+          "outcome",
+          "requires_human_review"
+        ],
+        "title": "SafetyResult",
+        "type": "object"
+      },
+      "ScenarioContext": {
+        "additionalProperties": false,
+        "properties": {
+          "campsite_ids": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Campsite Ids",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/$defs/Evidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "scenario_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Scenario Id",
+            "type": "string"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Template Id"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "campsite_ids",
+          "valid_from",
+          "valid_to",
+          "evidence"
+        ],
+        "title": "ScenarioContext",
+        "type": "object"
+      },
+      "SourceRef": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_file": {
+            "title": "Dataset File",
+            "type": "string"
+          },
+          "provenance": {
+            "$ref": "#/$defs/Provenance"
+          },
+          "record_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Record Id",
+            "type": "string"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Valid From"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Valid To"
+          }
+        },
+        "required": [
+          "dataset_file",
+          "record_id"
+        ],
+        "title": "SourceRef",
+        "type": "object"
+      },
+      "StoredAssessment": {
+        "additionalProperties": false,
+        "properties": {
+          "assessment_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Assessment Id",
+            "type": "string"
+          },
+          "depends_on_assessment_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depends On Assessment Id"
+          },
+          "gear_checklist_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gear Checklist Id"
+          },
+          "kind": {
+            "$ref": "#/$defs/AssessmentKind"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/LogisticsResult"
+              },
+              {
+                "$ref": "#/$defs/SafetyResult"
+              }
+            ],
+            "title": "Result"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          }
+        },
+        "required": [
+          "assessment_id",
+          "version_context",
+          "kind",
+          "result",
+          "gear_checklist_id",
+          "depends_on_assessment_id"
+        ],
+        "title": "StoredAssessment",
+        "type": "object"
+      },
+      "StoredRecommendations": {
+        "additionalProperties": false,
+        "properties": {
+          "recommendation_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Recommendation Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "result": {
+            "$ref": "#/$defs/RecommendCampsitesResult"
+          },
+          "run_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recommendation_id",
+          "request_id",
+          "run_id",
+          "result"
+        ],
+        "title": "StoredRecommendations",
+        "type": "object"
+      },
+      "StoredVersion": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "$ref": "#/$defs/ItineraryResult"
+          },
+          "revision": {
+            "minimum": 0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/$defs/PlanVersionStatus"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          },
+          "version_number": {
+            "exclusiveMinimum": 0,
+            "title": "Version Number",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version_context",
+          "version_number",
+          "content",
+          "status",
+          "revision"
+        ],
+        "title": "StoredVersion",
+        "type": "object"
+      },
+      "Transport": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "estimated_km": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Estimated Km"
+          },
+          "transport_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Transport Type"
+          },
+          "vehicle_count": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Vehicle Count"
+          }
+        },
+        "title": "Transport",
+        "type": "object"
+      },
+      "TripRequirements": {
+        "additionalProperties": false,
+        "properties": {
+          "budget_cents": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Budget Cents"
+          },
+          "currency": {
+            "const": "AUD",
+            "default": "AUD",
+            "title": "Currency",
+            "type": "string"
+          },
+          "destination": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Destination"
+          },
+          "duration_days": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Duration Days"
+          },
+          "duration_nights": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Duration Nights"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "End Date"
+          },
+          "mandatory_constraints": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Mandatory Constraints",
+            "type": "array"
+          },
+          "preferences": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Preferences",
+            "type": "array"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Start Date"
+          }
+        },
+        "title": "TripRequirements",
+        "type": "object"
+      },
+      "ValidReview": {
+        "additionalProperties": false,
+        "properties": {
+          "assessment_ids": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Assessment Ids",
+            "type": "array"
+          },
+          "decision": {
+            "$ref": "#/$defs/ReviewDecision"
+          },
+          "reason": {
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "review_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Review Id",
+            "type": "string"
+          },
+          "reviewer_user_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Reviewer User Id",
+            "type": "string"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          }
+        },
+        "required": [
+          "review_id",
+          "version_context",
+          "assessment_ids",
+          "reviewer_user_id",
+          "decision",
+          "reason"
+        ],
+        "title": "ValidReview",
+        "type": "object"
+      },
+      "VersionContext": {
+        "additionalProperties": false,
+        "properties": {
+          "input_fingerprint": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Input Fingerprint",
+            "type": "string"
+          },
+          "plan_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Plan Id",
+            "type": "string"
+          },
+          "plan_version_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Plan Version Id",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "plan_id",
+          "plan_version_id",
+          "run_id",
+          "input_fingerprint"
+        ],
+        "title": "VersionContext",
+        "type": "object"
+      }
+    }
+  },
+  "validation": {
+    "$defs": {
+      "AllowedAction": {
+        "enum": [
+          "EDIT_INPUT",
+          "RETRY",
+          "REQUEST_REVISION",
+          "REFRESH",
+          "WAIT_FOR_REVIEW",
+          "CONTACT_OPERATOR"
+        ],
+        "title": "AllowedAction",
+        "type": "string"
+      },
+      "Artifact": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Uncertainties",
+            "type": "array"
+          }
+        },
+        "required": [
+          "execution_mode"
+        ],
+        "title": "Artifact",
+        "type": "object"
+      },
+      "AssessmentKind": {
+        "enum": [
+          "LOGISTICS",
+          "SAFETY"
+        ],
+        "title": "AssessmentKind",
+        "type": "string"
+      },
+      "AssessmentOutcome": {
+        "enum": [
+          "PASSED",
+          "REVISION",
+          "REVIEW",
+          "BLOCKED"
+        ],
+        "title": "AssessmentOutcome",
+        "type": "string"
+      },
+      "Blocker": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "Blocker",
+        "type": "object"
+      },
+      "CampsiteCandidate": {
+        "additionalProperties": false,
+        "properties": {
+          "campsite_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Campsite Id",
+            "type": "string"
+          },
+          "material_uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Material Uncertainties",
+            "type": "array"
+          },
+          "rank": {
+            "exclusiveMinimum": 0,
+            "title": "Rank",
+            "type": "integer"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "campsite_id",
+          "rank",
+          "reasons"
+        ],
+        "title": "CampsiteCandidate",
+        "type": "object"
+      },
+      "Clarification": {
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "question",
+          "reason"
+        ],
+        "title": "Clarification",
+        "type": "object"
+      },
+      "Confidence": {
+        "enum": [
+          "LOW",
+          "MEDIUM",
+          "HIGH",
+          "UNKNOWN"
+        ],
+        "title": "Confidence",
+        "type": "string"
+      },
+      "ConfirmedContext": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmed_at": {
+            "format": "date-time",
+            "title": "Confirmed At",
+            "type": "string"
+          },
+          "dataset_context": {
+            "$ref": "#/$defs/DatasetContext"
+          },
+          "demo_context": {
+            "$ref": "#/$defs/DemoContext"
+          },
+          "profile_snapshot": {
+            "$ref": "#/$defs/ProfileSnapshot"
+          },
+          "request_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "requirements": {
+            "$ref": "#/$defs/ConfirmedRequirements"
+          }
+        },
+        "required": [
+          "request_id",
+          "confirmed_at",
+          "requirements",
+          "profile_snapshot",
+          "demo_context",
+          "dataset_context"
+        ],
+        "title": "ConfirmedContext",
+        "type": "object"
+      },
+      "ConfirmedRequirements": {
+        "additionalProperties": false,
+        "properties": {
+          "budget_cents": {
+            "exclusiveMinimum": 0,
+            "title": "Budget Cents",
+            "type": "integer"
+          },
+          "currency": {
+            "const": "AUD",
+            "default": "AUD",
+            "title": "Currency",
+            "type": "string"
+          },
+          "destination": {
+            "minLength": 1,
+            "title": "Destination",
+            "type": "string"
+          },
+          "duration_days": {
+            "exclusiveMinimum": 0,
+            "title": "Duration Days",
+            "type": "integer"
+          },
+          "duration_nights": {
+            "exclusiveMinimum": 0,
+            "title": "Duration Nights",
+            "type": "integer"
+          },
+          "end_date": {
+            "format": "date",
+            "title": "End Date",
+            "type": "string"
+          },
+          "mandatory_constraints": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Mandatory Constraints",
+            "type": "array"
+          },
+          "preferences": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Preferences",
+            "type": "array"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "destination",
+          "start_date",
+          "duration_nights",
+          "end_date",
+          "duration_days",
+          "budget_cents"
+        ],
+        "title": "ConfirmedRequirements",
+        "type": "object"
+      },
+      "ContractError": {
+        "additionalProperties": false,
+        "properties": {
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/$defs/AllowedAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "code": {
+            "$ref": "#/$defs/ErrorCode"
+          },
+          "context": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Context",
+            "type": "object"
+          },
+          "field_errors": {
+            "items": {
+              "$ref": "#/$defs/FieldError"
+            },
+            "title": "Field Errors",
+            "type": "array"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "recoverable": {
+            "default": false,
+            "title": "Recoverable",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ContractError",
+        "type": "object"
+      },
+      "CostLine": {
+        "additionalProperties": false,
+        "properties": {
+          "assumption": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Assumption"
+          },
+          "category": {
+            "enum": [
+              "CAMPSITE",
+              "TRANSPORT",
+              "FOOD",
+              "WATER",
+              "ADDITIONAL_GEAR"
+            ],
+            "title": "Category",
+            "type": "string"
+          },
+          "item_key": {
+            "title": "Item Key",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "source_ref": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/SourceRef"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "subtotal_cents": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Subtotal Cents"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "unit_price_cents": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Price Cents"
+          }
+        },
+        "required": [
+          "category",
+          "item_key",
+          "quantity",
+          "unit",
+          "unit_price_cents",
+          "subtotal_cents",
+          "source_ref"
+        ],
+        "title": "CostLine",
+        "type": "object"
+      },
+      "DataQuality": {
+        "enum": [
+          "AVAILABLE",
+          "MISSING",
+          "STALE",
+          "CONFLICTING"
+        ],
+        "title": "DataQuality",
+        "type": "string"
+      },
+      "DatasetContext": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_version": {
+            "title": "Dataset Version",
+            "type": "string"
+          },
+          "file_digests": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "File Digests",
+            "type": "object"
+          },
+          "fixture_digests": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Fixture Digests",
+            "type": "object"
+          },
+          "rules_version": {
+            "title": "Rules Version",
+            "type": "string"
+          },
+          "selection_config": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Selection Config",
+            "type": "object"
+          }
+        },
+        "required": [
+          "dataset_version",
+          "file_digests",
+          "rules_version"
+        ],
+        "title": "DatasetContext",
+        "type": "object"
+      },
+      "DemoContext": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_version": {
+            "default": "v1",
+            "title": "Dataset Version",
+            "type": "string"
+          },
+          "demo_today": {
+            "format": "date",
+            "title": "Demo Today",
+            "type": "string"
+          },
+          "mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "demo_today"
+        ],
+        "title": "DemoContext",
+        "type": "object"
+      },
+      "Eligibility": {
+        "additionalProperties": false,
+        "properties": {
+          "active_run_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Active Run Id",
+            "type": "string"
+          },
+          "allowed_actions": {
+            "items": {
+              "$ref": "#/$defs/AllowedAction"
+            },
+            "title": "Allowed Actions",
+            "type": "array"
+          },
+          "blocking_reasons": {
+            "items": {
+              "$ref": "#/$defs/Blocker"
+            },
+            "title": "Blocking Reasons",
+            "type": "array"
+          },
+          "current_version_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Current Version Id",
+            "type": "string"
+          },
+          "eligible": {
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "review_required": {
+            "title": "Review Required",
+            "type": "boolean"
+          },
+          "valid_review_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid Review Id"
+          }
+        },
+        "required": [
+          "eligible",
+          "current_version_id",
+          "active_run_id",
+          "blocking_reasons",
+          "review_required",
+          "valid_review_id",
+          "allowed_actions"
+        ],
+        "title": "Eligibility",
+        "type": "object"
+      },
+      "EquipmentItem": {
+        "additionalProperties": false,
+        "properties": {
+          "capacity_persons": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Capacity Persons"
+          },
+          "confirmed": {
+            "title": "Confirmed",
+            "type": "boolean"
+          },
+          "item_key": {
+            "title": "Item Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Quantity"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_key",
+          "label",
+          "unit",
+          "confirmed"
+        ],
+        "title": "EquipmentItem",
+        "type": "object"
+      },
+      "ErrorCode": {
+        "enum": [
+          "UNAUTHENTICATED",
+          "FORBIDDEN",
+          "NOT_FOUND",
+          "INPUT_INVALID",
+          "REQUEST_NOT_CONFIRMED",
+          "STALE_CONTEXT",
+          "VERSION_CONFLICT",
+          "IDEMPOTENCY_CONFLICT",
+          "INVALID_STATE",
+          "FINALISATION_BLOCKED",
+          "CONTRACT_INVALID",
+          "ADAPTER_FAILURE",
+          "AGENT_FAILURE",
+          "PERSISTENCE_FAILURE"
+        ],
+        "title": "ErrorCode",
+        "type": "string"
+      },
+      "ErrorEnvelope": {
+        "additionalProperties": false,
+        "properties": {
+          "error": {
+            "$ref": "#/$defs/ContractError"
+          },
+          "trace_id": {
+            "title": "Trace Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "error",
+          "trace_id"
+        ],
+        "title": "ErrorEnvelope",
+        "type": "object"
+      },
+      "Evidence": {
+        "additionalProperties": false,
+        "properties": {
+          "kind": {
+            "enum": [
+              "WEATHER",
+              "FIRE",
+              "ROAD",
+              "RESTRICTION"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "road_state": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/RoadState"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "source_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Date"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "status": {
+            "$ref": "#/$defs/DataQuality"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          }
+        },
+        "required": [
+          "kind",
+          "summary",
+          "source_date",
+          "status",
+          "valid_from",
+          "valid_to",
+          "source_refs"
+        ],
+        "title": "Evidence",
+        "type": "object"
+      },
+      "ExcludedCandidate": {
+        "additionalProperties": false,
+        "properties": {
+          "campsite_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Campsite Id",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Reasons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "campsite_id",
+          "reasons"
+        ],
+        "title": "ExcludedCandidate",
+        "type": "object"
+      },
+      "ExecutionMode": {
+        "enum": [
+          "stub",
+          "deterministic_demo",
+          "agent"
+        ],
+        "title": "ExecutionMode",
+        "type": "string"
+      },
+      "FieldError": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "$ref": "#/$defs/FieldErrorCode"
+          },
+          "field": {
+            "title": "Field",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "code",
+          "message"
+        ],
+        "title": "FieldError",
+        "type": "object"
+      },
+      "FieldErrorCode": {
+        "enum": [
+          "MISSING",
+          "INVALID",
+          "AMBIGUOUS",
+          "CONFLICTING",
+          "UNSUPPORTED"
+        ],
+        "title": "FieldErrorCode",
+        "type": "string"
+      },
+      "GearItem": {
+        "additionalProperties": false,
+        "properties": {
+          "arrangement_status": {
+            "enum": [
+              "OWNED",
+              "CONFIRMED_RENTAL",
+              "UNCONFIRMED",
+              "MISSING"
+            ],
+            "title": "Arrangement Status",
+            "type": "string"
+          },
+          "available_quantity": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available Quantity"
+          },
+          "capacity_requirement": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Capacity Requirement"
+          },
+          "essential": {
+            "title": "Essential",
+            "type": "boolean"
+          },
+          "item_key": {
+            "title": "Item Key",
+            "type": "string"
+          },
+          "missing_quantity": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Missing Quantity"
+          },
+          "required_quantity": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Required Quantity"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_key",
+          "required_quantity",
+          "available_quantity",
+          "missing_quantity",
+          "unit",
+          "arrangement_status",
+          "essential"
+        ],
+        "title": "GearItem",
+        "type": "object"
+      },
+      "InterpretRequestInput": {
+        "additionalProperties": false,
+        "properties": {
+          "demo_context": {
+            "$ref": "#/$defs/DemoContext"
+          },
+          "explicit_fields": {
+            "$ref": "#/$defs/TripRequirements"
+          },
+          "profile_snapshot": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ProfileSnapshot"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "raw_text": {
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Raw Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "raw_text",
+          "demo_context"
+        ],
+        "title": "InterpretRequestInput",
+        "type": "object"
+      },
+      "InterpretRequestResult": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "clarifications": {
+            "items": {
+              "$ref": "#/$defs/Clarification"
+            },
+            "title": "Clarifications",
+            "type": "array"
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "extracted_requirements": {
+            "$ref": "#/$defs/TripRequirements"
+          },
+          "field_errors": {
+            "items": {
+              "$ref": "#/$defs/FieldError"
+            },
+            "title": "Field Errors",
+            "type": "array"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Uncertainties",
+            "type": "array"
+          }
+        },
+        "required": [
+          "execution_mode",
+          "extracted_requirements"
+        ],
+        "title": "InterpretRequestResult",
+        "type": "object"
+      },
+      "ItineraryEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "campsite_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Campsite Id"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "end_at": {
+            "format": "date-time",
+            "title": "End At",
+            "type": "string"
+          },
+          "entry_kind": {
+            "enum": [
+              "TRAVEL",
+              "CAMP",
+              "ACTIVITY"
+            ],
+            "title": "Entry Kind",
+            "type": "string"
+          },
+          "start_at": {
+            "format": "date-time",
+            "title": "Start At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "entry_kind",
+          "start_at",
+          "end_at",
+          "description"
+        ],
+        "title": "ItineraryEntry",
+        "type": "object"
+      },
+      "ItineraryInput": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmed_requirements": {
+            "$ref": "#/$defs/ConfirmedRequirements"
+          },
+          "demo_context": {
+            "$ref": "#/$defs/DemoContext"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Feedback"
+          },
+          "previous_version": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/StoredVersion"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "profile_snapshot": {
+            "$ref": "#/$defs/ProfileSnapshot"
+          },
+          "recommendations": {
+            "$ref": "#/$defs/RecommendCampsitesResult"
+          }
+        },
+        "required": [
+          "confirmed_requirements",
+          "profile_snapshot",
+          "recommendations",
+          "demo_context"
+        ],
+        "title": "ItineraryInput",
+        "type": "object"
+      },
+      "ItineraryResult": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "itinerary_entries": {
+            "items": {
+              "$ref": "#/$defs/ItineraryEntry"
+            },
+            "title": "Itinerary Entries",
+            "type": "array"
+          },
+          "requested_requirement_changes": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/TripRequirements"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "revision_reason": {
+            "title": "Revision Reason",
+            "type": "string"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "selected_campsite_ids": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Selected Campsite Ids",
+            "type": "array"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Uncertainties",
+            "type": "array"
+          }
+        },
+        "required": [
+          "execution_mode",
+          "itinerary_entries",
+          "selected_campsite_ids",
+          "revision_reason"
+        ],
+        "title": "ItineraryResult",
+        "type": "object"
+      },
+      "LogisticsInput": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmed_requirements": {
+            "$ref": "#/$defs/ConfirmedRequirements"
+          },
+          "demo_context": {
+            "$ref": "#/$defs/DemoContext"
+          },
+          "profile_snapshot": {
+            "$ref": "#/$defs/ProfileSnapshot"
+          },
+          "saved_itinerary": {
+            "$ref": "#/$defs/ItineraryResult"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          }
+        },
+        "required": [
+          "version_context",
+          "saved_itinerary",
+          "confirmed_requirements",
+          "profile_snapshot",
+          "demo_context"
+        ],
+        "title": "LogisticsInput",
+        "type": "object"
+      },
+      "LogisticsResult": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "budget_difference_cents": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Difference Cents"
+          },
+          "clarifications": {
+            "items": {
+              "$ref": "#/$defs/Clarification"
+            },
+            "title": "Clarifications",
+            "type": "array"
+          },
+          "cost_breakdown": {
+            "items": {
+              "$ref": "#/$defs/CostLine"
+            },
+            "title": "Cost Breakdown",
+            "type": "array"
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "gear_checklist": {
+            "items": {
+              "$ref": "#/$defs/GearItem"
+            },
+            "title": "Gear Checklist",
+            "type": "array"
+          },
+          "known_subtotal_cents": {
+            "minimum": 0,
+            "title": "Known Subtotal Cents",
+            "type": "integer"
+          },
+          "mandatory_blockers": {
+            "items": {
+              "$ref": "#/$defs/Blocker"
+            },
+            "title": "Mandatory Blockers",
+            "type": "array"
+          },
+          "outcome": {
+            "$ref": "#/$defs/AssessmentOutcome"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "total_cents": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Cents"
+          },
+          "transport_feasible": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transport Feasible"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Uncertainties",
+            "type": "array"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          }
+        },
+        "required": [
+          "execution_mode",
+          "version_context",
+          "gear_checklist",
+          "transport_feasible",
+          "cost_breakdown",
+          "total_cents",
+          "known_subtotal_cents",
+          "budget_difference_cents",
+          "outcome"
+        ],
+        "title": "LogisticsResult",
+        "type": "object"
+      },
+      "OrchestrateInput": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmed_context": {
+            "$ref": "#/$defs/ConfirmedContext"
+          },
+          "previous_version": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/StoredVersion"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "run_scope": {
+            "$ref": "#/$defs/RunScope"
+          }
+        },
+        "required": [
+          "run_scope",
+          "confirmed_context"
+        ],
+        "title": "OrchestrateInput",
+        "type": "object"
+      },
+      "PlanVersionStatus": {
+        "enum": [
+          "DRAFT",
+          "ASSESSING",
+          "REVISION_REQUIRED",
+          "ESCALATED",
+          "BLOCKED",
+          "ELIGIBLE_FOR_FINALISATION",
+          "REJECTED",
+          "FINALISED"
+        ],
+        "title": "PlanVersionStatus",
+        "type": "string"
+      },
+      "ProfileSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "accessibility_requirements": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Accessibility Requirements",
+            "type": "array"
+          },
+          "children_count": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Children Count"
+          },
+          "equipment": {
+            "items": {
+              "$ref": "#/$defs/EquipmentItem"
+            },
+            "title": "Equipment",
+            "type": "array"
+          },
+          "experience_level": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Experience Level"
+          },
+          "group_size": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Group Size"
+          },
+          "has_children": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Has Children"
+          },
+          "profile_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Profile Id"
+          },
+          "transport": {
+            "$ref": "#/$defs/Transport"
+          }
+        },
+        "title": "ProfileSnapshot",
+        "type": "object"
+      },
+      "Provenance": {
+        "additionalProperties": false,
+        "properties": {
+          "demo_only": {
+            "const": true,
+            "default": true,
+            "title": "Demo Only",
+            "type": "boolean"
+          },
+          "source_date": {
+            "const": "2026-10-07",
+            "default": "2026-10-07",
+            "title": "Source Date",
+            "type": "string"
+          },
+          "source_name": {
+            "const": "CampMate Synthetic Demo Dataset v1",
+            "default": "CampMate Synthetic Demo Dataset v1",
+            "title": "Source Name",
+            "type": "string"
+          },
+          "source_type": {
+            "const": "SYNTHETIC",
+            "default": "SYNTHETIC",
+            "title": "Source Type",
+            "type": "string"
+          }
+        },
+        "title": "Provenance",
+        "type": "object"
+      },
+      "RecommendCampsitesInput": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmed_requirements": {
+            "$ref": "#/$defs/ConfirmedRequirements"
+          },
+          "demo_context": {
+            "$ref": "#/$defs/DemoContext"
+          },
+          "profile_snapshot": {
+            "$ref": "#/$defs/ProfileSnapshot"
+          }
+        },
+        "required": [
+          "confirmed_requirements",
+          "profile_snapshot",
+          "demo_context"
+        ],
+        "title": "RecommendCampsitesInput",
+        "type": "object"
+      },
+      "RecommendCampsitesResult": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/$defs/CampsiteCandidate"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "excluded_candidates": {
+            "items": {
+              "$ref": "#/$defs/ExcludedCandidate"
+            },
+            "title": "Excluded Candidates",
+            "type": "array"
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "search_outcome": {
+            "enum": [
+              "MATCHES",
+              "NO_MATCH"
+            ],
+            "title": "Search Outcome",
+            "type": "string"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Uncertainties",
+            "type": "array"
+          }
+        },
+        "required": [
+          "execution_mode",
+          "search_outcome",
+          "candidates"
+        ],
+        "title": "RecommendCampsitesResult",
+        "type": "object"
+      },
+      "ReviewDecision": {
+        "enum": [
+          "APPROVE",
+          "REJECT",
+          "REQUEST_REVISION"
+        ],
+        "title": "ReviewDecision",
+        "type": "string"
+      },
+      "RiskLevel": {
+        "enum": [
+          "LOW",
+          "MEDIUM",
+          "HIGH",
+          "UNKNOWN"
+        ],
+        "title": "RiskLevel",
+        "type": "string"
+      },
+      "RoadState": {
+        "enum": [
+          "OPEN",
+          "CLOSED",
+          "UNKNOWN"
+        ],
+        "title": "RoadState",
+        "type": "string"
+      },
+      "RouteResult": {
+        "additionalProperties": false,
+        "properties": {
+          "eligibility": {
+            "$ref": "#/$defs/Eligibility"
+          },
+          "status": {
+            "$ref": "#/$defs/PlanVersionStatus"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          }
+        },
+        "required": [
+          "version_context",
+          "status",
+          "eligibility"
+        ],
+        "title": "RouteResult",
+        "type": "object"
+      },
+      "RunResult": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_refs": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Artifact Refs",
+            "type": "object"
+          },
+          "blockers": {
+            "items": {
+              "$ref": "#/$defs/Blocker"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ContractError"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/PlanVersionStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "run_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_status": {
+            "$ref": "#/$defs/RunStatus"
+          },
+          "stage": {
+            "$ref": "#/$defs/RunStage"
+          }
+        },
+        "required": [
+          "run_id",
+          "execution_mode",
+          "run_status",
+          "stage"
+        ],
+        "title": "RunResult",
+        "type": "object"
+      },
+      "RunScope": {
+        "additionalProperties": false,
+        "properties": {
+          "command_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Command Id",
+            "type": "string"
+          },
+          "dataset_context": {
+            "$ref": "#/$defs/DatasetContext"
+          },
+          "demo_context": {
+            "$ref": "#/$defs/DemoContext"
+          },
+          "expected_current_version_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Current Version Id"
+          },
+          "operation": {
+            "enum": [
+              "PLAN",
+              "REVISE",
+              "REASSESS"
+            ],
+            "title": "Operation",
+            "type": "string"
+          },
+          "plan_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Plan Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "write_keys": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Write Keys",
+            "type": "object"
+          }
+        },
+        "required": [
+          "command_id",
+          "run_id",
+          "plan_id",
+          "request_id",
+          "operation",
+          "expected_current_version_id",
+          "demo_context",
+          "dataset_context",
+          "write_keys"
+        ],
+        "title": "RunScope",
+        "type": "object"
+      },
+      "RunSnapshot": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_refs": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Artifact Refs",
+            "type": "object"
+          },
+          "blockers": {
+            "items": {
+              "$ref": "#/$defs/Blocker"
+            },
+            "title": "Blockers",
+            "type": "array"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/ContractError"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "revision": {
+            "minimum": 0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "route": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/PlanVersionStatus"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "run_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          },
+          "run_status": {
+            "$ref": "#/$defs/RunStatus"
+          },
+          "stage": {
+            "$ref": "#/$defs/RunStage"
+          }
+        },
+        "required": [
+          "run_id",
+          "execution_mode",
+          "run_status",
+          "stage",
+          "revision"
+        ],
+        "title": "RunSnapshot",
+        "type": "object"
+      },
+      "RunStage": {
+        "enum": [
+          "RECOMMENDING",
+          "GENERATING",
+          "SAVING_VERSION",
+          "ASSESSING_LOGISTICS",
+          "ASSESSING_SAFETY",
+          "ROUTING",
+          "COMPLETED"
+        ],
+        "title": "RunStage",
+        "type": "string"
+      },
+      "RunStatus": {
+        "enum": [
+          "PENDING",
+          "RUNNING",
+          "SUCCEEDED",
+          "FAILED",
+          "CANCELLED",
+          "SUPERSEDED"
+        ],
+        "title": "RunStatus",
+        "type": "string"
+      },
+      "SafetyInput": {
+        "additionalProperties": false,
+        "properties": {
+          "confirmed_requirements": {
+            "$ref": "#/$defs/ConfirmedRequirements"
+          },
+          "demo_context": {
+            "$ref": "#/$defs/DemoContext"
+          },
+          "saved_itinerary": {
+            "$ref": "#/$defs/ItineraryResult"
+          },
+          "saved_logistics_assessment": {
+            "$ref": "#/$defs/StoredAssessment"
+          },
+          "scenario_context": {
+            "$ref": "#/$defs/ScenarioContext"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          }
+        },
+        "required": [
+          "version_context",
+          "saved_itinerary",
+          "confirmed_requirements",
+          "saved_logistics_assessment",
+          "scenario_context",
+          "demo_context"
+        ],
+        "title": "SafetyInput",
+        "type": "object"
+      },
+      "SafetyResult": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "confidence": {
+            "$ref": "#/$defs/Confidence"
+          },
+          "data_quality": {
+            "additionalProperties": {
+              "$ref": "#/$defs/DataQuality"
+            },
+            "title": "Data Quality",
+            "type": "object"
+          },
+          "depends_on_assessment_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Depends On Assessment Id",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/$defs/Evidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "execution_mode": {
+            "$ref": "#/$defs/ExecutionMode"
+          },
+          "hazards": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Hazards",
+            "type": "array"
+          },
+          "mandatory_blockers": {
+            "items": {
+              "$ref": "#/$defs/Blocker"
+            },
+            "title": "Mandatory Blockers",
+            "type": "array"
+          },
+          "outcome": {
+            "$ref": "#/$defs/AssessmentOutcome"
+          },
+          "recommended_actions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recommended Actions",
+            "type": "array"
+          },
+          "requires_human_review": {
+            "title": "Requires Human Review",
+            "type": "boolean"
+          },
+          "risk_level": {
+            "$ref": "#/$defs/RiskLevel"
+          },
+          "schema_version": {
+            "const": "1.0",
+            "default": "1.0",
+            "title": "Schema Version",
+            "type": "string"
+          },
+          "source_refs": {
+            "items": {
+              "$ref": "#/$defs/SourceRef"
+            },
+            "title": "Source Refs",
+            "type": "array"
+          },
+          "uncertainties": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Uncertainties",
+            "type": "array"
+          },
+          "unresolved_conflicts": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unresolved Conflicts",
+            "type": "array"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          }
+        },
+        "required": [
+          "execution_mode",
+          "version_context",
+          "depends_on_assessment_id",
+          "risk_level",
+          "confidence",
+          "data_quality",
+          "evidence",
+          "hazards",
+          "mandatory_blockers",
+          "recommended_actions",
+          "outcome",
+          "requires_human_review"
+        ],
+        "title": "SafetyResult",
+        "type": "object"
+      },
+      "ScenarioContext": {
+        "additionalProperties": false,
+        "properties": {
+          "campsite_ids": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Campsite Ids",
+            "type": "array"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/$defs/Evidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "scenario_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Scenario Id",
+            "type": "string"
+          },
+          "template_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Template Id"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid To"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "campsite_ids",
+          "valid_from",
+          "valid_to",
+          "evidence"
+        ],
+        "title": "ScenarioContext",
+        "type": "object"
+      },
+      "SourceRef": {
+        "additionalProperties": false,
+        "properties": {
+          "dataset_file": {
+            "title": "Dataset File",
+            "type": "string"
+          },
+          "provenance": {
+            "$ref": "#/$defs/Provenance"
+          },
+          "record_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Record Id",
+            "type": "string"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Valid From"
+          },
+          "valid_to": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Valid To"
+          }
+        },
+        "required": [
+          "dataset_file",
+          "record_id"
+        ],
+        "title": "SourceRef",
+        "type": "object"
+      },
+      "StoredAssessment": {
+        "additionalProperties": false,
+        "properties": {
+          "assessment_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Assessment Id",
+            "type": "string"
+          },
+          "depends_on_assessment_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depends On Assessment Id"
+          },
+          "gear_checklist_id": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gear Checklist Id"
+          },
+          "kind": {
+            "$ref": "#/$defs/AssessmentKind"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/$defs/LogisticsResult"
+              },
+              {
+                "$ref": "#/$defs/SafetyResult"
+              }
+            ],
+            "title": "Result"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          }
+        },
+        "required": [
+          "assessment_id",
+          "version_context",
+          "kind",
+          "result",
+          "gear_checklist_id",
+          "depends_on_assessment_id"
+        ],
+        "title": "StoredAssessment",
+        "type": "object"
+      },
+      "StoredRecommendations": {
+        "additionalProperties": false,
+        "properties": {
+          "recommendation_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Recommendation Id",
+            "type": "string"
+          },
+          "request_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Request Id",
+            "type": "string"
+          },
+          "result": {
+            "$ref": "#/$defs/RecommendCampsitesResult"
+          },
+          "run_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recommendation_id",
+          "request_id",
+          "run_id",
+          "result"
+        ],
+        "title": "StoredRecommendations",
+        "type": "object"
+      },
+      "StoredVersion": {
+        "additionalProperties": false,
+        "properties": {
+          "content": {
+            "$ref": "#/$defs/ItineraryResult"
+          },
+          "revision": {
+            "minimum": 0,
+            "title": "Revision",
+            "type": "integer"
+          },
+          "status": {
+            "$ref": "#/$defs/PlanVersionStatus"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          },
+          "version_number": {
+            "exclusiveMinimum": 0,
+            "title": "Version Number",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version_context",
+          "version_number",
+          "content",
+          "status",
+          "revision"
+        ],
+        "title": "StoredVersion",
+        "type": "object"
+      },
+      "Transport": {
+        "additionalProperties": false,
+        "properties": {
+          "assumptions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumptions",
+            "type": "array"
+          },
+          "estimated_km": {
+            "anyOf": [
+              {
+                "ge": 0,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Estimated Km"
+          },
+          "transport_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Transport Type"
+          },
+          "vehicle_count": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Vehicle Count"
+          }
+        },
+        "title": "Transport",
+        "type": "object"
+      },
+      "TripRequirements": {
+        "additionalProperties": false,
+        "properties": {
+          "budget_cents": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Budget Cents"
+          },
+          "currency": {
+            "const": "AUD",
+            "default": "AUD",
+            "title": "Currency",
+            "type": "string"
+          },
+          "destination": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Destination"
+          },
+          "duration_days": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Duration Days"
+          },
+          "duration_nights": {
+            "anyOf": [
+              {
+                "exclusiveMinimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Duration Nights"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "End Date"
+          },
+          "mandatory_constraints": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Mandatory Constraints",
+            "type": "array"
+          },
+          "preferences": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Preferences",
+            "type": "array"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Start Date"
+          }
+        },
+        "title": "TripRequirements",
+        "type": "object"
+      },
+      "ValidReview": {
+        "additionalProperties": false,
+        "properties": {
+          "assessment_ids": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "title": "Assessment Ids",
+            "type": "array"
+          },
+          "decision": {
+            "$ref": "#/$defs/ReviewDecision"
+          },
+          "reason": {
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          },
+          "review_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Review Id",
+            "type": "string"
+          },
+          "reviewer_user_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Reviewer User Id",
+            "type": "string"
+          },
+          "version_context": {
+            "$ref": "#/$defs/VersionContext"
+          }
+        },
+        "required": [
+          "review_id",
+          "version_context",
+          "assessment_ids",
+          "reviewer_user_id",
+          "decision",
+          "reason"
+        ],
+        "title": "ValidReview",
+        "type": "object"
+      },
+      "VersionContext": {
+        "additionalProperties": false,
+        "properties": {
+          "input_fingerprint": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Input Fingerprint",
+            "type": "string"
+          },
+          "plan_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Plan Id",
+            "type": "string"
+          },
+          "plan_version_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Plan Version Id",
+            "type": "string"
+          },
+          "run_id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "plan_id",
+          "plan_version_id",
+          "run_id",
+          "input_fingerprint"
+        ],
+        "title": "VersionContext",
+        "type": "object"
+      }
+    }
+  }
+}

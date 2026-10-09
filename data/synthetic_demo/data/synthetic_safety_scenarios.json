@@ -1,0 +1,396 @@
+[
+  {
+    "safety_case_id": "safety-01",
+    "title": "Complete low-risk demo case",
+    "campsite_id": "demo-pine-camp",
+    "scenario_date": "2026-10-20",
+    "weather": {
+      "summary": "Mild synthetic conditions.",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE"
+    },
+    "fire": {
+      "summary": "No synthetic fire restriction.",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE"
+    },
+    "road_access": {
+      "summary": "open in synthetic scenario",
+      "source_date": "2026-10-07",
+      "status": "OPEN"
+    },
+    "campsite_restrictions": [],
+    "risk_tags": [
+      "cold"
+    ],
+    "severity": "LOW",
+    "confidence": "HIGH",
+    "mandatory_blockers": [],
+    "expected_outcome": "PASSED",
+    "expected_actions": [
+      "record risk note",
+      "continue plan"
+    ],
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "notes": "Synthetic safety scenario; never use for real safety decisions."
+  },
+  {
+    "safety_case_id": "safety-02",
+    "title": "Missing weather data",
+    "campsite_id": "demo-river-flat",
+    "scenario_date": "2026-10-21",
+    "weather": {
+      "summary": "Synthetic weather data unavailable.",
+      "source_date": "unknown",
+      "status": "MISSING"
+    },
+    "fire": {
+      "summary": "No synthetic fire restriction.",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE"
+    },
+    "road_access": {
+      "summary": "open in synthetic scenario",
+      "source_date": "2026-10-07",
+      "status": "OPEN"
+    },
+    "campsite_restrictions": [],
+    "risk_tags": [
+      "heavy_rain"
+    ],
+    "severity": "MEDIUM",
+    "confidence": "LOW",
+    "mandatory_blockers": [],
+    "expected_outcome": "REVIEW",
+    "expected_actions": [
+      "escalate to Human Founder",
+      "do not claim safe"
+    ],
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "notes": "Synthetic safety scenario; never use for real safety decisions."
+  },
+  {
+    "safety_case_id": "safety-03",
+    "title": "Stale weather data",
+    "campsite_id": "demo-sandstone-grove",
+    "scenario_date": "2026-10-22",
+    "weather": {
+      "summary": "Synthetic weather data is stale.",
+      "source_date": "unknown",
+      "status": "STALE"
+    },
+    "fire": {
+      "summary": "No synthetic fire restriction.",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE"
+    },
+    "road_access": {
+      "summary": "open in synthetic scenario",
+      "source_date": "2026-10-07",
+      "status": "OPEN"
+    },
+    "campsite_restrictions": [],
+    "risk_tags": [
+      "heat"
+    ],
+    "severity": "MEDIUM",
+    "confidence": "LOW",
+    "mandatory_blockers": [],
+    "expected_outcome": "REVIEW",
+    "expected_actions": [
+      "request refreshed synthetic data",
+      "escalate"
+    ],
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "notes": "Synthetic safety scenario; never use for real safety decisions."
+  },
+  {
+    "safety_case_id": "safety-04",
+    "title": "Missing fire status",
+    "campsite_id": "demo-wattle-rest",
+    "scenario_date": "2026-10-23",
+    "weather": {
+      "summary": "Mild synthetic conditions.",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE"
+    },
+    "fire": {
+      "summary": "Synthetic fire information unavailable.",
+      "source_date": "unknown",
+      "status": "MISSING"
+    },
+    "road_access": {
+      "summary": "open in synthetic scenario",
+      "source_date": "2026-10-07",
+      "status": "OPEN"
+    },
+    "campsite_restrictions": [],
+    "risk_tags": [
+      "bushfire_demo"
+    ],
+    "severity": "HIGH",
+    "confidence": "LOW",
+    "mandatory_blockers": [],
+    "expected_outcome": "REVIEW",
+    "expected_actions": [
+      "escalate to Human Founder",
+      "hide no uncertainty"
+    ],
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "notes": "Synthetic safety scenario; never use for real safety decisions."
+  },
+  {
+    "safety_case_id": "safety-05",
+    "title": "Comprehensive fire prohibition",
+    "campsite_id": "demo-ridge-lookout",
+    "scenario_date": "2026-10-24",
+    "weather": {
+      "summary": "Dry synthetic conditions.",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE"
+    },
+    "fire": {
+      "summary": "Synthetic comprehensive no-fire restriction.",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE"
+    },
+    "road_access": {
+      "summary": "open in synthetic scenario",
+      "source_date": "2026-10-07",
+      "status": "OPEN"
+    },
+    "campsite_restrictions": [
+      "no fires"
+    ],
+    "risk_tags": [
+      "bushfire_demo"
+    ],
+    "severity": "HIGH",
+    "confidence": "HIGH",
+    "mandatory_blockers": [
+      "campfire requested at no-fire campsite"
+    ],
+    "expected_outcome": "REVISION",
+    "expected_actions": [
+      "remove campfire",
+      "use stove or ready-to-eat meals"
+    ],
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "notes": "Synthetic safety scenario; never use for real safety decisions."
+  },
+  {
+    "safety_case_id": "safety-06",
+    "title": "Road closed",
+    "campsite_id": "demo-cloud-gully",
+    "scenario_date": "2026-10-25",
+    "weather": {
+      "summary": "Mild synthetic conditions.",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE"
+    },
+    "fire": {
+      "summary": "No synthetic fire restriction.",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE"
+    },
+    "road_access": {
+      "summary": "closed in synthetic scenario",
+      "source_date": "2026-10-07",
+      "status": "CLOSED"
+    },
+    "campsite_restrictions": [],
+    "risk_tags": [
+      "road_access"
+    ],
+    "severity": "CRITICAL",
+    "confidence": "HIGH",
+    "mandatory_blockers": [
+      "road access closed"
+    ],
+    "expected_outcome": "BLOCKED",
+    "expected_actions": [
+      "select another campsite",
+      "do not finalize"
+    ],
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "notes": "Synthetic safety scenario; never use for real safety decisions."
+  },
+  {
+    "safety_case_id": "safety-07",
+    "title": "Campsite closed",
+    "campsite_id": "demo-granite-ledge",
+    "scenario_date": "2026-10-26",
+    "weather": {
+      "summary": "Mild synthetic conditions.",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE"
+    },
+    "fire": {
+      "summary": "No synthetic fire restriction.",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE"
+    },
+    "road_access": {
+      "summary": "open in synthetic scenario",
+      "source_date": "2026-10-07",
+      "status": "OPEN"
+    },
+    "campsite_restrictions": [
+      "synthetic campsite closure"
+    ],
+    "risk_tags": [
+      "remote"
+    ],
+    "severity": "CRITICAL",
+    "confidence": "HIGH",
+    "mandatory_blockers": [
+      "campsite closed"
+    ],
+    "expected_outcome": "BLOCKED",
+    "expected_actions": [
+      "select another campsite",
+      "do not finalize"
+    ],
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "notes": "Synthetic safety scenario; never use for real safety decisions."
+  },
+  {
+    "safety_case_id": "safety-08",
+    "title": "Conflicting weather and fire information",
+    "campsite_id": "demo-lake-meadow",
+    "scenario_date": "2026-10-27",
+    "weather": {
+      "summary": "Synthetic weather sources conflict.",
+      "source_date": "unknown",
+      "status": "CONFLICTING"
+    },
+    "fire": {
+      "summary": "Synthetic fire sources conflict.",
+      "source_date": "unknown",
+      "status": "CONFLICTING"
+    },
+    "road_access": {
+      "summary": "open in synthetic scenario",
+      "source_date": "2026-10-07",
+      "status": "OPEN"
+    },
+    "campsite_restrictions": [],
+    "risk_tags": [
+      "heavy_rain",
+      "bushfire_demo"
+    ],
+    "severity": "HIGH",
+    "confidence": "LOW",
+    "mandatory_blockers": [],
+    "expected_outcome": "REVIEW",
+    "expected_actions": [
+      "surface conflict",
+      "escalate to Human Founder"
+    ],
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "notes": "Synthetic safety scenario; never use for real safety decisions."
+  },
+  {
+    "safety_case_id": "safety-09",
+    "title": "Extreme heat revision",
+    "campsite_id": "demo-sandstone-grove",
+    "scenario_date": "2026-10-28",
+    "weather": {
+      "summary": "Synthetic extreme heat expected.",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE"
+    },
+    "fire": {
+      "summary": "No synthetic fire restriction.",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE"
+    },
+    "road_access": {
+      "summary": "restricted in synthetic scenario",
+      "source_date": "2026-10-07",
+      "status": "RESTRICTED"
+    },
+    "campsite_restrictions": [],
+    "risk_tags": [
+      "heat"
+    ],
+    "severity": "HIGH",
+    "confidence": "MEDIUM",
+    "mandatory_blockers": [],
+    "expected_outcome": "REVISION",
+    "expected_actions": [
+      "change date or campsite",
+      "increase water plan"
+    ],
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "notes": "Synthetic safety scenario; never use for real safety decisions."
+  },
+  {
+    "safety_case_id": "safety-10",
+    "title": "Multiple unknown data points",
+    "campsite_id": "demo-fern-walk",
+    "scenario_date": "2026-10-29",
+    "weather": {
+      "summary": "Synthetic weather data unavailable.",
+      "source_date": "unknown",
+      "status": "MISSING"
+    },
+    "fire": {
+      "summary": "Synthetic fire data unavailable.",
+      "source_date": "unknown",
+      "status": "MISSING"
+    },
+    "road_access": {
+      "summary": "unknown in synthetic scenario",
+      "source_date": "unknown",
+      "status": "UNKNOWN"
+    },
+    "campsite_restrictions": [
+      "walk-in access only"
+    ],
+    "risk_tags": [
+      "remote",
+      "limited_water"
+    ],
+    "severity": "HIGH",
+    "confidence": "LOW",
+    "mandatory_blockers": [],
+    "expected_outcome": "REVIEW",
+    "expected_actions": [
+      "escalate",
+      "request missing information"
+    ],
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "notes": "Synthetic safety scenario; never use for real safety decisions."
+  }
+]

@@ -1,0 +1,7 @@
+* text=auto eol=lf
+
+# Preserve the original demonstration package bytes and manifest hashes.
+data/synthetic_demo/** -text whitespace=cr-at-eol
+
+*.png binary
+*.jpg binary

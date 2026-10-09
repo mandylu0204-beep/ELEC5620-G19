@@ -1,0 +1,239 @@
+[
+  {
+    "request_id": "request-01",
+    "profile_id": "profile-a",
+    "natural_language_request": "We are two beginners with a car. Please plan a quiet two-night trip in CampMate Demo Region from 2026-10-20. Our budget is AUD 320.",
+    "destination": "CampMate Demo Region",
+    "start_date": "2026-10-20",
+    "duration_days": 2,
+    "budget_aud": 320,
+    "preferences": [
+      "quiet",
+      "toilets"
+    ],
+    "expected_request_status": "CONFIRMED",
+    "missing_fields": [],
+    "notes": "Complete valid request.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-02",
+    "profile_id": "profile-a",
+    "natural_language_request": "We want a two-night camping trip from 2026-10-21 with AUD 250, but have not chosen a destination.",
+    "destination": "unknown",
+    "start_date": "2026-10-21",
+    "duration_days": 2,
+    "budget_aud": 250,
+    "preferences": [
+      "quiet"
+    ],
+    "expected_request_status": "NEEDS_CLARIFICATION",
+    "missing_fields": [
+      "destination"
+    ],
+    "notes": "Destination is missing.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-03",
+    "profile_id": "profile-b",
+    "natural_language_request": "Four beginners need a CampMate Demo Region trip with AUD 500. We have no tent.",
+    "destination": "CampMate Demo Region",
+    "start_date": "unknown",
+    "duration_days": 2,
+    "budget_aud": 500,
+    "preferences": [
+      "toilets"
+    ],
+    "expected_request_status": "NEEDS_CLARIFICATION",
+    "missing_fields": [
+      "start_date"
+    ],
+    "notes": "Date is missing.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-04",
+    "profile_id": "profile-c",
+    "natural_language_request": "Two campers want CampMate Demo Region for two nights from 2026-10-25 using public transport.",
+    "destination": "CampMate Demo Region",
+    "start_date": "2026-10-25",
+    "duration_days": 2,
+    "budget_aud": 0,
+    "preferences": [
+      "public transport"
+    ],
+    "expected_request_status": "NEEDS_CLARIFICATION",
+    "missing_fields": [
+      "budget_aud"
+    ],
+    "notes": "Budget is missing.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-05",
+    "profile_id": "profile-d",
+    "natural_language_request": "Family trip in CampMate Demo Region from 2026-10-26 for two nights; our budget is AUD -50.",
+    "destination": "CampMate Demo Region",
+    "start_date": "2026-10-26",
+    "duration_days": 2,
+    "budget_aud": -50,
+    "preferences": [
+      "family"
+    ],
+    "expected_request_status": "REJECTED",
+    "missing_fields": [
+      "budget_aud"
+    ],
+    "notes": "Budget is invalid.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-06",
+    "profile_id": "profile-a",
+    "natural_language_request": "Zero campers want a one-night CampMate Demo Region trip on 2026-10-27 with AUD 100.",
+    "destination": "CampMate Demo Region",
+    "start_date": "2026-10-27",
+    "duration_days": 1,
+    "budget_aud": 100,
+    "preferences": [],
+    "expected_request_status": "REJECTED",
+    "missing_fields": [
+      "group_size"
+    ],
+    "notes": "Invalid group size stated in request.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-07",
+    "profile_id": "profile-a",
+    "natural_language_request": "Plan a trip to Real Coast Reserve for 2026-10-28, two nights, AUD 300.",
+    "destination": "Real Coast Reserve",
+    "start_date": "2026-10-28",
+    "duration_days": 2,
+    "budget_aud": 300,
+    "preferences": [],
+    "expected_request_status": "REJECTED",
+    "missing_fields": [
+      "destination"
+    ],
+    "notes": "Unsupported region.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-08",
+    "profile_id": "profile-b",
+    "natural_language_request": "Four beginners want two nights in CampMate Demo Region from 2026-10-29 with AUD 50.",
+    "destination": "CampMate Demo Region",
+    "start_date": "2026-10-29",
+    "duration_days": 2,
+    "budget_aud": 50,
+    "preferences": [
+      "toilets"
+    ],
+    "expected_request_status": "CONFIRMED",
+    "missing_fields": [],
+    "notes": "Valid request but likely over budget.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-09",
+    "profile_id": "profile-a",
+    "natural_language_request": "Please find a quiet CampMate Demo Region campsite for two nights from 2026-11-01; budget AUD 320.",
+    "destination": "CampMate Demo Region",
+    "start_date": "2026-11-01",
+    "duration_days": 2,
+    "budget_aud": 320,
+    "preferences": [
+      "quiet"
+    ],
+    "expected_request_status": "CONFIRMED",
+    "missing_fields": [],
+    "notes": "Quiet preference.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-10",
+    "profile_id": "profile-e",
+    "natural_language_request": "Two campers need an accessible CampMate Demo Region campsite from 2026-11-02 for one night; budget AUD 260.",
+    "destination": "CampMate Demo Region",
+    "start_date": "2026-11-02",
+    "duration_days": 1,
+    "budget_aud": 260,
+    "preferences": [
+      "wheelchair accessible"
+    ],
+    "expected_request_status": "CONFIRMED",
+    "missing_fields": [],
+    "notes": "Accessible facility request.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-11",
+    "profile_id": "profile-c",
+    "natural_language_request": "Two campers without a car need public transport access in CampMate Demo Region from 2026-11-03 for two nights; AUD 260.",
+    "destination": "CampMate Demo Region",
+    "start_date": "2026-11-03",
+    "duration_days": 2,
+    "budget_aud": 260,
+    "preferences": [
+      "public transport"
+    ],
+    "expected_request_status": "CONFIRMED",
+    "missing_fields": [],
+    "notes": "No vehicle request.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-12",
+    "profile_id": "profile-a",
+    "natural_language_request": "We want a campfire at CampMate Demo Region from 2026-11-04 for two nights; budget AUD 320.",
+    "destination": "CampMate Demo Region",
+    "start_date": "2026-11-04",
+    "duration_days": 2,
+    "budget_aud": 320,
+    "preferences": [
+      "campfire"
+    ],
+    "expected_request_status": "CONFIRMED",
+    "missing_fields": [],
+    "notes": "Must be checked against campsite fire restriction.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v1",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  }
+]

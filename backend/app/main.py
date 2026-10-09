@@ -1,0 +1,152 @@
+import logging
+from contextlib import asynccontextmanager
+from uuid import uuid4
+
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from pydantic import ValidationError
+from starlette.exceptions import HTTPException
+
+from .application.agent_registry import create_agent
+from .auth import AuthService
+from .http_accounts import router as accounts_router
+from .http_requests import router as requests_router
+from .storage.requests import RequestRepository
+from .storage.database import Database
+from .storage.repository import Repository
+from .config import Settings
+from .contracts import DEMO_DISCLAIMER, SCHEMA_VERSION
+from .contracts.base import ContractModel
+from .contracts.dto import DemoContext, InterpretRequestInput, InterpretRequestResult, ProfileSnapshot, TripRequirements
+from .contracts.enums import AllowedAction, ErrorCode, ExecutionMode, FieldErrorCode
+from .contracts.errors import ContractError, ContractFailure, ErrorEnvelope, FieldError, HTTP_STATUS
+
+BUSINESS_FILES = (
+    'synthetic_campsites.csv', 'synthetic_gear_rules.csv', 'synthetic_cost_reference.csv',
+    'synthetic_profiles.json', 'synthetic_requests.json', 'synthetic_safety_scenarios.json',
+)
+logger = logging.getLogger(__name__)
+
+
+class PreviewRequest(ContractModel):
+    raw_text: str
+    explicit_fields: TripRequirements
+    profile_snapshot: ProfileSnapshot | None = None
+
+
+def create_app(settings: Settings | None = None) -> FastAPI:
+    config = settings or Settings()
+    database = Database(config.database_path)
+    auth = AuthService(database, config.session_hours)
+
+    @asynccontextmanager
+    async def lifespan(application):
+        database.initialize()
+        if config.seed_demo_accounts:
+            auth.seed_demo_accounts()
+        yield
+
+    application = FastAPI(title='CampMate AI', version='0.3.0', description='Local synthetic demo: profiles and request confirmation. Agent planning is pending.', lifespan=lifespan)
+    application.state.settings = config
+    application.state.agent = create_agent(config.execution_mode)
+    application.state.database = database
+    application.state.auth = auth
+    application.state.repository = Repository(database)
+    application.state.requests = RequestRepository(database)
+    application.include_router(accounts_router)
+    application.include_router(requests_router)
+
+    @application.middleware('http')
+    async def trace_request(request: Request, call_next):
+        request.state.trace_id = uuid4().hex
+        response = await call_next(request)
+        response.headers['X-Trace-ID'] = request.state.trace_id
+        if request.url.path.startswith('/api/v1'):
+            response.headers['Cache-Control'] = 'no-store'
+        return response
+
+    def error_response(request: Request, error: ContractError, status_code: int) -> JSONResponse:
+        trace_id = getattr(request.state, 'trace_id', uuid4().hex)
+        return JSONResponse(status_code=status_code, content=ErrorEnvelope(error=error, trace_id=trace_id).model_dump(mode='json'), headers={'X-Trace-ID': trace_id})
+
+    @application.exception_handler(ContractFailure)
+    async def contract_failure(request: Request, exc: ContractFailure):
+        return error_response(request, exc.error, HTTP_STATUS[exc.error.code])
+
+    @application.exception_handler(RequestValidationError)
+    async def input_failure(request: Request, exc: RequestValidationError):
+        fields = [FieldError(field='.'.join(str(part) for part in item['loc'] if part != 'body'), code=FieldErrorCode.INVALID, message=item['msg']) for item in exc.errors()]
+        return error_response(request, ContractError(code=ErrorCode.INPUT_INVALID, message='输入格式不符合接口约定。', field_errors=fields, allowed_actions=[AllowedAction.EDIT_INPUT]), 422)
+
+    @application.exception_handler(HTTPException)
+    async def http_failure(request: Request, exc: HTTPException):
+        code = {401: ErrorCode.UNAUTHENTICATED, 403: ErrorCode.FORBIDDEN, 404: ErrorCode.NOT_FOUND}.get(exc.status_code, ErrorCode.INVALID_STATE)
+        return error_response(request, ContractError(code=code, message='接口不存在。' if exc.status_code == 404 else '当前请求不能执行。'), exc.status_code)
+
+    @application.exception_handler(Exception)
+    async def unexpected_failure(request: Request, exc: Exception):
+        logger.error('Unexpected application failure: trace=%s type=%s', getattr(request.state, 'trace_id', 'unknown'), type(exc).__name__)
+        return error_response(request, ContractError(code=ErrorCode.AGENT_FAILURE, message='服务发生错误，请保留 trace_id 供开发排查。', allowed_actions=[AllowedAction.CONTACT_OPERATOR]), 503)
+
+    @application.get('/api/v1/health/live')
+    async def liveness():
+        return {'status': 'alive', 'service': 'campmate-api'}
+
+    @application.get('/api/v1/health/ready')
+    async def readiness():
+        missing = []
+        for name in BUSINESS_FILES:
+            try:
+                with (config.dataset_path / 'data' / name).open('rb') as source:
+                    source.read(1)
+            except OSError:
+                missing.append(name)
+        sqlite_available = database.ready()
+        agent_available = application.state.agent is not None
+        ready = not missing and sqlite_available and agent_available
+        return JSONResponse(status_code=200 if ready else 503, content={
+            'status': 'ready' if ready else 'not_ready', 'scope': 'development_foundation',
+            'execution_mode': config.execution_mode.value,
+            'checks': {'dataset_readable': not missing, 'sqlite_driver': sqlite_available, 'database_migrated': sqlite_available, 'configured_agent_available': agent_available},
+            'missing_files': missing,
+            'business_persistence_implemented': True,
+            'business_workflows_implemented': False,
+            'real_agents_implemented': False,
+        })
+
+    @application.get('/api/v1/meta')
+    async def metadata():
+        return {
+            'project': 'CampMate AI', 'version': '0.3.0', 'schema_version': SCHEMA_VERSION,
+            'execution_mode': config.execution_mode.value, 'demo_today': config.demo_today.isoformat(),
+            'disclaimer': DEMO_DISCLAIMER,
+            'provenance': {'source_type': 'SYNTHETIC', 'source_name': 'CampMate Synthetic Demo Dataset v1', 'source_date': '2026-10-07', 'demo_only': True},
+            'features': {'request_preview': config.execution_mode == ExecutionMode.STUB and application.state.agent is not None, 'authentication': True, 'persistence': True, 'profiles': True, 'request_confirmation': True, 'planning': False, 'human_review': False, 'finalisation': False},
+        }
+
+    @application.post('/api/v1/dev/interpret', response_model=InterpretRequestResult)
+    async def interpret_preview(body: PreviewRequest):
+        if config.execution_mode != ExecutionMode.STUB or application.state.agent is None:
+            raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='契约预览仅支持 stub；配置的其他模式尚未接入，不会自动回退。', allowed_actions=[AllowedAction.CONTACT_OPERATOR]))
+        try:
+            input = InterpretRequestInput(
+                raw_text=body.raw_text, explicit_fields=body.explicit_fields,
+                profile_snapshot=body.profile_snapshot,
+                demo_context=DemoContext(mode=config.execution_mode, demo_today=config.demo_today),
+            )
+        except ValidationError as exc:
+            raise ContractFailure(ContractError(code=ErrorCode.INPUT_INVALID, message='请求内容无效。', field_errors=[FieldError(field='.'.join(map(str, item['loc'])), code=FieldErrorCode.INVALID, message=item['msg']) for item in exc.errors()], allowed_actions=[AllowedAction.EDIT_INPUT])) from exc
+        result = await application.state.agent.interpret_request(input)
+        try:
+            validated = InterpretRequestResult.model_validate(result)
+            if validated.execution_mode != config.execution_mode:
+                raise ValueError('Agent mode does not match the registered mode')
+            return validated
+        except (ValidationError, ValueError) as exc:
+            raise ContractFailure(ContractError(code=ErrorCode.CONTRACT_INVALID, message='Agent 输出不符合共享 schema，结果未保存。', allowed_actions=[AllowedAction.CONTACT_OPERATOR])) from exc
+
+    return application
+
+
+app = create_app()
