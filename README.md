@@ -119,7 +119,7 @@ PowerShell 脚本被禁止时可运行 `.\.venv\Scripts\python.exe scripts\check
 
 ## GitHub
 
-小组协作仓库使用名称 `ELEC5620-G19`，分支 main。当前交付为 A-05 开发原型，不是完整 Agent 项目的验收版本。协作步骤见 [贡献说明](CONTRIBUTING.md)，本版范围见 [首版交付说明](docs/releases/a05-development.md)。
+私有协作仓库：[LyraWangDev/ELEC5620-G19](https://github.com/LyraWangDev/ELEC5620-G19)，分支 main。当前交付为 A-05 开发原型，不是完整 Agent 项目的验收版本。协作步骤见 [贡献说明](CONTRIBUTING.md)，本版范围见 [首版交付说明](docs/releases/a05-development.md)。首个源码提交的 [GitHub CI](https://github.com/LyraWangDev/ELEC5620-G19/actions/runs/37935196604) 已通过后端 54 项测试、schema 对照和前端构建。
 
 上传范围为项目根目录的源码、文档、synthetic 数据、schema、锁文件和 CI。`.venv`、node_modules、`.env`、数据库、构建目录和日志已忽略。克隆后需在自己的电脑安装依赖并创建本地数据库；GitHub 仓库保存源码，服务仍按安装与启动说明在本地运行。
 

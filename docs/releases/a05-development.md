@@ -16,7 +16,7 @@
 
 Windows / Python 3.12.14 / Node.js 22.20.0，本机 `scripts/check.py` 退出码 0：54 项后端测试、schema 对照、TypeScript/Vite 构建通过。浏览器检查资料保存、冲突澄清、确认和历史快照保持，见 [实施状态与截图](../implementation_status.md)。原始与仓库数据副本共 10 文件，SHA256 逐文件一致。
 
-本机结果不能代替 GitHub runner、另一台电脑或完整业务联调；远端 CI 结果在仓库 Actions 查看，未运行前不记为通过。
+首个源码提交 `36bce3f` 已上传至 [私有仓库](https://github.com/LyraWangDev/ELEC5620-G19)。首次 [GitHub CI](https://github.com/LyraWangDev/ELEC5620-G19/actions/runs/37935196604) 成功：Ubuntu runner 上 54 项后端测试、schema 对照和 45 模块前端构建通过。远端 CI 不替代另一台电脑的交互演示或完整业务联调。
 
 ## 下一阶段
 

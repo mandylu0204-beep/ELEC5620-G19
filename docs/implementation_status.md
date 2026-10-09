@@ -1,5 +1,11 @@
 # 开发 A 实施状态
 
+## GitHub 首版交付：2026-10-10
+
+已创建并核实 [LyraWangDev/ELEC5620-G19](https://github.com/LyraWangDev/ELEC5620-G19) 为私有仓库，首个源码提交 `36bce3f` 推送至 main。源码、锁文件、契约、synthetic 原包副本和文档已上传；数据库、`.env`、依赖和构建产物没有提交。`.gitattributes` 保留数据包原始字节，10 个业务/说明文件在 Git 中与本地原件一致。
+
+首次 [GitHub Actions](https://github.com/LyraWangDev/ELEC5620-G19/actions/runs/37935196604) 已成功：Ubuntu runner、Python 3.12、Node.js 22，54 passed（1 个已知测试工具弃用提示）、schema 对照成功、45 个前端模块构建成功。这是远端 CI 验证，不是完整交互演示、其他成员复核或全部 Done。公网服务、B 实现及四个业务联调仍未完成；本次仅上传私有协作源码。
+
 ## 当前记录：A-05（2026-10-09 至 2026-10-10）
 
 A 侧 Profile 编辑与请求保存、澄清、确认已实现。装备数量/容量和交通距离未知时保留 null；两晚推导三天与结束日期；仅天数或明确日期/时长冲突时先澄清。用户须阅读摘要并勾选确认；确认快照不可覆盖，确认尚不创建方案或启动规划。
@@ -20,7 +26,7 @@ A 侧 Profile 编辑与请求保存、澄清、确认已实现。装备数量/�
 
 交接细节见 [资料与请求流程](profile_request_flow.md)。证据：[Profile](evidence/profile-editor.png)、[待确认摘要](evidence/request-summary.png)、[已确认快照](evidence/request-confirmed.png)。
 
-A-05 的 A 侧本机自检完成；B 的 interpret_request、自然语言提取、首轮四个业务场景及全组 Done 条件仍未完成。规划、进度/产物展示、审批和最终化待 A-06 至 A-08。GitHub CI、其他成员复核和干净部署仍未执行，没有提交、远端或推送。
+A-05 的 A 侧本机自检完成；B 的 interpret_request、自然语言提取、首轮四个业务场景及全组 Done 条件仍未完成。规划、进度/产物展示、审批和最终化待 A-06 至 A-08。本机检查时尚未提交或运行远端 CI；随后完成的 GitHub 首版交付见本页顶部。其他成员复核和干净交互部署仍未执行。
 
 ## 历史记录：A-03/A-04（2026-10-09）
 
