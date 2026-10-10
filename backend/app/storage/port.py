@@ -237,7 +237,9 @@ class SqlitePersistencePort:
             if run['status'] in {'SUCCEEDED','FAILED','CANCELLED','SUPERSEDED'} or stages.index(stage) < stages.index(RunStage(run['stage'])):
                 fail(ErrorCode.INVALID_STATE, '已结束或陈旧的阶段不能重新推进。')
             if status == RunStatus.SUCCEEDED:
-                if stage != RunStage.COMPLETED or not connection.execute("SELECT 1 FROM write_receipts WHERE run_id=? AND operation='route'", (self.scope.run_id,)).fetchone():
+                recommendation = connection.execute('SELECT payload FROM recommendations WHERE run_id=?', (self.scope.run_id,)).fetchone()
+                no_match = recommendation and StoredRecommendations.model_validate_json(recommendation['payload']).result.search_outcome == 'NO_MATCH' and not connection.execute('SELECT 1 FROM run_versions WHERE run_id=?', (self.scope.run_id,)).fetchone()
+                if stage != RunStage.COMPLETED or not (no_match or connection.execute("SELECT 1 FROM write_receipts WHERE run_id=? AND operation='route'", (self.scope.run_id,)).fetchone()):
                     fail(ErrorCode.INVALID_STATE, '保存路由后才能结束工作流。')
             elif stage == RunStage.COMPLETED:
                 fail(ErrorCode.INVALID_STATE, 'COMPLETED 必须与 SUCCEEDED 一致。')

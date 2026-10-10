@@ -12,6 +12,8 @@ from .application.agent_registry import create_agent
 from .auth import AuthService
 from .http_accounts import router as accounts_router
 from .http_requests import router as requests_router
+from .http_plans import router as plans_router
+from .storage.plan_queries import PlanQueries
 from .storage.requests import RequestRepository
 from .storage.database import Database
 from .storage.repository import Repository
@@ -47,15 +49,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             auth.seed_demo_accounts()
         yield
 
-    application = FastAPI(title='CampMate AI', version='0.3.0', description='Local synthetic demo: profiles and request confirmation. Agent planning is pending.', lifespan=lifespan)
+    application = FastAPI(title='CampMate AI', version='0.4.0', description='Local synthetic demo: saved planning progress and artifacts. B planning is pending.', lifespan=lifespan)
     application.state.settings = config
     application.state.agent = create_agent(config.execution_mode)
     application.state.database = database
     application.state.auth = auth
     application.state.repository = Repository(database)
     application.state.requests = RequestRepository(database)
+    application.state.plan_queries = PlanQueries(database)
     application.include_router(accounts_router)
     application.include_router(requests_router)
+    application.include_router(plans_router)
 
     @application.middleware('http')
     async def trace_request(request: Request, call_next):
@@ -118,11 +122,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @application.get('/api/v1/meta')
     async def metadata():
         return {
-            'project': 'CampMate AI', 'version': '0.3.0', 'schema_version': SCHEMA_VERSION,
+            'project': 'CampMate AI', 'version': '0.4.0', 'schema_version': SCHEMA_VERSION,
             'execution_mode': config.execution_mode.value, 'demo_today': config.demo_today.isoformat(),
             'disclaimer': DEMO_DISCLAIMER,
             'provenance': {'source_type': 'SYNTHETIC', 'source_name': 'CampMate Synthetic Demo Dataset v1', 'source_date': '2026-10-07', 'demo_only': True},
-            'features': {'request_preview': config.execution_mode == ExecutionMode.STUB and application.state.agent is not None, 'authentication': True, 'persistence': True, 'profiles': True, 'request_confirmation': True, 'planning': False, 'human_review': False, 'finalisation': False},
+            'features': {'request_preview': config.execution_mode == ExecutionMode.STUB and application.state.agent is not None, 'authentication': True, 'persistence': True, 'profiles': True, 'request_confirmation': True, 'plan_reading': True, 'planning': False, 'human_review': False, 'finalisation': False},
         }
 
     @application.post('/api/v1/dev/interpret', response_model=InterpretRequestResult)

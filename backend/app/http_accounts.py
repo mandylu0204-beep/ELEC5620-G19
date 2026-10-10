@@ -79,7 +79,7 @@ def save_profile(body: ProfileInput, request: Request, user: User = Depends(writ
 
 @router.get('/plans')
 def plans(request: Request, user: User = Depends(current_user)):
-    return {'plans': request.app.state.repository.list_plans(user)}
+    return {'plans': request.app.state.plan_queries.list(user)}
 
 
 @router.get('/plans/{plan_id}/versions')
