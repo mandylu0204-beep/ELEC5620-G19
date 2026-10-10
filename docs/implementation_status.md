@@ -1,6 +1,10 @@
 # 开发 A 实施状态
 
-## 当前本地开发：A-10 数据上下文接入准备（2026-10-10）
+## 当前发布：A-10 部署与数据上下文准备（2026-10-11）
+
+按用户授权，feature/a10-submission-preparation 的累计改动直接合并发布至 main，不创建 PR：安装/打包/隔离部署检查、Canvas 下载验收清单、v2 独立复核，以及数据来源/版本/运行输入摘要。功能代码自已验证的 f1450ae 未变，本次只更新发布说明。远端检查结果以 [main CI](https://github.com/LyraWangDev/ELEC5620-G19/actions/workflows/ci.yml?query=branch%3Amain) 对应提交为准，不沿用 A-09 的 129 项结果。
+
+## A-10 数据上下文接入准备（2026-10-10）
 
 继续在本地 feature/a10-submission-preparation 分支开发。新增 A-owned DatasetDescriptor，支持原 v1 与具有 manifest 的 v2 来源/版本；六份业务文件、runtime 输入、manifest、配置场景及选用项纳入上下文。请求确认快照和 meta 使用实际版本；来源或输入无法验证时显式未就绪。Provenance 新增 v2 来源枚举并重新导出共享 schema，保留 v1 默认与端口 1.0。
 
@@ -8,7 +12,7 @@
 
 只读检查用户 v2 副本，识别 2.0.0、v2 来源及 9 个输入文件摘要。默认业务数据、个人 .env、演示时钟、数据库迁移和业务枚举未改；未复制 v2 到应用业务数据目录。没有运行 B Agent、56 条应用验收规格或 Canvas 完整演示。
 
-交接见 [数据上下文交接](dataset_context_handoff.md)。B 需更新共同 DTO/schema，并在实际 dispatcher 使用重新读取的上下文；文件变化自动监控、实际规划/重评与所有业务入口检查仍待联调。meal_mode、Decimal/cents 参考算法、审核测试身份和场景时钟问题仍按 [v2 独立复核](synthetic_data_review_v2.md) 修正。本轮代码尚未推送 GitHub；已有 42981fe ZIP 不包含这些后续代码，最终交付须重新打包并验收。
+交接见 [数据上下文交接](dataset_context_handoff.md)。B 需更新共同 DTO/schema，并在实际 dispatcher 使用重新读取的上下文；文件变化自动监控、实际规划/重评与所有业务入口检查仍待联调。meal_mode、Decimal/cents 参考算法、审核测试身份和场景时钟问题仍按 [v2 独立复核](synthetic_data_review_v2.md) 修正。已有 42981fe ZIP 不包含这些后续代码，最终交付须重新打包并验收。
 
 ## 历史本地开发：A-10 部署准备（2026-10-10）
 
@@ -25,7 +29,7 @@
 
 smoke 使用独立 18010/15180 端口与 var/deployment-smoke-* 数据库；默认数据库未创建或改动，已有服务未终止。报告见 [HTTP 部署证据](evidence/a10-deployment-smoke.json)，完整输出见 [新环境检查证据](evidence/a10-clean-check.txt)，操作见 [部署准备](deployment_preparation.md)。验证完成后仅补充 README/交付文档及证据，运行脚本和业务源码保持与上述已测包一致；最终源码 ZIP 的 commit 与 checksum 以其 PACKAGE_MANIFEST 和 .sha256 为准。
 
-这是同一 Windows 电脑的干净目录/新环境验证，不是另一台电脑、完整浏览器渲染、Linux 启动或真实 B 业务链路验证。A-10 的提交包/本机部署准备已自检；B 首版 Agent/Adapter、规划/修订调度及页面启动/重试、修订数据、四个业务场景、成员复核、Jira 和完整提交 Done 仍待完成。本分支尚未推送 GitHub或执行本轮远端 CI。
+这是同一 Windows 电脑的干净目录/新环境验证，不是另一台电脑、完整浏览器渲染、Linux 启动或真实 B 业务链路验证。A-10 的提交包/本机部署准备已自检；B 首版 Agent/Adapter、规划/修订调度及页面启动/重试、修订数据、四个业务场景、成员复核、Jira 和完整提交 Done 仍待完成。发布情况见本页顶部。
 
 ## 历史本地开发：A-09 恢复边界（2026-10-10）
 
