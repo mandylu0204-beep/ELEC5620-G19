@@ -124,7 +124,7 @@ PowerShell 脚本被禁止时可运行 `.\.venv\Scripts\python.exe scripts\check
 
 ## GitHub
 
-私有协作仓库：[LyraWangDev/ELEC5620-G19](https://github.com/LyraWangDev/ELEC5620-G19)。A-06 至 A-09 的累计开发通过 [feature/a09-run-recovery 功能分支](https://github.com/LyraWangDev/ELEC5620-G19/tree/feature/a09-run-recovery) 同步，main 在 PR 审核合并前仍为 A-05 原型。协作步骤见 [贡献说明](CONTRIBUTING.md)，首版范围见 [首版交付说明](docs/releases/a05-development.md)。首个源码提交的 [GitHub CI](https://github.com/LyraWangDev/ELEC5620-G19/actions/runs/37935196604) 只适用于 A-05；当前分支的实际检查以 PR 和 [Actions](https://github.com/LyraWangDev/ELEC5620-G19/actions) 为准。
+私有协作仓库：[LyraWangDev/ELEC5620-G19](https://github.com/LyraWangDev/ELEC5620-G19)。A-06 至 A-09 已通过 [PR #1](https://github.com/LyraWangDev/ELEC5620-G19/pull/1) 合并至 main（d83f3ba），[合并提交 CI](https://github.com/LyraWangDev/ELEC5620-G19/actions/runs/38046024091) 已通过 129 项测试、schema 与前端构建。当前 A-10 部署准备位于本地 feature/a10-submission-preparation，尚未同步远端。协作步骤见 [贡献说明](CONTRIBUTING.md)，当前验证与限制见 [实施状态](docs/implementation_status.md)。
 
 上传范围为项目根目录的源码、文档、synthetic 数据、schema、锁文件和 CI。`.venv`、node_modules、`.env`、数据库、构建目录和日志已忽略。克隆后需在自己的电脑安装依赖并创建本地数据库；GitHub 仓库保存源码，服务仍按安装与启动说明在本地运行。
 

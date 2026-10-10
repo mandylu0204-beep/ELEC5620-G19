@@ -1,6 +1,23 @@
 # 开发 A 实施状态
 
-## 当前本地开发：A-09 恢复边界（2026-10-10）
+## 当前本地开发：A-10 部署准备（2026-10-10）
+
+分支 feature/a10-submission-preparation 从已合并的 main d83f3ba 建立。新增 Python 锁文件安装入口、源码 ZIP 及每文件 SHA-256 清单、隔离 HTTP 部署 smoke；PowerShell 安装脚本调用同一安装器。启动器增加可选的 stop marker，使自动检查只关闭自己创建的子服务。页面、共同契约、业务规则和原始数据未修改。
+
+实际先打包提交 622dd779edf1e765c1e3250e1989f769b23891eb：118 个源文件，ZIP SHA-256 为 3296111f81a065cdb732606c7fc97e2d3ce9288e963f348a66aa308615ceb813。在 Stage2/a10_clean_20261010/campmate_app 独立解压；起初没有 .venv/node_modules/.env/数据库或 .git，随后从锁文件建立新的 Python 3.12.14 环境与 npm 依赖，editable 导入确认来自解压目录。没有复制原工作区依赖、数据库或个人配置。
+
+| 检查 | 实际结果 |
+| --- | --- |
+| 新环境安装 | setup.py 退出码 0；pip check 无冲突；npm ci 成功 |
+| 新环境完整 check.py | 退出码 0；129 passed，1 个已有测试工具弃用提示；schema up to date；Vite 49 模块构建成功 |
+| 实际 HTTP 部署检查 | 7 步通过：本目录 interpreter/import、前端 SPA/module/API proxy、登录/资料/请求确认与回执、权限、重启回读/迁移、注销、服务关闭及端口释放 |
+| 数据与打包 | 原始 10 个数据文件逐字一致；ZIP 文件清单与全部 SHA-256 一致；拒绝未提交源码的 guard 已实际触发 |
+
+smoke 使用独立 18010/15180 端口与 var/deployment-smoke-* 数据库；默认数据库未创建或改动，已有服务未终止。报告见 [HTTP 部署证据](evidence/a10-deployment-smoke.json)，完整输出见 [新环境检查证据](evidence/a10-clean-check.txt)，操作见 [部署准备](deployment_preparation.md)。验证完成后仅补充 README/交付文档及证据，运行脚本和业务源码保持与上述已测包一致；最终源码 ZIP 的 commit 与 checksum 以其 PACKAGE_MANIFEST 和 .sha256 为准。
+
+这是同一 Windows 电脑的干净目录/新环境验证，不是另一台电脑、完整浏览器渲染、Linux 启动或真实 B 业务链路验证。A-10 的提交包/本机部署准备已自检；B 首版 Agent/Adapter、规划/修订调度及页面启动/重试、修订数据、四个业务场景、成员复核、Jira 和完整提交 Done 仍待完成。本分支尚未推送 GitHub或执行本轮远端 CI。
+
+## 历史本地开发：A-09 恢复边界（2026-10-10）
 
 分支 feature/a09-run-recovery 基于 A-08 本地提交，新增内部 WorkflowService、启动/重试回执、当前 run/version 比较、执行租约、失败恢复 checkpoint 和迟到任务拒绝。重复启动不新建 plan/run；重复重试不重置后续失败；输入未变保留已保存版本及评估；证据变化开启新 run。首次尚无版本时可在同一 plan 新开 PLAN run。migration 5 保留旧记录，共同 schema 1.0 和现有 HTTP 接口未改。
 

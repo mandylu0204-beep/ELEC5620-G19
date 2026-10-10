@@ -1,0 +1,18 @@
+{
+  "scope": "A local HTTP deployment smoke; B workflow and browser rendering not tested",
+  "root": "C:\\Users\\87901\\Desktop\\ELEC5620\\Stage2\\a10_clean_20261010\\campmate_app",
+  "python": "3.12.14",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "steps": [
+    "Fresh project interpreter and local backend import path",
+    "Frontend SPA/module serving and API proxy; stub scope retained",
+    "Camper login, profile, request analysis/confirmation and same-key replay",
+    "Anonymous, other Camper and Founder request access guards",
+    "Service restart, migrations 1–5 and exact saved request/profile recovery",
+    "Logout invalidates the session",
+    "Owned services stopped and both ports released"
+  ],
+  "status": "PASSED",
+  "package_commit": "622dd779edf1e765c1e3250e1989f769b23891eb",
+  "checked_at": "2026-10-10T10:57:48.089057+00:00"
+}
