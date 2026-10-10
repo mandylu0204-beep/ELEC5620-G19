@@ -33,6 +33,8 @@ ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
 .\.venv\Scripts\python.exe scripts\dev.py --backend-port 8001 --frontend-port 5174
 ```
 
+首次安装也有 Python 入口：`py -3.12 scripts/setup.py`（或使用 Python 3.12 完整路径）。源码包、校验与隔离启动检查见 [部署准备](docs/deployment_preparation.md)。安装器使用锁文件，不覆盖已有 `.env`。
+
 Linux/macOS 可分别创建 venv、按 `backend/requirements.lock` 安装依赖、在 backend 执行 `pip install --no-deps -e .`，在 frontend 执行 `npm ci`，再以该 venv 的 Python 运行 `scripts/dev.py`。此流程有 CI 配置，尚未在另一台电脑或 Linux 上实际执行。
 
 ## 配置
@@ -137,6 +139,6 @@ git push -u origin YOUR_FEATURE_BRANCH
 
 ## 参考与后续任务
 
-下一批：A-10 提交包与部署准备，以及 B 工作流调度、恢复端口和页面启动/重试的实际接入。内部启动回执、执行租约、迟到任务拒绝和恢复 checkpoint 见 [运行恢复交接](docs/run_recovery.md)。A-06 至 A-09 检查使用独立 A 夹具，不是 Agent 输出；正式四个业务场景联调需要 B 首版实现及修订数据。任务与验收见 [开发 A 清单](docs/developer_a_backlog.md)。
+当前 A-10 提供源码打包、Python 安装入口与隔离 HTTP 部署检查，见 [部署准备](docs/deployment_preparation.md)；真实 B 调度、恢复端口与页面启动/重试仍待实际接入。内部启动回执、执行租约、迟到任务拒绝和恢复 checkpoint 见 [运行恢复交接](docs/run_recovery.md)。正式四个业务场景联调需要 B 首版实现及修订数据。任务与验收见 [开发 A 清单](docs/developer_a_backlog.md)。
 
 实现参考：[React 构建说明](https://react.dev/learn/build-a-react-app-from-scratch)、[Vite 入门](https://vite.dev/guide/)、[FastAPI 测试](https://fastapi.tiangolo.com/tutorial/testing/)、[Pydantic 标准类型](https://docs.pydantic.dev/latest/api/standard_library_types/)。CI 的 checkout、Python 和 Node 设置采用官方示例的 v7 调用形式：[checkout](https://github.com/actions/checkout)、[setup-python](https://github.com/actions/setup-python)、[setup-node](https://github.com/actions/setup-node)。

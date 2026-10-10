@@ -15,7 +15,10 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('--backend-port', type=int, default=8000)
     parser.add_argument('--frontend-port', type=int, default=5173)
+    parser.add_argument('--stop-file', type=Path, help='Optional cooperative stop marker for automated deployment checks.')
     args = parser.parse_args()
+    if args.stop_file and args.stop_file.exists():
+        parser.error('The stop marker already exists; use a fresh marker path.')
     ports = [args.backend_port, args.frontend_port]
     if len(set(ports)) != 2 or any(not 1 <= port <= 65535 for port in ports):
         parser.error('Use two distinct ports between 1 and 65535.')
@@ -47,6 +50,8 @@ def main() -> int:
         print(f'CampMate: http://127.0.0.1:{args.frontend_port} | API: http://127.0.0.1:{args.backend_port}/docs', flush=True)
         print('Press Ctrl+C to stop both services. Restart after backend edits.', flush=True)
         while all(child.poll() is None for child in children):
+            if args.stop_file and args.stop_file.exists():
+                return 0
             time.sleep(0.3)
         return 1
     except KeyboardInterrupt:
