@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from starlette.exceptions import HTTPException
 
 from .application.agent_registry import create_agent
+from .application.datasets import BUSINESS_FILES, inspect_dataset
 from .auth import AuthService
 from .http_accounts import router as accounts_router
 from .http_requests import router as requests_router
@@ -28,10 +29,6 @@ from .contracts.dto import DemoContext, InterpretRequestInput, InterpretRequestR
 from .contracts.enums import AllowedAction, ErrorCode, ExecutionMode, FieldErrorCode
 from .contracts.errors import ContractError, ContractFailure, ErrorEnvelope, FieldError, HTTP_STATUS
 
-BUSINESS_FILES = (
-    'synthetic_campsites.csv', 'synthetic_gear_rules.csv', 'synthetic_cost_reference.csv',
-    'synthetic_profiles.json', 'synthetic_requests.json', 'synthetic_safety_scenarios.json',
-)
 logger = logging.getLogger(__name__)
 
 
@@ -106,7 +103,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {'status': 'alive', 'service': 'campmate-api'}
 
     @application.get('/api/v1/health/ready')
-    async def readiness():
+    def readiness():
         missing = []
         for name in BUSINESS_FILES:
             try:
@@ -114,13 +111,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     source.read(1)
             except OSError:
                 missing.append(name)
+        try:
+            descriptor = inspect_dataset(config)
+        except ContractFailure:
+            descriptor = None
         sqlite_available = database.ready()
         agent_available = application.state.agent is not None
-        ready = not missing and sqlite_available and agent_available
+        ready = not missing and descriptor is not None and sqlite_available and agent_available
         return JSONResponse(status_code=200 if ready else 503, content={
             'status': 'ready' if ready else 'not_ready', 'scope': 'development_foundation',
             'execution_mode': config.execution_mode.value,
-            'checks': {'dataset_readable': not missing, 'sqlite_driver': sqlite_available, 'database_migrated': sqlite_available, 'configured_agent_available': agent_available},
+            'checks': {'dataset_readable': not missing, 'dataset_context_valid': descriptor is not None, 'sqlite_driver': sqlite_available, 'database_migrated': sqlite_available, 'configured_agent_available': agent_available},
+            'dataset_version': descriptor.context.dataset_version if descriptor else None,
             'missing_files': missing,
             'business_persistence_implemented': True,
             'business_workflows_implemented': False,
@@ -128,12 +130,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         })
 
     @application.get('/api/v1/meta')
-    async def metadata():
+    def metadata():
+        try:
+            descriptor = inspect_dataset(config)
+        except ContractFailure:
+            descriptor = None
         return {
             'project': 'CampMate AI', 'version': '0.6.0', 'schema_version': SCHEMA_VERSION,
             'execution_mode': config.execution_mode.value, 'demo_today': config.demo_today.isoformat(),
             'disclaimer': DEMO_DISCLAIMER,
-            'provenance': {'source_type': 'SYNTHETIC', 'source_name': 'CampMate Synthetic Demo Dataset v1', 'source_date': '2026-10-07', 'demo_only': True},
+            'provenance': descriptor.provenance.model_dump(mode='json') if descriptor else None,
+            'dataset_version': descriptor.context.dataset_version if descriptor else None,
             'features': {'request_preview': config.execution_mode == ExecutionMode.STUB and application.state.agent is not None, 'authentication': True, 'persistence': True, 'profiles': True, 'request_confirmation': True, 'plan_reading': True, 'planning': False, 'human_review': True, 'finalisation': True},
         }
 
@@ -142,10 +149,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if config.execution_mode != ExecutionMode.STUB or application.state.agent is None:
             raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='契约预览仅支持 stub；配置的其他模式尚未接入，不会自动回退。', allowed_actions=[AllowedAction.CONTACT_OPERATOR]))
         try:
+            descriptor = inspect_dataset(config)
             input = InterpretRequestInput(
                 raw_text=body.raw_text, explicit_fields=body.explicit_fields,
                 profile_snapshot=body.profile_snapshot,
-                demo_context=DemoContext(mode=config.execution_mode, demo_today=config.demo_today),
+                demo_context=DemoContext(mode=config.execution_mode, demo_today=config.demo_today, dataset_version=descriptor.context.dataset_version),
             )
         except ValidationError as exc:
             raise ContractFailure(ContractError(code=ErrorCode.INPUT_INVALID, message='请求内容无效。', field_errors=[FieldError(field='.'.join(map(str, item['loc'])), code=FieldErrorCode.INVALID, message=item['msg']) for item in exc.errors()], allowed_actions=[AllowedAction.EDIT_INPUT])) from exc

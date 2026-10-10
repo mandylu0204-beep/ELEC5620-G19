@@ -1,4 +1,5 @@
 from fastapi.testclient import TestClient
+import shutil
 
 from app.config import Settings
 from app.main import BUSINESS_FILES, create_app
@@ -8,7 +9,7 @@ def make_dataset(tmp_path):
     folder = tmp_path / 'data'
     folder.mkdir()
     for name in BUSINESS_FILES:
-        (folder / name).write_text('synthetic readiness fixture', encoding='utf-8')
+        shutil.copyfile(Settings(_env_file=None).dataset_path / 'data' / name, folder / name)
     return tmp_path
 
 

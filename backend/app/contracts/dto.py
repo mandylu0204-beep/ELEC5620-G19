@@ -15,7 +15,7 @@ from .errors import ContractError, FieldError
 
 class Provenance(ContractModel):
     source_type: Literal["SYNTHETIC"] = "SYNTHETIC"
-    source_name: Literal["CampMate Synthetic Demo Dataset v1"] = "CampMate Synthetic Demo Dataset v1"
+    source_name: Literal["CampMate Synthetic Demo Dataset v1", "CampMate Synthetic Demo Dataset v2"] = "CampMate Synthetic Demo Dataset v1"
     source_date: Literal["2026-10-07"] = "2026-10-07"
     demo_only: Literal[True] = True
 

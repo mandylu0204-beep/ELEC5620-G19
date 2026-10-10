@@ -1458,8 +1458,11 @@
             "type": "string"
           },
           "source_name": {
-            "const": "CampMate Synthetic Demo Dataset v1",
             "default": "CampMate Synthetic Demo Dataset v1",
+            "enum": [
+              "CampMate Synthetic Demo Dataset v1",
+              "CampMate Synthetic Demo Dataset v2"
+            ],
             "title": "Source Name",
             "type": "string"
           },
@@ -3942,8 +3945,11 @@
             "type": "string"
           },
           "source_name": {
-            "const": "CampMate Synthetic Demo Dataset v1",
             "default": "CampMate Synthetic Demo Dataset v1",
+            "enum": [
+              "CampMate Synthetic Demo Dataset v1",
+              "CampMate Synthetic Demo Dataset v2"
+            ],
             "title": "Source Name",
             "type": "string"
           },

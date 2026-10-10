@@ -1,32 +1,16 @@
 """A-side input integrity checks. No prose parsing or trip/safety inference."""
-import csv
-import hashlib
 from datetime import timedelta
 
-from ..auth import fail
-from ..contracts.dto import Clarification, DatasetContext, InterpretRequestResult, ProfileSnapshot, TripRequirements
+from ..contracts.dto import Clarification, InterpretRequestResult, ProfileSnapshot, TripRequirements
 from ..contracts.enums import ErrorCode, FieldErrorCode, RequestStatus
 from ..contracts.errors import FieldError
 
-BUSINESS_FILES = (
-    'synthetic_campsites.csv', 'synthetic_gear_rules.csv', 'synthetic_cost_reference.csv',
-    'synthetic_profiles.json', 'synthetic_requests.json', 'synthetic_safety_scenarios.json',
-)
+from .datasets import inspect_dataset
 
 
 def data_context(settings):
-    try:
-        digests = {name: hashlib.sha256((settings.dataset_path / 'data' / name).read_bytes()).hexdigest() for name in BUSINESS_FILES}
-        with (settings.dataset_path / 'data/synthetic_campsites.csv').open(encoding='utf-8-sig', newline='') as source:
-            rows = list(csv.DictReader(source))
-        if not rows or any(row.get('source_type') != 'SYNTHETIC' or row.get('demo_only', '').lower() != 'true' or not row.get('region', '').strip() for row in rows):
-            raise ValueError('Dataset needs synthetic region metadata')
-        regions = sorted({row['region'].strip() for row in rows})
-        context = DatasetContext(dataset_version='v1', file_digests=digests, rules_version='a-request-normalization-v1')
-        return context, regions
-    except (OSError, UnicodeError, ValueError, csv.Error) as exc:
-        from ..contracts.errors import ContractError, ContractFailure
-        raise ContractFailure(ContractError(code=ErrorCode.ADAPTER_FAILURE, message='无法读取演示来源，需求尚未确认。')) from exc
+    descriptor = inspect_dataset(settings)
+    return descriptor.context, descriptor.regions
 
 
 def normalize(result: InterpretRequestResult, explicit: TripRequirements, profile: ProfileSnapshot, regions: list[str]):

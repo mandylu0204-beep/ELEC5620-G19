@@ -1,12 +1,13 @@
 export type Mode = 'stub' | 'deterministic_demo' | 'agent';
 export interface Meta {
   schema_version: string; execution_mode: Mode; demo_today: string; disclaimer: string;
-  provenance: { source_type: string; source_name: string; source_date: string; demo_only: boolean };
+  dataset_version: string | null;
+  provenance: { source_type: string; source_name: string; source_date: string; demo_only: boolean } | null;
   features: Record<string, boolean>;
 }
 export interface Ready {
   status: 'ready' | 'not_ready'; execution_mode: Mode;
-  checks: { dataset_readable: boolean; sqlite_driver: boolean; database_migrated: boolean; configured_agent_available: boolean };
+  checks: { dataset_readable: boolean; dataset_context_valid: boolean; sqlite_driver: boolean; database_migrated: boolean; configured_agent_available: boolean };
   missing_files: string[]; business_persistence_implemented: boolean; real_agents_implemented: boolean;
 }
 export interface ApiError {

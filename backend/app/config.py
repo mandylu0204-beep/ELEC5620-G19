@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     execution_mode: ExecutionMode = ExecutionMode.STUB
     demo_today: date = date(2026, 10, 8)
     dataset_path: Path = APP_ROOT / "data" / "synthetic_demo"
+    dataset_scenario_files: list[str] = Field(default_factory=list)
+    dataset_selection: dict[str, str] = Field(default_factory=dict)
     database_path: Path = APP_ROOT / "var" / "campmate.sqlite3"
     seed_demo_accounts: bool = True
     session_hours: int = Field(default=8, ge=1, le=168)

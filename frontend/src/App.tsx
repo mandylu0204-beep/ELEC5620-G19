@@ -82,7 +82,7 @@ function Overview({ status }: { status: Status | null }) {
     <section className="stats" aria-label="环境状态">
       <div><span>运行模式</span><strong>{status?.meta.execution_mode ?? '—'}</strong><small>stub 不代表 Agent 已实现</small></div>
       <div><span>演示时钟</span><strong>{status?.meta.demo_today ?? '—'}</strong><small>与实际系统日期分开</small></div>
-      <div><span>数据来源</span><strong>Synthetic v1</strong><small>{checks ? (checks.dataset_readable ? '六份业务源文件可读取' : '源文件缺失或不可读') : '正在检查源文件…'}</small></div>
+      <div><span>数据来源</span><strong>{status?.meta.dataset_version ? `Synthetic ${status.meta.dataset_version}` : '—'}</strong><small>{checks ? (checks.dataset_context_valid ? '数据版本与运行输入可验证' : '数据包或场景配置未就绪') : '正在检查源文件…'}</small></div>
     </section>
     <section className="section-heading"><div><span className="eyebrow">THE JOURNEY</span><h2>从请求到最终方案</h2></div><span>业务功能将在后续接入</span></section>
     <div className="journey">{[['01', '确认需求', '资料 · 澄清 · 摘要确认'], ['02', '生成与检查', '推荐 · 行程 · 装备 · 安全'], ['03', '审核与调整', '人工决定 · 新版本复评'], ['04', '保存与交付', '最终化守卫 · 历史回读']].map(([number, title, description]) => <div key={number}><span className="step-number">{number}</span><h3>{title}</h3><p>{description}</p><span className="pending-label">{number==='01'?'可填写与确认':'待实现'}</span></div>)}</div>

@@ -48,6 +48,8 @@ Linux/macOS 可分别创建 venv、按 `backend/requirements.lock` 安装依赖�
 | CAMPMATE_EXECUTION_MODE | stub | 仅 stub 已注册；deterministic_demo / agent 尚未接入，配置后就绪检查失败，不能自动回退 |
 | CAMPMATE_DEMO_TODAY | 2026-10-08 | 固定演示时钟，与系统时间分开 |
 | CAMPMATE_DATASET_PATH | data/synthetic_demo | 原始包的完整副本；业务源文件在其 data 子目录 |
+| CAMPMATE_DATASET_SCENARIO_FILES | [] | 已选数据包 data/scenarios 下的独立运行输入 JSON；摘要纳入确认/run 上下文 |
+| CAMPMATE_DATASET_SELECTION | {} | 服务器场景选用项；JSON 对象，纳入上下文，不能作为测试预期 |
 | CAMPMATE_DATABASE_PATH | var/campmate.sqlite3 | 启动时创建及迁移，重启保留；不提交 Git |
 | CAMPMATE_SEED_DEMO_ACCOUNTS | true | seed 三个演示账号；false 只关闭新增 seed，不删除已有账号 |
 | CAMPMATE_SESSION_HOURS | 8 | 服务器会话有效小时，系统时间计算 |
@@ -77,7 +79,7 @@ Linux/macOS 可分别创建 venv、按 `backend/requirements.lock` 安装依赖�
 - Review `/review`、`/review/{plan_id}`：Founder 查看当前审核依据，提交带理由的批准、拒绝或修订要求。批准后重算 eligibility，不自动最终化。详见 [人工审核流程](docs/founder_review.md)。
 - 最终保存：Camper 在当前方案中阅读并确认后保存；`/plans/{id}/finals/{final_id}` 展示不可覆盖的完整快照，明确区分当前与历史最终方案。详见 [最终化与历史](docs/finalisation.md)。
 - `GET /api/v1/health/live`：进程可响应。
-- `GET /api/v1/health/ready`：开发基础依赖及业务表迁移可用，不表示完整业务工作流已实现，也不验证源文件语义。
+- `GET /api/v1/health/ready`：开发基础依赖、业务表迁移与数据包身份/输入摘要可验证；不表示完整业务规则或工作流已实现。
 - `GET /api/v1/meta`：演示模式、时钟、来源标签、disclaimer 与实际功能开关。
 
 请求预览是 loopback 开发工具；正式请求由登录后的 `/requests` 接口保存。审核使用 GET/POST `/api/v1/review/{plan_id}`；最终保存使用 POST `/api/v1/plans/{plan_id}/finalise`，快照回读使用 GET `/api/v1/plans/{plan_id}/finals/{final_id}`。规划执行尚未提供。写入要求 X-CampMate-Client: 1，已登录写入另要求 X-CSRF-Token；浏览器自动携带 HttpOnly 会话 Cookie。确认要求匹配 revision、明确 acknowledged=true 和幂等 command_key，资料或数据变化后需重新生成摘要。详见 [资料与请求流程](docs/profile_request_flow.md)。
@@ -102,6 +104,8 @@ docs/                      冻结设计、导出 schema 与实施证据
 ```
 
 A 提供的 DTO 是按基线形成的参考实现，B 首版 schema 需核对字段与规则。六个入口已在 AgentPort 定义；PersistencePort 已有按 owner/run 绑定的 SQLite 实现。A 登记 run 后向 B 传递受限端口，不让 B 创建审核或最终记录。实际绑定方式、限制与待对齐项见 [登录与存储说明](docs/storage_and_accounts.md)。B 通过 registry 注册 deterministic_demo 工厂；LLM 接入仍使用 synthetic 业务源及同一契约。
+
+v2 的来源标识与运行输入摘要接入准备见 [数据上下文交接](docs/dataset_context_handoff.md)。当前默认仍为原 v1，修正版尚未导入；实际包版本由 manifest/来源识别，不能仅改配置就宣称完整业务演示已通过。
 
 共同定义见 [端口代码](backend/app/contracts/ports.py) 和 [设计说明](docs/shared_contracts_spec.md)。[contracts.schema.json](docs/contracts.schema.json) 同时导出 validation 与 serialization schema；Decimal 数量输入和输出使用字符串，金额使用整数 cents。schema 更新后重新导出：
 

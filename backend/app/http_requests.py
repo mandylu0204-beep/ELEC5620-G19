@@ -85,7 +85,7 @@ async def interpret_request(request_id: str, body: RevisionInput, request: Reque
     if agent is None:
         fail(ErrorCode.AGENT_FAILURE, '当前解释器尚未接入；请求草稿已保留。')
     dataset, regions = await run_in_threadpool(data_context, config)
-    demo = DemoContext(mode=config.execution_mode, demo_today=config.demo_today)
+    demo = DemoContext(mode=config.execution_mode, demo_today=config.demo_today, dataset_version=dataset.dataset_version)
     revision, input = await run_in_threadpool(repository.begin_analysis, user, request_id, body.expected_revision, demo, dataset)
     try:
         result = InterpretRequestResult.model_validate(await agent.interpret_request(input))
@@ -115,5 +115,5 @@ def confirm_request(request_id: str, body: ConfirmInput, request: Request, user:
     request.app.state.requests.get(user, request_id)
     config = request.app.state.settings
     dataset, _ = data_context(config)
-    demo = DemoContext(mode=config.execution_mode, demo_today=config.demo_today)
+    demo = DemoContext(mode=config.execution_mode, demo_today=config.demo_today, dataset_version=dataset.dataset_version)
     return request.app.state.requests.confirm(user, request_id, body.expected_revision, body.command_key, demo, dataset)

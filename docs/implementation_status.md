@@ -1,6 +1,16 @@
 # 开发 A 实施状态
 
-## 当前本地开发：A-10 部署准备（2026-10-10）
+## 当前本地开发：A-10 数据上下文接入准备（2026-10-10）
+
+继续在本地 feature/a10-submission-preparation 分支开发。新增 A-owned DatasetDescriptor，支持原 v1 与具有 manifest 的 v2 来源/版本；六份业务文件、runtime 输入、manifest、配置场景及选用项纳入上下文。请求确认快照和 meta 使用实际版本；来源或输入无法验证时显式未就绪。Provenance 新增 v2 来源枚举并重新导出共享 schema，保留 v1 默认与端口 1.0。
+
+新增 20 项独立边界测试。最终完整 scripts/check.py 退出码 0：149 passed，1 个已有 Starlette 提示，89.18 秒；schema up to date；Vite 49 模块构建通过，1.58 秒，见 [检查证据](evidence/a10-dataset-context-check.json)。首次目标测试发现新测试调用 append_plan_version 参数不完整，修正测试调用后回归通过；随后补齐 null manifest 拒绝检查，最终完整回归再次通过。沙箱内 TestClient 停滞后停止，仅在沙箱外项目内独立测试数据库完成检查。
+
+只读检查用户 v2 副本，识别 2.0.0、v2 来源及 9 个输入文件摘要。默认业务数据、个人 .env、演示时钟、数据库迁移和业务枚举未改；未复制 v2 到应用业务数据目录。没有运行 B Agent、56 条应用验收规格或 Canvas 完整演示。
+
+交接见 [数据上下文交接](dataset_context_handoff.md)。B 需更新共同 DTO/schema，并在实际 dispatcher 使用重新读取的上下文；文件变化自动监控、实际规划/重评与所有业务入口检查仍待联调。meal_mode、Decimal/cents 参考算法、审核测试身份和场景时钟问题仍按 [v2 独立复核](synthetic_data_review_v2.md) 修正。本轮代码尚未推送 GitHub；已有 42981fe ZIP 不包含这些后续代码，最终交付须重新打包并验收。
+
+## 历史本地开发：A-10 部署准备（2026-10-10）
 
 分支 feature/a10-submission-preparation 从已合并的 main d83f3ba 建立。新增 Python 锁文件安装入口、源码 ZIP 及每文件 SHA-256 清单、隔离 HTTP 部署 smoke；PowerShell 安装脚本调用同一安装器。启动器增加可选的 stop marker，使自动检查只关闭自己创建的子服务。页面、共同契约、业务规则和原始数据未修改。
 
