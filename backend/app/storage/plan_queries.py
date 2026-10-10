@@ -35,9 +35,15 @@ class PlanQueries:
                 result.append(item)
             return result
 
-    def detail(self, user, plan_id, run_id=None):
+    def detail(self, user, plan_id, run_id=None, *, review=False):
         with self.db.transaction(write=False) as connection:
-            plan = Repository.own_plan(connection, user, plan_id)
+            if review:
+                require_role(user, 'FOUNDER')
+                plan = connection.execute('SELECT * FROM plans WHERE id=?', (plan_id,)).fetchone()
+                if not plan:
+                    fail(ErrorCode.NOT_FOUND, '方案不存在。')
+            else:
+                plan = Repository.own_plan(connection, user, plan_id)
             selected = run_id if run_id is not None else plan['active_run_id']
             run = connection.execute('SELECT * FROM runs WHERE id=? AND plan_id=?', (selected, plan_id)).fetchone()
             if run_id is not None and not run:
@@ -49,7 +55,7 @@ class PlanQueries:
             result = {'plan': {'plan_id': plan_id, **{key: plan[key] for key in ('request_id','current_version_id','active_run_id','final_version_id','created_at')}},
                       'run': None, 'run_history': history, 'confirmed_context': None, 'events': [],
                       'recommendations': None, 'version': None, 'assessments': [], 'route': None,
-                      'eligibility': None, 'planning_available': False, 'finalisation_available': False}
+                      'eligibility': None, 'reviews': [], 'planning_available': False, 'finalisation_available': False}
             if not run:
                 return result
             scope = RunScope.model_validate_json(run['scope'])
@@ -68,6 +74,8 @@ class PlanQueries:
             if route:
                 result['route'] = RouteResult.model_validate_json(route['result']).model_dump(mode='json')
             if binding:
+                result['reviews'] = [unpack(row, 'payload') for row in connection.execute(
+                    'SELECT payload FROM reviews WHERE run_id=? AND version_id=? ORDER BY rowid', (run['id'], binding['version_id']))]
                 version = Repository.stored_version(connection, scope)
                 # Reassessment changes the mutable version status. Historical runs
                 # display their own saved routing result instead of the latest run's.
@@ -78,7 +86,9 @@ class PlanQueries:
                 result['assessments'] = [StoredAssessment.model_validate_json(row['payload']).model_dump(mode='json')
                     for row in connection.execute('SELECT payload FROM assessments WHERE run_id=? AND version_id=? ORDER BY kind', (run['id'], binding['version_id']))]
                 if active and plan['current_version_id'] == binding['version_id']:
-                    result['eligibility'] = SqlitePersistencePort(self.db, user.id, scope).decision(connection, version.version_context)[1].model_dump(mode='json')
+                    result['eligibility'] = SqlitePersistencePort(self.db, plan['owner_id'], scope).decision(connection, version.version_context)[1].model_dump(mode='json')
+            if review:
+                result['run_history'] = []
             return result
 
     def run(self, user, run_id):

@@ -101,6 +101,18 @@ CREATE TRIGGER no_delete_confirmed_summary BEFORE DELETE ON request_summaries
 """
 
 
+MIGRATION_3 = """
+CREATE TABLE review_commands(
+ reviewer_id TEXT NOT NULL REFERENCES users(id), command_key TEXT NOT NULL,
+ review_id TEXT NOT NULL UNIQUE REFERENCES reviews(id), input_hash TEXT NOT NULL,
+ result TEXT NOT NULL, PRIMARY KEY(reviewer_id,command_key));
+CREATE TRIGGER immutable_review BEFORE UPDATE ON reviews
+ BEGIN SELECT RAISE(ABORT, 'immutable review'); END;
+CREATE TRIGGER immutable_review_command BEFORE UPDATE ON review_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable review command'); END;
+"""
+
+
 def execute_migration(connection, script):
     statement = ''
     for line in script.splitlines():
@@ -134,7 +146,11 @@ class Database:
                 execute_migration(connection, MIGRATION_2)
                 connection.execute("INSERT INTO schema_migrations VALUES(2, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
                 versions.append(2)
-            if versions != [1, 2]:
+            if versions == [1, 2]:
+                execute_migration(connection, MIGRATION_3)
+                connection.execute("INSERT INTO schema_migrations VALUES(3, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
+                versions.append(3)
+            if versions != [1, 2, 3]:
                 raise RuntimeError('Unsupported database schema version')
 
     @contextmanager
@@ -164,6 +180,6 @@ class Database:
         try:
             with self.transaction(write=False) as connection:
                 versions = [row[0] for row in connection.execute('SELECT version FROM schema_migrations ORDER BY version')]
-                return versions == [1, 2]
+                return versions == [1, 2, 3]
         except ContractFailure:
             return False

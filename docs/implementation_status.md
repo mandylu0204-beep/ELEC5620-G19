@@ -1,6 +1,20 @@
 # 开发 A 实施状态
 
-## 当前本地开发：A-06（2026-10-10）
+## 当前本地开发：A-07（2026-10-10）
+
+分支 feature/a07-founder-review 基于 A-06 本地提交，新增 Founder 审核队列、当前证据详情与带理由的 APPROVE/REJECT/REQUEST_REVISION；审核绑定当前 version/run/fingerprint/两份评估和 revision，批准后同事务重算 eligibility，不能绕过 blocker、未知必要费用、超预算或未解决修订。重复提交回读原结果，竞争审批仅一个保存，故障时审核/状态/回执一起回滚。migration 3 升级保留旧记录；共享 schema 1.0 未改，API 0.5.0。
+
+| 最终检查 | 实际结果 |
+| --- | --- |
+| 后端 pytest | 82 passed；新增 14 项审核测试；1 个已有测试工具弃用提示 |
+| schema 对照 | up to date |
+| TypeScript/Vite | 构建成功，47 模块 |
+| 浏览器 | 三种决定、理由必填、关闭道路禁止批准、批准刷新回读、队列移除 |
+| 事务/并发 | 重复 key、竞争决定、回执保存故障回滚、旧 run 与旧版本拒绝审批 |
+
+浏览器使用独立测试夹具和 var/e2e-a07-review-20261010.sqlite3；原始数据和默认数据库未改。审核通过仍不最终化；修订动作当前只保存反馈，B 修订执行尚未接入。详见 [人工审核流程与证据](founder_review.md)。A 侧本机实现/自检完成；B 实际联调、其他成员复核、Jira 与全组 Done 仍待完成。本轮仅本地提交，尚未推送 GitHub、创建 PR 或执行本轮远端 CI。
+
+## 历史本地开发：A-06（2026-10-10）
 
 分支 feature/a06-plan-display 已实现已保存运行与方案展示：列表、阶段事件、推荐/排除原因、日程、装备/物流、费用/预算、安全证据、路由及历史 run。GET /plans/{id} 和 /runs/{id} 按用户授权，单次读取事务只组合同一 run/version 的产物；历史 run 不展示当前 eligibility。活动运行按 2.5 秒轮询真实保存记录，终结或读取失败后停止。
 

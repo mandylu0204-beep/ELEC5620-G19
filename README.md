@@ -2,7 +2,7 @@
 
 ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
 
-当前已实现 A-01 至 A-05 基础、登录、持久化、Profile 编辑和请求确认，以及 A-06 的已保存规划进度与方案展示。请求支持刷新恢复、版本检查和不可覆盖的确认快照；方案详情按同一次运行显示产物和证据。解释器目前仍为 stub，需手动填写明确字段；真实 Agent、规划工作流、审批与最终化服务尚未接入。首轮四个业务联调 fixture 尚待 B 与数据负责人准备。
+当前已实现 A-01 至 A-05 基础、登录、持久化、Profile 编辑和请求确认、A-06 已保存规划进度与方案展示，以及 A-07 Founder 审核。审核支持批准、拒绝和要求修订，绑定当前版本及证据；批准不能绕过 blocker。解释器目前仍为 stub，需手动填写明确字段；真实 Agent、规划工作流、修订执行与最终化服务尚未接入。首轮四个业务联调 fixture 尚待 B 与数据负责人准备。
 
 > This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.
 
@@ -70,12 +70,12 @@ Linux/macOS 可分别创建 venv、按 `backend/requirements.lock` 安装依赖�
 - 登录：`POST /auth/login`、`GET /auth/me`、`POST /auth/logout` 管理会话。
 - Profile：`GET/PUT /profile`；Requests：`GET/POST /requests`、`GET/PATCH /requests/{id}`、`POST /requests/{id}/interpret`、`POST /requests/{id}/confirm`（均在 `/api/v1` 下）。
 - Plans：`/plans` 与 `/plans/{id}` 展示自己已保存的运行、推荐、行程、装备、费用和安全证据；活动运行自动读取保存进度，可选择历史 run。接口为 `GET /plans/{id}`、`GET /runs/{id}`，详见 [进度与产物展示](docs/plan_display.md)。
-- Review：Founder 审核队列读取数据库；当前无正式工作流创建的审批记录，审批提交待接入。
+- Review `/review`、`/review/{plan_id}`：Founder 查看当前审核依据，提交带理由的批准、拒绝或修订要求。批准后重算 eligibility，不自动最终化。详见 [人工审核流程](docs/founder_review.md)。
 - `GET /api/v1/health/live`：进程可响应。
 - `GET /api/v1/health/ready`：开发基础依赖及业务表迁移可用，不表示完整业务工作流已实现，也不验证源文件语义。
 - `GET /api/v1/meta`：演示模式、时钟、来源标签、disclaimer 与实际功能开关。
 
-请求预览是 loopback 开发工具；正式请求由登录后的 `/requests` 接口保存。规划、审批和 finalise 端点尚未提供。写入要求 X-CampMate-Client: 1，已登录写入另要求 X-CSRF-Token；浏览器自动携带 HttpOnly 会话 Cookie。确认要求匹配 revision、明确 acknowledged=true 和幂等 command_key，资料或数据变化后需重新生成摘要。详见 [资料与请求流程](docs/profile_request_flow.md)。
+请求预览是 loopback 开发工具；正式请求由登录后的 `/requests` 接口保存。审核使用 GET/POST `/api/v1/review/{plan_id}`；规划执行和 finalise 端点尚未提供。写入要求 X-CampMate-Client: 1，已登录写入另要求 X-CSRF-Token；浏览器自动携带 HttpOnly 会话 Cookie。确认要求匹配 revision、明确 acknowledged=true 和幂等 command_key，资料或数据变化后需重新生成摘要。详见 [资料与请求流程](docs/profile_request_flow.md)。
 
 ## 文件位置与 B 接入
 
@@ -117,7 +117,7 @@ Set-Location backend
 
 PowerShell 脚本被禁止时可运行 `.\.venv\Scripts\python.exe scripts\check.py`。
 
-检查后端契约与 HTTP、导出 schema 是否同步，以及 TypeScript 和 Vite 生产构建。测试临时目录限制在项目 `var` 下，避免清理源码。当前实际结果、截图及限制见 [实施状态](docs/implementation_status.md)。GitHub Actions 文件已建立，尚未上传或执行；本轮检查不能替代 B 的规则测试和端到端验收。
+检查后端契约与 HTTP、导出 schema 是否同步，以及 TypeScript 和 Vite 生产构建。测试临时目录限制在项目 `var` 下，避免清理源码。当前实际结果、截图及限制见 [实施状态](docs/implementation_status.md)。此前 A-05 的 GitHub CI 已执行；A-06/A-07 本地开发尚未推送或执行本轮远端 CI。本机检查不能替代 B 的规则测试和端到端验收。
 
 ## GitHub
 
@@ -136,6 +136,6 @@ git push -u origin YOUR_FEATURE_BRANCH
 
 ## 参考与后续任务
 
-下一批：对接 B 的规则流程，以及 A-07 审核动作。A-06 页面检查使用独立展示夹具，不是 Agent 输出；正式四个业务场景联调需要 B 首版实现及修订数据。任务与验收见 [开发 A 清单](docs/developer_a_backlog.md)。
+下一批：A-08 最终化与历史交付，以及对接 B 的规则流程。A-06/A-07 页面检查使用独立展示夹具，不是 Agent 输出；正式四个业务场景联调需要 B 首版实现及修订数据。任务与验收见 [开发 A 清单](docs/developer_a_backlog.md)。
 
 实现参考：[React 构建说明](https://react.dev/learn/build-a-react-app-from-scratch)、[Vite 入门](https://vite.dev/guide/)、[FastAPI 测试](https://fastapi.tiangolo.com/tutorial/testing/)、[Pydantic 标准类型](https://docs.pydantic.dev/latest/api/standard_library_types/)。CI 的 checkout、Python 和 Node 设置采用官方示例的 v7 调用形式：[checkout](https://github.com/actions/checkout)、[setup-python](https://github.com/actions/setup-python)、[setup-node](https://github.com/actions/setup-node)。

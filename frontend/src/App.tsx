@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import { ApiFailure, loadStatus, previewRequest, type ApiError, type Meta, type PreviewResult, type Ready } from './api';
-import { AccountControl, LoginPage, Protected, SavedRecords, SessionProvider, useSession } from './session';
+import { ReviewQueue, ReviewPage } from './reviews';
+import { AccountControl, LoginPage, Protected, SessionProvider, useSession } from './session';
 import { ProfilePage } from './profile';
 import { RequestDetail, RequestsPage } from './requests';
 import { PlansPage, PlanPage } from './plans';
@@ -51,7 +52,7 @@ function AppContent() {
     <div className="workspace">
       <header className="topbar"><span>小组项目 · 开发预览</span><div className="topbar-right"><span className={`connection ${status?.ready.status === 'ready' ? 'connected' : ''}`}><i />{error ? '服务未连接' : status ? (status.ready.status === 'ready' ? '开发基础可用' : '依赖未就绪') : '正在连接…'}</span><AccountControl /></div></header>
       <main>
-        <div className="mode-notice"><strong>{status?.meta.execution_mode.toUpperCase() ?? '开发环境'}</strong><span>资料、需求确认与已保存方案展示已接入。真实规划、审批及最终化仍待实现。</span></div>
+        <div className="mode-notice"><strong>{status?.meta.execution_mode.toUpperCase() ?? '开发环境'}</strong><span>资料、需求确认与已保存方案展示已接入。人工审核已接入。真实规划、修订执行及最终化仍待实现。</span></div>
         {error && <div className="error-box" role="alert"><strong>无法连接后端</strong><p>{error}。请检查启动终端。</p><button onClick={() => setRefresh(value => value + 1)}>重新连接</button></div>}
         <Routes>
           <Route path="/" element={<Overview status={status} />} />
@@ -62,7 +63,8 @@ function AppContent() {
           <Route path="/profile" element={<Protected role="CAMPER"><ProfilePage /></Protected>} />
           <Route path="/plans" element={<Protected role="CAMPER"><PlansPage /></Protected>} />
           <Route path="/plans/:planId" element={<Protected role="CAMPER"><PlanPage /></Protected>} />
-          <Route path="/review" element={<Protected role="FOUNDER"><SavedRecords review /></Protected>} />
+          <Route path="/review/:planId" element={<Protected role="FOUNDER"><ReviewPage /></Protected>} />
+          <Route path="/review" element={<Protected role="FOUNDER"><ReviewQueue /></Protected>} />
           <Route path="*" element={<Upcoming title="页面不存在" description="请使用左侧导航返回项目概览。" />} />
         </Routes>
       </main>
@@ -82,7 +84,7 @@ function Overview({ status }: { status: Status | null }) {
     </section>
     <section className="section-heading"><div><span className="eyebrow">THE JOURNEY</span><h2>从请求到最终方案</h2></div><span>业务功能将在后续接入</span></section>
     <div className="journey">{[['01', '确认需求', '资料 · 澄清 · 摘要确认'], ['02', '生成与检查', '推荐 · 行程 · 装备 · 安全'], ['03', '审核与调整', '人工决定 · 新版本复评'], ['04', '保存与交付', '最终化守卫 · 历史回读']].map(([number, title, description]) => <div key={number}><span className="step-number">{number}</span><h3>{title}</h3><p>{description}</p><span className="pending-label">{number==='01'?'可填写与确认':'待实现'}</span></div>)}</div>
-    <div className="bottom-grid"><section className="panel"><span className="eyebrow">FOUNDATION CHECKS</span><h2>当前可验证的基础</h2><ul className="check-list">{[['业务源文件', checks?.dataset_readable], ['SQLite 数据库迁移', checks?.database_migrated], ['配置的 Agent 入口', checks?.configured_agent_available]].map(([title, value]) => <li key={String(title)}><span>{title}</span><span className={value === true ? 'check-ok' : 'check-wait'}>{value === undefined ? '检查中' : value ? '可用' : '未就绪'}</span></li>)}</ul><p className="muted">来源可读不代表业务数据已通过验收。开发预览见 <Link className="text-link" to="/dev/request-preview">字段交接工具</Link>。</p></section><section className="panel next-panel"><span className="eyebrow">NEXT MILESTONE</span><h2>接入规则流程与审核</h2><p>已保存的规划阶段与产物可以查看。下一步对接 B 的实际输出，再实现审核与最终化。</p><div className="chips"><span>B 规则实现</span><span>A-07 人工审核</span><span>四个联调场景</span></div></section></div>
+    <div className="bottom-grid"><section className="panel"><span className="eyebrow">FOUNDATION CHECKS</span><h2>当前可验证的基础</h2><ul className="check-list">{[['业务源文件', checks?.dataset_readable], ['SQLite 数据库迁移', checks?.database_migrated], ['配置的 Agent 入口', checks?.configured_agent_available]].map(([title, value]) => <li key={String(title)}><span>{title}</span><span className={value === true ? 'check-ok' : 'check-wait'}>{value === undefined ? '检查中' : value ? '可用' : '未就绪'}</span></li>)}</ul><p className="muted">来源可读不代表业务数据已通过验收。开发预览见 <Link className="text-link" to="/dev/request-preview">字段交接工具</Link>。</p></section><section className="panel next-panel"><span className="eyebrow">NEXT MILESTONE</span><h2>接入规则流程与最终化</h2><p>已保存的规划阶段与产物可以查看。Founder 可以审核当前证据。下一步实现 Camper 最终化，并对接 B 的实际输出。</p><div className="chips"><span>B 规则实现</span><span>A-08 最终化</span><span>四个联调场景</span></div></section></div>
   </>;
 }
 

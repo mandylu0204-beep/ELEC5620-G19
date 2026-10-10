@@ -80,23 +80,5 @@ export function LoginPage() {
     catch (reason) { setError(reason instanceof ApiFailure ? reason.message : '登录失败，请检查服务连接。'); }
     finally { setBusy(false); }
   }
-  return <><div className="page-heading"><span className="eyebrow">YOUR ACCOUNT</span><h1>欢迎回来。</h1><p>登录后，继续你的露营计划。</p></div><div className="preview-grid"><section className="panel"><h2>账户登录</h2><form onSubmit={submit}><label htmlFor="username">用户名</label><input id="username" autoComplete="username" maxLength={80} required disabled={busy} value={username} onChange={event => setUsername(event.target.value)} /><label htmlFor="password">密码</label><input id="password" type="password" autoComplete="current-password" maxLength={256} required disabled={busy} value={password} onChange={event => setPassword(event.target.value)} />{error && <p className="error-box" role="alert">{error}</p>}<button className="primary-button" disabled={busy}>{busy ? '正在登录…' : '登录'} <span>↗</span></button></form></section><section className="panel next-panel"><span className="tag">SYNTHETIC DEMO ACCOUNTS</span><h2>本地演示账户</h2><p>选择一个角色验证用户隔离。这些是公开的演示凭据。</p><dl className="demo-accounts">{[['camper.a','CampMate-A-2026!'],['camper.b','CampMate-B-2026!'],['founder','CampMate-Founder-2026!']].map(([name, pass]) => <div key={name}><dt>{name}</dt><dd><code>{pass}</code></dd></div>)}</dl><p className="muted">账户与演示数据中的 Profile ID 分开管理。规划与审批功能仍待接入。</p></section></div></>;
-}
-
-export function SavedRecords({ review = false }: { review?: boolean }) {
-  const { session, reload } = useSession();
-  const [count, setCount] = useState<number | null>(null);
-  const [error, setError] = useState('');
-  useEffect(() => {
-    const controller = new AbortController();
-    setCount(null); setError('');
-    privateApi<Record<string, unknown[]>>(review ? '/review-queue' : '/plans', { signal: controller.signal }).then(value => setCount(value[review ? 'reviews' : 'plans'].length)).catch(reason => {
-      if (!controller.signal.aborted) {
-        setError(reason instanceof ApiFailure ? reason.message : '读取失败，请重新连接。');
-        if (reason instanceof ApiFailure && reason.envelope.error.code === 'UNAUTHENTICATED') reload();
-      }
-    });
-    return () => controller.abort();
-  }, [review, session?.user.user_id]);
-  return <><div className="page-heading"><span className="eyebrow">{review ? 'FOUNDER REVIEW' : 'YOUR PLANS'}</span><h1>{review ? '人工审核' : '方案与历史'}</h1></div><section className="panel"><h2>{count === null ? '正在读取…' : count === 0 ? review ? '暂无待审核记录' : '还没有保存的方案' : `${count} 条记录`}</h2>{error && <p role="alert" className="error-box">{error}</p>}<p className="muted">{review ? '审核队列已按 Founder 权限读取；审核决定将在后续接入。' : '此列表从数据库读取当前账户记录。创建方案及完整产物展示将在规则流程接入后开放。'}</p></section></>;
+  return <><div className="page-heading"><span className="eyebrow">YOUR ACCOUNT</span><h1>欢迎回来。</h1><p>登录后，继续你的露营计划。</p></div><div className="preview-grid"><section className="panel"><h2>账户登录</h2><form onSubmit={submit}><label htmlFor="username">用户名</label><input id="username" autoComplete="username" maxLength={80} required disabled={busy} value={username} onChange={event => setUsername(event.target.value)} /><label htmlFor="password">密码</label><input id="password" type="password" autoComplete="current-password" maxLength={256} required disabled={busy} value={password} onChange={event => setPassword(event.target.value)} />{error && <p className="error-box" role="alert">{error}</p>}<button className="primary-button" disabled={busy}>{busy ? '正在登录…' : '登录'} <span>↗</span></button></form></section><section className="panel next-panel"><span className="tag">SYNTHETIC DEMO ACCOUNTS</span><h2>本地演示账户</h2><p>选择一个角色验证用户隔离。这些是公开的演示凭据。</p><dl className="demo-accounts">{[['camper.a','CampMate-A-2026!'],['camper.b','CampMate-B-2026!'],['founder','CampMate-Founder-2026!']].map(([name, pass]) => <div key={name}><dt>{name}</dt><dd><code>{pass}</code></dd></div>)}</dl><p className="muted">账户与演示数据中的 Profile ID 分开管理。Founder 审核已接入；规划执行与最终化仍待接入。</p></section></div></>;
 }

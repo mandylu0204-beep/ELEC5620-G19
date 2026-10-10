@@ -89,4 +89,4 @@ def versions(plan_id: str, request: Request, user: User = Depends(current_user))
 
 @router.get('/review-queue')
 def reviews(request: Request, user: User = Depends(current_user)):
-    return {'reviews': request.app.state.repository.review_queue(user)}
+    return {'reviews': request.app.state.reviews.queue(user)}
