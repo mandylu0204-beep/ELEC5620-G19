@@ -6,6 +6,8 @@ ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
 
 > This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.
 
+最终提交须满足 [Canvas 下载后演示验收](docs/canvas_submission.md)：下载 ZIP 后无需访问私有 GitHub 或使用作者电脑的配置，按随包说明可完成完整演示。当前仍待 B 工作流接入与最终包验收。
+
 ## 安装与启动
 
 测试环境：Windows、Python 3.12.14、Node.js 22.20.0。使用 Python 3.12 与 Node.js 22.12+；其他版本尚未做完整部署验证。依赖下载需要网络，业务运行只使用本地 synthetic 数据。
