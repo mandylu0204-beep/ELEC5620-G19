@@ -1,6 +1,22 @@
 # 开发 A 实施状态
 
-## 当前本地开发：A-08（2026-10-10）
+## 当前本地开发：A-09 恢复边界（2026-10-10）
+
+分支 feature/a09-run-recovery 基于 A-08 本地提交，新增内部 WorkflowService、启动/重试回执、当前 run/version 比较、执行租约、失败恢复 checkpoint 和迟到任务拒绝。重复启动不新建 plan/run；重复重试不重置后续失败；输入未变保留已保存版本及评估；证据变化开启新 run。首次尚无版本时可在同一 plan 新开 PLAN run。migration 5 保留旧记录，共同 schema 1.0 和现有 HTTP 接口未改。
+
+| 最终检查 | 实际结果 |
+| --- | --- |
+| 完整 scripts/check.py | 退出码 0；128 passed，1 个已有测试工具弃用提示；schema up to date；前端 49 模块构建成功 |
+| 最后一项边界补充后回归 | test_workflows.py 与 test_storage.py 共 34 项全部通过；本轮恢复测试共 24 项 |
+| 并发与迟到任务 | 启动/重试竞争、单 worker 领取、旧 attempt/旧端口/旧 run 写入拒绝 |
+| 故障恢复 | 保存、领取、重试回执失败整体回滚；租约续期/过期及数据库重启后恢复；版本/评估/路由/NO_MATCH checkpoint |
+| 数据与权限 | 数据/规则/时钟/模式变化拒绝 retry；fingerprint 损坏拒绝；跨 Camper/Founder 操作拒绝；旧数据库升级保留记录 |
+
+首轮完整回归发现旧 migration 3 测试在升级前调用当前端口，因缺少新租约表失败；已改为写入真实旧版存储记录，再升级校验，修复后完整检查通过。最后补充无版本时换证据重开 run，随后对全部受影响的运行管理/持久化测试回归通过。
+
+原始数据和默认数据库未改；前端页面未改。B 接入签名及限制见 [运行恢复交接](run_recovery.md)。当前是 A 侧恢复原语与自检，不含真实 B 调度器、后台恢复扫描、HTTP/页面启动与重试或业务联调。本轮仅本地提交，未推送 GitHub、创建 PR 或执行远端 CI；其他成员复核、Jira、全组 Done 与 A-10 干净环境完整演示仍待完成。
+
+## 历史本地开发：A-08（2026-10-10）
 
 分支 feature/a08-finalisation 基于 A-07 本地提交，新增 Camper 最终保存和不可覆盖快照；保存前重新校验版本/run/fingerprint/两份评估/审核/revision 与 eligibility。同事务保存快照、FINALISED、最终指针及回执，故障时全部回滚。当前/历史最终方案根据 version 与 run 同时判断，同版本重评也会使旧快照成为历史。migration 4 升级保留数据；共享 schema 1.0 未改，API 0.6.0。
 

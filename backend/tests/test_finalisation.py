@@ -250,14 +250,23 @@ def test_concurrent_duplicate_and_competing_finalisation(final_client):
 
 
 def test_upgrade_from_review_schema_keeps_existing_data(tmp_path):
+    source=Database(tmp_path/'fixture.sqlite3');source.initialize()
+    AuthService(source,8).seed_demo_accounts()
+    camper=User('camper-a','camper.a','Camper A','CAMPER')
+    create(Repository(source),camper,'legacy','review')
     db=Database(tmp_path/'upgrade3.sqlite3')
     with db.transaction() as connection:
         for number,script in enumerate((MIGRATION_1,MIGRATION_2,MIGRATION_3),1):
             execute_migration(connection,script)
             connection.execute('INSERT INTO schema_migrations VALUES(?,?)',(number,'test'))
-    AuthService(db,8).seed_demo_accounts()
-    camper=User('camper-a','camper.a','Camper A','CAMPER');repo=Repository(db)
-    scope,_=create(repo,camper,'legacy','review')
+    # Populate the old schema as stored rows, without invoking current ports
+    # against a database which has not yet gained the required lease table.
+    with source.transaction(write=False) as fixture, db.transaction() as connection:
+        connection.execute('PRAGMA defer_foreign_keys=ON')
+        for table in ('users','requests','plans','runs','versions','run_versions','recommendations','assessments','gear_checklists','run_events','write_receipts'):
+            rows=[tuple(row) for row in fixture.execute('SELECT * FROM '+table)]
+            if rows:
+                connection.executemany('INSERT INTO '+table+' VALUES('+','.join('?' for _ in rows[0])+')',rows)
     with db.transaction(write=False) as connection:
         before=[tuple(row) for row in connection.execute('SELECT * FROM assessments')]
     db.initialize();db.initialize()
@@ -265,7 +274,7 @@ def test_upgrade_from_review_schema_keeps_existing_data(tmp_path):
     with db.transaction(write=False) as connection:
         assert [tuple(row) for row in connection.execute('SELECT * FROM assessments')]==before
         assert connection.execute('SELECT status FROM versions').fetchone()[0]=='ESCALATED'
-        assert connection.execute('SELECT COUNT(*) FROM schema_migrations').fetchone()[0]==4
+        assert connection.execute('SELECT COUNT(*) FROM schema_migrations').fetchone()[0]==5
 
 
 def test_fingerprint_is_recalculated_from_registered_input(final_client):

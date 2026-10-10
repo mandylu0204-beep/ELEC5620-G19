@@ -2,7 +2,7 @@
 
 ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
 
-当前已实现 A-01 至 A-05 基础、登录、持久化、Profile 编辑和请求确认、A-06 已保存规划进度与方案展示、A-07 Founder 审核及 A-08 最终化与历史快照。审批与最终保存绑定当前版本及证据，不能绕过 blocker；最终快照不会被后续修订或评估覆盖。解释器目前仍为 stub，需手动填写明确字段；真实 Agent、规划工作流与修订执行尚未接入。首轮四个业务联调 fixture 尚待 B 与数据负责人准备。
+当前已实现 A-01 至 A-05 基础、登录、持久化、Profile 编辑和请求确认、A-06 已保存规划进度与方案展示、A-07 Founder 审核、A-08 最终化与历史快照，以及 A-09 内部运行管理与恢复边界。审批与最终保存绑定当前版本及证据，不能绕过 blocker；最终快照不会被后续修订或评估覆盖。解释器目前仍为 stub，需手动填写明确字段；真实 Agent、规划/修订调度和页面启动/重试尚未接入。首轮四个业务联调 fixture 尚待 B 与数据负责人准备。
 
 > This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.
 
@@ -118,11 +118,11 @@ Set-Location backend
 
 PowerShell 脚本被禁止时可运行 `.\.venv\Scripts\python.exe scripts\check.py`。
 
-检查后端契约与 HTTP、导出 schema 是否同步，以及 TypeScript 和 Vite 生产构建。测试临时目录限制在项目 `var` 下，避免清理源码。当前实际结果、截图及限制见 [实施状态](docs/implementation_status.md)。此前 A-05 的 GitHub CI 已执行；A-06 至 A-08 本地开发尚未推送或执行本轮远端 CI。本机检查不能替代 B 的规则测试和端到端验收。
+检查后端契约与 HTTP、导出 schema 是否同步，以及 TypeScript 和 Vite 生产构建。测试临时目录限制在项目 `var` 下，避免清理源码。当前实际结果、截图及限制见 [实施状态](docs/implementation_status.md)。此前 A-05 的 GitHub CI 已执行；A-06 至 A-09 本地开发尚未推送或执行本轮远端 CI。本机检查不能替代 B 的规则测试和端到端验收。
 
 ## GitHub
 
-私有协作仓库：[LyraWangDev/ELEC5620-G19](https://github.com/LyraWangDev/ELEC5620-G19)，远端 main 仍为 A-05 开发原型；本地 feature/a08-finalisation 包含 A-06 至 A-08 开发，尚未推送。协作步骤见 [贡献说明](CONTRIBUTING.md)，首版范围见 [首版交付说明](docs/releases/a05-development.md)。首个源码提交的 [GitHub CI](https://github.com/LyraWangDev/ELEC5620-G19/actions/runs/37935196604) 已通过后端 54 项测试、schema 对照和前端构建，不代表后续本地代码已完成远端 CI。
+私有协作仓库：[LyraWangDev/ELEC5620-G19](https://github.com/LyraWangDev/ELEC5620-G19)，远端 main 仍为 A-05 开发原型；本地 feature/a09-run-recovery 包含 A-06 至 A-09 开发，尚未推送。协作步骤见 [贡献说明](CONTRIBUTING.md)，首版范围见 [首版交付说明](docs/releases/a05-development.md)。首个源码提交的 [GitHub CI](https://github.com/LyraWangDev/ELEC5620-G19/actions/runs/37935196604) 已通过后端 54 项测试、schema 对照和前端构建，不代表后续本地代码已完成远端 CI。
 
 上传范围为项目根目录的源码、文档、synthetic 数据、schema、锁文件和 CI。`.venv`、node_modules、`.env`、数据库、构建目录和日志已忽略。克隆后需在自己的电脑安装依赖并创建本地数据库；GitHub 仓库保存源码，服务仍按安装与启动说明在本地运行。
 
@@ -137,6 +137,6 @@ git push -u origin YOUR_FEATURE_BRANCH
 
 ## 参考与后续任务
 
-下一批：A-09 工作流并发、幂等及失败恢复，以及对接 B 的规则流程。A-06 至 A-08 页面检查使用独立展示夹具，不是 Agent 输出；正式四个业务场景联调需要 B 首版实现及修订数据。任务与验收见 [开发 A 清单](docs/developer_a_backlog.md)。
+下一批：A-10 提交包与部署准备，以及 B 工作流调度、恢复端口和页面启动/重试的实际接入。内部启动回执、执行租约、迟到任务拒绝和恢复 checkpoint 见 [运行恢复交接](docs/run_recovery.md)。A-06 至 A-09 检查使用独立 A 夹具，不是 Agent 输出；正式四个业务场景联调需要 B 首版实现及修订数据。任务与验收见 [开发 A 清单](docs/developer_a_backlog.md)。
 
 实现参考：[React 构建说明](https://react.dev/learn/build-a-react-app-from-scratch)、[Vite 入门](https://vite.dev/guide/)、[FastAPI 测试](https://fastapi.tiangolo.com/tutorial/testing/)、[Pydantic 标准类型](https://docs.pydantic.dev/latest/api/standard_library_types/)。CI 的 checkout、Python 和 Node 设置采用官方示例的 v7 调用形式：[checkout](https://github.com/actions/checkout)、[setup-python](https://github.com/actions/setup-python)、[setup-node](https://github.com/actions/setup-node)。

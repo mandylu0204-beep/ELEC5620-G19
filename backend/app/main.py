@@ -16,6 +16,7 @@ from .http_plans import router as plans_router
 from .http_reviews import router as reviews_router
 from .storage.reviews import ReviewService
 from .storage.finalisation import FinalisationService
+from .storage.workflows import WorkflowService
 from .storage.plan_queries import PlanQueries
 from .storage.requests import RequestRepository
 from .storage.database import Database
@@ -62,6 +63,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.state.plan_queries = PlanQueries(database)
     application.state.reviews = ReviewService(database)
     application.state.finalisation = FinalisationService(database)
+    application.state.workflows = WorkflowService(database)
     application.include_router(accounts_router)
     application.include_router(requests_router)
     application.include_router(plans_router)

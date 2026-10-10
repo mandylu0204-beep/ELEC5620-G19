@@ -89,12 +89,23 @@ class Repository:
         with self.db.transaction() as connection:
             connection.execute('INSERT INTO requests VALUES(?,?,?,?,?,?,?,?)', (context.request_id, user.id, raw_text, 'CONFIRMED', 1, encode(context.requirements), encode(context), now()))
 
-    def begin_run(self, user: User, request_id: str, demo: DemoContext, dataset: DatasetContext, *, plan_id=None, operation='PLAN', expected_current_version_id=None):
+    def begin_run(self, user: User, request_id: str, demo: DemoContext, dataset: DatasetContext, *, plan_id=None, operation='PLAN', expected_current_version_id=None, command_key=None, expected_active_run_id=None):
         """Only trusted A workflow services call this; no B-supplied RunScope accepted."""
         require_role(user, 'CAMPER')
         if operation not in {'PLAN', 'REVISE', 'REASSESS'}:
             fail(ErrorCode.INPUT_INVALID, '运行操作无效。')
+        if command_key is not None and (not isinstance(command_key, str) or not command_key.strip() or len(command_key) > 128):
+            fail(ErrorCode.INPUT_INVALID, 'command_key 必须为 1 至 128 位非空字符串。')
+        input_hash = fingerprint({'operation': operation, 'request_id': request_id, 'plan_id': plan_id,
+            'expected_current_version_id': expected_current_version_id, 'expected_active_run_id': expected_active_run_id,
+            'demo': demo.model_dump(mode='json'), 'dataset': dataset.model_dump(mode='json')})
         with self.db.transaction() as connection:
+            if command_key is not None:
+                previous = connection.execute('SELECT * FROM workflow_commands WHERE owner_id=? AND command_key=?', (user.id, command_key)).fetchone()
+                if previous:
+                    if previous['operation'] != 'START' or previous['input_hash'] != input_hash:
+                        fail(ErrorCode.IDEMPOTENCY_CONFLICT, '同一个 key 不能启动不同任务。')
+                    return RunScope.model_validate_json(previous['result'])
             request = connection.execute('SELECT * FROM requests WHERE id=? AND owner_id=?', (request_id, user.id)).fetchone()
             if not request:
                 fail(ErrorCode.NOT_FOUND, '请求不存在。')
@@ -109,7 +120,10 @@ class Repository:
                 connection.execute('INSERT INTO plans VALUES(?,?,?,?,?,?,?)', (plan_id, user.id, request_id, None, None, None, now()))
             else:
                 plan = self.own_plan(connection, user, plan_id)
-                if operation == 'PLAN' or plan['current_version_id'] != expected_current_version_id or expected_current_version_id is None:
+                if command_key is not None and plan['active_run_id'] != expected_active_run_id:
+                    fail(ErrorCode.STALE_CONTEXT, '当前运行已变化，请刷新后启动新任务。')
+                restart_before_version = operation == 'PLAN' and command_key is not None and plan['current_version_id'] is None and expected_current_version_id is None
+                if not restart_before_version and (operation == 'PLAN' or plan['current_version_id'] != expected_current_version_id or expected_current_version_id is None):
                     fail(ErrorCode.VERSION_CONFLICT, '当前版本已变化。')
                 if plan['active_run_id']:
                     connection.execute("UPDATE runs SET status='SUPERSEDED',revision=revision+1 WHERE id=? AND status IN ('PENDING','RUNNING')", (plan['active_run_id'],))
@@ -120,6 +134,8 @@ class Repository:
                 version = connection.execute('SELECT * FROM versions WHERE id=?', (expected_current_version_id,)).fetchone()
                 self.bind_version(connection, scope, context, version['id'], json.loads(version['content']))
                 connection.execute("UPDATE versions SET status='ASSESSING',revision=revision+1 WHERE id=?", (version['id'],))
+            if command_key is not None:
+                connection.execute('INSERT INTO workflow_commands VALUES(?,?,?,?,?,?)', (user.id, command_key, 'START', scope.run_id, input_hash, encode(scope)))
             return scope
 
     @staticmethod
