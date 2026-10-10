@@ -1,4 +1,5 @@
 import json
+import time
 from uuid import uuid4
 
 from ..auth import fail
@@ -21,16 +22,21 @@ class SqlitePersistencePort:
     Every method checks the stored scope and current pointers in the same transaction
     as its writes. No port method writes FINALISED or creates a human review.
     """
-    def __init__(self, database: Database, owner_id: str, scope: RunScope):
+    def __init__(self, database: Database, owner_id: str, scope: RunScope, *, attempt_id=None, clock=time.time):
         self.db, self.owner_id, self.scope = database, owner_id, scope
+        self.attempt_id, self.clock = attempt_id, clock
 
-    def active(self, connection, *, writing=False):
+    def active(self, connection, *, writing=False, execution=False):
         plan = connection.execute('SELECT * FROM plans WHERE id=? AND owner_id=?', (self.scope.plan_id, self.owner_id)).fetchone()
         run = connection.execute('SELECT * FROM runs WHERE id=? AND plan_id=?', (self.scope.run_id, self.scope.plan_id)).fetchone()
         if not plan or not run:
             fail(ErrorCode.NOT_FOUND, '运行不存在。')
         if run['scope'] != encode(self.scope) or plan['active_run_id'] != self.scope.run_id:
             fail(ErrorCode.STALE_CONTEXT, '运行已被新任务取代，请刷新。')
+        if writing or execution:
+            lease = connection.execute('SELECT * FROM run_leases WHERE run_id=?', (self.scope.run_id,)).fetchone()
+            if (self.attempt_id is not None and lease is None) or (lease and (lease['attempt_id'] != self.attempt_id or lease['expires_at'] <= self.clock())):
+                fail(ErrorCode.STALE_CONTEXT, '执行尝试已失效，迟到任务不能继续读写。')
         if writing and run['status'] in {'FAILED','CANCELLED','SUPERSEDED'}:
             fail(ErrorCode.INVALID_STATE, '运行已结束，不能继续写入。')
         return plan, run
@@ -65,7 +71,7 @@ class SqlitePersistencePort:
 
     async def load_confirmed_context(self):
         with self.db.transaction(write=False) as connection:
-            _, run = self.active(connection)
+            _, run = self.active(connection, execution=True)
             return ConfirmedContext.model_validate_json(run['confirmed_context'])
 
     async def save_recommendations(self, result: RecommendCampsitesResult, write_key: str):
@@ -232,12 +238,14 @@ class SqlitePersistencePort:
         if (status == RunStatus.FAILED) != (error is not None):
             fail(ErrorCode.CONTRACT_INVALID, '失败状态必须携带错误，其他状态不能携带错误。')
         with self.db.transaction() as connection:
-            _, run = self.active(connection)
+            _, run = self.active(connection, writing=True)
             stages = list(RunStage)
             if run['status'] in {'SUCCEEDED','FAILED','CANCELLED','SUPERSEDED'} or stages.index(stage) < stages.index(RunStage(run['stage'])):
                 fail(ErrorCode.INVALID_STATE, '已结束或陈旧的阶段不能重新推进。')
             if status == RunStatus.SUCCEEDED:
-                if stage != RunStage.COMPLETED or not connection.execute("SELECT 1 FROM write_receipts WHERE run_id=? AND operation='route'", (self.scope.run_id,)).fetchone():
+                recommendation = connection.execute('SELECT payload FROM recommendations WHERE run_id=?', (self.scope.run_id,)).fetchone()
+                no_match = recommendation and StoredRecommendations.model_validate_json(recommendation['payload']).result.search_outcome == 'NO_MATCH' and not connection.execute('SELECT 1 FROM run_versions WHERE run_id=?', (self.scope.run_id,)).fetchone()
+                if stage != RunStage.COMPLETED or not (no_match or connection.execute("SELECT 1 FROM write_receipts WHERE run_id=? AND operation='route'", (self.scope.run_id,)).fetchone()):
                     fail(ErrorCode.INVALID_STATE, '保存路由后才能结束工作流。')
             elif stage == RunStage.COMPLETED:
                 fail(ErrorCode.INVALID_STATE, 'COMPLETED 必须与 SUCCEEDED 一致。')

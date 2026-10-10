@@ -1,0 +1,13 @@
+import { Link, useParams } from 'react-router-dom';
+import { PlanView, useSavedRead, type PlanDetail } from './plans';
+
+const noPoll=()=>false;
+type FinalRecord={final_id:string;status:string;finalised_at:string;finalised_by:string;version_context:NonNullable<PlanDetail['version']>['version_context'];version_number:number;version_revision:number;content:NonNullable<PlanDetail['version']>['content'];confirmed_context:PlanDetail['confirmed_context'];assessments:PlanDetail['assessments'];review:PlanDetail['reviews'][number]|null;recommendations:PlanDetail['recommendations'];route:PlanDetail['route'];events:PlanDetail['events'];run:Omit<NonNullable<PlanDetail['run']>,'is_active'>};
+
+export function FinalPage(){
+  const {planId,finalId}=useParams();const {data,error,refresh}=useSavedRead<{is_current:boolean;final_record:FinalRecord}>('/plans/'+planId+'/finals/'+finalId,noPoll);
+  if(!data)return <section className="panel"><h1>读取最终方案</h1>{error&&<p className="error-box" role="alert">{error}</p>}<button className="secondary-button" onClick={refresh}>重新读取</button><Link className="text-link" to={'/plans/'+planId}>返回当前方案 ↗</Link></section>;
+  const saved=data.final_record;
+  const view:PlanDetail={plan:{plan_id:planId!,request_id:saved.confirmed_context?.request_id??'',active_run_id:saved.run.run_id,current_version_id:saved.version_context.plan_version_id,final_version_id:saved.version_context.plan_version_id,created_at:saved.run.created_at},run:{...saved.run,is_active:data.is_current},run_history:[],confirmed_context:saved.confirmed_context,events:saved.events,version:{version_number:saved.version_number,status:'FINALISED',revision:saved.version_revision,version_context:saved.version_context,content:saved.content},assessments:saved.assessments,recommendations:saved.recommendations,route:saved.route,eligibility:null,reviews:saved.review?[saved.review]:[],last_final:null,selected_final:null,final_history:[],finalisation_available:false};
+  return <><section className="panel final-record-heading"><span className="tag">{data.is_current?'当前最终方案':'历史最终方案'}</span><h1>已保存的最终方案</h1><p>{data.is_current?'当前版本与运行对应这份最终快照。':'此后已产生新修订或重新评估；这份快照仅表示当时保存的最终方案。'}</p><p>保存时间：{new Intl.DateTimeFormat('zh-CN',{timeZone:'Australia/Sydney',dateStyle:'medium',timeStyle:'short'}).format(new Date(saved.finalised_at))}（悉尼时间） · 保存人：{saved.finalised_by}</p><p className="identifier">记录编号：{saved.final_id}</p><Link className="text-link" to={'/plans/'+planId}>查看当前方案与运行 ↗</Link></section><PlanView data={view} error={error} refresh={refresh} snapshot/></>;
+}

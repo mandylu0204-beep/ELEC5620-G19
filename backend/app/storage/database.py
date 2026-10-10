@@ -101,6 +101,48 @@ CREATE TRIGGER no_delete_confirmed_summary BEFORE DELETE ON request_summaries
 """
 
 
+MIGRATION_3 = """
+CREATE TABLE review_commands(
+ reviewer_id TEXT NOT NULL REFERENCES users(id), command_key TEXT NOT NULL,
+ review_id TEXT NOT NULL UNIQUE REFERENCES reviews(id), input_hash TEXT NOT NULL,
+ result TEXT NOT NULL, PRIMARY KEY(reviewer_id,command_key));
+CREATE TRIGGER immutable_review BEFORE UPDATE ON reviews
+ BEGIN SELECT RAISE(ABORT, 'immutable review'); END;
+CREATE TRIGGER immutable_review_command BEFORE UPDATE ON review_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable review command'); END;
+"""
+
+
+MIGRATION_4 = """
+CREATE UNIQUE INDEX final_once_per_evidence ON final_records(run_id,version_id);
+CREATE TABLE final_commands(
+ owner_id TEXT NOT NULL REFERENCES users(id), command_key TEXT NOT NULL,
+ final_id TEXT NOT NULL REFERENCES final_records(id), input_hash TEXT NOT NULL,
+ result TEXT NOT NULL, PRIMARY KEY(owner_id,command_key));
+CREATE TRIGGER immutable_final BEFORE UPDATE ON final_records
+ BEGIN SELECT RAISE(ABORT, 'immutable final snapshot'); END;
+CREATE TRIGGER no_delete_final BEFORE DELETE ON final_records
+ BEGIN SELECT RAISE(ABORT, 'immutable final snapshot'); END;
+CREATE TRIGGER immutable_final_command BEFORE UPDATE ON final_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable final command'); END;
+"""
+
+
+MIGRATION_5 = """
+CREATE TABLE workflow_commands(
+ owner_id TEXT NOT NULL REFERENCES users(id), command_key TEXT NOT NULL,
+ operation TEXT NOT NULL, run_id TEXT NOT NULL REFERENCES runs(id),
+ input_hash TEXT NOT NULL, result TEXT NOT NULL, PRIMARY KEY(owner_id,command_key));
+CREATE TABLE run_leases(
+ run_id TEXT PRIMARY KEY REFERENCES runs(id), attempt_id TEXT NOT NULL UNIQUE,
+ generation INTEGER NOT NULL CHECK(generation >= 1), expires_at REAL NOT NULL);
+CREATE TRIGGER immutable_workflow_command BEFORE UPDATE ON workflow_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable workflow command'); END;
+CREATE TRIGGER no_delete_workflow_command BEFORE DELETE ON workflow_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable workflow command'); END;
+"""
+
+
 def execute_migration(connection, script):
     statement = ''
     for line in script.splitlines():
@@ -134,7 +176,19 @@ class Database:
                 execute_migration(connection, MIGRATION_2)
                 connection.execute("INSERT INTO schema_migrations VALUES(2, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
                 versions.append(2)
-            if versions != [1, 2]:
+            if versions == [1, 2]:
+                execute_migration(connection, MIGRATION_3)
+                connection.execute("INSERT INTO schema_migrations VALUES(3, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
+                versions.append(3)
+            if versions == [1, 2, 3]:
+                execute_migration(connection, MIGRATION_4)
+                connection.execute("INSERT INTO schema_migrations VALUES(4, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
+                versions.append(4)
+            if versions == [1, 2, 3, 4]:
+                execute_migration(connection, MIGRATION_5)
+                connection.execute("INSERT INTO schema_migrations VALUES(5, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
+                versions.append(5)
+            if versions != [1, 2, 3, 4, 5]:
                 raise RuntimeError('Unsupported database schema version')
 
     @contextmanager
@@ -164,6 +218,6 @@ class Database:
         try:
             with self.transaction(write=False) as connection:
                 versions = [row[0] for row in connection.execute('SELECT version FROM schema_migrations ORDER BY version')]
-                return versions == [1, 2]
+                return versions == [1, 2, 3, 4, 5]
         except ContractFailure:
             return False

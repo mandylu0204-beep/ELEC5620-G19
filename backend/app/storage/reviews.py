@@ -1,0 +1,101 @@
+"""Founder commands: compare exact evidence, persist once, then re-evaluate."""
+import json
+from uuid import uuid4
+
+from pydantic import Field, StrictInt, field_validator
+
+from ..auth import fail, require_role
+from ..contracts.base import ContractModel, Identifier
+from ..contracts.dto import RunScope, ValidReview, VersionContext
+from ..contracts.enums import ErrorCode, ReviewDecision
+from .plan_queries import PlanQueries
+from .port import SqlitePersistencePort
+from .repository import Repository, encode, fingerprint, now
+
+
+class ReviewInput(ContractModel):
+    command_key: Identifier
+    version_context: VersionContext
+    assessment_ids: list[Identifier] = Field(min_length=2, max_length=2)
+    expected_version_revision: StrictInt = Field(ge=0)
+    expected_run_revision: StrictInt = Field(ge=0)
+    decision: ReviewDecision
+    reason: str = Field(min_length=1, max_length=4000)
+
+    @field_validator('reason')
+    @classmethod
+    def meaningful_reason(cls, value):
+        if not value.strip():
+            raise ValueError('审核理由不能为空。')
+        return value.strip()
+
+
+class ReviewService:
+    def __init__(self, database):
+        self.db = database
+
+    def queue(self, user):
+        require_role(user, 'FOUNDER')
+        with self.db.transaction(write=False) as connection:
+            return [dict(row) for row in connection.execute('''SELECT p.id AS plan_id,
+                v.id AS plan_version_id,p.active_run_id AS run_id,v.status,v.version_number,v.created_at
+                FROM plans p JOIN versions v ON v.id=p.current_version_id
+                JOIN runs r ON r.id=p.active_run_id
+                WHERE v.status IN ('ESCALATED','BLOCKED','REVISION_REQUIRED') AND r.status='SUCCEEDED'
+                AND NOT EXISTS (SELECT 1 FROM reviews h WHERE h.run_id=r.id AND h.version_id=v.id)
+                ORDER BY v.created_at,p.id''')]
+
+    def detail(self, user, plan_id):
+        data = PlanQueries(self.db).detail(user, plan_id, review=True)
+        if not data['version'] or not data['route'] or data['run']['status'] != 'SUCCEEDED':
+            fail(ErrorCode.INVALID_STATE, '当前运行尚未完成评估和路由，请等待。')
+        if data['version']['status'] not in {'ESCALATED','BLOCKED','REVISION_REQUIRED'} and not data['reviews']:
+            fail(ErrorCode.FORBIDDEN, '此方案不属于人工审核范围。')
+        data['review_available'] = (not data['reviews'] and data['version']['status'] in {'ESCALATED','BLOCKED','REVISION_REQUIRED'})
+        return data
+
+    def submit(self, user, plan_id, body: ReviewInput):
+        require_role(user, 'FOUNDER')
+        with self.db.transaction() as connection:
+            plan = connection.execute('SELECT * FROM plans WHERE id=?', (plan_id,)).fetchone()
+            if not plan:
+                fail(ErrorCode.NOT_FOUND, '方案不存在。')
+            run = connection.execute('SELECT * FROM runs WHERE id=?', (plan['active_run_id'],)).fetchone()
+            if not run or body.version_context.plan_id != plan_id:
+                fail(ErrorCode.STALE_CONTEXT, '审核上下文已变化，请刷新。')
+            scope = RunScope.model_validate_json(run['scope'])
+            port = SqlitePersistencePort(self.db, plan['owner_id'], scope)
+            _, _, version = port.context(connection, body.version_context)
+            assessments = port.assessments(connection, body.version_context)
+            actual = sorted(item.assessment_id for item in assessments)
+            if len(set(body.assessment_ids)) != 2 or sorted(body.assessment_ids) != actual:
+                fail(ErrorCode.STALE_CONTEXT, '审核必须绑定当前两份评估记录。')
+            previous = connection.execute('SELECT * FROM review_commands WHERE reviewer_id=? AND command_key=?', (user.id, body.command_key)).fetchone()
+            input_hash = fingerprint(body)
+            if previous:
+                if previous['input_hash'] != input_hash:
+                    fail(ErrorCode.IDEMPOTENCY_CONFLICT, '同一提交编号不能用于不同审核内容。')
+                return json.loads(previous['result'])
+            if version.revision != body.expected_version_revision or run['revision'] != body.expected_run_revision:
+                fail(ErrorCode.VERSION_CONFLICT, '方案或运行已变化，请刷新后重新审核。')
+            if run['status'] != 'SUCCEEDED' or version.status not in {'ESCALATED','BLOCKED','REVISION_REQUIRED'} or port.review(connection, body.version_context, actual):
+                fail(ErrorCode.INVALID_STATE, '当前版本不再接受审核，请刷新。')
+            if not connection.execute("SELECT 1 FROM write_receipts WHERE run_id=? AND operation='route'", (scope.run_id,)).fetchone():
+                fail(ErrorCode.INVALID_STATE, '当前运行尚未保存路由。')
+            review = ValidReview(review_id=uuid4().hex, version_context=body.version_context,
+                assessment_ids=actual, reviewer_user_id=user.id, decision=body.decision, reason=body.reason)
+            connection.execute('INSERT INTO reviews VALUES(?,?,?,?,?,?)', (review.review_id, scope.run_id, body.version_context.plan_version_id, user.id, encode(review), now()))
+            if body.decision == ReviewDecision.APPROVE:
+                route, eligibility = port.decision(connection, body.version_context)
+                if not eligibility.eligible:
+                    fail(ErrorCode.INVALID_STATE, '存在 blocker、必要证据不足或未解决修订，不能批准；请要求修订或拒绝。')
+                status = route.value
+            else:
+                status = 'REJECTED' if body.decision == ReviewDecision.REJECT else 'REVISION_REQUIRED'
+            connection.execute('UPDATE versions SET status=?,revision=revision+1 WHERE id=?', (status, body.version_context.plan_version_id))
+            eligibility = port.decision(connection, body.version_context)[1]
+            result = {'review': review.model_dump(mode='json'), 'status': status,
+                'version_revision': version.revision + 1, 'eligibility': eligibility.model_dump(mode='json'),
+                'revision_execution_available': False, 'finalisation_available': False}
+            connection.execute('INSERT INTO review_commands VALUES(?,?,?,?,?)', (user.id, body.command_key, review.review_id, input_hash, encode(result)))
+            return result

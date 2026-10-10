@@ -2,6 +2,8 @@
 
 > 本文为 1.0 接口冻结时的设计记录；其中实施状态描述保留当时语境。当前代码和验证进度见 [实施状态](implementation_status.md)。
 
+2026-10-10 补充：A 侧已提供内部工作流命令、执行租约及恢复 checkpoint；签名和 B 恢复接入要求见 [运行恢复交接](run_recovery.md)。具体 Adapter 增加 `load_checkpoint` / `heartbeat`，共同 Protocol 1.0 未改。尚无 B 调度器或实际恢复联调证据。
+
 日期：2026-10-08。契约版本：1.0。用户已转交 B 的审阅反馈，D-01 至 D-06 与风险路由按反馈冻结为实现基线。B 当前没有 Agent、Adapter 或 workflow 代码，六个入口是计划接口，尚无运行样例或联调结果。本助手没有向成员发送消息。
 
 本交接针对 Stage 2 的 React、FastAPI、SQLite 原型。业务来源仅使用当前 synthetic 数据包。详细背景见 [数据库与接口设计](developer_a_contract_draft.md)，已有数据问题见 [数据检查报告](synthetic_data_review.md)。A 提供的共同 contracts 位置、端口签名和异常格式见 [共享契约实施说明](shared_contracts_spec.md)；实施任务见 [开发 A 任务清单](developer_a_backlog.md)。新增签名是 A 本轮提供的设计，尚无代码，未声称 B 已逐项复核这些新增细节。

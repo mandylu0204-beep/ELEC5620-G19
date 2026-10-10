@@ -1,9 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import { ApiFailure, loadStatus, previewRequest, type ApiError, type Meta, type PreviewResult, type Ready } from './api';
-import { AccountControl, LoginPage, Protected, SavedRecords, SessionProvider, useSession } from './session';
+import { FinalPage } from './finals';
+import { ReviewQueue, ReviewPage } from './reviews';
+import { AccountControl, LoginPage, Protected, SessionProvider, useSession } from './session';
 import { ProfilePage } from './profile';
 import { RequestDetail, RequestsPage } from './requests';
+import { PlansPage, PlanPage } from './plans';
 
 const DISCLAIMER = 'This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.';
 type Status = { meta: Meta; ready: Ready };
@@ -42,7 +45,7 @@ function AppContent() {
         <NavLink to="/" end><span>◫</span>项目概览</NavLink>
         <NavLink to="/request"><span>↗</span>露营请求</NavLink>
         <NavLink to="/profile"><span>◎</span>露营资料</NavLink>
-        <NavLink to="/plans"><span>≋</span>方案与历史 <em>待接入</em></NavLink>
+        <NavLink to="/plans"><span>≋</span>方案与历史</NavLink>
         {session?.user.role === 'FOUNDER' && <NavLink to="/review"><span>◇</span>人工审核</NavLink>}
       </nav>
       <div className="sidebar-note"><span className="eyebrow">STAGE 2 / FOUNDATION</span><p>从清晰的需求开始，<br />让每一步都有依据。</p><span className="tag">Synthetic demo only</span></div>
@@ -50,7 +53,7 @@ function AppContent() {
     <div className="workspace">
       <header className="topbar"><span>小组项目 · 开发预览</span><div className="topbar-right"><span className={`connection ${status?.ready.status === 'ready' ? 'connected' : ''}`}><i />{error ? '服务未连接' : status ? (status.ready.status === 'ready' ? '开发基础可用' : '依赖未就绪') : '正在连接…'}</span><AccountControl /></div></header>
       <main>
-        <div className="mode-notice"><strong>{status?.meta.execution_mode.toUpperCase() ?? '开发环境'}</strong><span>资料与需求确认已接入。当前解释器为开发支架；规划、审批及最终化仍待实现。</span></div>
+        <div className="mode-notice"><strong>{status?.meta.execution_mode.toUpperCase() ?? '开发环境'}</strong><span>资料、需求确认与已保存方案展示已接入。人工审核与最终化已接入。真实规划与修订执行仍待实现。</span></div>
         {error && <div className="error-box" role="alert"><strong>无法连接后端</strong><p>{error}。请检查启动终端。</p><button onClick={() => setRefresh(value => value + 1)}>重新连接</button></div>}
         <Routes>
           <Route path="/" element={<Overview status={status} />} />
@@ -59,8 +62,11 @@ function AppContent() {
           <Route path="/dev/request-preview" element={<RequestPreview enabled={status?.meta.features.request_preview === true && status.ready.status === 'ready'} />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/profile" element={<Protected role="CAMPER"><ProfilePage /></Protected>} />
-          <Route path="/plans" element={<Protected role="CAMPER"><SavedRecords /></Protected>} />
-          <Route path="/review" element={<Protected role="FOUNDER"><SavedRecords review /></Protected>} />
+          <Route path="/plans" element={<Protected role="CAMPER"><PlansPage /></Protected>} />
+          <Route path="/plans/:planId/finals/:finalId" element={<Protected role="CAMPER"><FinalPage /></Protected>} />
+          <Route path="/plans/:planId" element={<Protected role="CAMPER"><PlanPage /></Protected>} />
+          <Route path="/review/:planId" element={<Protected role="FOUNDER"><ReviewPage /></Protected>} />
+          <Route path="/review" element={<Protected role="FOUNDER"><ReviewQueue /></Protected>} />
           <Route path="*" element={<Upcoming title="页面不存在" description="请使用左侧导航返回项目概览。" />} />
         </Routes>
       </main>
@@ -80,7 +86,7 @@ function Overview({ status }: { status: Status | null }) {
     </section>
     <section className="section-heading"><div><span className="eyebrow">THE JOURNEY</span><h2>从请求到最终方案</h2></div><span>业务功能将在后续接入</span></section>
     <div className="journey">{[['01', '确认需求', '资料 · 澄清 · 摘要确认'], ['02', '生成与检查', '推荐 · 行程 · 装备 · 安全'], ['03', '审核与调整', '人工决定 · 新版本复评'], ['04', '保存与交付', '最终化守卫 · 历史回读']].map(([number, title, description]) => <div key={number}><span className="step-number">{number}</span><h3>{title}</h3><p>{description}</p><span className="pending-label">{number==='01'?'可填写与确认':'待实现'}</span></div>)}</div>
-    <div className="bottom-grid"><section className="panel"><span className="eyebrow">FOUNDATION CHECKS</span><h2>当前可验证的基础</h2><ul className="check-list">{[['业务源文件', checks?.dataset_readable], ['SQLite 数据库迁移', checks?.database_migrated], ['配置的 Agent 入口', checks?.configured_agent_available]].map(([title, value]) => <li key={String(title)}><span>{title}</span><span className={value === true ? 'check-ok' : 'check-wait'}>{value === undefined ? '检查中' : value ? '可用' : '未就绪'}</span></li>)}</ul><p className="muted">来源可读不代表业务数据已通过验收。开发预览见 <Link className="text-link" to="/dev/request-preview">字段交接工具</Link>。</p></section><section className="panel next-panel"><span className="eyebrow">NEXT MILESTONE</span><h2>接入规则流程与方案</h2><p>资料和需求确认已可保存。下一步对接 B 的规则实现，展示进度、营地、行程、装备和安全评估。</p><div className="chips"><span>A-06 进度与方案</span><span>B 规则实现</span><span>四个联调场景</span></div></section></div>
+    <div className="bottom-grid"><section className="panel"><span className="eyebrow">FOUNDATION CHECKS</span><h2>当前可验证的基础</h2><ul className="check-list">{[['业务源文件', checks?.dataset_readable], ['SQLite 数据库迁移', checks?.database_migrated], ['配置的 Agent 入口', checks?.configured_agent_available]].map(([title, value]) => <li key={String(title)}><span>{title}</span><span className={value === true ? 'check-ok' : 'check-wait'}>{value === undefined ? '检查中' : value ? '可用' : '未就绪'}</span></li>)}</ul><p className="muted">来源可读不代表业务数据已通过验收。开发预览见 <Link className="text-link" to="/dev/request-preview">字段交接工具</Link>。</p></section><section className="panel next-panel"><span className="eyebrow">NEXT MILESTONE</span><h2>接入规则流程与联调</h2><p>已保存的规划阶段与产物可以查看。Founder 可以审核当前证据。Camper 可以保存通过检查的最终快照。下一步对接 B 的实际输出并验证完整流程。</p><div className="chips"><span>B 规则实现</span><span>A-09 并发与恢复</span><span>四个联调场景</span></div></section></div>
   </>;
 }
 

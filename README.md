@@ -2,7 +2,7 @@
 
 ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
 
-当前已实现 A-01/A-02 基础、A-03/A-04 登录和持久化，以及 A-05 的 Profile 编辑、请求保存、澄清与明确确认。请求支持刷新恢复、版本检查和不可覆盖的确认快照。解释器目前仍为 stub，需手动填写明确字段；真实 Agent、规划工作流、审批与最终化服务尚未接入。首轮四个联调 fixture 尚待 B 与数据负责人准备。
+当前已实现 A-01 至 A-05 基础、登录、持久化、Profile 编辑和请求确认、A-06 已保存规划进度与方案展示、A-07 Founder 审核、A-08 最终化与历史快照，以及 A-09 内部运行管理与恢复边界。审批与最终保存绑定当前版本及证据，不能绕过 blocker；最终快照不会被后续修订或评估覆盖。解释器目前仍为 stub，需手动填写明确字段；真实 Agent、规划/修订调度和页面启动/重试尚未接入。首轮四个业务联调 fixture 尚待 B 与数据负责人准备。
 
 > This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.
 
@@ -69,12 +69,14 @@ Linux/macOS 可分别创建 venv、按 `backend/requirements.lock` 安装依赖�
 - 开发预览 `/dev/request-preview`：`POST /api/v1/dev/interpret`，仅回显字段，不保存请求。
 - 登录：`POST /auth/login`、`GET /auth/me`、`POST /auth/logout` 管理会话。
 - Profile：`GET/PUT /profile`；Requests：`GET/POST /requests`、`GET/PATCH /requests/{id}`、`POST /requests/{id}/interpret`、`POST /requests/{id}/confirm`（均在 `/api/v1` 下）。
-- Plans / Review：按 Camper / Founder 权限从数据库读取列表；当前无正式流程创建的方案或审批记录。
+- Plans：`/plans` 与 `/plans/{id}` 展示自己已保存的运行、推荐、行程、装备、费用和安全证据；活动运行自动读取保存进度，可选择历史 run。接口为 `GET /plans/{id}`、`GET /runs/{id}`，详见 [进度与产物展示](docs/plan_display.md)。
+- Review `/review`、`/review/{plan_id}`：Founder 查看当前审核依据，提交带理由的批准、拒绝或修订要求。批准后重算 eligibility，不自动最终化。详见 [人工审核流程](docs/founder_review.md)。
+- 最终保存：Camper 在当前方案中阅读并确认后保存；`/plans/{id}/finals/{final_id}` 展示不可覆盖的完整快照，明确区分当前与历史最终方案。详见 [最终化与历史](docs/finalisation.md)。
 - `GET /api/v1/health/live`：进程可响应。
 - `GET /api/v1/health/ready`：开发基础依赖及业务表迁移可用，不表示完整业务工作流已实现，也不验证源文件语义。
 - `GET /api/v1/meta`：演示模式、时钟、来源标签、disclaimer 与实际功能开关。
 
-请求预览是 loopback 开发工具；正式请求由登录后的 `/requests` 接口保存。规划、审批和 finalise 端点尚未提供。写入要求 X-CampMate-Client: 1，已登录写入另要求 X-CSRF-Token；浏览器自动携带 HttpOnly 会话 Cookie。确认要求匹配 revision、明确 acknowledged=true 和幂等 command_key，资料或数据变化后需重新生成摘要。详见 [资料与请求流程](docs/profile_request_flow.md)。
+请求预览是 loopback 开发工具；正式请求由登录后的 `/requests` 接口保存。审核使用 GET/POST `/api/v1/review/{plan_id}`；最终保存使用 POST `/api/v1/plans/{plan_id}/finalise`，快照回读使用 GET `/api/v1/plans/{plan_id}/finals/{final_id}`。规划执行尚未提供。写入要求 X-CampMate-Client: 1，已登录写入另要求 X-CSRF-Token；浏览器自动携带 HttpOnly 会话 Cookie。确认要求匹配 revision、明确 acknowledged=true 和幂等 command_key，资料或数据变化后需重新生成摘要。详见 [资料与请求流程](docs/profile_request_flow.md)。
 
 ## 文件位置与 B 接入
 
@@ -86,6 +88,7 @@ backend/app/main.py         FastAPI 与健康/预览路由
 backend/app/auth.py         密码哈希、演示 seed、会话认证
 backend/app/http_accounts.py 登录、资料、列表及角色检查
 backend/app/http_requests.py 请求保存、摘要生成及明确确认
+backend/app/http_plans.py   已保存运行与方案详情读取
 backend/app/application/request_rules.py A 侧字段规范化与数据上下文
 backend/app/storage/        SQLite 迁移、Repository 与持久化端口
 frontend/src/              页面、路由、样式与 HTTP 调用
@@ -115,11 +118,11 @@ Set-Location backend
 
 PowerShell 脚本被禁止时可运行 `.\.venv\Scripts\python.exe scripts\check.py`。
 
-检查后端契约与 HTTP、导出 schema 是否同步，以及 TypeScript 和 Vite 生产构建。测试临时目录限制在项目 `var` 下，避免清理源码。当前实际结果、截图及限制见 [实施状态](docs/implementation_status.md)。GitHub Actions 文件已建立，尚未上传或执行；本轮检查不能替代 B 的规则测试和端到端验收。
+检查后端契约与 HTTP、导出 schema 是否同步，以及 TypeScript 和 Vite 生产构建。测试临时目录限制在项目 `var` 下，避免清理源码。当前实际结果、截图及限制见 [实施状态](docs/implementation_status.md)。此前 A-05 的 GitHub CI 已执行；A-06 至 A-09 的 CI 结果以功能分支 PR 检查为准。本机检查不能替代 B 的规则测试和端到端验收。
 
 ## GitHub
 
-私有协作仓库：[LyraWangDev/ELEC5620-G19](https://github.com/LyraWangDev/ELEC5620-G19)，分支 main。当前交付为 A-05 开发原型，不是完整 Agent 项目的验收版本。协作步骤见 [贡献说明](CONTRIBUTING.md)，本版范围见 [首版交付说明](docs/releases/a05-development.md)。首个源码提交的 [GitHub CI](https://github.com/LyraWangDev/ELEC5620-G19/actions/runs/37935196604) 已通过后端 54 项测试、schema 对照和前端构建。
+私有协作仓库：[LyraWangDev/ELEC5620-G19](https://github.com/LyraWangDev/ELEC5620-G19)。A-06 至 A-09 的累计开发通过 [feature/a09-run-recovery 功能分支](https://github.com/LyraWangDev/ELEC5620-G19/tree/feature/a09-run-recovery) 同步，main 在 PR 审核合并前仍为 A-05 原型。协作步骤见 [贡献说明](CONTRIBUTING.md)，首版范围见 [首版交付说明](docs/releases/a05-development.md)。首个源码提交的 [GitHub CI](https://github.com/LyraWangDev/ELEC5620-G19/actions/runs/37935196604) 只适用于 A-05；当前分支的实际检查以 PR 和 [Actions](https://github.com/LyraWangDev/ELEC5620-G19/actions) 为准。
 
 上传范围为项目根目录的源码、文档、synthetic 数据、schema、锁文件和 CI。`.venv`、node_modules、`.env`、数据库、构建目录和日志已忽略。克隆后需在自己的电脑安装依赖并创建本地数据库；GitHub 仓库保存源码，服务仍按安装与启动说明在本地运行。
 
@@ -134,6 +137,6 @@ git push -u origin YOUR_FEATURE_BRANCH
 
 ## 参考与后续任务
 
-下一批：A-06 进度与方案产物展示，再对接 B 的规则流程。A-05 本机检查使用 stub 和独立测试数据，不需要等待修订业务数据；四个业务场景联调需要 B 首版实现及修订数据。任务与验收见 [开发 A 清单](docs/developer_a_backlog.md)。
+下一批：A-10 提交包与部署准备，以及 B 工作流调度、恢复端口和页面启动/重试的实际接入。内部启动回执、执行租约、迟到任务拒绝和恢复 checkpoint 见 [运行恢复交接](docs/run_recovery.md)。A-06 至 A-09 检查使用独立 A 夹具，不是 Agent 输出；正式四个业务场景联调需要 B 首版实现及修订数据。任务与验收见 [开发 A 清单](docs/developer_a_backlog.md)。
 
 实现参考：[React 构建说明](https://react.dev/learn/build-a-react-app-from-scratch)、[Vite 入门](https://vite.dev/guide/)、[FastAPI 测试](https://fastapi.tiangolo.com/tutorial/testing/)、[Pydantic 标准类型](https://docs.pydantic.dev/latest/api/standard_library_types/)。CI 的 checkout、Python 和 Node 设置采用官方示例的 v7 调用形式：[checkout](https://github.com/actions/checkout)、[setup-python](https://github.com/actions/setup-python)、[setup-node](https://github.com/actions/setup-node)。
