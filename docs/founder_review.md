@@ -1,5 +1,7 @@
 # A-07 Founder 人工审核
 
+本文保留 A-07 阶段记录。后续 A-08 已接入 Camper 最终保存与历史快照，当前状态见 [最终化说明](finalisation.md) 与 [实施状态](implementation_status.md)。
+
 2026-10-10，当前本地分支 `feature/a07-founder-review`，基于未推送的 A-06 提交 `9d74e50`。API 开发版本 0.5.0，共享 Agent DTO/schema 1.0 未改变。
 
 ## 已实现的流程

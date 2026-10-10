@@ -1,6 +1,21 @@
 # 开发 A 实施状态
 
-## 当前本地开发：A-07（2026-10-10）
+## 当前本地开发：A-08（2026-10-10）
+
+分支 feature/a08-finalisation 基于 A-07 本地提交，新增 Camper 最终保存和不可覆盖快照；保存前重新校验版本/run/fingerprint/两份评估/审核/revision 与 eligibility。同事务保存快照、FINALISED、最终指针及回执，故障时全部回滚。当前/历史最终方案根据 version 与 run 同时判断，同版本重评也会使旧快照成为历史。migration 4 升级保留数据；共享 schema 1.0 未改，API 0.6.0。
+
+| 最终检查 | 实际结果 |
+| --- | --- |
+| scripts/check.py | 退出码 0 |
+| 后端 pytest | 105 passed；新增 23 项最终化测试；1 个已有测试工具弃用提示 |
+| 共享 schema 对照 | up to date |
+| TypeScript/Vite | 构建成功，49 模块 |
+| 浏览器 | 明确确认、批准后保存、完整快照回读及刷新、关闭道路禁用、新评估后历史标记和历史链接 |
+| 并发/回滚/历史 | 同 key 回读、不同 key 竞争、保存回执失败全部回滚；旧版本/证据/审核失效；旧快照不可更新/删除 |
+
+浏览器仅使用独立保存夹具、var/e2e-a08-final-20261010.sqlite3 与 8001/5174；原始数据、副本及默认数据库未改。详见 [最终化与历史说明及证据](finalisation.md)。A 侧本机实现与自检完成；B 实际输出与修订执行、四个真实联调场景、其他成员复核、Jira 和全组 Done 尚未完成。本轮仅本地提交，尚未推送 GitHub、创建 PR 或运行本轮远端 CI。
+
+## 历史本地开发：A-07（2026-10-10）
 
 分支 feature/a07-founder-review 基于 A-06 本地提交，新增 Founder 审核队列、当前证据详情与带理由的 APPROVE/REJECT/REQUEST_REVISION；审核绑定当前 version/run/fingerprint/两份评估和 revision，批准后同事务重算 eligibility，不能绕过 blocker、未知必要费用、超预算或未解决修订。重复提交回读原结果，竞争审批仅一个保存，故障时审核/状态/回执一起回滚。migration 3 升级保留旧记录；共享 schema 1.0 未改，API 0.5.0。
 

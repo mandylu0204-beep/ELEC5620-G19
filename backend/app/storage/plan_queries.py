@@ -6,6 +6,7 @@ from ..contracts.dto import RunScope, StoredAssessment, StoredRecommendations, R
 from ..contracts.enums import ErrorCode
 from .port import SqlitePersistencePort
 from .repository import Repository
+from .finalisation import final_index
 
 
 def unpack(row, column):
@@ -32,6 +33,8 @@ class PlanQueries:
                 item.pop('scope'); item.pop('confirmed_context')
                 item['execution_mode'] = scope['demo_context']['mode'] if scope else None
                 item['destination'] = confirmed['requirements']['destination'] if confirmed else None
+                final = connection.execute('SELECT * FROM final_records WHERE plan_id=? ORDER BY rowid DESC LIMIT 1', (row['plan_id'],)).fetchone()
+                item['last_final'] = final_index(final, row) if final else None
                 result.append(item)
             return result
 
@@ -55,7 +58,13 @@ class PlanQueries:
             result = {'plan': {'plan_id': plan_id, **{key: plan[key] for key in ('request_id','current_version_id','active_run_id','final_version_id','created_at')}},
                       'run': None, 'run_history': history, 'confirmed_context': None, 'events': [],
                       'recommendations': None, 'version': None, 'assessments': [], 'route': None,
-                      'eligibility': None, 'reviews': [], 'planning_available': False, 'finalisation_available': False}
+                      'eligibility': None, 'reviews': [], 'last_final': None, 'selected_final': None,
+                      'final_history': [], 'planning_available': False, 'finalisation_available': False}
+            if not review:
+                result['final_history'] = [final_index(row, plan) for row in connection.execute(
+                    'SELECT * FROM final_records WHERE plan_id=? ORDER BY rowid DESC', (plan_id,))]
+                result['last_final'] = next(iter(result['final_history']), None)
+                result['selected_final'] = next((item for item in result['final_history'] if item['run_id'] == selected), None)
             if not run:
                 return result
             scope = RunScope.model_validate_json(run['scope'])
@@ -82,11 +91,14 @@ class PlanQueries:
                 stored = version.model_dump(mode='json')
                 if not active:
                     stored['status'] = result['route']['status'] if result['route'] else 'ASSESSING'
+                    if result['selected_final']:
+                        stored['status'] = 'FINALISED'
                 result['version'] = stored
                 result['assessments'] = [StoredAssessment.model_validate_json(row['payload']).model_dump(mode='json')
                     for row in connection.execute('SELECT payload FROM assessments WHERE run_id=? AND version_id=? ORDER BY kind', (run['id'], binding['version_id']))]
-                if active and plan['current_version_id'] == binding['version_id']:
+                if active and plan['current_version_id'] == binding['version_id'] and version.status != 'FINALISED':
                     result['eligibility'] = SqlitePersistencePort(self.db, plan['owner_id'], scope).decision(connection, version.version_context)[1].model_dump(mode='json')
+                    result['finalisation_available'] = not review and version.status == 'ELIGIBLE_FOR_FINALISATION' and result['eligibility']['eligible'] and bool(result['route']) and run['status'] == 'SUCCEEDED' and run['stage'] == 'COMPLETED'
             if review:
                 result['run_history'] = []
             return result

@@ -123,8 +123,12 @@ class Repository:
             return scope
 
     @staticmethod
+    def input_fingerprint(scope, confirmed, content):
+        return fingerprint({'version_content': content, 'confirmed_requirements': confirmed.requirements.model_dump(mode='json'), 'profile_snapshot': confirmed.profile_snapshot.model_dump(mode='json'), 'demo_context': scope.demo_context.model_dump(mode='json'), 'dataset_context': scope.dataset_context.model_dump(mode='json')})
+
+    @staticmethod
     def bind_version(connection, scope, confirmed, version_id, content):
-        value = fingerprint({'version_content': content, 'confirmed_requirements': confirmed.requirements.model_dump(mode='json'), 'profile_snapshot': confirmed.profile_snapshot.model_dump(mode='json'), 'demo_context': scope.demo_context.model_dump(mode='json'), 'dataset_context': scope.dataset_context.model_dump(mode='json')})
+        value = Repository.input_fingerprint(scope, confirmed, content)
         connection.execute('INSERT INTO run_versions VALUES(?,?,?,?)', (scope.run_id, version_id, scope.plan_id, value))
         return VersionContext(plan_id=scope.plan_id, plan_version_id=version_id, run_id=scope.run_id, input_fingerprint=value)
 

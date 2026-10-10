@@ -113,6 +113,21 @@ CREATE TRIGGER immutable_review_command BEFORE UPDATE ON review_commands
 """
 
 
+MIGRATION_4 = """
+CREATE UNIQUE INDEX final_once_per_evidence ON final_records(run_id,version_id);
+CREATE TABLE final_commands(
+ owner_id TEXT NOT NULL REFERENCES users(id), command_key TEXT NOT NULL,
+ final_id TEXT NOT NULL REFERENCES final_records(id), input_hash TEXT NOT NULL,
+ result TEXT NOT NULL, PRIMARY KEY(owner_id,command_key));
+CREATE TRIGGER immutable_final BEFORE UPDATE ON final_records
+ BEGIN SELECT RAISE(ABORT, 'immutable final snapshot'); END;
+CREATE TRIGGER no_delete_final BEFORE DELETE ON final_records
+ BEGIN SELECT RAISE(ABORT, 'immutable final snapshot'); END;
+CREATE TRIGGER immutable_final_command BEFORE UPDATE ON final_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable final command'); END;
+"""
+
+
 def execute_migration(connection, script):
     statement = ''
     for line in script.splitlines():
@@ -150,7 +165,11 @@ class Database:
                 execute_migration(connection, MIGRATION_3)
                 connection.execute("INSERT INTO schema_migrations VALUES(3, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
                 versions.append(3)
-            if versions != [1, 2, 3]:
+            if versions == [1, 2, 3]:
+                execute_migration(connection, MIGRATION_4)
+                connection.execute("INSERT INTO schema_migrations VALUES(4, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
+                versions.append(4)
+            if versions != [1, 2, 3, 4]:
                 raise RuntimeError('Unsupported database schema version')
 
     @contextmanager
@@ -180,6 +199,6 @@ class Database:
         try:
             with self.transaction(write=False) as connection:
                 versions = [row[0] for row in connection.execute('SELECT version FROM schema_migrations ORDER BY version')]
-                return versions == [1, 2, 3]
+                return versions == [1, 2, 3, 4]
         except ContractFailure:
             return False
