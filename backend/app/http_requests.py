@@ -53,7 +53,7 @@ def request_context(request: Request, user: User = Depends(current_user)):
     from .auth import require_role
     require_role(user, 'CAMPER')
     _, regions = data_context(request.app.state.settings)
-    return {'supported_destinations': regions, 'execution_mode': request.app.state.settings.execution_mode.value, 'demo_today': request.app.state.settings.demo_today.isoformat(), 'planning_available': False}
+    return {'supported_destinations': regions, 'execution_mode': request.app.state.settings.execution_mode.value, 'demo_today': request.app.state.settings.demo_today.isoformat(), 'planning_available': request.app.state.dispatcher.available}
 
 
 @router.get('/requests')
@@ -68,7 +68,14 @@ def create_request(body: RequestInput, request: Request, user: User = Depends(wr
 
 @router.get('/requests/{request_id}')
 def read_request(request_id: str, request: Request, user: User = Depends(current_user)):
-    return request.app.state.requests.get(user, request_id)
+    return planning_fields(request, user, request.app.state.requests.get(user, request_id))
+
+
+def planning_fields(request, user, result):
+    with request.app.state.database.transaction(write=False) as connection:
+        plan = connection.execute('SELECT id FROM plans WHERE request_id=? AND owner_id=? ORDER BY created_at DESC LIMIT 1', (result['request_id'], user.id)).fetchone()
+    return {**result, 'planning_plan_id': plan['id'] if plan else None,
+            'planning_available': request.app.state.dispatcher.available}
 
 
 @router.patch('/requests/{request_id}')
@@ -116,4 +123,4 @@ def confirm_request(request_id: str, body: ConfirmInput, request: Request, user:
     config = request.app.state.settings
     dataset, _ = data_context(config)
     demo = DemoContext(mode=config.execution_mode, demo_today=config.demo_today, dataset_version=dataset.dataset_version)
-    return request.app.state.requests.confirm(user, request_id, body.expected_revision, body.command_key, demo, dataset)
+    return planning_fields(request, user, request.app.state.requests.confirm(user, request_id, body.expected_revision, body.command_key, demo, dataset))

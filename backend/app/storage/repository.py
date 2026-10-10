@@ -89,7 +89,7 @@ class Repository:
         with self.db.transaction() as connection:
             connection.execute('INSERT INTO requests VALUES(?,?,?,?,?,?,?,?)', (context.request_id, user.id, raw_text, 'CONFIRMED', 1, encode(context.requirements), encode(context), now()))
 
-    def begin_run(self, user: User, request_id: str, demo: DemoContext, dataset: DatasetContext, *, plan_id=None, operation='PLAN', expected_current_version_id=None, command_key=None, expected_active_run_id=None):
+    def begin_run(self, user: User, request_id: str, demo: DemoContext, dataset: DatasetContext, *, plan_id=None, operation='PLAN', expected_current_version_id=None, command_key=None, expected_active_run_id=None, expected_request_revision=None, single_plan=False):
         """Only trusted A workflow services call this; no B-supplied RunScope accepted."""
         require_role(user, 'CAMPER')
         if operation not in {'PLAN', 'REVISE', 'REASSESS'}:
@@ -98,6 +98,7 @@ class Repository:
             fail(ErrorCode.INPUT_INVALID, 'command_key 必须为 1 至 128 位非空字符串。')
         input_hash = fingerprint({'operation': operation, 'request_id': request_id, 'plan_id': plan_id,
             'expected_current_version_id': expected_current_version_id, 'expected_active_run_id': expected_active_run_id,
+            'expected_request_revision': expected_request_revision, 'single_plan': single_plan,
             'demo': demo.model_dump(mode='json'), 'dataset': dataset.model_dump(mode='json')})
         with self.db.transaction() as connection:
             if command_key is not None:
@@ -111,6 +112,10 @@ class Repository:
                 fail(ErrorCode.NOT_FOUND, '请求不存在。')
             if request['status'] != 'CONFIRMED':
                 fail(ErrorCode.REQUEST_NOT_CONFIRMED, '请先确认请求。')
+            if expected_request_revision is not None and request['revision'] != expected_request_revision:
+                fail(ErrorCode.VERSION_CONFLICT, '需求记录已更新，请刷新后开始规划。')
+            if single_plan and connection.execute('SELECT 1 FROM plans WHERE request_id=? AND owner_id=?', (request_id, user.id)).fetchone():
+                fail(ErrorCode.INVALID_STATE, '此请求已有规划记录，请查看现有方案或重试失败运行。')
             context = ConfirmedContext.model_validate_json(request['confirmed_context'])
             context = ConfirmedContext.model_validate(context.model_copy(update={'demo_context': demo, 'dataset_context': dataset}))
             if plan_id is None:

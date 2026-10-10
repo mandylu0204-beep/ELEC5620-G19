@@ -2,7 +2,7 @@
 
 ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
 
-当前已实现 A-01 至 A-05 基础、登录、持久化、Profile 编辑和请求确认、A-06 已保存规划进度与方案展示、A-07 Founder 审核、A-08 最终化与历史快照，以及 A-09 内部运行管理与恢复边界。审批与最终保存绑定当前版本及证据，不能绕过 blocker；最终快照不会被后续修订或评估覆盖。解释器目前仍为 stub，需手动填写明确字段；真实 Agent、规划/修订调度和页面启动/重试尚未接入。首轮四个业务联调 fixture 尚待 B 与数据负责人准备。
+当前已实现 A-01 至 A-05 基础、登录、持久化、Profile 编辑和请求确认、A-06 已保存规划进度与方案展示、A-07 Founder 审核、A-08 最终化与历史快照、A-09 内部运行管理与恢复边界、A-10 部署与数据上下文准备，以及 A-11 规划启动/失败重试入口与本地任务调度。审批与最终保存绑定当前版本及证据，不能绕过 blocker；最终快照不会被后续修订或评估覆盖。解释器目前仍为 stub，需手动填写明确字段；真实 B Agent/Adapter、修订执行和四个业务联调场景仍待接入。默认规划禁用，B 接入与显式开启要求见 [规划执行接入](docs/planning_entry.md)。
 
 > This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.
 

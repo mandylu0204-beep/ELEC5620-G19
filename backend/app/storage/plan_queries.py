@@ -59,7 +59,8 @@ class PlanQueries:
                       'run': None, 'run_history': history, 'confirmed_context': None, 'events': [],
                       'recommendations': None, 'version': None, 'assessments': [], 'route': None,
                       'eligibility': None, 'reviews': [], 'last_final': None, 'selected_final': None,
-                      'final_history': [], 'planning_available': False, 'finalisation_available': False}
+                      'final_history': [], 'planning_available': False, 'retry_available': False,
+                      'retry_unavailable_reason': None, 'finalisation_available': False}
             if not review:
                 result['final_history'] = [final_index(row, plan) for row in connection.execute(
                     'SELECT * FROM final_records WHERE plan_id=? ORDER BY rowid DESC', (plan_id,))]

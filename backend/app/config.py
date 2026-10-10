@@ -16,6 +16,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8", extra="ignore",
     )
     execution_mode: ExecutionMode = ExecutionMode.STUB
+    planning_enabled: bool = False
     demo_today: date = date(2026, 10, 8)
     dataset_path: Path = APP_ROOT / "data" / "synthetic_demo"
     dataset_scenario_files: list[str] = Field(default_factory=list)

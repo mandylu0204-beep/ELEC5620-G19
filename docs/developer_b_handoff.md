@@ -2,6 +2,8 @@
 
 > 本文为 1.0 接口冻结时的设计记录；其中实施状态描述保留当时语境。当前代码和验证进度见 [实施状态](implementation_status.md)。
 
+2026-10-11 补充：A 已实现规划启动/失败重试的 HTTP、页面与本地 dispatcher。B 的注册、开关、checkpoint 恢复和最终成功提交要求见 [规划执行接入](planning_entry.md)。默认 stub 仍禁用规划；本轮验证使用独立测试替身，不代表 B 已实现。
+
 2026-10-10 补充：A 侧已提供内部工作流命令、执行租约及恢复 checkpoint；签名和 B 恢复接入要求见 [运行恢复交接](run_recovery.md)。具体 Adapter 增加 `load_checkpoint` / `heartbeat`，共同 Protocol 1.0 未改。尚无 B 调度器或实际恢复联调证据。
 
 日期：2026-10-08。契约版本：1.0。用户已转交 B 的审阅反馈，D-01 至 D-06 与风险路由按反馈冻结为实现基线。B 当前没有 Agent、Adapter 或 workflow 代码，六个入口是计划接口，尚无运行样例或联调结果。本助手没有向成员发送消息。

@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from starlette.exceptions import HTTPException
 
 from .application.agent_registry import create_agent
+from .application.dispatcher import PlanningDispatcher
 from .application.datasets import BUSINESS_FILES, inspect_dataset
 from .auth import AuthService
 from .http_accounts import router as accounts_router
@@ -48,7 +49,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         database.initialize()
         if config.seed_demo_accounts:
             auth.seed_demo_accounts()
-        yield
+        await application.state.dispatcher.recover()
+        try:
+            yield
+        finally:
+            await application.state.dispatcher.close()
 
     application = FastAPI(title='CampMate AI', version='0.6.0', description='Local synthetic demo: Founder review and immutable final snapshots. B planning is pending.', lifespan=lifespan)
     application.state.settings = config
@@ -61,6 +66,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.state.reviews = ReviewService(database)
     application.state.finalisation = FinalisationService(database)
     application.state.workflows = WorkflowService(database)
+    application.state.dispatcher = PlanningDispatcher(application.state)
     application.include_router(accounts_router)
     application.include_router(requests_router)
     application.include_router(plans_router)
@@ -141,7 +147,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             'disclaimer': DEMO_DISCLAIMER,
             'provenance': descriptor.provenance.model_dump(mode='json') if descriptor else None,
             'dataset_version': descriptor.context.dataset_version if descriptor else None,
-            'features': {'request_preview': config.execution_mode == ExecutionMode.STUB and application.state.agent is not None, 'authentication': True, 'persistence': True, 'profiles': True, 'request_confirmation': True, 'plan_reading': True, 'planning': False, 'human_review': True, 'finalisation': True},
+            'features': {'request_preview': config.execution_mode == ExecutionMode.STUB and application.state.agent is not None, 'authentication': True, 'persistence': True, 'profiles': True, 'request_confirmation': True, 'plan_reading': True, 'planning': application.state.dispatcher.available, 'human_review': True, 'finalisation': True},
         }
 
     @application.post('/api/v1/dev/interpret', response_model=InterpretRequestResult)

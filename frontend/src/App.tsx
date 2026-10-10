@@ -53,7 +53,7 @@ function AppContent() {
     <div className="workspace">
       <header className="topbar"><span>小组项目 · 开发预览</span><div className="topbar-right"><span className={`connection ${status?.ready.status === 'ready' ? 'connected' : ''}`}><i />{error ? '服务未连接' : status ? (status.ready.status === 'ready' ? '开发基础可用' : '依赖未就绪') : '正在连接…'}</span><AccountControl /></div></header>
       <main>
-        <div className="mode-notice"><strong>{status?.meta.execution_mode.toUpperCase() ?? '开发环境'}</strong><span>资料、需求确认与已保存方案展示已接入。人工审核与最终化已接入。真实规划与修订执行仍待实现。</span></div>
+        <div className="mode-notice"><strong>{status?.meta.execution_mode.toUpperCase() ?? '开发环境'}</strong><span>{status?.meta.features.planning ? '规划执行入口已启用，可查看实际保存的进度与产物。修订执行仍待接入。' : '资料、需求确认、方案展示、人工审核与最终化已接入。规划流程尚未启用。'}</span></div>
         {error && <div className="error-box" role="alert"><strong>无法连接后端</strong><p>{error}。请检查启动终端。</p><button onClick={() => setRefresh(value => value + 1)}>重新连接</button></div>}
         <Routes>
           <Route path="/" element={<Overview status={status} />} />

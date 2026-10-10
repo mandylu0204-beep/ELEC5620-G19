@@ -1,5 +1,21 @@
 # 开发 A 实施状态
 
+## 当前本地实现：A-11 规划启动与失败重试（2026-10-11）
+
+基于 main 2c647e6，在 feature/a11-planning-entry 实现 Camper 规划启动/重试 HTTP、页面入口与本地异步 dispatcher。确认、owner、CSRF、revision、命令回执和当前数据上下文先检查；重复新 key 不能为同一请求重复建 plan。执行租约自动续期、旧 attempt 拒绝、服务退出记录失败、重启恢复 PENDING；失败清理过程中收到的重试仍可调度。B 返回内容校验后才由 A 提交成功，避免提前开放最终化。
+
+| 检查 | 最终结果 |
+| --- | --- |
+| 完整 scripts/check.py | 退出码 0；172 passed，1 个已有 Starlette 测试工具弃用提示；113.09 秒 |
+| 共同 schema | up to date；冻结的 1.0 Protocol/DTO 未变 |
+| 前端 | TypeScript 与 Vite 构建成功，50 模块，1.64 秒 |
+| 新增 A 独立验收 | 23 项：禁用模式、确认/权限/回执、checkpoint、租约、退出/重启、输入变化、返回校验、收尾竞争及事务回滚 |
+| 浏览器实际操作 | 独立 18011/15181 端口、var/a11-browser-test.sqlite3；启动后注入失败、点击重试、同一运行/版本完成、刷新恢复、已有方案链接、stub 按钮禁用 |
+
+证据见 [A-11 检查摘要](evidence/a11-planning-check.json)、[失败重试页面](evidence/a11-retry.png)、[恢复完成页面](evidence/a11-recovered.png)、[stub 禁用状态](evidence/a11-stub-disabled.png)。浏览器执行使用 backend/tests/test_planning_entry.py 中明确的 TestOnlyAgent，启动脚本和测试数据库只在忽略的 var 中；未注册到实际应用。前一轮完整回归发现 HTTP 与 PlanQueries 默认重试字段不一致，统一返回结构后重新完整通过。测试服务与标签已关闭。
+
+默认仍为 v1/stub，个人 .env 与演示数据库未修改；真实 B 实现、修订/重评公共执行入口、修订数据和四个业务场景仍待联调。当前输入变化后的新 run 尚无页面入口；审核/最终化对磁盘最新数据的独立检查仍待下一阶段补全。此次不代表真实 Agent 已完成，也不代表 Canvas 最终 ZIP 已验收。需要转交 B 的新增接入说明见 [规划执行接入](planning_entry.md)。本轮为本地分支提交，尚未发布到 GitHub。
+
 ## 当前发布：A-10 部署与数据上下文准备（2026-10-11）
 
 按用户授权，feature/a10-submission-preparation 的累计改动直接合并发布至 main，不创建 PR：安装/打包/隔离部署检查、Canvas 下载验收清单、v2 独立复核，以及数据来源/版本/运行输入摘要。功能代码自已验证的 f1450ae 未变，本次只更新发布说明。远端检查结果以 [main CI](https://github.com/LyraWangDev/ELEC5620-G19/actions/workflows/ci.yml?query=branch%3Amain) 对应提交为准，不沿用 A-09 的 129 项结果。
