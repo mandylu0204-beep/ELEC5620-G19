@@ -1,0 +1,79 @@
+{
+  "kind": "INDEPENDENT_V2_REVIEW",
+  "zip_sha256": "8066f252a50d8dc024d5ee4fa1cd8f1a8b6adcf59c377c2120fd8f9232d6ed0a",
+  "meal_mode_reproduction": [
+    {
+      "mode": "SIMPLE",
+      "fire_prohibited": true,
+      "cooking_pot_required": false,
+      "camping_stove_required": false,
+      "cost_total_aud": 273.0,
+      "missing_cost_inputs": []
+    },
+    {
+      "mode": "SELF_CATERED",
+      "fire_prohibited": true,
+      "cooking_pot_required": true,
+      "camping_stove_required": true,
+      "cost_total_aud": null,
+      "missing_cost_inputs": [
+        "meal_mode"
+      ]
+    },
+    {
+      "mode": "READY_TO_EAT",
+      "fire_prohibited": true,
+      "cooking_pot_required": false,
+      "camping_stove_required": false,
+      "cost_total_aud": 261.0,
+      "missing_cost_inputs": []
+    }
+  ],
+  "rounding_reproduction": {
+    "rate_aud": "0.35",
+    "kilometres": "3.5",
+    "v2_amount_aud": 1.22,
+    "contract_amount_cents": 123
+  },
+  "clock_alignment": {
+    "app_fixed_day": "2026-10-08",
+    "v2_manifest_default": "2026-10-09T10:00:00+11:00",
+    "observations_after_app_fixed_day": [
+      "safety-01",
+      "safety-02",
+      "safety-03",
+      "safety-04",
+      "safety-05",
+      "safety-06",
+      "safety-07",
+      "safety-08",
+      "safety-09",
+      "safety-11",
+      "safety-12"
+    ],
+    "success_clock_changes_after_generation": true,
+    "success_initial_clock": "2026-10-09T10:00:00+11:00",
+    "success_later_clock": "2026-11-06T08:00:00+11:00"
+  },
+  "fixture_guard_reproduction": [
+    {
+      "test_id": "test-43",
+      "actor": "FOUNDER",
+      "finalise_actor": "FOUNDER",
+      "assessment_kinds": []
+    },
+    {
+      "test_id": "test-56",
+      "actor": "FOUNDER",
+      "finalise_actor": "FOUNDER",
+      "assessment_kinds": [
+        "safety"
+      ]
+    }
+  ],
+  "app_provenance_accepts_v2_directly": false,
+  "manifest_checked_file_count": 28,
+  "manifest_missing_or_different_files": [],
+  "unsealed_files": [],
+  "application_tests_executed": false
+}
