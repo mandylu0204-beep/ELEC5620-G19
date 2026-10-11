@@ -19,6 +19,21 @@ python3 scripts/validate_dataset.py
 ```
 
 检查仅验证结构、引用、时间/状态预期及参考计算，不执行应用或 Agent。
+
+## 发布封存
+
+包内发布文件统一使用 UTF-8 和 LF；包内 `.gitattributes` 保证单独导出数据子目录时也保留 LF，不依赖父仓库或个人 core.autocrlf 配置。manifest 只封存 `scripts/release_files.py` 登记的文件，不包含 Python 缓存或本地运行产物。
+
+作者修改发布输入后，执行以下命令并在干净 Git 导出/下载副本上复核：
+
+```bash
+python3 -B scripts/release_files.py
+python3 -B scripts/validate_dataset.py --write-report
+python3 -B scripts/validate_dataset.py
+```
+
+第一步显式重建封存；普通校验只读，不会自动接受被修改的文件。报告写入仅在原封存和其他检查全部通过后同步更新报告摘要；失败检查不会自动修复封存。Python 缓存无需删除，也不参与发布摘要。
+
 每个场景启动前设置固定 demo_clock，运行中不得改变；不能根据运行电脑的今天改变演示输入。
 新增假设明确标注，未知容量/数量/路程不猜填；不是实时营地、价格或安全数据。
 

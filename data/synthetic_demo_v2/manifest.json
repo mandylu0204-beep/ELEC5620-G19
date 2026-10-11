@@ -34,9 +34,10 @@
   "application_tests_executed": false,
   "policy_status": "PROPOSED_V2_CONTRACT_ALIGNED_TO_STAGE1; A/B integration still requires adoption",
   "files_sha256": {
-    "CHANGELOG.md": "5578798327d55fb7cc59a850647e0629df66b51a68b5819f8633f027cee89c68",
+    ".gitattributes": "e390101f55e251a284ede74c1df137fb4b14489845b19c5887cccbdcb7e18251",
+    "CHANGELOG.md": "87cc0746e9bae2b24a46830169a488dcee92a32a30c9b0bfc5fe9c41e19adfa6",
     "FINAL_VALIDATION_REPORT.md": "45a97535984574dc6b0f37483bf8fe55586ee55d49aa03799cb00b0461059b13",
-    "README.md": "1c07fb1c35b794b0729288e90f238885a18d652be48d0b15e7b92bd489498ec0",
+    "README.md": "589c17bf13a0ce1f87c0e9220cbdee4529198efb23e8744b0bab4e18c4f80e77",
     "data/runtime_requests.json": "2e8f42816313bea35e26517933c567fdbd772b75d6b6788b1ddd89569a4ceb0c",
     "data/runtime_safety_evidence.json": "8eaed2d3b898757f941e9341cd0f69e17bba8f8d3def4c11635c4e61d47bbdb9",
     "data/synthetic_campsites.csv": "c4fe2e94d6dde01034c8ed404423a7932943ef1eba2b3b8a3c40f01b23183b1b",
@@ -56,14 +57,15 @@
     "schemas/synthetic_requests.json": "177e27eaef258d416e3091379acff0a4fb4d0594a3f8fbddb351b47054741626",
     "schemas/synthetic_safety_scenarios.json": "996bf758594ba9160f4783797882811b9f27b510dd94d86a32562c945e7a1ff3",
     "schemas/synthetic_test_fixtures.json": "66861dc8587fd96a8458fd925c7ccf21c8b37d5428069b608219f4e88f05dd03",
-    "scripts/__pycache__/runtime_inputs.cpython-314.pyc": "4847f875ad2625c3db1f43e4102579bcbf7645b56f1f43e3bdef4c5da9c27dfe",
-    "scripts/repair_review_findings.py": "4571bb8aff067970cb508697f21c03956d43fb36d88117aac6e4d135d7482621",
-    "scripts/runtime_inputs.py": "b1d47af7e98d2635a6d0b446c22133c5f0475418a5695bf57a02d9f412fad0c1",
-    "scripts/validate_dataset.py": "8b4972a74f7b62d89942282f5b5b23547fedb28692fe758e8c410e082c1bf317",
+    "scripts/release_files.py": "415c812197c73953e155db8577a543e954c7ff50476236e39b8e73846b32a040",
+    "scripts/repair_review_findings.py": "14a440012f6c090bd1017fb0cc67d5eb477a28810172463bf86be8da30e8757b",
+    "scripts/runtime_inputs.py": "9c2bac47e98bf62df2136a70ba1d3a8b17f75db527777e1543bead40d7768552",
+    "scripts/validate_dataset.py": "d06cbce1180daeadfc75c16cf8b38b1b14e31bdf6295195f51d5ce0cb82bf78e",
     "tests/static_validation_results.json": "d2d6e69beb2f0a6257d41ffbe1f8e028d054c771e307011ad99e323f24481deb",
-    "tests/synthetic_agent_test_cases.csv": "f80d1557065d168de6541d375b623cece20d6f83ee01fa803639cc9e41b52c8f",
+    "tests/synthetic_agent_test_cases.csv": "bde00a11bd0c0482ac1b1128b4639a68ef11c9639ed33e7d74713a0125bf6026",
     "tests/synthetic_oracles.json": "e67535a49d7a28a1013745109c8dac089d5fc429448b5de1b7a4c71a5b5027df",
     "tests/synthetic_test_fixtures.json": "b0b3317445e1dab3c1cce318cedc14f2896d50dd7bb437384c6e1f24bc34d556"
   },
-  "source_originals_verified_unchanged": true
+  "source_originals_verified_unchanged": true,
+  "release_format": "UTF-8/LF; SHA-256 of distributed bytes; registered files only"
 }

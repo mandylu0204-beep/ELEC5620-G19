@@ -1,6 +1,5 @@
 """Static package checks. This does not run CampMate, its Agents, or its database."""
 import copy
-import hashlib
 import json
 import re
 import sys
@@ -8,6 +7,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 from runtime_inputs import ROOT, load_csv, load_json, request_agent_input, safety_agent_input, evaluate, estimate_cost, required_gear
+from release_files import seal_release, verify_release
 
 results = []
 def check(name, condition, detail=''):
@@ -197,19 +197,17 @@ def schema_errors(value,schema,path='$'):
 
 errors=[]
 for schemafile in sorted((ROOT/'schemas').glob('*.json')):
-    schema=json.loads(schemafile.read_text())
+    schema=json.loads(schemafile.read_text(encoding='utf-8'))
     data=load_json(schema['x-data-file'])
     errors+=schema_errors(data,schema,schema['x-data-file'])
 check('JSON record schemas validate complete files',bool(list((ROOT/'schemas').glob('*.json'))) and not errors,str(errors[:20]))
 
-sealed=manifest.get('files_sha256',{})
-if sealed:
-    bad=[name for name,digest in sealed.items() if not (ROOT/name).is_file() or hashlib.sha256((ROOT/name).read_bytes()).hexdigest()!=digest]
-    check('Release manifest checksums',not bad,str(bad))
+bad=verify_release(ROOT)
+check('Release manifest checksums',not bad,str(bad))
 
 summary={'validation_date':'2026-10-11','kind':'STATIC_DATA_AND_IMPORT_ADAPTER_CHECKS','passed':sum(r['passed'] for r in results),'failed':sum(not r['passed'] for r in results),'acceptance_specs':len(tests),'application_tests_executed':False,'checks':results}
 if '--write-report' in sys.argv:
-    (ROOT/'tests/static_validation_results.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2)+'\n')
+    (ROOT/'tests/static_validation_results.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2)+'\n', encoding='utf-8', newline='\n')
     table='\n'.join(f"| {r['check']} | {'PASS' if r['passed'] else 'FAIL'} |" for r in results)
     report=f'''# CampMate v2 静态验证报告
 
@@ -240,7 +238,13 @@ A/B 仍需采用 docs/integration_contract.md 中的 v2 接口及路由约定。
 
 完整机器可读结果见 tests/static_validation_results.json。
 '''
-    (ROOT/'FINAL_VALIDATION_REPORT.md').write_text(report)
+    (ROOT/'FINAL_VALIDATION_REPORT.md').write_text(report, encoding='utf-8', newline='\n')
+    if summary['failed'] == 0:
+        # The prior seal was valid. Only the generated report bytes changed;
+        # record them together so --write-report does not invalidate the release.
+        seal_release(ROOT)
+        if verify_release(ROOT):
+            raise RuntimeError('Generated release reports failed seal verification')
 print(json.dumps({k:v for k,v in summary.items() if k!='checks'},ensure_ascii=False))
 for r in results:
     if not r['passed']:print('FAIL:',r['check'],r['detail'])

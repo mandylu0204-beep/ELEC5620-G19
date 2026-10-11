@@ -22,11 +22,11 @@ def safety_agent_input(record):
     return {k: copy.deepcopy(record[k]) for k in SAFETY_KEYS}
 
 def load_json(relative_path):
-    return json.loads((ROOT / relative_path).read_text())
+    return json.loads((ROOT / relative_path).read_text(encoding='utf-8'))
 
 def load_csv(relative_path, boolean_fields=(), integer_fields=(), number_fields=(), list_fields=(), json_fields=()):
     """Strict conversion: bool('false') would be incorrect; missing is not zero."""
-    with (ROOT / relative_path).open(newline='') as stream:
+    with (ROOT / relative_path).open(encoding='utf-8', newline='') as stream:
         rows = list(csv.DictReader(stream))
     for row in rows:
         if None in row or any(v is None for v in row.values()):

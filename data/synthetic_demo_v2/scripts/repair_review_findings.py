@@ -1,18 +1,18 @@
 """Apply the deterministic review fixes to this synthetic release copy."""
 import csv
-import hashlib
 import json
 from pathlib import Path
+from release_files import seal_release
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def load_json(name):
-    return json.loads((ROOT / name).read_text())
+    return json.loads((ROOT / name).read_text(encoding='utf-8'))
 
 
 def save_json(name, value):
-    (ROOT / name).write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n")
+    (ROOT / name).write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding='utf-8', newline='\n')
 
 
 fixtures = load_json("tests/synthetic_test_fixtures.json")
@@ -101,7 +101,7 @@ action_schema["actor"] = {
 save_json("schemas/synthetic_test_fixtures.json", schema)
 
 # Add two paired-control acceptance specifications and their independent oracles.
-with (ROOT / "tests/synthetic_agent_test_cases.csv").open(newline="") as stream:
+with (ROOT / "tests/synthetic_agent_test_cases.csv").open(encoding='utf-8', newline="") as stream:
     reader = csv.DictReader(stream)
     fieldnames, rows = reader.fieldnames, list(reader)
 rows = [row for row in rows if row["test_id"] not in ("test-57", "test-58")]
@@ -126,8 +126,8 @@ for target, cause in [("43", "campfire at no-fire site"), ("56", "SAFETY_EVIDENC
     row["expected_outcome"] = "FINALISATION_BLOCKED"
     row["pass_criteria"] = json.dumps({"result": "FINALISATION_BLOCKED", "blocker_codes": [cause], "final_record_count": 0}, ensure_ascii=False)
     row["notes"] = "Founder approval followed by owner finalization; target blocker must remain explicit."
-with (ROOT / "tests/synthetic_agent_test_cases.csv").open("w", newline="") as stream:
-    writer = csv.DictWriter(stream, fieldnames=fieldnames)
+with (ROOT / "tests/synthetic_agent_test_cases.csv").open("w", encoding='utf-8', newline="") as stream:
+    writer = csv.DictWriter(stream, fieldnames=fieldnames, lineterminator='\n')
     writer.writeheader()
     writer.writerows(rows)
 
@@ -168,15 +168,14 @@ save_json("schemas/synthetic_oracles.json", oracle_schema)
 # Canonicalise the meal enum everywhere in authored test content and guidance.
 for name in ("tests/synthetic_test_fixtures.json", "docs/synthetic_data_dictionary.md"):
     path = ROOT / name
-    path.write_text(path.read_text().replace('"SIMPLE"', '"SELF_CATERED"').replace("SIMPLE 使用 cost-04", "SELF_CATERED 使用 cost-04"))
+    path.write_text(path.read_text(encoding='utf-8').replace('"SIMPLE"', '"SELF_CATERED"').replace("SIMPLE 使用 cost-04", "SELF_CATERED 使用 cost-04"), encoding='utf-8', newline='\n')
 
-# Re-seal all packaged files except the manifest itself; original-source hashes
+# Re-seal registered release files, excluding caches; original-source hashes
 # stay as provenance for the uploaded archive and are intentionally unchanged.
 manifest = load_json("manifest.json")
 manifest["counts"]["acceptance_specs"] = len(rows)
 manifest["revision_date"] = "2026-10-11"
 manifest["provenance"]["revision_date"] = "2026-10-11"
 manifest["clock_policy"] = "Immutable clock per scenario run; scenario fixtures set it before startup. Host clock is never used."
-files = sorted(p for p in ROOT.rglob("*") if p.is_file() and p.relative_to(ROOT).as_posix() != "manifest.json")
-manifest["files_sha256"] = {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
 save_json("manifest.json", manifest)
+seal_release(ROOT)
