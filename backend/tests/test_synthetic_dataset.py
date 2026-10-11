@@ -280,7 +280,8 @@ def test_duplicate_record_id_is_failure(dataset, filename):
 @pytest.mark.parametrize('filename,field,value', [
     ('synthetic_campsites.csv', 'demo_only', 'false'),
     ('synthetic_gear_rules.csv', 'source_type', 'REAL'),
-    ('synthetic_cost_reference.csv', 'source_name', 'CampMate Synthetic Demo Dataset v2'),
+    # v2 is registered by the shared contract; use an unregistered source version.
+    ('synthetic_cost_reference.csv', 'source_name', 'CampMate Synthetic Demo Dataset v999'),
     ('synthetic_profiles.json', 'demo_only', 'true'),
     ('synthetic_requests.json', 'source_date', '2026-10-08'),
     ('synthetic_safety_scenarios.json', 'source_name', 'Real provider'),
