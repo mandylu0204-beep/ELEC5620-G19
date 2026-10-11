@@ -1,0 +1,350 @@
+{
+  "validation_date": "2026-10-11",
+  "kind": "STATIC_DATA_AND_IMPORT_ADAPTER_CHECKS",
+  "passed": 68,
+  "failed": 0,
+  "acceptance_specs": 58,
+  "application_tests_executed": false,
+  "checks": [
+    {
+      "check": "Unique/nonempty campsite_id",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Unique/nonempty gear_rule_id",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Unique/nonempty cost_id",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Unique/nonempty profile_id",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Unique/nonempty request_id",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Unique/nonempty safety_case_id",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Unique/nonempty test_id",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Unique/nonempty fixture_id",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Synthetic provenance on every data/test/oracle record",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Fixed manifest clock",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Manifest counts match files",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Cost ranges ordered",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "CSV false values converted to false",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Profile child/adult counts reconcile",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Unknown tent capacity/torch count preserved",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Unconfirmed candidates do not imply confirmed equipment",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Request ownership and snapshots",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "No business request starts confirmed",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Two nights derive three days",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "All canonical durations/end dates reconcile",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "request-03 missing date AND duration",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Missing budget differs from invalid budget",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Business records contain no oracle labels",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Runtime inputs contain no oracle labels",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Runtime files match allowlist adapters",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Oracle/candidate contamination cannot change Agent inputs",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Original 30 tests semantically remapped to Stage 1",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "FR-01 to FR-10 specification traceability",
+      "passed": true,
+      "detail": "Traceability only; execution/coverage not claimed."
+    },
+    {
+      "check": "All acceptance specifications explicitly NOT_RUN",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Every test has fixture and oracle",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "All nonempty cross-file IDs resolve",
+      "passed": true,
+      "detail": "[]"
+    },
+    {
+      "check": "Test user/campsite/trip scope consistency",
+      "passed": true,
+      "detail": "[]"
+    },
+    {
+      "check": "Plan versions, links, actors, actions and isolated fixtures",
+      "passed": true,
+      "detail": "[]"
+    },
+    {
+      "check": "Observations do not come from future fixture clocks",
+      "passed": true,
+      "detail": "[]"
+    },
+    {
+      "check": "Known mismatched safety references removed",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Impossible constraints and reversed dates are explicit",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Impossible accessible/walk-in/no-fire filter yields no record",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Oracle policy prevents unsafe automatic eligibility",
+      "passed": true,
+      "detail": "[]; validates expected outputs only, not application enforcement."
+    },
+    {
+      "check": "Fixable blocker and escalation modeled independently",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Approval blocker case isolates FINALISATION_BLOCKED cause and owner actor",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Missing safety evidence case isolates FINALISATION_BLOCKED cause",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Target conditions have paired resolving controls",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "High heat escalates for human review",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Stale evidence has computable expiry",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Missing evidence is null, not fabricated weather",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Context copies retain source and dates",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Executable gear rules evaluate without missing inputs",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Gear overlap does not double-count tents/bags",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Self-catered fire-ban requires stove and pot",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Ready-to-eat mode does not require stove or pot",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Potable-site water uses 3 days",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "No-water site includes emergency day",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Missing expression input never becomes numeric zero",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Success fixture arithmetic independently reconciles",
+      "passed": true,
+      "detail": "{\"lines\": [{\"cost_id\": \"cost-01\", \"quantity\": 2, \"rate_aud\": \"35\", \"rate_cents\": 3500, \"amount_cents\": 7000, \"amount_aud\": 70.0}, {\"cost_id\": \"cost-02\", \"quantity\": 100, \"rate_aud\": \"0.35\", \"rate_cents\": 35, \"amount_cents\": 3500, \"amount_aud\": 35.0}, {\"cost_id\": \"cost-05\", \"quantity\": 6, \"rate_aud\": \"6\", \"rate_cents\": 600, \"amount_cents\": 3600, \"amount_aud\": 36.0}, {\"cost_id\": \"cost-06\", \"quantity\": 0, \"rate_aud\": \"45\", \"rate_cents\": 4500, \"amount_cents\": 0, \"amount_aud\": 0.0}, {\"cost_id\": \"cost-07\", \"quantity\": 0, \"rate_aud\": \"22\", \"rate_cents\": 2200, \"amount_cents\": 0, \"amount_aud\": 0.0}, {\"cost_id\": \"cost-08\", \"quantity\": 0, \"rate_aud\": \"18\", \"rate_cents\": 1800, \"amount_cents\": 0, \"amount_aud\": 0.0}, {\"cost_id\": \"cost-09\", \"quantity\": 0, \"rate_aud\": \"18\", \"rate_cents\": 1800, \"amount_cents\": 0, \"amount_aud\": 0.0}, {\"cost_id\": \"cost-10\", \"quantity\": 0, \"rate_aud\": \"15\", \"rate_cents\": 1500, \"amount_cents\": 0, \"amount_aud\": 0.0}, {\"cost_id\": \"cost-11\", \"quantity\": 0, \"rate_aud\": \"35\", \"rate_cents\": 3500, \"amount_cents\": 0, \"amount_aud\": 0.0}, {\"cost_id\": \"cost-12\", \"quantity\": 0, \"rate_aud\": \"18\", \"rate_cents\": 1800, \"amount_cents\": 0, \"amount_aud\": 0.0}, {\"cost_id\": \"cost-13\", \"quantity\": 0, \"rate_aud\": \"28\", \"rate_cents\": 2800, \"amount_cents\": 0, \"amount_aud\": 0.0}, {\"cost_id\": \"cost-14\", \"quantity\": 6, \"rate_aud\": \"18\", \"rate_cents\": 1800, \"amount_cents\": 10800, \"amount_aud\": 108.0}, {\"cost_id\": \"cost-15\", \"quantity\": 1, \"rate_aud\": \"12\", \"rate_cents\": 1200, \"amount_cents\": 1200, \"amount_aud\": 12.0}, {\"cost_id\": \"cost-16\", \"quantity\": 0, \"rate_aud\": \"5\", \"rate_cents\": 500, \"amount_cents\": 0, \"amount_aud\": 0.0}], \"partial_subtotal_cents\": 26100, \"partial_subtotal_aud\": 261.0, \"total_cents\": 26100, \"total_aud\": 261.0, \"missing_inputs\": [], \"assumption\": \"Typical synthetic rates; no live quotes.\"}"
+    },
+    {
+      "check": "Food alternatives not double-charged",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Half-cent money rounds per line using HALF_UP",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Water cost uses equivalent person-days, not litres",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Missing distance/vehicle gives incomplete estimate",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "test-17 campsite subtotal already exceeds budget",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Success fixture uses one fixed clock and orders confirmation/all checks/save/read",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Actual success fixture supplies satisfy every triggered rule",
+      "passed": true,
+      "detail": "[]"
+    },
+    {
+      "check": "Actual fixture-derived total matches isolated oracle",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Success request starts unconfirmed with explicit priced inputs",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Fixtures use defined PlanVersion status enum",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Safety oracle enums are distinct and controlled",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "Evidence status and source date formats",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "check": "JSON record schemas validate complete files",
+      "passed": true,
+      "detail": "[]"
+    },
+    {
+      "check": "Release manifest checksums",
+      "passed": true,
+      "detail": "[]"
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+# Keep this package's distributed bytes stable even when exporting its subtree.
+* text=auto eol=lf

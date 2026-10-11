@@ -1,0 +1,1054 @@
+[
+  {
+    "request_id": "request-01",
+    "profile_id": "profile-a",
+    "natural_language_request": "We are two beginners with a car. Please plan a quiet two-night trip in CampMate Demo Region from 2026-10-20. Our budget is AUD 320.",
+    "user_supplements": {
+      "preferences": [
+        "quiet",
+        "toilets"
+      ]
+    },
+    "supplement_provenance": "DEMO_FIXTURE_INPUT: v1 preferences not fully stated in the text; confirmation required.",
+    "profile_snapshot": {
+      "profile_id": "profile-a",
+      "camper_name": "Demo Camper A",
+      "group_size": 2,
+      "experience_level": "BEGINNER",
+      "has_children": false,
+      "available_equipment": [
+        "two-person tent",
+        "two sleeping bags",
+        "first aid kit",
+        "torch",
+        "car"
+      ],
+      "transport_type": "CAR",
+      "accessibility_requirements": [],
+      "notes": "Two beginners with car and mostly complete gear.",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "owner_user_id": "camper-a",
+      "children_count": 0,
+      "vehicle_count": null,
+      "adult_count": 2,
+      "normalized_equipment": [
+        {
+          "item_key": "tent",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": 2,
+          "confirmed": false,
+          "original_text": "two-person tent",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "sleeping_bag",
+          "quantity": 2,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "two sleeping bags",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "first_aid_kit",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "first aid kit",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "torch",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "torch",
+          "provenance": "NEEDS_CLARIFICATION"
+        },
+        {
+          "item_key": "vehicle",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "car",
+          "provenance": "NEEDS_CLARIFICATION"
+        }
+      ],
+      "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+    },
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-02",
+    "profile_id": "profile-a",
+    "natural_language_request": "We want a two-night camping trip from 2026-10-21 with AUD 250, but have not chosen a destination.",
+    "user_supplements": {
+      "preferences": [
+        "quiet"
+      ]
+    },
+    "supplement_provenance": "DEMO_FIXTURE_INPUT: v1 preferences not fully stated in the text; confirmation required.",
+    "profile_snapshot": {
+      "profile_id": "profile-a",
+      "camper_name": "Demo Camper A",
+      "group_size": 2,
+      "experience_level": "BEGINNER",
+      "has_children": false,
+      "available_equipment": [
+        "two-person tent",
+        "two sleeping bags",
+        "first aid kit",
+        "torch",
+        "car"
+      ],
+      "transport_type": "CAR",
+      "accessibility_requirements": [],
+      "notes": "Two beginners with car and mostly complete gear.",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "owner_user_id": "camper-a",
+      "children_count": 0,
+      "vehicle_count": null,
+      "adult_count": 2,
+      "normalized_equipment": [
+        {
+          "item_key": "tent",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": 2,
+          "confirmed": false,
+          "original_text": "two-person tent",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "sleeping_bag",
+          "quantity": 2,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "two sleeping bags",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "first_aid_kit",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "first aid kit",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "torch",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "torch",
+          "provenance": "NEEDS_CLARIFICATION"
+        },
+        {
+          "item_key": "vehicle",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "car",
+          "provenance": "NEEDS_CLARIFICATION"
+        }
+      ],
+      "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+    },
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-03",
+    "profile_id": "profile-b",
+    "natural_language_request": "Four beginners need a CampMate Demo Region trip with AUD 500. We have no tent.",
+    "user_supplements": {
+      "preferences": [
+        "toilets"
+      ]
+    },
+    "supplement_provenance": "DEMO_FIXTURE_INPUT: v1 preferences not fully stated in the text; confirmation required.",
+    "profile_snapshot": {
+      "profile_id": "profile-b",
+      "camper_name": "Demo Camper B",
+      "group_size": 4,
+      "experience_level": "BEGINNER",
+      "has_children": false,
+      "available_equipment": [
+        "two sleeping bags",
+        "first aid kit",
+        "torch"
+      ],
+      "transport_type": "CAR",
+      "accessibility_requirements": [],
+      "notes": "Four beginners; tent is missing.",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "owner_user_id": "camper-b",
+      "children_count": 0,
+      "vehicle_count": null,
+      "adult_count": 4,
+      "normalized_equipment": [
+        {
+          "item_key": "sleeping_bag",
+          "quantity": 2,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "two sleeping bags",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "first_aid_kit",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "first aid kit",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "torch",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "torch",
+          "provenance": "NEEDS_CLARIFICATION"
+        }
+      ],
+      "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+    },
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-04",
+    "profile_id": "profile-c",
+    "natural_language_request": "Two campers want CampMate Demo Region for two nights from 2026-10-25 using public transport.",
+    "user_supplements": {
+      "preferences": [
+        "public transport"
+      ]
+    },
+    "supplement_provenance": "DEMO_FIXTURE_INPUT: v1 preferences not fully stated in the text; confirmation required.",
+    "profile_snapshot": {
+      "profile_id": "profile-c",
+      "camper_name": "Demo Camper C",
+      "group_size": 2,
+      "experience_level": "INTERMEDIATE",
+      "has_children": false,
+      "available_equipment": [
+        "two-person tent",
+        "two sleeping bags",
+        "first aid kit"
+      ],
+      "transport_type": "PUBLIC_TRANSPORT",
+      "accessibility_requirements": [],
+      "notes": "Two campers without a vehicle.",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "owner_user_id": "camper-c",
+      "children_count": 0,
+      "vehicle_count": 0,
+      "adult_count": 2,
+      "normalized_equipment": [
+        {
+          "item_key": "tent",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": 2,
+          "confirmed": false,
+          "original_text": "two-person tent",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "sleeping_bag",
+          "quantity": 2,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "two sleeping bags",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "first_aid_kit",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "first aid kit",
+          "provenance": "V1_TEXT_EXPLICIT"
+        }
+      ],
+      "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+    },
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-05",
+    "profile_id": "profile-d",
+    "natural_language_request": "Family trip in CampMate Demo Region from 2026-10-26 for two nights; our budget is AUD -50.",
+    "user_supplements": {
+      "preferences": [
+        "family"
+      ]
+    },
+    "supplement_provenance": "DEMO_FIXTURE_INPUT: v1 preferences not fully stated in the text; confirmation required.",
+    "profile_snapshot": {
+      "profile_id": "profile-d",
+      "camper_name": "Demo Camper D",
+      "group_size": 3,
+      "experience_level": "BEGINNER",
+      "has_children": true,
+      "available_equipment": [
+        "family tent",
+        "three sleeping bags",
+        "first aid kit",
+        "camping stove"
+      ],
+      "transport_type": "CAR",
+      "accessibility_requirements": [],
+      "notes": "Family group including one child.",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "owner_user_id": "camper-d",
+      "children_count": 1,
+      "vehicle_count": null,
+      "adult_count": 2,
+      "normalized_equipment": [
+        {
+          "item_key": "tent",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "family tent",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "sleeping_bag",
+          "quantity": 3,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "three sleeping bags",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "first_aid_kit",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "first aid kit",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "camping_stove",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "camping stove",
+          "provenance": "V1_TEXT_EXPLICIT"
+        }
+      ],
+      "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+    },
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-06",
+    "profile_id": "profile-a",
+    "natural_language_request": "Zero campers want a one-night CampMate Demo Region trip on 2026-10-27 with AUD 100.",
+    "user_supplements": {
+      "preferences": []
+    },
+    "supplement_provenance": "DEMO_FIXTURE_INPUT: v1 preferences not fully stated in the text; confirmation required.",
+    "profile_snapshot": {
+      "profile_id": "profile-a",
+      "camper_name": "Demo Camper A",
+      "group_size": 2,
+      "experience_level": "BEGINNER",
+      "has_children": false,
+      "available_equipment": [
+        "two-person tent",
+        "two sleeping bags",
+        "first aid kit",
+        "torch",
+        "car"
+      ],
+      "transport_type": "CAR",
+      "accessibility_requirements": [],
+      "notes": "Two beginners with car and mostly complete gear.",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "owner_user_id": "camper-a",
+      "children_count": 0,
+      "vehicle_count": null,
+      "adult_count": 2,
+      "normalized_equipment": [
+        {
+          "item_key": "tent",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": 2,
+          "confirmed": false,
+          "original_text": "two-person tent",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "sleeping_bag",
+          "quantity": 2,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "two sleeping bags",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "first_aid_kit",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "first aid kit",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "torch",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "torch",
+          "provenance": "NEEDS_CLARIFICATION"
+        },
+        {
+          "item_key": "vehicle",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "car",
+          "provenance": "NEEDS_CLARIFICATION"
+        }
+      ],
+      "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+    },
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-07",
+    "profile_id": "profile-a",
+    "natural_language_request": "Plan a trip to Real Coast Reserve for 2026-10-28, two nights, AUD 300.",
+    "user_supplements": {
+      "preferences": []
+    },
+    "supplement_provenance": "DEMO_FIXTURE_INPUT: v1 preferences not fully stated in the text; confirmation required.",
+    "profile_snapshot": {
+      "profile_id": "profile-a",
+      "camper_name": "Demo Camper A",
+      "group_size": 2,
+      "experience_level": "BEGINNER",
+      "has_children": false,
+      "available_equipment": [
+        "two-person tent",
+        "two sleeping bags",
+        "first aid kit",
+        "torch",
+        "car"
+      ],
+      "transport_type": "CAR",
+      "accessibility_requirements": [],
+      "notes": "Two beginners with car and mostly complete gear.",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "owner_user_id": "camper-a",
+      "children_count": 0,
+      "vehicle_count": null,
+      "adult_count": 2,
+      "normalized_equipment": [
+        {
+          "item_key": "tent",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": 2,
+          "confirmed": false,
+          "original_text": "two-person tent",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "sleeping_bag",
+          "quantity": 2,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "two sleeping bags",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "first_aid_kit",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "first aid kit",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "torch",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "torch",
+          "provenance": "NEEDS_CLARIFICATION"
+        },
+        {
+          "item_key": "vehicle",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "car",
+          "provenance": "NEEDS_CLARIFICATION"
+        }
+      ],
+      "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+    },
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-08",
+    "profile_id": "profile-b",
+    "natural_language_request": "Four beginners want two nights in CampMate Demo Region from 2026-10-29 with AUD 50.",
+    "user_supplements": {
+      "preferences": [
+        "toilets"
+      ]
+    },
+    "supplement_provenance": "DEMO_FIXTURE_INPUT: v1 preferences not fully stated in the text; confirmation required.",
+    "profile_snapshot": {
+      "profile_id": "profile-b",
+      "camper_name": "Demo Camper B",
+      "group_size": 4,
+      "experience_level": "BEGINNER",
+      "has_children": false,
+      "available_equipment": [
+        "two sleeping bags",
+        "first aid kit",
+        "torch"
+      ],
+      "transport_type": "CAR",
+      "accessibility_requirements": [],
+      "notes": "Four beginners; tent is missing.",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "owner_user_id": "camper-b",
+      "children_count": 0,
+      "vehicle_count": null,
+      "adult_count": 4,
+      "normalized_equipment": [
+        {
+          "item_key": "sleeping_bag",
+          "quantity": 2,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "two sleeping bags",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "first_aid_kit",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "first aid kit",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "torch",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "torch",
+          "provenance": "NEEDS_CLARIFICATION"
+        }
+      ],
+      "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+    },
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-09",
+    "profile_id": "profile-a",
+    "natural_language_request": "Please find a quiet CampMate Demo Region campsite for two nights from 2026-11-01; budget AUD 320.",
+    "user_supplements": {
+      "preferences": [
+        "quiet"
+      ]
+    },
+    "supplement_provenance": "DEMO_FIXTURE_INPUT: v1 preferences not fully stated in the text; confirmation required.",
+    "profile_snapshot": {
+      "profile_id": "profile-a",
+      "camper_name": "Demo Camper A",
+      "group_size": 2,
+      "experience_level": "BEGINNER",
+      "has_children": false,
+      "available_equipment": [
+        "two-person tent",
+        "two sleeping bags",
+        "first aid kit",
+        "torch",
+        "car"
+      ],
+      "transport_type": "CAR",
+      "accessibility_requirements": [],
+      "notes": "Two beginners with car and mostly complete gear.",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "owner_user_id": "camper-a",
+      "children_count": 0,
+      "vehicle_count": null,
+      "adult_count": 2,
+      "normalized_equipment": [
+        {
+          "item_key": "tent",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": 2,
+          "confirmed": false,
+          "original_text": "two-person tent",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "sleeping_bag",
+          "quantity": 2,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "two sleeping bags",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "first_aid_kit",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "first aid kit",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "torch",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "torch",
+          "provenance": "NEEDS_CLARIFICATION"
+        },
+        {
+          "item_key": "vehicle",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "car",
+          "provenance": "NEEDS_CLARIFICATION"
+        }
+      ],
+      "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+    },
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-10",
+    "profile_id": "profile-e",
+    "natural_language_request": "Two campers need an accessible CampMate Demo Region campsite from 2026-11-02 for one night; budget AUD 260.",
+    "user_supplements": {
+      "preferences": [
+        "wheelchair accessible"
+      ]
+    },
+    "supplement_provenance": "DEMO_FIXTURE_INPUT: v1 preferences not fully stated in the text; confirmation required.",
+    "profile_snapshot": {
+      "profile_id": "profile-e",
+      "camper_name": "Demo Camper E",
+      "group_size": 2,
+      "experience_level": "BEGINNER",
+      "has_children": false,
+      "available_equipment": [
+        "two-person tent",
+        "two sleeping bags",
+        "first aid kit"
+      ],
+      "transport_type": "PUBLIC_TRANSPORT",
+      "accessibility_requirements": [
+        "wheelchair-accessible toilet",
+        "step-free path"
+      ],
+      "notes": "Requires accessible facilities.",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "owner_user_id": "camper-e",
+      "children_count": 0,
+      "vehicle_count": 0,
+      "adult_count": 2,
+      "normalized_equipment": [
+        {
+          "item_key": "tent",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": 2,
+          "confirmed": false,
+          "original_text": "two-person tent",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "sleeping_bag",
+          "quantity": 2,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "two sleeping bags",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "first_aid_kit",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "first aid kit",
+          "provenance": "V1_TEXT_EXPLICIT"
+        }
+      ],
+      "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+    },
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-11",
+    "profile_id": "profile-c",
+    "natural_language_request": "Two campers without a car need public transport access in CampMate Demo Region from 2026-11-03 for two nights; AUD 260.",
+    "user_supplements": {
+      "preferences": [
+        "public transport"
+      ]
+    },
+    "supplement_provenance": "DEMO_FIXTURE_INPUT: v1 preferences not fully stated in the text; confirmation required.",
+    "profile_snapshot": {
+      "profile_id": "profile-c",
+      "camper_name": "Demo Camper C",
+      "group_size": 2,
+      "experience_level": "INTERMEDIATE",
+      "has_children": false,
+      "available_equipment": [
+        "two-person tent",
+        "two sleeping bags",
+        "first aid kit"
+      ],
+      "transport_type": "PUBLIC_TRANSPORT",
+      "accessibility_requirements": [],
+      "notes": "Two campers without a vehicle.",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "owner_user_id": "camper-c",
+      "children_count": 0,
+      "vehicle_count": 0,
+      "adult_count": 2,
+      "normalized_equipment": [
+        {
+          "item_key": "tent",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": 2,
+          "confirmed": false,
+          "original_text": "two-person tent",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "sleeping_bag",
+          "quantity": 2,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "two sleeping bags",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "first_aid_kit",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "first aid kit",
+          "provenance": "V1_TEXT_EXPLICIT"
+        }
+      ],
+      "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+    },
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-12",
+    "profile_id": "profile-a",
+    "natural_language_request": "We want a campfire at CampMate Demo Region from 2026-11-04 for two nights; budget AUD 320.",
+    "user_supplements": {
+      "preferences": [
+        "campfire"
+      ]
+    },
+    "supplement_provenance": "DEMO_FIXTURE_INPUT: v1 preferences not fully stated in the text; confirmation required.",
+    "profile_snapshot": {
+      "profile_id": "profile-a",
+      "camper_name": "Demo Camper A",
+      "group_size": 2,
+      "experience_level": "BEGINNER",
+      "has_children": false,
+      "available_equipment": [
+        "two-person tent",
+        "two sleeping bags",
+        "first aid kit",
+        "torch",
+        "car"
+      ],
+      "transport_type": "CAR",
+      "accessibility_requirements": [],
+      "notes": "Two beginners with car and mostly complete gear.",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "owner_user_id": "camper-a",
+      "children_count": 0,
+      "vehicle_count": null,
+      "adult_count": 2,
+      "normalized_equipment": [
+        {
+          "item_key": "tent",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": 2,
+          "confirmed": false,
+          "original_text": "two-person tent",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "sleeping_bag",
+          "quantity": 2,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "two sleeping bags",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "first_aid_kit",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "first aid kit",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "torch",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "torch",
+          "provenance": "NEEDS_CLARIFICATION"
+        },
+        {
+          "item_key": "vehicle",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "car",
+          "provenance": "NEEDS_CLARIFICATION"
+        }
+      ],
+      "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+    },
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  {
+    "request_id": "request-13",
+    "profile_id": "profile-a",
+    "natural_language_request": "Two beginners with one car want a quiet two-night trip in CampMate Demo Region from 2026-11-06. Budget AUD 320. Use ready-to-eat meals, no campfire, and 100 total vehicle kilometres.",
+    "user_supplements": {
+      "preferences": [
+        "quiet",
+        "toilets"
+      ],
+      "vehicle_count": 1,
+      "estimated_total_vehicle_km": 100,
+      "meal_mode": "READY_TO_EAT",
+      "planned_campfire": false
+    },
+    "supplement_provenance": "DEMO_USER_SUPPLEMENT: explicit success fixture values; confirmation action is required.",
+    "profile_snapshot": {
+      "profile_id": "profile-a",
+      "camper_name": "Demo Camper A",
+      "group_size": 2,
+      "experience_level": "BEGINNER",
+      "has_children": false,
+      "available_equipment": [
+        "two-person tent",
+        "two sleeping bags",
+        "first aid kit",
+        "torch",
+        "car"
+      ],
+      "transport_type": "CAR",
+      "accessibility_requirements": [],
+      "notes": "Two beginners with car and mostly complete gear.",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "owner_user_id": "camper-a",
+      "children_count": 0,
+      "vehicle_count": null,
+      "adult_count": 2,
+      "normalized_equipment": [
+        {
+          "item_key": "tent",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": 2,
+          "confirmed": false,
+          "original_text": "two-person tent",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "sleeping_bag",
+          "quantity": 2,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "two sleeping bags",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "first_aid_kit",
+          "quantity": 1,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "first aid kit",
+          "provenance": "V1_TEXT_EXPLICIT"
+        },
+        {
+          "item_key": "torch",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "torch",
+          "provenance": "NEEDS_CLARIFICATION"
+        },
+        {
+          "item_key": "vehicle",
+          "quantity": null,
+          "unit": "item",
+          "capacity_persons": null,
+          "confirmed": false,
+          "original_text": "car",
+          "provenance": "NEEDS_CLARIFICATION"
+        }
+      ],
+      "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+    },
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  }
+]
