@@ -40,7 +40,7 @@ synthetic_requests.json
 synthetic_safety_scenarios.json
 ```
 
-支持 UTF-8 BOM、严格 CSV 行列与 JSON 数组校验，检查所有来源记录的 v1 Provenance、重复 ID、请求→Profile 和安全场景→营地引用。拒绝越出 data 业务目录的文件 symlink，包括指向同一包内 tests/docs 的链接。文件缺失、结构或字段非法时返回 `ADAPTER_FAILURE`；不会执行包内脚本或读取 `tests/`、`docs/`。
+支持 UTF-8 BOM、严格 CSV 行列与 JSON 数组校验，检查所有来源记录的 v1 Provenance、重复 ID、请求→Profile 和安全场景→营地引用。即使共同 Provenance 类型以后接受多个来源名称，本 Adapter 仍要求六份文件全部来自同一受支持的 v1 包；混合来源包会整体返回 `ADAPTER_FAILURE`。拒绝越出 data 业务目录的文件 symlink，包括指向同一包内 tests/docs 的链接。文件缺失、结构或字段非法时返回 `ADAPTER_FAILURE`；不会执行包内脚本或读取 `tests/`、`docs/`。
 
 `dataset.context` 与当前 A-09 的 `application.request_rules.data_context` 一致：版本 v1、六份原始文件 SHA-256、空 fixture/selection、`a-request-normalization-v1`。后续运行可以：
 
@@ -105,7 +105,7 @@ python -m pytest --basetemp ../var/pytest-b01-regression
 python -m app.export_contracts --check
 ```
 
-测试只修改 var 下的隔离来源副本，并检查 Git 原数据与 A 的 manifest 摘要一致。覆盖转换、未知值、半分舍入、来源身份、oracle 隔离、缺失文件、重复 ID、非法类型/日期、引用、上下文变化、读取范围和快照隔离。
+测试只修改 var 下的隔离来源副本，并检查 Git 原数据与 A 的 manifest 摘要一致。覆盖转换、未知值、半分舍入、混合/非法来源身份、oracle 隔离、缺失文件、重复 ID、非法类型/日期、引用、上下文变化、读取范围和快照隔离。Windows 若当前用户确实无权创建 symlink，两个 symlink 行为测试仅在对应 Windows permission error 下跳过；其他创建失败照常报错，有权限的平台仍执行生产路径守卫测试。
 
 本次实际验证使用临时隔离的 Python 3.12.14 环境及仓库 `backend/requirements.lock`：新增 Adapter 测试 105 项，全部后端回归 234 项均通过，共同 schema 检查通过。回归有一条依赖自带的 Starlette/httpx 弃用警告。未执行前端构建或 Agent 端到端演示；前端和应用注册未修改。
 

@@ -20,7 +20,7 @@
 - 保存阶段失败可记录 FAILED；普通未知异常记录可恢复 AGENT_FAILURE，持久化异常记录可恢复 PERSISTENCE_FAILURE，其他 ContractFailure 保留自身可恢复标识。不把无效输入、变动上下文或不支持的规则无限原地重试。
 - FAILED 自身不能保存时抛出异常，注明没有确认失败记录；不返回假装持久化成功的 FAILED。由 A 检查、expire、显式 retry。
 - 取消任务不假报成功/已保存失败；清理内部等待任务，A 负责处理放弃的租约。
-- 路由回执的 eligibility 早于 SUCCEEDED，结束后重新读 A eligibility，不把过期的 RUN_NOT_SUCCEEDED 留作最终 blockers。结束后的 eligibility 读失败不改写已成功的 run；调用方读取 A 的详情确认状态。
+- 路由回执的 eligibility 早于 SUCCEEDED，B 从业务 blockers 中剔除由该先后顺序产生的 `RUN_NOT_SUCCEEDED`。B 返回完成意向及 RunResult，由 A 校验后持久化最终 SUCCEEDED 并重算 eligibility；B 不把 A 提交前的 eligibility 冒充最终结果。A-09 本地适配器会直接持久化 `report_stage(COMPLETED, SUCCEEDED)`，A11 dispatcher 则可将相同调用视为完成意向并在校验返回后提交。
 
 ## 输入与上下文登记
 
@@ -93,6 +93,6 @@ python -m app.export_contracts --check
 
 独立测试使用 A 的真实 WorkflowService/RecoveryPort、临时 SQLite、B 实际规则和明确标注的测试 Profile/证据。涵盖正常可计算输入、超预算、证据缺失、道路关闭、NO_MATCH、三种 operation、保存回执丢失、阶段/完成响应丢失、数据库失败、service/agent 重启、阶段单调、上下文变化、取消/续期、旧 attempt 拒绝。原始 Git 数据未改；完整输入是隔离测试，不是默认生产数据或 UI 成功证明。
 
-2026-10-11 实际结果：B-03 44 项通过；完整后端回归 398 项通过，有一条既有 Starlette/httpx 弃用警告；共享 schema、Python 语法和空白检查通过。测试环境是隔离 Python 3.12.14 加仓库 requirements.lock，不改变项目依赖版本。
+2026-10-11 实际结果：B-03 原阶段 44 项通过；包含本轮审查修复的完整后端回归 406 项通过，有一条既有 Starlette/httpx 弃用警告；共享 schema、Python 语法和空白检查通过。测试环境是隔离 Python 3.12.14 加仓库 requirements.lock。
 
 提交建议：当前 B-01、B-02、B-03 均未提交，可一并使用 [commit message](commit_b01_b03.txt)。不要把忽略的 var 测试数据库/缓存、临时环境或原始数据包放入提交。

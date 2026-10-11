@@ -1,0 +1,356 @@
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "safety_case_id": {
+        "type": "string"
+      },
+      "title": {
+        "type": "string"
+      },
+      "campsite_id": {
+        "type": "string"
+      },
+      "scenario_date": {
+        "type": "string"
+      },
+      "weather": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "source_date": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "data_status": {
+            "type": "string"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "temporal_provenance": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary",
+          "source_date",
+          "status",
+          "data_status",
+          "observed_at",
+          "valid_from",
+          "valid_until",
+          "temporal_provenance"
+        ],
+        "additionalProperties": false
+      },
+      "fire": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "source_date": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "data_status": {
+            "type": "string"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "temporal_provenance": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary",
+          "source_date",
+          "status",
+          "data_status",
+          "observed_at",
+          "valid_from",
+          "valid_until",
+          "temporal_provenance"
+        ],
+        "additionalProperties": false
+      },
+      "road_access": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          },
+          "source_date": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "data_status": {
+            "type": "string"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "valid_until": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "temporal_provenance": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary",
+          "source_date",
+          "status",
+          "data_status",
+          "observed_at",
+          "valid_from",
+          "valid_until",
+          "temporal_provenance"
+        ],
+        "additionalProperties": false
+      },
+      "campsite_restrictions": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "risk_tags": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "mandatory_blockers": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "source_type": {
+        "type": "string"
+      },
+      "source_name": {
+        "type": "string"
+      },
+      "source_date": {
+        "type": "string"
+      },
+      "demo_only": {
+        "type": "boolean"
+      },
+      "notes": {
+        "type": "string"
+      },
+      "revision_date": {
+        "type": "string"
+      },
+      "template_source_id": {
+        "anyOf": [
+          {
+            "type": "null"
+          },
+          {
+            "type": "string"
+          }
+        ]
+      },
+      "context_request_id": {
+        "anyOf": [
+          {
+            "type": "null"
+          },
+          {
+            "type": "string"
+          }
+        ]
+      },
+      "valid_from": {
+        "type": "string"
+      },
+      "valid_until": {
+        "type": "string"
+      },
+      "evidence_facts": {
+        "type": "object",
+        "properties": {
+          "temperature_max_c": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "temperature_min_c": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "forecast_rain_mm": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "wind_kph": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "campsite_open": {
+            "type": "boolean"
+          },
+          "fire_prohibited": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "temperature_max_c",
+          "temperature_min_c",
+          "forecast_rain_mm",
+          "wind_kph",
+          "campsite_open",
+          "fire_prohibited"
+        ],
+        "additionalProperties": false
+      },
+      "evidence_facts_provenance": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "safety_case_id",
+      "title",
+      "campsite_id",
+      "scenario_date",
+      "weather",
+      "fire",
+      "road_access",
+      "campsite_restrictions",
+      "risk_tags",
+      "mandatory_blockers",
+      "source_type",
+      "source_name",
+      "source_date",
+      "demo_only",
+      "notes",
+      "revision_date",
+      "template_source_id",
+      "context_request_id",
+      "valid_from",
+      "valid_until",
+      "evidence_facts",
+      "evidence_facts_provenance"
+    ],
+    "additionalProperties": false
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "synthetic_safety_scenarios v2 dataset fixture schema",
+  "x-data-file": "data/synthetic_safety_scenarios.json"
+}

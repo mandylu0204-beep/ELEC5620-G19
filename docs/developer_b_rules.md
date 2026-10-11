@@ -36,7 +36,7 @@ print(result.model_dump_json(indent=2))
 
 限定为当前英文 demo 语句与明确结构化输入，不声称支持通用自然语言或中文解析：
 
-- 识别已登记地区、ISO 日期、明确晚数/天数、AUD/美元符号金额和少量偏好。
+- 识别已登记地区、ISO 日期、明确晚数/天数、AUD/美元符号金额和少量偏好。时长和人数先解析完整数字 token；负数和小数不会从 token 后缀误读成正整数，而是返回 INVALID 并要求澄清。
 - 两晚推导三天及结束日期；只给天数不会自动换算晚数；原 v1 的 duration_days 元数据不参与解析。
 - 显式字段优先；无效预算、非正人数、日期冲突、不同人数/交通方式、缺失字段或不支持地区返回 field_errors/clarifications。
 - 原文 zero campers 不被 Profile 人数覆盖；request-03 没有时长仍需澄清。
@@ -118,6 +118,6 @@ python -m pytest --basetemp ../var/pytest-b02-regression
 python -m app.export_contracts --check
 ```
 
-2026-10-11 实际验证：B-02 新增 120 项规则测试通过；包含 A 原有测试和 B-01 的全部后端回归 354 项通过；共享 schema、Python 语法和空白检查通过，Git 原数据摘要保持不变。测试使用临时隔离 Python 3.12.14 环境与仓库 requirements.lock。回归有一条既有 Starlette/httpx 弃用警告。没有运行前端构建、LLM 或真实 UI/数据库四场景演示。
+2026-10-11 实际验证（B-02 原阶段）：新增 120 项规则测试通过；当时后端回归 354 项通过。后续审查修复及当前回归结果见 PR 审查修复记录。没有运行 LLM 或真实 UI 四场景验收。
 
 后续更新：B-03 已完成后端编排，当前工作区可一并提交 B-01～B-03。接下来与 A 接线规则版本、工厂、场景登记、HTTP/页面启动重试与风险路由，再共同准备四个用户端可运行场景。

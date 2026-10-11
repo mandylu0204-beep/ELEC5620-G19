@@ -62,10 +62,17 @@ def test_only_days_does_not_implicitly_become_nights(agent):
     ('CampMate Demo Region from 2026-02-30 for two nights, AUD 300.', 'start_date', 'INVALID'),
     ('CampMate Demo Region from 2026-10-07 for two nights, AUD 300.', 'start_date', 'INVALID'),
     ('CampMate Demo Region from 2026-10-20 for zero nights, AUD 300.', 'duration_nights', 'INVALID'),
+    ('CampMate Demo Region from 2026-10-20 for -2 nights, AUD 300.', 'duration_nights', 'INVALID'),
+    ('CampMate Demo Region from 2026-10-20 for 1.5 nights, AUD 300.', 'duration_nights', 'INVALID'),
+    ('CampMate Demo Region from 2026-10-20 for -2 days, AUD 300.', 'duration_days', 'INVALID'),
+    ('CampMate Demo Region from 2026-10-20 for 1.5 days, AUD 300.', 'duration_days', 'INVALID'),
     ('CampMate Demo Region from 2026-10-20 for two nights or three nights, AUD 300.', 'duration_nights', 'CONFLICTING'),
     ('CampMate Demo Region from 2026-10-20 for two nights, AUD 300 or AUD 400.', 'budget_cents', 'CONFLICTING'),
     ('CampMate Demo Region from 2026-10-20 to 2026-10-21 for two nights, AUD 300.', 'end_date', 'CONFLICTING'),
     ('Three campers in CampMate Demo Region from 2026-10-20 for two nights, AUD 300.', 'profile.group_size', 'CONFLICTING'),
+    ('-2 people in CampMate Demo Region from 2026-10-20 for two nights, AUD 300.', 'profile.group_size', 'INVALID'),
+    ('1.5 people in CampMate Demo Region from 2026-10-20 for two nights, AUD 300.', 'profile.group_size', 'INVALID'),
+    ('CampMate Demo Region from 2026-10-20 for 1.5 nights, AUD 300.', 'duration_nights', 'INVALID'),
 ])
 def test_parser_exposes_invalid_and_conflicting_original_values(agent, text, field, code):
     assert any(item.field == field and item.code == code for item in interpret(agent, text).field_errors)

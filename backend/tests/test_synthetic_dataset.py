@@ -4,6 +4,7 @@ from datetime import date
 from decimal import Decimal
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
 
@@ -280,7 +281,7 @@ def test_duplicate_record_id_is_failure(dataset, filename):
 @pytest.mark.parametrize('filename,field,value', [
     ('synthetic_campsites.csv', 'demo_only', 'false'),
     ('synthetic_gear_rules.csv', 'source_type', 'REAL'),
-    # v2 is registered by the shared contract; use an unregistered source version.
+    ('synthetic_profiles.json', 'source_name', 'CampMate Synthetic Demo Dataset v2'),
     ('synthetic_cost_reference.csv', 'source_name', 'CampMate Synthetic Demo Dataset v999'),
     ('synthetic_profiles.json', 'demo_only', 'true'),
     ('synthetic_requests.json', 'source_date', '2026-10-08'),
@@ -417,7 +418,7 @@ def test_symlink_cannot_escape_dataset_root(dataset, tmp_path):
     outside = tmp_path / 'outside.csv'
     shutil.copyfile(path, outside)
     path.unlink()
-    path.symlink_to(outside)
+    _symlink_or_skip_without_permission(path, outside)
     load_failure(dataset)
 
 
@@ -427,9 +428,21 @@ def test_symlink_cannot_redirect_to_oracle_inside_dataset(dataset):
     oracle.parent.mkdir()
     shutil.copyfile(path, oracle)
     path.unlink()
-    path.symlink_to(oracle)
+    _symlink_or_skip_without_permission(path, oracle)
     # Even structurally valid source-looking content in tests must not be opened.
     load_failure(dataset)
+
+
+def _symlink_or_skip_without_permission(path, target):
+    try:
+        path.symlink_to(target)
+    except OSError as exc:
+        # Windows may disable symlink creation for ordinary users (WinError 1314).
+        # Keep all other failures visible; the production path guard remains tested
+        # on platforms where creating a link is permitted.
+        if os.name == 'nt' and getattr(exc, 'winerror', None) in {5, 1314}:
+            pytest.skip(f'Windows symlink creation is unavailable: {exc}')
+        raise
 
 
 def test_missing_dataset_directory_is_contract_failure(tmp_path):

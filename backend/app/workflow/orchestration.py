@@ -177,15 +177,15 @@ class Orchestrator:
                 route = await self.call(lambda: self.port.route_assessed_version(context, propose_route(logistics, safety.result), 'B-03 saved logistics/safety route proposal.', scope.write_keys['route']))
                 self.route = route.status
             self.blockers = route.eligibility.blocking_reasons
-            # Eligibility in a route receipt predates SUCCEEDED. Recompute only
-            # AFTER completion; never report its RUN_NOT_SUCCEEDED as final truth.
-            return await self.finish(scope, version.version_context)
+            # A owns the post-success eligibility calculation.
+            return await self.finish(scope)
         except asyncio.CancelledError:
             # No false durable FAILED claim. A expires/retries an abandoned lease.
             raise
         except Exception as exc:
             if self.stage == RunStage.COMPLETED:
-                # Completion is durable; a subsequent read failure cannot undo it.
+                # The completion intent was already accepted; do not report a
+                # contradictory failure after the returned success result.
                 raise
             error = exc.error if isinstance(exc, ContractFailure) else failure(ErrorCode.AGENT_FAILURE, 'Unexpected workflow failure; retry resumes persisted steps.', recoverable=True).error
             if error.code == ErrorCode.PERSISTENCE_FAILURE and not error.recoverable:
@@ -197,15 +197,15 @@ class Orchestrator:
                 raise exc from recording_error
             return self.result(scope, RunStatus.FAILED, error)
 
-    async def finish(self, scope, context=None):
+    async def finish(self, scope):
+        # Completion is an intent/result for A to validate and commit. A11's
+        # dispatcher owns the durable success transition and final eligibility.
+        # The A-09 standalone adapter commits this call directly; both preserve
+        # the same B-facing order and RunResult contract.
         await self.call(lambda: self.port.report_stage(RunStage.COMPLETED, RunStatus.SUCCEEDED, None))
         self.stage = RunStage.COMPLETED
-        if context is not None:
-            # Read-only: the completed worker cannot heartbeat again. If the read
-            # fails, do NOT change an already persisted SUCCEEDED into FAILED.
-            try:
-                eligibility = await self.port.evaluate_eligibility(context)
-            except Exception as exc:
-                raise failure(ErrorCode.PERSISTENCE_FAILURE, 'Run completion was saved, but eligibility refresh failed; read A plan detail.') from exc
-            self.blockers = eligibility.blocking_reasons
+        # The saved route receipt predates A's success commit and therefore
+        # contains RUN_NOT_SUCCEEDED. It is an execution-order artifact, not a
+        # final business blocker; A computes final eligibility after commit.
+        self.blockers = [item for item in self.blockers if item.code != 'RUN_NOT_SUCCEEDED']
         return self.result(scope, RunStatus.SUCCEEDED)

@@ -6,7 +6,7 @@ import pytest
 
 from app.agents.rule_agent import RuleAgent
 from app.auth import User
-from app.contracts.dto import ConfirmedContext, Evidence, OrchestrateInput, RunResult
+from app.contracts.dto import ConfirmedContext, Evidence, OrchestrateInput, RunResult, RunSnapshot
 from app.contracts.enums import ErrorCode, RunStage
 from app.contracts.errors import ContractFailure
 from app.storage.database import Database
@@ -347,14 +347,25 @@ def test_database_failure_not_claimed_as_durable_failed(setup):
     assert call(port.load_checkpoint())['run_status'] == 'RUNNING'
 
 
-def test_eligibility_read_failure_does_not_undo_success(setup):
+def test_a_dispatcher_commits_success_after_validating_b_result(setup):
     agent, input, port = start(setup)
-    class BrokenRead(Proxy):
-        async def evaluate_eligibility(self, context):
-            raise RuntimeError('Injected read failure')
-    with pytest.raises(ContractFailure, match='completion was saved'):
-        call(agent.orchestrate(input, BrokenRead(port)))
+    class A11CompletionIntent(Proxy):
+        async def report_stage(self, stage, status, error):
+            if stage == 'COMPLETED' and status == 'SUCCEEDED':
+                # A11 validates completion intent but leaves the run RUNNING
+                # until it validates the returned RunResult.
+                return RunSnapshot(run_id=input.run_scope.run_id, execution_mode=DEMO.mode,
+                    run_status='RUNNING', stage='COMPLETED', revision=99)
+            return await self.port.report_stage(stage, status, error)
+    dispatcher_port = A11CompletionIntent(port)
+    result = call(agent.orchestrate(input, dispatcher_port))
+    assert result.run_status == 'SUCCEEDED' and result.stage == 'COMPLETED'
+    assert all(item.code != 'RUN_NOT_SUCCEEDED' for item in result.blockers)
+    assert call(port.load_checkpoint())['run_status'] == 'RUNNING'
+    # Simulate A validating the B response and committing final run status.
+    call(port.report_stage('COMPLETED', 'SUCCEEDED', None))
     assert call(port.load_checkpoint())['run_status'] == 'SUCCEEDED'
+    assert PlanQueries(setup[1].db).detail(setup[2], input.run_scope.plan_id)['eligibility']['eligible']
 
 
 def test_lease_expiry_and_old_attempt_cannot_run_business(setup):

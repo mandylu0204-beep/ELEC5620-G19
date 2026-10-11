@@ -8,12 +8,28 @@ from ...contracts.errors import FieldError
 from .common import artifact
 
 NUMBERS = {'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10}
-NUMBER = r'(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|[+-]?\d+)'
+NUMBER = r'(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|[+-]?(?:\d+(?:\.\d+)?|\.\d+))'
+NUMBER_BOUNDARY = r'(?<![\w.])'
 NO_FIRE_PATTERN = r"\b(?:no fires|no campfires?|without campfires?|avoid campfires?|(?:do not|don't|must not)\s+(?:use|light|have|build|start)\s+(?:a\s+)?campfires?)\b"
 
 
-def _number(token: str) -> int:
-    return NUMBERS[token] if token in NUMBERS else int(token)
+def _positive_integer_tokens(tokens: list[str]) -> tuple[list[int], bool]:
+    """Parse complete numeric tokens; never take a positive suffix of -2 or 1.5."""
+    values, invalid = [], False
+    for token in tokens:
+        if token in NUMBERS:
+            value = NUMBERS[token]
+        else:
+            try:
+                value = int(token)
+            except ValueError:
+                invalid = True
+                continue
+        if value <= 0:
+            invalid = True
+        else:
+            values.append(value)
+    return values, invalid
 
 
 def interpret(dataset, input) -> InterpretRequestResult:
@@ -55,12 +71,13 @@ def interpret(dataset, input) -> InterpretRequestResult:
             error('start_date', FieldErrorCode.AMBIGUOUS, 'More than two dates need clarification.')
 
     for field, suffix in (('duration_nights', 'nights?'), ('duration_days', 'days?')):
-        tokens = re.findall(rf'\b({NUMBER})(?:\s+|-){suffix}\b', lowered)
-        counts = [_number(token) for token in tokens]
-        if any(count <= 0 for count in counts) and field not in explicit:
-            error(field, FieldErrorCode.INVALID, 'Duration must be positive.')
-        else:
-            scalar(field, counts)
+        tokens = re.findall(rf'{NUMBER_BOUNDARY}({NUMBER})(?:\s+|-){suffix}\b', lowered)
+        if field not in explicit:
+            counts, invalid = _positive_integer_tokens(tokens)
+            if invalid:
+                error(field, FieldErrorCode.INVALID, 'Duration must be a positive whole number.')
+            else:
+                scalar(field, counts)
 
     budgets = re.findall(r'\bAUD\s*([+-]?\d+(?:\.\d+)?)|\$\s*([+-]?\d+(?:\.\d+)?)', text, flags=re.IGNORECASE)
     if budgets and 'budget_cents' not in explicit:
@@ -145,11 +162,12 @@ def interpret(dataset, input) -> InterpretRequestResult:
         stated_transport = 'CAR'
     if stated_transport and profile and profile.transport.transport_type is not None and profile.transport.transport_type != stated_transport:
         error('profile.transport.transport_type', FieldErrorCode.CONFLICTING, 'Original request transport differs from the saved Profile.')
-    stated_group = re.findall(rf'\b({NUMBER})\s+(?:campers|beginners|people)\b', lowered)
+    stated_group = re.findall(rf'{NUMBER_BOUNDARY}({NUMBER})\s+(?:campers|beginners|people)\b', lowered)
     stated_group += re.findall(rf'\bwe are\s+({NUMBER})\b', lowered)
-    groups = {_number(token) for token in stated_group}
-    if any(group <= 0 for group in groups):
-        error('profile.group_size', FieldErrorCode.INVALID, 'The original request states a nonpositive group size.')
+    groups_list, invalid_groups = _positive_integer_tokens(stated_group)
+    groups = set(groups_list)
+    if invalid_groups:
+        error('profile.group_size', FieldErrorCode.INVALID, 'The original request states an invalid or nonpositive group size.')
     elif len(groups) > 1 or groups and profile and profile.group_size is not None and groups != {profile.group_size}:
         error('profile.group_size', FieldErrorCode.CONFLICTING, 'Request group size differs from the Profile snapshot.')
     if profile is None or profile.group_size is None:

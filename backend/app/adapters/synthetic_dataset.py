@@ -31,6 +31,7 @@ BUSINESS_FILES = (
 CONTEXT_RULES_VERSION = 'a-request-normalization-v1'
 ADAPTER_VERSION = 'b01-v1-adapter-1'
 PROVENANCE_FIELDS = ('source_type', 'source_name', 'source_date', 'demo_only')
+V1_SOURCE_NAME = 'CampMate Synthetic Demo Dataset v1'
 Record = TypeVar('Record', bound=ContractModel)
 
 
@@ -52,6 +53,10 @@ def _source(row: dict, filename: str, record_id: str) -> SourceRef:
     metadata = {key: row[key] for key in PROVENANCE_FIELDS}
     if filename.endswith('.csv'):
         metadata['demo_only'] = csv_boolean(metadata['demo_only'])
+    # Keep this adapter's package-level contract strict even if a later shared
+    # Provenance schema learns additional source_name values.
+    if metadata['source_name'] != V1_SOURCE_NAME:
+        raise ValueError('This adapter accepts only a consistent Git v1 source package')
     return SourceRef(
         dataset_file=filename, record_id=record_id,
         provenance=Provenance.model_validate(metadata),
