@@ -1,0 +1,17 @@
+feat(agents): implement B01-B03 synthetic adapters, rules and recovery orchestration
+
+- Add read-only v1 dataset adapter with provenance, digest and strict field validation
+- Implement deterministic request, recommendation, itinerary, logistics and safety rules
+- Add checkpoint-first PLAN, REVISE and REASSESS orchestration using A RecoveryPort
+- Reuse saved artifacts and A-generated write keys/IDs when resuming failed runs
+- Fingerprint workflow choices, feedback, rules and explicit scenario DTO supplements
+- Renew attempt leases during async work and preserve durable failure/success boundaries
+- Return A-persisted routes and refreshed eligibility without finalising plans
+- Add adapter, business-rule and real SQLite recovery integration tests
+- Document input gaps, A integration steps and known route-priority differences
+
+Keep shared contracts 1.0, original Git data and A-owned application/storage/UI unchanged.
+Deterministic agent registration and HTTP/UI start/retry wiring remain pending A integration.
+
+Validation: 398 backend tests passed, including 44 B03 orchestration tests.
+Shared JSON schemas unchanged; one existing Starlette/httpx deprecation warning.
