@@ -2,7 +2,7 @@
 
 ## 范围与状态
 
-本次仅使用 Git 中的 `data/synthetic_demo`，不解压或引入上传的 v2，不改动原始数据、共享契约 1.0、数据库、HTTP、前端或 Agent 注册。Adapter 是独立的只读业务输入边界，不表示规划、风险评估或端到端演示已经完成。
+本次仅使用 Git 中的 `data/synthetic_demo`，不改动原始数据、共享契约 1.0、数据库、HTTP、前端或 Agent 注册。Adapter 是独立的只读业务输入边界，不表示规划、风险评估或端到端演示已经完成。
 
 新增模块在 `backend/app/adapters/`。`models.py` 是 Adapter 内部的来源记录类型，不是第二套 AgentPort/PersistencePort 契约；输出的 ProfileSnapshot、Evidence、ScenarioContext 等仍直接使用共同 DTO。
 
