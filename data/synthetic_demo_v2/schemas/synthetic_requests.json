@@ -1,0 +1,346 @@
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "request_id": {
+        "type": "string"
+      },
+      "profile_id": {
+        "type": "string"
+      },
+      "natural_language_request": {
+        "type": "string"
+      },
+      "destination": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "start_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "duration_days": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "budget_aud": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "preferences": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      },
+      "notes": {
+        "type": "string"
+      },
+      "source_type": {
+        "type": "string"
+      },
+      "source_name": {
+        "type": "string"
+      },
+      "source_date": {
+        "type": "string"
+      },
+      "demo_only": {
+        "type": "boolean"
+      },
+      "revision_date": {
+        "type": "string"
+      },
+      "legacy_duration_days": {
+        "type": "integer"
+      },
+      "duration_nights": {
+        "anyOf": [
+          {
+            "type": "integer"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "end_date": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "user_supplements": {
+        "type": "object",
+        "properties": {
+          "preferences": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "vehicle_count": {
+            "type": "integer"
+          },
+          "estimated_total_vehicle_km": {
+            "type": "integer"
+          },
+          "meal_mode": {
+            "type": "string"
+          },
+          "planned_campfire": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "preferences"
+        ],
+        "additionalProperties": false
+      },
+      "supplement_provenance": {
+        "type": "string"
+      },
+      "profile_snapshot": {
+        "type": "object",
+        "properties": {
+          "profile_id": {
+            "type": "string"
+          },
+          "camper_name": {
+            "type": "string"
+          },
+          "group_size": {
+            "type": "integer"
+          },
+          "experience_level": {
+            "type": "string"
+          },
+          "has_children": {
+            "type": "boolean"
+          },
+          "available_equipment": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "transport_type": {
+            "type": "string"
+          },
+          "accessibility_requirements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "notes": {
+            "type": "string"
+          },
+          "source_type": {
+            "type": "string"
+          },
+          "source_name": {
+            "type": "string"
+          },
+          "source_date": {
+            "type": "string"
+          },
+          "demo_only": {
+            "type": "boolean"
+          },
+          "revision_date": {
+            "type": "string"
+          },
+          "owner_user_id": {
+            "type": "string"
+          },
+          "children_count": {
+            "type": "integer"
+          },
+          "vehicle_count": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "adult_count": {
+            "type": "integer"
+          },
+          "normalized_equipment": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "item_key": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "unit": {
+                  "type": "string"
+                },
+                "capacity_persons": {
+                  "anyOf": [
+                    {
+                      "type": "integer"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "confirmed": {
+                  "type": "boolean"
+                },
+                "original_text": {
+                  "type": "string"
+                },
+                "provenance": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "item_key",
+                "quantity",
+                "unit",
+                "capacity_persons",
+                "confirmed",
+                "original_text",
+                "provenance"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "normalization_notes": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "profile_id",
+          "camper_name",
+          "group_size",
+          "experience_level",
+          "has_children",
+          "available_equipment",
+          "transport_type",
+          "accessibility_requirements",
+          "notes",
+          "source_type",
+          "source_name",
+          "source_date",
+          "demo_only",
+          "revision_date",
+          "owner_user_id",
+          "children_count",
+          "vehicle_count",
+          "adult_count",
+          "normalized_equipment",
+          "normalization_notes"
+        ],
+        "additionalProperties": false
+      },
+      "confirmed": {
+        "type": "boolean"
+      },
+      "transport_parameters": {
+        "type": "object",
+        "properties": {
+          "vehicle_count": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "estimated_total_vehicle_km": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          }
+        },
+        "required": [
+          "vehicle_count",
+          "estimated_total_vehicle_km"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "required": [
+      "request_id",
+      "profile_id",
+      "natural_language_request",
+      "destination",
+      "start_date",
+      "duration_days",
+      "budget_aud",
+      "preferences",
+      "notes",
+      "source_type",
+      "source_name",
+      "source_date",
+      "demo_only",
+      "revision_date",
+      "legacy_duration_days",
+      "duration_nights",
+      "end_date",
+      "user_supplements",
+      "supplement_provenance",
+      "profile_snapshot",
+      "confirmed",
+      "transport_parameters"
+    ],
+    "additionalProperties": false
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "synthetic_requests v2 dataset fixture schema",
+  "x-data-file": "data/synthetic_requests.json"
+}

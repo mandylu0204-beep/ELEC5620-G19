@@ -1,0 +1,1444 @@
+{
+  "request_oracles": [
+    {
+      "request_id": "request-01",
+      "expected_initial_status": "AWAITING_CONFIRMATION",
+      "missing_fields": [],
+      "invalid_fields": [],
+      "expected_after_explicit_confirmation": "CONFIRMED",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test oracle only; not an Agent input."
+    },
+    {
+      "request_id": "request-02",
+      "expected_initial_status": "NEEDS_CLARIFICATION",
+      "missing_fields": [
+        "destination"
+      ],
+      "invalid_fields": [],
+      "expected_after_explicit_confirmation": null,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test oracle only; not an Agent input."
+    },
+    {
+      "request_id": "request-03",
+      "expected_initial_status": "NEEDS_CLARIFICATION",
+      "missing_fields": [
+        "start_date",
+        "duration_nights"
+      ],
+      "invalid_fields": [],
+      "expected_after_explicit_confirmation": null,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test oracle only; not an Agent input."
+    },
+    {
+      "request_id": "request-04",
+      "expected_initial_status": "NEEDS_CLARIFICATION",
+      "missing_fields": [
+        "budget_aud"
+      ],
+      "invalid_fields": [],
+      "expected_after_explicit_confirmation": null,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test oracle only; not an Agent input."
+    },
+    {
+      "request_id": "request-05",
+      "expected_initial_status": "REJECTED",
+      "missing_fields": [],
+      "invalid_fields": [
+        "budget_aud"
+      ],
+      "expected_after_explicit_confirmation": null,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test oracle only; not an Agent input."
+    },
+    {
+      "request_id": "request-06",
+      "expected_initial_status": "REJECTED",
+      "missing_fields": [],
+      "invalid_fields": [
+        "group_size"
+      ],
+      "expected_after_explicit_confirmation": null,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test oracle only; not an Agent input."
+    },
+    {
+      "request_id": "request-07",
+      "expected_initial_status": "REJECTED",
+      "missing_fields": [],
+      "invalid_fields": [
+        "destination"
+      ],
+      "expected_after_explicit_confirmation": null,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test oracle only; not an Agent input."
+    },
+    {
+      "request_id": "request-08",
+      "expected_initial_status": "AWAITING_CONFIRMATION",
+      "missing_fields": [],
+      "invalid_fields": [],
+      "expected_after_explicit_confirmation": "CONFIRMED",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test oracle only; not an Agent input."
+    },
+    {
+      "request_id": "request-09",
+      "expected_initial_status": "AWAITING_CONFIRMATION",
+      "missing_fields": [],
+      "invalid_fields": [],
+      "expected_after_explicit_confirmation": "CONFIRMED",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test oracle only; not an Agent input."
+    },
+    {
+      "request_id": "request-10",
+      "expected_initial_status": "AWAITING_CONFIRMATION",
+      "missing_fields": [],
+      "invalid_fields": [],
+      "expected_after_explicit_confirmation": "CONFIRMED",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test oracle only; not an Agent input."
+    },
+    {
+      "request_id": "request-11",
+      "expected_initial_status": "AWAITING_CONFIRMATION",
+      "missing_fields": [],
+      "invalid_fields": [],
+      "expected_after_explicit_confirmation": "CONFIRMED",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test oracle only; not an Agent input."
+    },
+    {
+      "request_id": "request-12",
+      "expected_initial_status": "AWAITING_CONFIRMATION",
+      "missing_fields": [],
+      "invalid_fields": [],
+      "expected_after_explicit_confirmation": "CONFIRMED",
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test oracle only; not an Agent input."
+    },
+    {
+      "request_id": "request-13",
+      "expected_initial_status": "AWAITING_CONFIRMATION",
+      "expected_after_explicit_confirmation": "CONFIRMED",
+      "missing_fields": [],
+      "invalid_fields": [],
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Success-path oracle; explicit confirmation required."
+    }
+  ],
+  "safety_oracles": [
+    {
+      "safety_case_id": "safety-01",
+      "expected_outcome": "PASSED",
+      "expected_severity": "LOW",
+      "expected_confidence": "HIGH",
+      "expected_actions": [
+        "record risk note",
+        "continue plan"
+      ],
+      "requires_human_review": false,
+      "finalization_eligible": true,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Expected assessment and routing are test outputs, never evidence inputs."
+    },
+    {
+      "safety_case_id": "safety-02",
+      "expected_outcome": "REVIEW",
+      "expected_severity": "MEDIUM",
+      "expected_confidence": "LOW",
+      "expected_actions": [
+        "escalate to Human Founder",
+        "do not claim safe"
+      ],
+      "requires_human_review": true,
+      "finalization_eligible": false,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Expected assessment and routing are test outputs, never evidence inputs."
+    },
+    {
+      "safety_case_id": "safety-03",
+      "expected_outcome": "REVIEW",
+      "expected_severity": "MEDIUM",
+      "expected_confidence": "LOW",
+      "expected_actions": [
+        "request refreshed synthetic data",
+        "escalate"
+      ],
+      "requires_human_review": true,
+      "finalization_eligible": false,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Expected assessment and routing are test outputs, never evidence inputs."
+    },
+    {
+      "safety_case_id": "safety-04",
+      "expected_outcome": "REVIEW",
+      "expected_severity": "HIGH",
+      "expected_confidence": "LOW",
+      "expected_actions": [
+        "escalate to Human Founder",
+        "hide no uncertainty"
+      ],
+      "requires_human_review": true,
+      "finalization_eligible": false,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Expected assessment and routing are test outputs, never evidence inputs."
+    },
+    {
+      "safety_case_id": "safety-05",
+      "expected_outcome": "REVISION",
+      "expected_severity": "HIGH",
+      "expected_confidence": "HIGH",
+      "expected_actions": [
+        "remove campfire",
+        "use stove or ready-to-eat meals"
+      ],
+      "requires_human_review": true,
+      "finalization_eligible": false,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Expected assessment and routing are test outputs, never evidence inputs."
+    },
+    {
+      "safety_case_id": "safety-06",
+      "expected_outcome": "BLOCKED",
+      "expected_severity": "CRITICAL",
+      "expected_confidence": "HIGH",
+      "expected_actions": [
+        "select another campsite",
+        "do not finalize"
+      ],
+      "requires_human_review": true,
+      "finalization_eligible": false,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Expected assessment and routing are test outputs, never evidence inputs."
+    },
+    {
+      "safety_case_id": "safety-07",
+      "expected_outcome": "BLOCKED",
+      "expected_severity": "CRITICAL",
+      "expected_confidence": "HIGH",
+      "expected_actions": [
+        "select another campsite",
+        "do not finalize"
+      ],
+      "requires_human_review": true,
+      "finalization_eligible": false,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Expected assessment and routing are test outputs, never evidence inputs."
+    },
+    {
+      "safety_case_id": "safety-08",
+      "expected_outcome": "REVIEW",
+      "expected_severity": "HIGH",
+      "expected_confidence": "LOW",
+      "expected_actions": [
+        "surface conflict",
+        "escalate to Human Founder"
+      ],
+      "requires_human_review": true,
+      "finalization_eligible": false,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Expected assessment and routing are test outputs, never evidence inputs."
+    },
+    {
+      "safety_case_id": "safety-09",
+      "expected_outcome": "REVIEW",
+      "expected_severity": "HIGH",
+      "expected_confidence": "MEDIUM",
+      "expected_actions": [
+        "change date or campsite",
+        "increase water plan",
+        "escalate high risk to Human Founder before any finalisation"
+      ],
+      "requires_human_review": true,
+      "finalization_eligible": false,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Expected assessment and routing are test outputs, never evidence inputs."
+    },
+    {
+      "safety_case_id": "safety-10",
+      "expected_outcome": "REVIEW",
+      "expected_severity": "HIGH",
+      "expected_confidence": "LOW",
+      "expected_actions": [
+        "escalate",
+        "request missing information"
+      ],
+      "requires_human_review": true,
+      "finalization_eligible": false,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Expected assessment and routing are test outputs, never evidence inputs."
+    },
+    {
+      "safety_case_id": "safety-11",
+      "expected_outcome": "PASSED",
+      "expected_severity": "LOW",
+      "expected_confidence": "HIGH",
+      "expected_actions": [
+        "record risk note",
+        "continue plan"
+      ],
+      "requires_human_review": false,
+      "finalization_eligible": true,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Expected assessment and routing are test outputs, never evidence inputs."
+    },
+    {
+      "safety_case_id": "safety-12",
+      "expected_outcome": "REVISION",
+      "expected_severity": "HIGH",
+      "expected_confidence": "HIGH",
+      "expected_actions": [
+        "remove campfire",
+        "use stove or ready-to-eat meals"
+      ],
+      "requires_human_review": true,
+      "finalization_eligible": false,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Expected assessment and routing are test outputs, never evidence inputs."
+    }
+  ],
+  "test_oracles": [
+    {
+      "test_id": "test-01",
+      "assertions": {
+        "expected_extracted_values": "missing_fields=destination",
+        "expected_outcome": "NEEDS_CLARIFICATION",
+        "expected_required_content": "destination question",
+        "expected_state_change": "request stays unconfirmed",
+        "forbidden_behaviour": "change confirmed request without confirmation",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-02",
+      "assertions": {
+        "expected_extracted_values": "missing_fields=start_date;duration_nights",
+        "expected_outcome": "NEEDS_CLARIFICATION",
+        "expected_required_content": "start-date and duration questions",
+        "expected_state_change": "request stays unconfirmed",
+        "forbidden_behaviour": "hide uncertainty",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-03",
+      "assertions": {
+        "expected_extracted_values": "missing_fields=budget_aud",
+        "expected_outcome": "NEEDS_CLARIFICATION",
+        "expected_required_content": "budget question",
+        "expected_state_change": "request stays unconfirmed",
+        "forbidden_behaviour": "hide uncertainty",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-04",
+      "assertions": {
+        "expected_extracted_values": "group_size invalid",
+        "expected_outcome": "REJECTED",
+        "expected_required_content": "invalid group size",
+        "expected_state_change": "request becomes rejected",
+        "forbidden_behaviour": "change confirmed request without confirmation",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-05",
+      "assertions": {
+        "expected_extracted_values": "confirmation=false",
+        "expected_outcome": "AWAITING_CONFIRMATION",
+        "expected_required_content": "confirmation prompt",
+        "expected_state_change": "no draft is created",
+        "forbidden_behaviour": "change confirmed request without confirmation",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-06",
+      "assertions": {
+        "expected_extracted_values": "destination unsupported",
+        "expected_outcome": "REJECTED",
+        "expected_required_content": "supported region notice",
+        "expected_state_change": "request becomes rejected",
+        "forbidden_behaviour": "fabricate campsite availability",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-07",
+      "assertions": {
+        "expected_extracted_values": "vehicle_access=true; group<=8",
+        "expected_outcome": "RECOMMENDED",
+        "expected_required_content": "reason for match",
+        "expected_state_change": "draft created",
+        "forbidden_behaviour": "fabricate campsite availability",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-08",
+      "assertions": {
+        "expected_extracted_values": "constraints incompatible",
+        "expected_outcome": "NO_MATCH",
+        "expected_required_content": "no matching campsite",
+        "expected_state_change": "no plan created",
+        "forbidden_behaviour": "fabricate campsite availability",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-09",
+      "assertions": {
+        "expected_extracted_values": "wheelchair_accessible=true",
+        "expected_outcome": "RECOMMENDED",
+        "expected_required_content": "accessible facility rationale",
+        "expected_state_change": "draft created",
+        "forbidden_behaviour": "ignore mandatory restriction",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-10",
+      "assertions": {
+        "expected_extracted_values": "public_transport_access=true",
+        "expected_outcome": "RECOMMENDED",
+        "expected_required_content": "transport option",
+        "expected_state_change": "draft created",
+        "forbidden_behaviour": "ignore mandatory restriction",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-11",
+      "assertions": {
+        "expected_extracted_values": "date order invalid",
+        "expected_outcome": "REJECTED",
+        "expected_required_content": "valid date order",
+        "expected_state_change": "no plan created",
+        "forbidden_behaviour": "hide uncertainty",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-12",
+      "assertions": {
+        "expected_extracted_values": "prior=plan-12-v1; new=plan-12-v2",
+        "expected_outcome": "VERSION_CREATED",
+        "expected_required_content": "new version identifier",
+        "expected_state_change": "new version DRAFT with no inherited assessments or approval",
+        "forbidden_behaviour": "overwrite previous plan version",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-13",
+      "assertions": {
+        "expected_extracted_values": "tent missing",
+        "expected_outcome": "REVISION_REQUIRED",
+        "expected_required_content": "tent requirement",
+        "expected_state_change": "gear revision required",
+        "forbidden_behaviour": "ignore mandatory restriction",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-14",
+      "assertions": {
+        "expected_extracted_values": "sleeping bag missing",
+        "expected_outcome": "REVISION_REQUIRED",
+        "expected_required_content": "sleeping bag requirement",
+        "expected_state_change": "gear revision required",
+        "forbidden_behaviour": "ignore mandatory restriction",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-15",
+      "assertions": {
+        "expected_extracted_values": "required_water_litres=16 (2 people * (3 days + 1 emergency day) * 2 litres)",
+        "expected_outcome": "REVISION_REQUIRED",
+        "expected_required_content": "required water quantity",
+        "expected_state_change": "gear revision required",
+        "forbidden_behaviour": "claim safe when evidence is missing",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-16",
+      "assertions": {
+        "expected_extracted_values": "public_transport_access=false",
+        "expected_outcome": "REVISION_REQUIRED",
+        "expected_required_content": "transport incompatibility",
+        "expected_state_change": "draft needs revision",
+        "forbidden_behaviour": "ignore mandatory restriction",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-17",
+      "assertions": {
+        "expected_extracted_values": "total>50",
+        "expected_outcome": "REVISION_REQUIRED",
+        "expected_required_content": "over budget amount",
+        "expected_state_change": "draft needs revision",
+        "forbidden_behaviour": "hide uncertainty",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-18",
+      "assertions": {
+        "expected_extracted_values": "sum line items != total",
+        "expected_outcome": "REVISION_REQUIRED",
+        "expected_required_content": "cost reconciliation error",
+        "expected_state_change": "draft needs revision",
+        "forbidden_behaviour": "hide uncertainty",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-19",
+      "assertions": {
+        "expected_extracted_values": "weather.status=MISSING",
+        "expected_outcome": "REVIEW",
+        "expected_required_content": "uncertainty and review",
+        "expected_state_change": "human review required",
+        "forbidden_behaviour": "claim safe when evidence is missing",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-20",
+      "assertions": {
+        "expected_extracted_values": "weather.status=STALE",
+        "expected_outcome": "REVIEW",
+        "expected_required_content": "stale-data notice",
+        "expected_state_change": "human review required",
+        "forbidden_behaviour": "claim safe when evidence is missing",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-21",
+      "assertions": {
+        "expected_extracted_values": "road_access=CLOSED",
+        "expected_outcome": "BLOCKED",
+        "expected_required_content": "road closure blocker",
+        "expected_state_change": "plan blocked",
+        "forbidden_behaviour": "finalize blocked plan",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-22",
+      "assertions": {
+        "expected_extracted_values": "mandatory_blockers nonempty",
+        "expected_outcome": "BLOCKED",
+        "expected_required_content": "campsite closure blocker",
+        "expected_state_change": "plan blocked",
+        "forbidden_behaviour": "finalize blocked plan",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-23",
+      "assertions": {
+        "expected_extracted_values": "no fires; campfire requested",
+        "expected_outcome": "REVISION",
+        "expected_required_content": "no-fire restriction",
+        "expected_state_change": "revision feedback recorded; current HIGH-risk version AWAITING_REVIEW; finalization_eligible=false",
+        "forbidden_behaviour": "ignore mandatory restriction",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-24",
+      "assertions": {
+        "expected_extracted_values": "status=CONFLICTING",
+        "expected_outcome": "REVIEW",
+        "expected_required_content": "conflict explanation",
+        "expected_state_change": "human review required",
+        "forbidden_behaviour": "hide uncertainty",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-25",
+      "assertions": {
+        "expected_extracted_values": "severity=HIGH; confidence=LOW",
+        "expected_outcome": "REVIEW",
+        "expected_required_content": "Human Founder escalation",
+        "expected_state_change": "human review required",
+        "forbidden_behaviour": "claim safe when evidence is missing",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-26",
+      "assertions": {
+        "expected_extracted_values": "actor unauthorised",
+        "expected_outcome": "NOT_FINALIZED",
+        "expected_required_content": "unauthorised operation notice",
+        "expected_state_change": "state unchanged",
+        "forbidden_behaviour": "finalize rejected plan",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-27",
+      "assertions": {
+        "expected_extracted_values": "latest=plan-12-v2",
+        "expected_outcome": "NOT_FINALIZED",
+        "expected_required_content": "old version notice",
+        "expected_state_change": "old version remains unapproved",
+        "forbidden_behaviour": "reuse approval from previous version",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-28",
+      "assertions": {
+        "expected_extracted_values": "decision=REQUEST_REVISION",
+        "expected_outcome": "REVISION_REQUIRED",
+        "expected_required_content": "revision instructions",
+        "expected_state_change": "new plan version required",
+        "forbidden_behaviour": "overwrite previous plan version",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-29",
+      "assertions": {
+        "expected_extracted_values": "save=false",
+        "expected_outcome": "NOT_FINALIZED",
+        "expected_required_content": "save failure notice",
+        "expected_state_change": "transaction rolled back; status remains READY_TO_FINALIZE; no final record",
+        "forbidden_behaviour": "finalize rejected plan",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-30",
+      "assertions": {
+        "expected_extracted_values": "states=DRAFT;REJECTED;BLOCKED",
+        "expected_outcome": "NOT_FINALIZED",
+        "expected_required_content": "state-specific rejection",
+        "expected_state_change": "no final plan saved",
+        "forbidden_behaviour": "finalize rejected plan;finalize blocked plan",
+        "pass_criteria": "Semantic result and stated state match; exact wording is not required."
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Legacy semantic assertions retained; see fixture inputs for actual parameters."
+    },
+    {
+      "test_id": "test-31",
+      "assertions": {
+        "result": "SUCCESS",
+        "owner_user_id": "camper-a",
+        "saved_group_size": 2
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-32",
+      "assertions": {
+        "result": "SUCCESS",
+        "owner_user_id": "camper-a",
+        "saved_group_size": 2
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-33",
+      "assertions": {
+        "result": "SUCCESS",
+        "owner_user_id": "camper-a",
+        "saved_group_size": 3
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-34",
+      "assertions": {
+        "result": "FINALIZED",
+        "state": "FINALIZED",
+        "duration_days": 3,
+        "duration_nights": 2,
+        "end_date": "2026-11-08",
+        "expected_daily_dates": [
+          "2026-11-06",
+          "2026-11-07",
+          "2026-11-08"
+        ],
+        "all_assessments_complete": true,
+        "required_water_litres": 12,
+        "cost_breakdown_typical_aud": {
+          "campsite": 70,
+          "transport": 35,
+          "food": 108,
+          "water": 36,
+          "parking": 12,
+          "additional_equipment": 0
+        },
+        "total_typical_aud": 261,
+        "final_record_count": 1,
+        "read_saved_version": "plan-success-v1"
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-35",
+      "assertions": {
+        "result": "FORBIDDEN",
+        "state": "UNCHANGED",
+        "response_contains_owner_data": false
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-36",
+      "assertions": {
+        "result": "FORBIDDEN",
+        "state": "UNCHANGED",
+        "response_contains_owner_data": false
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-37",
+      "assertions": {
+        "result": "FORBIDDEN",
+        "state": "UNCHANGED",
+        "response_contains_owner_data": false
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-38",
+      "assertions": {
+        "result": "FORBIDDEN",
+        "state": "UNCHANGED",
+        "response_contains_owner_data": false
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-39",
+      "assertions": {
+        "result": "DECISION_SAVED",
+        "decision": "APPROVE",
+        "reason_required": true,
+        "reviewed_version_id": "plan-extra-v1",
+        "state": "READY_TO_FINALIZE"
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-40",
+      "assertions": {
+        "result": "DECISION_SAVED",
+        "decision": "REJECT",
+        "reason_required": true,
+        "reviewed_version_id": "plan-extra-v1",
+        "state": "REJECTED"
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-41",
+      "assertions": {
+        "result": "DECISION_SAVED",
+        "decision": "REQUEST_REVISION",
+        "reason_required": true,
+        "reviewed_version_id": "plan-extra-v1",
+        "state": "NEEDS_REVISION"
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-42",
+      "assertions": {
+        "result": "REASON_REQUIRED",
+        "decision": "APPROVE",
+        "reason_required": true,
+        "reviewed_version_id": "plan-extra-v1",
+        "state": "UNCHANGED"
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-43",
+      "assertions": {
+        "result": "FINALISATION_BLOCKED",
+        "final_record_count": 0,
+        "finalization_eligible": false,
+        "blocker_codes": [
+          "campfire at no-fire site"
+        ],
+        "review_actor": "founder-demo",
+        "finalize_actor": "camper-a"
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-44",
+      "assertions": {
+        "result": "NOT_FINALIZED",
+        "new_version_state": "DRAFT",
+        "new_assessment_refs": [],
+        "new_review_refs": [],
+        "old_records_unchanged": true
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-45",
+      "assertions": {
+        "result": "SUCCESS",
+        "saved_profile_group_size": 4,
+        "historical_request_profile_snapshot": {
+          "profile_id": "profile-a",
+          "camper_name": "Demo Camper A",
+          "group_size": 2,
+          "experience_level": "BEGINNER",
+          "has_children": false,
+          "available_equipment": [
+            "two-person tent",
+            "two sleeping bags",
+            "first aid kit",
+            "torch",
+            "car"
+          ],
+          "transport_type": "CAR",
+          "accessibility_requirements": [],
+          "notes": "Two beginners with car and mostly complete gear.",
+          "source_type": "SYNTHETIC",
+          "source_name": "CampMate Synthetic Demo Dataset v2",
+          "source_date": "2026-10-07",
+          "demo_only": true,
+          "revision_date": "2026-10-09",
+          "owner_user_id": "camper-a",
+          "children_count": 0,
+          "vehicle_count": null,
+          "adult_count": 2,
+          "normalized_equipment": [
+            {
+              "item_key": "tent",
+              "quantity": 1,
+              "unit": "item",
+              "capacity_persons": 2,
+              "confirmed": false,
+              "original_text": "two-person tent",
+              "provenance": "V1_TEXT_EXPLICIT"
+            },
+            {
+              "item_key": "sleeping_bag",
+              "quantity": 2,
+              "unit": "item",
+              "capacity_persons": null,
+              "confirmed": false,
+              "original_text": "two sleeping bags",
+              "provenance": "V1_TEXT_EXPLICIT"
+            },
+            {
+              "item_key": "first_aid_kit",
+              "quantity": 1,
+              "unit": "item",
+              "capacity_persons": null,
+              "confirmed": false,
+              "original_text": "first aid kit",
+              "provenance": "V1_TEXT_EXPLICIT"
+            },
+            {
+              "item_key": "torch",
+              "quantity": null,
+              "unit": "item",
+              "capacity_persons": null,
+              "confirmed": false,
+              "original_text": "torch",
+              "provenance": "NEEDS_CLARIFICATION"
+            },
+            {
+              "item_key": "vehicle",
+              "quantity": null,
+              "unit": "item",
+              "capacity_persons": null,
+              "confirmed": false,
+              "original_text": "car",
+              "provenance": "NEEDS_CLARIFICATION"
+            }
+          ],
+          "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+        },
+        "historical_plan_snapshot_unchanged": true
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-46",
+      "assertions": {
+        "result": "IDEMPOTENT",
+        "confirmed_snapshot_count": 1,
+        "plan_version_count": 1
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-47",
+      "assertions": {
+        "result": "STALE_RESULT_IGNORED",
+        "latest_state": "DRAFT",
+        "latest_assessment_refs": []
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-48",
+      "assertions": {
+        "result": "FINALIZED",
+        "after_failure_final_count": 0,
+        "after_failure_state": "READY_TO_FINALIZE",
+        "final_record_count": 1
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-49",
+      "assertions": {
+        "result": "DISPLAY_RECOVERED",
+        "state": "FINALIZED",
+        "final_record_count": 1
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-50",
+      "assertions": {
+        "result": "EQUIVALENT_RESULTS",
+        "business_agent_count": 3,
+        "business_agent_interfaces_unchanged": true
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-51",
+      "assertions": {
+        "result": "STARTED",
+        "campsites": 10,
+        "gear_rules": 30,
+        "cost_references": 16,
+        "profiles": 5,
+        "requests": 13,
+        "safety_scenarios": 12,
+        "external_network_required": false
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-52",
+      "assertions": {
+        "result": "REVIEW",
+        "requires_human_review": true,
+        "finalization_eligible": false,
+        "revision_actions_present": true
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-53",
+      "assertions": {
+        "result": "REVIEW",
+        "missing_inputs": [
+          "vehicle_count",
+          "estimated_total_vehicle_km"
+        ],
+        "precise_total_aud": null,
+        "partial_campsite_subtotal_aud": 70
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-54",
+      "assertions": {
+        "result": "AWAITING_CONFIRMATION",
+        "planning_started": false,
+        "old_confirmed_snapshot_unchanged": true
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-55",
+      "assertions": {
+        "result": "SAVE_FAILED",
+        "latest_version_id": "plan-extra-v1",
+        "plan_version_count": 1,
+        "old_records_unchanged": true
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-56",
+      "assertions": {
+        "result": "FINALISATION_BLOCKED",
+        "final_record_count": 0,
+        "finalization_eligible": false,
+        "evidence_complete": false,
+        "blocker_codes": [
+          "SAFETY_EVIDENCE_INCOMPLETE"
+        ],
+        "review_actor": "founder-demo",
+        "finalize_actor": "camper-a"
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Test-only assertions."
+    },
+    {
+      "test_id": "test-57",
+      "assertions": {
+        "result": "FINALIZED",
+        "finalization_eligible": true,
+        "final_record_count": 1
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Paired condition-resolved control for test-43."
+    },
+    {
+      "test_id": "test-58",
+      "assertions": {
+        "result": "FINALIZED",
+        "finalization_eligible": true,
+        "final_record_count": 1,
+        "evidence_complete": true
+      },
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-09",
+      "notes": "Paired condition-resolved control for test-56."
+    }
+  ],
+  "metadata": {
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "revision_date": "2026-10-09"
+  }
+}
