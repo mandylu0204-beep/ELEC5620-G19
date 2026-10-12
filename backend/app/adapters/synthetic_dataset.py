@@ -254,11 +254,19 @@ class SyntheticDataset:
         self, context: DatasetContext, campsites: dict[str, CampsiteRecord],
         gear_rules: dict[str, GearRuleRecord], costs: dict[str, CostReferenceRecord],
         profiles: dict[str, ProfileRecord], requests: dict[str, RequestRecord],
-        safety: dict[str, SafetyRecord],
+        safety: dict[str, SafetyRecord], *, v2_policy=None, runtime_requests=None,
+        safety_facts=None, runtime_profiles=None,
     ):
         self._context = context
         self._campsites, self._gear_rules, self._costs = campsites, gear_rules, costs
         self._profiles, self._requests, self._safety = profiles, requests, safety
+        # v2-only declarative source material. Kept separate from shared DTOs so
+        # contract 1.0 remains stable and the source expressions remain auditable.
+        self.v2_policy = v2_policy
+        self.runtime_requests = runtime_requests or {}
+        self.safety_facts = safety_facts or {}
+        self.runtime_profiles = runtime_profiles or {}
+        self.adapter_version = ADAPTER_VERSION
 
     @property
     def context(self) -> DatasetContext:
@@ -322,8 +330,13 @@ class SyntheticDataset:
         if demo_context.dataset_version != self._context.dataset_version:
             raise _stale('DemoContext and source dataset versions differ.')
         request = self.get_request(request_id)
+        runtime = self.runtime_requests.get(request_id) if self.runtime_requests else None
+        raw_text = runtime['natural_language_request'] if runtime is not None else request.raw_text
+        profile_snapshot = self.runtime_profiles.get(request_id) or self.get_profile(request.profile_id).snapshot
+        if runtime is not None and runtime.get('profile_snapshot', {}).get('profile_id') != request.profile_id:
+            raise _failure('Runtime request profile snapshot does not match its linked profile.', record_id=request_id)
         return InterpretRequestInput(
-            raw_text=request.raw_text, profile_snapshot=self.get_profile(request.profile_id).snapshot,
+            raw_text=raw_text, profile_snapshot=profile_snapshot,
             demo_context=demo_context,
         )
 

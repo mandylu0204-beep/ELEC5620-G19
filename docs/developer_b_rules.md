@@ -4,7 +4,9 @@
 
 本次在 B-01 Adapter 上实现五项纯业务能力，使用 Git 中未改动的 v1。没有调用外部 API、LLM 或爬虫，也没有更改共享契约 1.0、A 的数据库/权限/HTTP/前端、应用注册或默认配置。
 
-入口：`backend/app/agents/rule_agent.py` 的 `RuleAgent(dataset)`。实现拆在 `agents/rules/`，规则标识为 `b02-v1-rules-1`。只接受 `deterministic_demo`，拒绝伪装成 stub 或真实 LLM agent。输入输出直接使用共同 DTO，不另建数据库或业务 ID。
+入口：`backend/app/agents/rule_agent.py` 的 `RuleAgent(dataset)`。实现拆在 `agents/rules/`，当前 v1 规则标识为 `b02-v1-rules-2`。只接受 `deterministic_demo`，拒绝伪装成 stub 或真实 LLM agent。输入输出直接使用共同 DTO，不另建数据库或业务 ID。
+
+2026-10-12 修订：无台阶硬约束采用 True/False/None 三态判断，False 不得被旧设施文本覆盖。本文后续 B-02 缺口/协商表是原阶段记录；当前 A12/A13 接线、v2 规则身份与 R-01/R-02 验证结论见 [v2 runtime integration](v2_runtime_integration.md)。
 
 2026-10-11 更新：`orchestrate()` 已由 B-03 实现 checkpoint 编排，见 [编排与恢复交接](developer_b_orchestration.md)。RuleAgent 尚未加入 A 的 AGENT_FACTORIES，所以页面仍不声称可以执行真实规划；下文 B-02 的验证数字保留该阶段记录。
 

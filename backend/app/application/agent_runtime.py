@@ -37,7 +37,7 @@ def configured_scenarios(settings, descriptor):
     for name in settings.dataset_scenario_files:
         try:
             payload = scenario_path(settings.dataset_path, name).read_bytes()
-        except OSError as exc:
+        except (OSError, ValueError) as exc:
             raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='场景文件在加载期间不可读，请重新读取。')) from exc
         if hashlib.sha256(payload).hexdigest() != descriptor.context.fixture_digests[name]:
             raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='场景文件在加载期间变化，请重新读取。'))
@@ -67,9 +67,25 @@ def build_v1_rule_binding(settings, descriptor):
     return AgentBinding(RuleAgent(dataset, workflow_configuration=configuration), configuration.context)
 
 
+def build_v2_binding(settings, descriptor):
+    """Bind the sealed v2 bytes and explicit safety selections to a real RuleAgent."""
+    from ..adapters.synthetic_dataset_v2 import SyntheticDatasetV2Adapter
+    from ..agents.rule_agent import RuleAgent
+    from ..workflow import WorkflowConfiguration
+
+    dataset = SyntheticDatasetV2Adapter(settings.dataset_path).load(expected_context=descriptor.context)
+    dataset.selected_safety_case_ids = tuple(settings.workflow_safety_case_ids)
+    base = descriptor.context.model_copy(update={'rules_version': descriptor.context.rules_version + '/a-runtime-bindings-v2'})
+    configuration = WorkflowConfiguration(dataset, safety_case_ids=settings.workflow_safety_case_ids,
+        scenarios=configured_scenarios(settings, descriptor), registered_context=base,
+        feedback=base.selection_config.get('a_revision_feedback') or None)
+    return AgentBinding(RuleAgent(dataset, workflow_configuration=configuration), configuration.context)
+
+
 # B can register v2 under its own explicit source family. No fallback to v1.
 DATASET_AGENT_FACTORIES = {
     (ExecutionMode.DETERMINISTIC_DEMO, 'CampMate Synthetic Demo Dataset v1'): build_v1_rule_binding,
+    (ExecutionMode.DETERMINISTIC_DEMO, 'CampMate Synthetic Demo Dataset v2'): build_v2_binding,
 }
 
 

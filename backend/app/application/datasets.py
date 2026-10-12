@@ -9,6 +9,7 @@ from pathlib import Path, PurePosixPath
 from ..contracts.dto import DatasetContext, Provenance
 from ..contracts.enums import ErrorCode
 from ..contracts.errors import ContractError, ContractFailure
+from ..dataset_paths import data_file_path, manifest_file_path
 
 BUSINESS_FILES = (
     'synthetic_campsites.csv', 'synthetic_gear_rules.csv', 'synthetic_cost_reference.csv',
@@ -60,10 +61,7 @@ def scenario_path(root, name):
             or path.is_absolute() or '..' in path.parts or path.suffix != '.json'
             or len(path.parts) < 3 or path.parts[:2] != ('data', 'scenarios')):
         raise ValueError('Scenarios must be JSON under data/scenarios')
-    result = (root / name).resolve()
-    if not result.is_relative_to(root.resolve()):
-        raise ValueError('Scenario must stay inside the dataset')
-    return result
+    return data_file_path(root, path.relative_to('data').as_posix(), scenarios=True)
 
 
 def inspect_dataset(settings):
@@ -73,8 +71,8 @@ def inspect_dataset(settings):
     as business input, even if the package manifest lists them.
     """
     try:
-        root = settings.dataset_path
-        payloads = {f'data/{name}': (root / 'data' / name).read_bytes() for name in BUSINESS_FILES}
+        root = settings.dataset_path.resolve(strict=True)
+        payloads = {f'data/{name}': data_file_path(root, name).read_bytes() for name in BUSINESS_FILES}
         rows = {name: records(name, payloads[f'data/{name}']) for name in BUSINESS_FILES}
         camps = rows['synthetic_campsites.csv']
         source = provenance_for(camps[0], True)
@@ -84,7 +82,7 @@ def inspect_dataset(settings):
         if not regions or not all(regions):
             raise ValueError('Missing region')
         manifest_path = root / 'manifest.json'
-        manifest_payload = manifest_path.read_bytes() if manifest_path.exists() else None
+        manifest_payload = manifest_file_path(root).read_bytes() if manifest_path.exists() or manifest_path.is_symlink() else None
         manifest = json.loads(manifest_payload.decode('utf-8-sig')) if manifest_payload is not None else None
         if manifest_payload is not None and not isinstance(manifest, dict):
             raise ValueError('Manifest must be an object')
@@ -105,7 +103,7 @@ def inspect_dataset(settings):
         if (source_v2 or any(runtime_present)) and not all(runtime_present):
             raise ValueError('Incomplete runtime input pair')
         for name in RUNTIME_FILES if all(runtime_present) else ():
-            payload = (root / 'data' / name).read_bytes()
+            payload = data_file_path(root, name).read_bytes()
             runtime_rows = records(name, payload)
             if contains_oracle(runtime_rows) or any(provenance_for(row) != source for row in runtime_rows):
                 raise ValueError('Runtime input contains oracle or mixed provenance')

@@ -34,6 +34,9 @@ class CampsiteRecord(ContractModel):
     facilities: list[str]
     mandatory_restrictions: list[str]
     risk_tags: list[str]
+    walk_in_only: bool | None = None
+    quiet_environment: bool | None = None
+    step_free_path: bool | None = None
     source_ref: SourceRef
 
 

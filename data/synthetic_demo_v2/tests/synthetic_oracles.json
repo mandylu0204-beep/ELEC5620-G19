@@ -400,6 +400,114 @@
       "demo_only": true,
       "revision_date": "2026-10-09",
       "notes": "Expected assessment and routing are test outputs, never evidence inputs."
+    },
+    {
+      "safety_case_id": "safety-13",
+      "expected_outcome": "PASSED",
+      "expected_severity": "LOW",
+      "expected_confidence": "HIGH",
+      "expected_actions": [
+        "record risk note",
+        "continue plan"
+      ],
+      "requires_human_review": false,
+      "finalization_eligible": true,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-12",
+      "notes": "Expected assessment and routing are test outputs, never evidence inputs."
+    },
+    {
+      "safety_case_id": "safety-14",
+      "expected_outcome": "PASSED",
+      "expected_severity": "LOW",
+      "expected_confidence": "HIGH",
+      "expected_actions": [
+        "record risk note",
+        "continue plan"
+      ],
+      "requires_human_review": false,
+      "finalization_eligible": true,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-12",
+      "notes": "Expected assessment and routing are test outputs, never evidence inputs."
+    },
+    {
+      "safety_case_id": "safety-15",
+      "expected_outcome": "PASSED",
+      "expected_severity": "LOW",
+      "expected_confidence": "HIGH",
+      "expected_actions": [
+        "record risk note",
+        "continue plan"
+      ],
+      "requires_human_review": false,
+      "finalization_eligible": true,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-12",
+      "notes": "Independent expected safety output; full-plan eligibility additionally depends on saved logistics and application guards."
+    },
+    {
+      "safety_case_id": "safety-16",
+      "expected_outcome": "PASSED",
+      "expected_severity": "LOW",
+      "expected_confidence": "HIGH",
+      "expected_actions": [
+        "record risk note",
+        "continue plan"
+      ],
+      "requires_human_review": false,
+      "finalization_eligible": false,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-12",
+      "notes": "Independent expected safety output; full-plan eligibility additionally depends on saved logistics and application guards."
+    },
+    {
+      "safety_case_id": "safety-17",
+      "expected_outcome": "PASSED",
+      "expected_severity": "LOW",
+      "expected_confidence": "HIGH",
+      "expected_actions": [
+        "record risk note",
+        "continue plan"
+      ],
+      "requires_human_review": false,
+      "finalization_eligible": true,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-12",
+      "notes": "Independent expected safety output; full-plan eligibility additionally depends on saved logistics and application guards."
+    },
+    {
+      "safety_case_id": "safety-18",
+      "expected_outcome": "BLOCKED",
+      "expected_severity": "CRITICAL",
+      "expected_confidence": "HIGH",
+      "expected_actions": [
+        "select another campsite",
+        "do not finalize"
+      ],
+      "requires_human_review": true,
+      "finalization_eligible": false,
+      "source_type": "SYNTHETIC",
+      "source_name": "CampMate Synthetic Demo Dataset v2",
+      "source_date": "2026-10-07",
+      "demo_only": true,
+      "revision_date": "2026-10-12",
+      "notes": "Independent expected safety output; full-plan eligibility additionally depends on saved logistics and application guards."
     }
   ],
   "test_oracles": [
@@ -1312,7 +1420,7 @@
         "cost_references": 16,
         "profiles": 5,
         "requests": 13,
-        "safety_scenarios": 12,
+        "safety_scenarios": 18,
         "external_network_required": false
       },
       "source_type": "SYNTHETIC",

@@ -32,9 +32,26 @@
 | 3 缺失场景 | 两 Camper 越权读写、Founder 决策/理由、blocker 守卫、新版重评、snapshot、幂等/迟到结果、保存回滚/恢复、适配器/干净环境规格 |
 | 4 报告范围 | 报告仅声明静态数据检查；所有应用规格 NOT_RUN；测试记录补来源元数据 |
 
+## 2026-10-12 数据与验证更新
+
+- Added safety-13/safety-14, synthetic coverage for Pine Camp and River Flat during the two-night budget-revision demo (2026-10-27–29).
+- Shifted safety-06 and its matching component fixture to 2027-04-10–13, within Cloud Gully's synthetic autumn availability; the road remains CLOSED.
+- Kept safety-02 weather evidence MISSING intentionally. Its fire and road evidence already cover the River Flat test trip.
+- Added independent test-only expected outcomes for safety-13/safety-14; they are not Agent evidence inputs.
+- Re-sealed all 31 registered release files. Static package validation: 68 passed, 0 failed; the generated report and manifest checksums are current.
+- Full backend suite: 485 passed, 0 failed; shared JSON Schema check passed. The suite reports one Starlette deprecation warning for the test-client `httpx` dependency.
+- These results do not claim browser acceptance or the complete authenticated HTTP retry/reassessment flow; those remain outstanding integration acceptance work.
+
 新增业务记录：request-13 完整成功输入；safety-11 为 safety-01 的 Nov 6–8 新上下文；safety-12 为 safety-05 的 Nov 4–6 新上下文。
 新增明确演示假设：安静与无台阶属性、装备阈值、场景数值证据及有效期、成功路径的用品与总车公里。原有未知 family tent 容量与 torch 数量没有猜填。
 默认费用仍是原 v1 典型参考值，全部为 SYNTHETIC。示例成本不代表真实价格。
+
+## 2026-10-12 HTTP 演示输入对齐
+
+- 新增 safety-15（Wattle Rest 正常）、safety-16（Wattle Rest 超预算）、safety-17（Moonlit Field 低价修订）与 safety-18（Moonlit Field 封路）。均为明确标注的合成事实，不修改营地排名或现有业务记录。
+- runtime_safety_evidence 由相同业务记录的 allowlist 映射同步生成；独立期望仅保存在 synthetic_oracles。safety-16 的安全评估通过不代表整份方案可最终化（费用超预算）。
+- 四套真实 HTTP 输入位于应用仓库 docs/demo/v2_inputs.json；不用手工筛选或指定候选营地。预算为 AUD 245，自动推荐的 AUD 251 方案可修订至 AUD 231。
+- 数据包静态验证不执行应用测试；应用端验证结果与范围见仓库 docs/v2_runtime_integration.md。上节 485 项结果是此前组件测试阶段的记录，不是本轮锁定环境的验证结论。
 
 ## 集成仍需执行的工作
 
