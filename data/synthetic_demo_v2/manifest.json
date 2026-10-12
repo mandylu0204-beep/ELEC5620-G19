@@ -1,12 +1,12 @@
 {
   "dataset_version": "2.0.0",
-  "revision_date": "2026-10-11",
+  "revision_date": "2026-10-12",
   "provenance": {
     "source_type": "SYNTHETIC",
     "source_name": "CampMate Synthetic Demo Dataset v2",
     "source_date": "2026-10-07",
     "demo_only": true,
-    "revision_date": "2026-10-11"
+    "revision_date": "2026-10-12"
   },
   "default_demo_clock": "2026-10-09T10:00:00+11:00",
   "clock_policy": "Immutable clock per scenario run; scenario fixtures set it before startup. Host clock is never used.",
@@ -28,24 +28,24 @@
     "cost_references": 16,
     "profiles": 5,
     "requests": 13,
-    "safety_scenarios": 12,
+    "safety_scenarios": 18,
     "acceptance_specs": 58
   },
   "application_tests_executed": false,
   "policy_status": "PROPOSED_V2_CONTRACT_ALIGNED_TO_STAGE1; A/B integration still requires adoption",
   "files_sha256": {
     ".gitattributes": "e390101f55e251a284ede74c1df137fb4b14489845b19c5887cccbdcb7e18251",
-    "CHANGELOG.md": "87cc0746e9bae2b24a46830169a488dcee92a32a30c9b0bfc5fe9c41e19adfa6",
-    "FINAL_VALIDATION_REPORT.md": "45a97535984574dc6b0f37483bf8fe55586ee55d49aa03799cb00b0461059b13",
-    "README.md": "589c17bf13a0ce1f87c0e9220cbdee4529198efb23e8744b0bab4e18c4f80e77",
+    "CHANGELOG.md": "a59a80730f4e23d8e162fa01046c72a4965aa602b03d3cb5eb94fae4d0012852",
+    "FINAL_VALIDATION_REPORT.md": "52e3c0e42057c33cca62c3a13fa6ac90d2b648d7ec3990589679d277aced50ab",
+    "README.md": "0b3202457c6d4da92b99fe5efdd74b662853af7981c5c52dfb301a5d34d4b77e",
     "data/runtime_requests.json": "2e8f42816313bea35e26517933c567fdbd772b75d6b6788b1ddd89569a4ceb0c",
-    "data/runtime_safety_evidence.json": "8eaed2d3b898757f941e9341cd0f69e17bba8f8d3def4c11635c4e61d47bbdb9",
+    "data/runtime_safety_evidence.json": "c2b51107b6ca9534d719e0bbe385d789341757fa9574815df8ee92bf0fff0c9b",
     "data/synthetic_campsites.csv": "c4fe2e94d6dde01034c8ed404423a7932943ef1eba2b3b8a3c40f01b23183b1b",
     "data/synthetic_cost_reference.csv": "f027927431e6edacab3a7c22603fa2f4b6e422a793bb4f0e82eec08806f0e535",
     "data/synthetic_gear_rules.csv": "6e2de57f35b6ff1fb9fe7d8575ebfdf35d3424e02785753aa35e9a7a28d51f79",
     "data/synthetic_profiles.json": "8e422b9375b8c68922c3d1a47b0dbd4d556f160d284fe001276bfcce7a447e55",
     "data/synthetic_requests.json": "4be90883e21b66af06341842ddae82d5f94f98a4a47141f30c66fc3a477a56e6",
-    "data/synthetic_safety_scenarios.json": "2bc7990d1491642ad312ea0c8597c7b301444180f1f7d370f6c299528b421198",
+    "data/synthetic_safety_scenarios.json": "af30582923dcd52ecb061f6ea3b4722c2618803264449ef6b12461239b55d72a",
     "docs/integration_contract.md": "82bc8b182114c810cc458deb8e21050185969a0984138ba083c84795dec225fa",
     "docs/original_validation_report_v1.md": "d5a3815c10f1b8f156faf8c786ff69f2e985fa4c43a07d70707eed637bfb1c4a",
     "docs/synthetic_data_dictionary.md": "e263e4b6500f78cbf0d788b9ed72707b65334f938e429857941afb98c3297876",
@@ -60,11 +60,11 @@
     "scripts/release_files.py": "415c812197c73953e155db8577a543e954c7ff50476236e39b8e73846b32a040",
     "scripts/repair_review_findings.py": "14a440012f6c090bd1017fb0cc67d5eb477a28810172463bf86be8da30e8757b",
     "scripts/runtime_inputs.py": "9c2bac47e98bf62df2136a70ba1d3a8b17f75db527777e1543bead40d7768552",
-    "scripts/validate_dataset.py": "d06cbce1180daeadfc75c16cf8b38b1b14e31bdf6295195f51d5ce0cb82bf78e",
-    "tests/static_validation_results.json": "d2d6e69beb2f0a6257d41ffbe1f8e028d054c771e307011ad99e323f24481deb",
+    "scripts/validate_dataset.py": "2f8a0d9bbd8da9c7d0f5a68511bc61828c527f9801ba8319f5053b0494793d01",
+    "tests/static_validation_results.json": "939a64835cb0ac9c7e4734e9eb4fe41a772222691a2176770c808abfaeaa4ea6",
     "tests/synthetic_agent_test_cases.csv": "bde00a11bd0c0482ac1b1128b4639a68ef11c9639ed33e7d74713a0125bf6026",
-    "tests/synthetic_oracles.json": "e67535a49d7a28a1013745109c8dac089d5fc429448b5de1b7a4c71a5b5027df",
-    "tests/synthetic_test_fixtures.json": "b0b3317445e1dab3c1cce318cedc14f2896d50dd7bb437384c6e1f24bc34d556"
+    "tests/synthetic_oracles.json": "ea3c03fc818b85cd8de65738ce87959f16231baf095def712b5b594e6efadf1f",
+    "tests/synthetic_test_fixtures.json": "dae3ec168fe972ddbb780fa0e4996d01099ed82093428b0478448be802d79a42"
   },
   "source_originals_verified_unchanged": true,
   "release_format": "UTF-8/LF; SHA-256 of distributed bytes; registered files only"

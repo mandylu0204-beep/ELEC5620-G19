@@ -205,15 +205,15 @@ check('JSON record schemas validate complete files',bool(list((ROOT/'schemas').g
 bad=verify_release(ROOT)
 check('Release manifest checksums',not bad,str(bad))
 
-summary={'validation_date':'2026-10-11','kind':'STATIC_DATA_AND_IMPORT_ADAPTER_CHECKS','passed':sum(r['passed'] for r in results),'failed':sum(not r['passed'] for r in results),'acceptance_specs':len(tests),'application_tests_executed':False,'checks':results}
+summary={'validation_date':date.today().isoformat(),'kind':'STATIC_DATA_AND_IMPORT_ADAPTER_CHECKS','passed':sum(r['passed'] for r in results),'failed':sum(not r['passed'] for r in results),'acceptance_specs':len(tests),'application_tests_executed':False,'checks':results}
 if '--write-report' in sys.argv:
     (ROOT/'tests/static_validation_results.json').write_text(json.dumps(summary,ensure_ascii=False,indent=2)+'\n', encoding='utf-8', newline='\n')
     table='\n'.join(f"| {r['check']} | {'PASS' if r['passed'] else 'FAIL'} |" for r in results)
     report=f'''# CampMate v2 静态验证报告
 
-验证日期：2026-10-11。共 {len(results)} 项检查，{summary['passed']} 项通过，{summary['failed']} 项失败。
+验证日期：{summary['validation_date']}。共 {len(results)} 项检查，{summary['passed']} 项通过，{summary['failed']} 项失败。
 
-业务数据：10 个营地、30 条装备规则、16 条费用参考、5 个资料、13 个请求、12 个安全场景。
+业务数据：10 个营地、30 条装备规则、16 条费用参考、5 个资料、13 个请求、{len(safety)} 个安全场景。
 测试规格：{len(tests)} 条，每条都有独立 fixture、身份、动作与预期，全部为 NOT_RUN。
 
 ## 验证范围

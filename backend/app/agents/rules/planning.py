@@ -50,7 +50,7 @@ def violations(campsite, requirements, profile, *, include_budget=True):
         normalized = requirement.strip().casefold()
         supported = {
             'wheelchair-accessible toilet': campsite.wheelchair_accessible is True and campsite.toilets is True,
-            'step-free path': campsite.wheelchair_accessible is True and 'accessible path' in campsite.facilities,
+            'step-free path': campsite.step_free_path is True or campsite.wheelchair_accessible is True and 'accessible path' in campsite.facilities,
             'wheelchair access': campsite.wheelchair_accessible is True,
         }
         if supported.get(normalized) is not True:
@@ -84,10 +84,14 @@ def recommend(dataset, input) -> RecommendCampsitesResult:
                 score += 1
                 matches.append(f'Soft preference {preference} matches source facilities.')
             elif normalized == 'quiet':
-                if any('quiet hours' in restriction.casefold() for restriction in campsite.mandatory_restrictions):
+                if campsite.quiet_environment is True:
+                    score += 1
+                    matches.append('Synthetic quiet-environment attribute matches; it is not a real-world guarantee.')
+                elif campsite.quiet_environment is None and any('quiet hours' in restriction.casefold() for restriction in campsite.mandatory_restrictions):
                     score += 1
                     matches.append('Source lists a quiet-hours policy, not a quietness guarantee.')
-                uncertainties.append('Actual quietness is not supplied.')
+                if campsite.quiet_environment is not True:
+                    uncertainties.append('Actual quietness is not supplied.')
             elif feature is None and normalized not in {'ready-to-eat meals', 'ready_to_eat', 'self-catered meals', 'self_catered'}:
                 uncertainties.append(f'Preference {preference!r} has no verified source mapping.')
         if campsite.nightly_fee_cents is None:
@@ -101,7 +105,10 @@ def recommend(dataset, input) -> RecommendCampsitesResult:
     return RecommendCampsitesResult(
         search_outcome='MATCHES' if candidates else 'NO_MATCH', candidates=candidates,
         excluded_candidates=excluded,
-        **artifact(input.demo_context, sources, assumptions=['Soft-match count, known nightly fee, then campsite ID determine stable ranking.']),
+        **artifact(input.demo_context, sources, assumptions=[
+            'Soft-match count, known nightly fee, then campsite ID determine stable ranking.',
+            *(['v2 quiet and step-free fields are synthetic demo assumptions, not real-world verification.'] if dataset.v2_policy is not None else []),
+        ]),
     )
 
 

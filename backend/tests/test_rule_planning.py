@@ -231,7 +231,7 @@ def test_rule_agent_registration_is_dataset_bound_and_orchestration_requires_rec
     from app.application.agent_runtime import DATASET_AGENT_FACTORIES
     assert ExecutionMode.DETERMINISTIC_DEMO not in AGENT_FACTORIES
     assert (ExecutionMode.DETERMINISTIC_DEMO, 'CampMate Synthetic Demo Dataset v1') in DATASET_AGENT_FACTORIES
-    assert (ExecutionMode.DETERMINISTIC_DEMO, 'CampMate Synthetic Demo Dataset v2') not in DATASET_AGENT_FACTORIES
+    assert (ExecutionMode.DETERMINISTIC_DEMO, 'CampMate Synthetic Demo Dataset v2') in DATASET_AGENT_FACTORIES
     with pytest.raises(ContractFailure) as failure:
         call(agent.orchestrate(None, None))
     assert failure.value.error.code == ErrorCode.CONTRACT_INVALID

@@ -1,5 +1,6 @@
 """Synthetic gear and budget rules. Estimates never confirm rentals or supplies."""
 from decimal import Decimal, ROUND_CEILING, ROUND_HALF_UP
+from functools import reduce
 
 from ...contracts.dto import Blocker, Clarification, CostLine, GearItem, LogisticsResult
 from ...contracts.enums import AssessmentOutcome
@@ -45,6 +46,35 @@ def _ceil(value: Decimal) -> Decimal:
     return value.to_integral_value(rounding=ROUND_CEILING)
 
 
+def _eval_expression(expression, values):
+    """Evaluate the sealed v2 expression DSL; unknown variables never default to zero."""
+    if not isinstance(expression, dict):
+        return expression, set()
+    if 'var' in expression:
+        key = expression['var']
+        return (values[key], set()) if values.get(key) is not None else (None, {key})
+    if len(expression) != 1:
+        raise rule_failure('Malformed v2 gear expression.', 'gear_rules')
+    operator, args = next(iter(expression.items()))
+    evaluated = [_eval_expression(arg, values) for arg in args]
+    missing = set().union(*(item[1] for item in evaluated))
+    if missing:
+        return None, missing
+    args = [item[0] for item in evaluated]
+    if operator == 'mul': result = reduce(lambda left, right: left * right, args, 1)
+    elif operator == 'add': result = sum(args)
+    elif operator == 'sub': result = args[0] - args[1]
+    elif operator == 'eq': result = args[0] == args[1]
+    elif operator == 'lt': result = args[0] < args[1]
+    elif operator == 'lte': result = args[0] <= args[1]
+    elif operator == 'gt': result = args[0] > args[1]
+    elif operator == 'gte': result = args[0] >= args[1]
+    elif operator == 'and': result = all(args)
+    elif operator == 'or': result = any(args)
+    else: raise rule_failure(f'Unsupported v2 gear operator: {operator}.', 'gear_rules')
+    return result, set()
+
+
 def _available(profile, item_key, unit, required=None):
     entries = [item for item in profile.equipment if item.item_key == item_key]
     if not entries:
@@ -76,7 +106,16 @@ def _tent_count(profile, group):
 
 
 def _active(trigger, context):
-    group, profile, campsites, requirements, mode = context
+    group, profile, campsites, requirements, mode = context[:5]
+    dataset, policy_values = context[5:]
+    if dataset.v2_policy is not None:
+        row = dataset.v2_policy['gear'][trigger.gear_rule_id]
+        active, missing = _eval_expression(row['trigger_json'], policy_values)
+        policy_values['_missing_inputs'].update(missing)
+        # Unknown conditions are conservatively included; the resulting unknown
+        # quantity is surfaced as a clarification below, never treated as zero.
+        return True if active is None else bool(active)
+    trigger = trigger.trigger_conditions
     remote = any('remote' in campsite.risk_tags for campsite in campsites)
     no_vehicle = profile.transport.transport_type != 'CAR'
     fire_prohibited = 'no_fires' in requirements.mandatory_constraints or any(campsite.fire_allowed is not True for campsite in campsites)
@@ -110,7 +149,13 @@ def _active(trigger, context):
 
 
 def _required(rule, context):
-    group, profile, campsites, requirements, mode = context
+    group, profile, campsites, requirements, mode = context[:5]
+    dataset, policy_values = context[5:]
+    if dataset.v2_policy is not None:
+        row = dataset.v2_policy['gear'][rule.gear_rule_id]
+        quantity, missing = _eval_expression(row['quantity_json'], policy_values)
+        policy_values['_missing_inputs'].update(missing)
+        return None if quantity is None else Decimal(str(quantity))
     if rule.quantity_rule in {'one tent space per two campers', 'one tent space per uncovered camper'}:
         return group
     if rule.quantity_rule in {'one per camper', 'one set per camper', 'one per uncovered camper'}:
@@ -145,11 +190,52 @@ def assess(dataset, input) -> LogisticsResult:
     nights = validate_itinerary(dataset, input.saved_itinerary, requirements)
     campsites = [dataset.get_campsite(key) for key in nights]
     group, mode = Decimal(profile.group_size), meal_mode(requirements)
-    context = (group, profile, campsites, requirements, mode)
+    policy_values = {}
+    if dataset.v2_policy is not None:
+        tent_capacity = _available(profile, 'tent', 'person_space', group)
+        tent_count = _tent_count(profile, group)
+        sleeping_bags = _available(profile, 'sleeping_bag', 'item', group)
+        stove_count = _available(profile, 'camping_stove', 'item')
+        vehicle_count = profile.transport.vehicle_count
+        fire_prohibited = 'no_fires' in requirements.mandatory_constraints or any(camp.fire_allowed is not True for camp in campsites)
+        selected_ids = set(getattr(dataset, 'selected_safety_case_ids', ()))
+        facts = []
+        for case in dataset.safety_cases:
+            if case.safety_case_id not in selected_ids or case.campsite_id not in {camp.campsite_id for camp in campsites}:
+                continue
+            weather = next((item for item in case.scenario_context.evidence if item.kind == 'WEATHER'), None)
+            if (weather is None or weather.status.value != 'AVAILABLE' or weather.source_date is None
+                    or weather.source_date > input.demo_context.demo_today
+                    or weather.valid_from is None or weather.valid_from > requirements.start_date
+                    or weather.valid_to is None or weather.valid_to < requirements.end_date
+                    or not weather.summary):
+                continue
+            facts.append(dataset.safety_facts.get(case.safety_case_id, {}))
+        def known_fact(name):
+            values = [fact.get(name) for fact in facts]
+            return values[0] if values and all(value == values[0] for value in values) else None
+        policy_values = {
+            'duration_nights': requirements.duration_nights, 'duration_days': requirements.duration_days,
+            'group_size': profile.group_size, 'tent_count': tent_count, 'tent_capacity_persons': tent_capacity,
+            'sleeping_bag_count': sleeping_bags, 'stove_count': stove_count,
+            'meal_mode': mode, 'fire_prohibited': fire_prohibited,
+            'experience_level': profile.experience_level,
+            'potable_water': all(camp.potable_water is True for camp in campsites) if all(camp.potable_water is not None for camp in campsites) else None,
+            'toilets': all(camp.toilets is True for camp in campsites) if all(camp.toilets is not None for camp in campsites) else None,
+            'remote': any('remote' in camp.risk_tags for camp in campsites),
+            'transport_type': profile.transport.transport_type, 'vehicle_count': vehicle_count,
+            'children_count': profile.children_count,
+            'adult_count': None if profile.children_count is None else profile.group_size - profile.children_count,
+            'temperature_min_c': known_fact('temperature_min_c'), 'temperature_max_c': known_fact('temperature_max_c'),
+            'forecast_rain_mm': known_fact('forecast_rain_mm'), 'wind_kph': known_fact('wind_kph'),
+            '_missing_inputs': set(),
+        }
+    context = (group, profile, campsites, requirements, mode, dataset, policy_values)
     clarifications, blockers, sources = [], [], [campsite.source_ref for campsite in campsites]
     assumptions = [
         'Gear quantities are conservative synthetic planning rules, not real safety advice.',
-        'Conditional weather gear is provisionally included because LogisticsInput has no weather context.',
+        ('Conditional v2 weather gear uses only selected, current, trip-covering synthetic observations; unknown triggers are conservatively included.'
+         if dataset.v2_policy is not None else 'Conditional weather gear is provisionally included because LogisticsInput has no weather context.'),
         'Food/water use synthetic provision-value allowances, not a claim of actual purchases.',
         'Priced equipment gaps are estimates; they do not confirm a hire or purchase.',
     ]
@@ -172,18 +258,27 @@ def assess(dataset, input) -> LogisticsResult:
         clarify('cooking_method', 'Confirm a fire-free cooking arrangement.', 'A campsite fire_allowed flag is not current fire permission or a cooking arrangement.')
 
     merged = {}
+    V2_UNITS = {'person_capacity': 'person_space', 'meal_portion': 'portion', 'snack_portion': 'portion',
+        'item': 'item', 'litre': 'litre', 'plan': 'plan'}
     for rule in dataset.gear_rules:
         if rule.item_name not in ITEMS:
             raise rule_failure(f'Unsupported gear item: {rule.item_name}.', 'gear_rules')
-        if not _active(rule.trigger_conditions, context):
+        if not _active(rule, context):
             continue
         sources.append(rule.source_ref)
         key, unit = ITEMS[rule.item_name]
+        if dataset.v2_policy is not None:
+            source_rule = dataset.v2_policy['gear'][rule.gear_rule_id]
+            if source_rule['item_key'] != key or source_rule['quantity_unit'] not in V2_UNITS:
+                raise rule_failure(f'Unsupported v2 item/unit mapping for {rule.gear_rule_id}.', 'gear_rules')
+            unit = V2_UNITS[source_rule['quantity_unit']]
         required = _required(rule, context)
         if key not in merged:
             merged[key] = {'required': required, 'unit': unit, 'essential': rule.essential, 'mandatory': rule.severity_if_missing == 'MANDATORY_BLOCKER', 'sources': [rule.source_ref]}
         else:
             existing = merged[key]
+            if existing['unit'] != unit:
+                raise rule_failure(f'Conflicting units for gear item {key}.', 'gear_rules')
             existing['required'] = None if existing['required'] is None or required is None else max(existing['required'], required)
             existing['essential'] |= rule.essential
             existing['mandatory'] |= rule.severity_if_missing == 'MANDATORY_BLOCKER'
@@ -200,9 +295,18 @@ def assess(dataset, input) -> LogisticsResult:
             arrangement_status=arrangement, essential=details['essential'],
         ))
         if details['essential'] and missing is None:
-            clarify(f'equipment.{key}', f'Confirm {key} quantity, units and capacity where relevant.', 'Essential stock or requirement is unknown/unconfirmed.')
+            reason = 'Essential stock or requirement is unknown/unconfirmed.'
+            if dataset.v2_policy is not None:
+                row = dataset.v2_policy['gear'][next(item.gear_rule_id for item in dataset.gear_rules if item.source_ref in details['sources'])]
+                _, unknown = _eval_expression(row['quantity_json'], policy_values)
+                if unknown:
+                    reason = 'Missing v2 rule inputs: ' + ', '.join(sorted(unknown)) + '.'
+            clarify(f'equipment.{key}', f'Confirm {key} quantity, units and capacity where relevant.', reason)
         if details['essential'] and missing is not None and missing > 0 and details['mandatory']:
             blockers.append(Blocker(code='ESSENTIAL_GEAR_MISSING', message=f'{key} has an unresolved gap of {missing} {details["unit"]}.', source_refs=details['sources']))
+    if dataset.v2_policy is not None:
+        for name in sorted(policy_values['_missing_inputs']):
+            clarify(f'gear_rule_input.{name}', f'Confirm the v2 rule input {name}.', 'The registered v2 expression references an unknown input; no default or zero was substituted.')
 
     transport = profile.transport
     transport_feasible = None
@@ -247,6 +351,52 @@ def assess(dataset, input) -> LogisticsResult:
         reference = dataset.get_cost_reference(cost_id)
         if (reference.category, reference.unit) != EXPECTED_COST_UNITS[cost_id]:
             raise rule_failure(f'Cost reference {cost_id} has unsupported category/unit semantics.', 'cost_reference')
+        if dataset.v2_policy is not None:
+            row = dataset.v2_policy['costs'][cost_id]
+            if row['rate_source'] != 'typical_aud':
+                raise rule_failure(f'Unsupported v2 rate source for {cost_id}.', 'cost_reference')
+            values = {
+                'estimated_total_vehicle_km': transport.estimated_km,
+                'vehicle_count': transport.vehicle_count,
+                'group_size': profile.group_size,
+                'duration_days': requirements.duration_days,
+                'duration_nights': requirements.duration_nights,
+                'meal_mode': mode,
+                'water_equivalent_person_days': None,
+                'hire_tent_count': Decimal(0), 'hire_sleeping_bag_count': Decimal(0),
+                'hire_stove_count': Decimal(0), 'purchase_first_aid_count': Decimal(0),
+                'purchase_torch_count': Decimal(0), 'purchase_rain_jacket_count': Decimal(0),
+                'hire_sleeping_mat_count': Decimal(0), 'purchase_power_bank_count': Decimal(0),
+                'purchase_map_count': Decimal(0),
+            }
+            by_key = {item.item_key: item for item in checklist}
+            if 'drinking_water' in by_key and by_key['drinking_water'].required_quantity is not None:
+                values['water_equivalent_person_days'] = by_key['drinking_water'].required_quantity / 2
+            cost_item_variables = {
+                'tent':'hire_tent_count', 'sleeping_bag':'hire_sleeping_bag_count',
+                'camping_stove':'hire_stove_count', 'first_aid_kit':'purchase_first_aid_count',
+                'torch':'purchase_torch_count', 'rain_jacket':'purchase_rain_jacket_count',
+                'sleeping_mat':'hire_sleeping_mat_count', 'power_bank':'purchase_power_bank_count',
+                'offline_map':'purchase_map_count',
+            }
+            for item_key, variable in cost_item_variables.items():
+                item = by_key.get(item_key)
+                if item is not None:
+                    missing = item.missing_quantity
+                    values[variable] = None if missing is None else _ceil(missing / 2) if item_key == 'tent' else missing
+            quantity, unknown = _eval_expression(row['quantity_json'], values)
+            policy_values['_missing_inputs'].update(unknown)
+            quantity = None if unknown else Decimal(str(quantity))
+            selection_group = row['selection_group']
+            if selection_group not in {'', 'TRANSPORT_CHOICE', 'FOOD_CHOICE'}:
+                raise rule_failure(f'Unsupported v2 cost selection group for {cost_id}.', 'cost_reference')
+            if selection_group == 'TRANSPORT_CHOICE' and (
+                    reference.unit in {'per_kilometre', 'per_vehicle'} and transport.transport_type != 'CAR'
+                    or reference.unit == 'per_person' and transport.transport_type != 'PUBLIC_TRANSPORT'):
+                return
+            if selection_group == 'FOOD_CHOICE':
+                if mode is None or (cost_id == 'cost-04' and mode != 'SELF_CATERED') or (cost_id == 'cost-14' and mode != 'READY_TO_EAT'):
+                    return
         line(reference.category, cost_id, quantity, reference.typical_cents, reference.unit, reference.source_ref, assumption)
         if quantity is None or reference.typical_cents is None:
             clarify(f'cost.{cost_id}', f'Complete quantity/rate for {reference.item_name}.', 'Unknown quantity or price means unknown line amount.')

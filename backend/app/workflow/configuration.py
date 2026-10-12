@@ -64,7 +64,7 @@ class WorkflowConfiguration:
             dataset_version=base.dataset_version, file_digests=base.file_digests,
             fixture_digests={**base.fixture_digests, **fixture_digests},
             selection_config={**base.selection_config, **choices},
-            rules_version=f'{base.rules_version}/{ADAPTER_VERSION}/{RULES_VERSION}/{WORKFLOW_VERSION}',
+            rules_version=f'{base.rules_version}/{getattr(dataset, "adapter_version", ADAPTER_VERSION)}/{getattr(dataset, "rules_version", RULES_VERSION)}/{WORKFLOW_VERSION}',
         )
         self._scenarios = tuple(selected)
         self._feedback = feedback

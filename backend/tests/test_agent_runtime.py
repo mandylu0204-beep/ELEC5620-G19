@@ -200,19 +200,19 @@ def test_factory_detects_dataset_changed_between_inspection_and_consumption(data
     assert failure.value.error.code == 'STALE_CONTEXT'
 
 
-def test_v2_data_identity_is_ready_but_missing_business_adapter_is_explicit(tmp_path):
+def test_v2_data_identity_resolves_the_registered_business_adapter(tmp_path):
     app = create_app(settings(APP_ROOT / 'data/synthetic_demo_v2', tmp_path, dataset_scenario_files=[]))
     with TestClient(app) as client:
         meta = client.get('/api/v1/meta').json()
         assert meta['dataset_version'] == '2.0.0'
-        assert not meta['features']['planning']
-        assert meta['agent_configuration_error']['context']['dataset_version'] == '2.0.0'
+        assert meta['features']['planning']
+        assert meta['agent_configuration_error'] is None
         assert client.get('/api/v1/health/live').status_code == 200
         response = client.get('/api/v1/health/ready')
-        assert response.status_code == 503
+        assert response.status_code == 200
         assert response.json()['checks']['dataset_context_valid']
-        assert not response.json()['checks']['configured_agent_available']
-        assert app.state.agent is None
+        assert response.json()['checks']['configured_agent_available']
+        assert app.state.agent is not None
 
 
 def test_legacy_case_selection_and_rules_enter_registered_context(dataset, tmp_path):

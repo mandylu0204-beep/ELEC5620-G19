@@ -5312,7 +5312,7 @@
     "fixture_id": "fixture-test-21",
     "test_id": "test-21",
     "test_mode": "COMPONENT",
-    "demo_clock": "2026-10-25T08:00:00+11:00",
+    "demo_clock": "2027-04-09T10:00:00+10:00",
     "actor": {
       "user_id": "camper-a",
       "role": "CAMPER",
@@ -5409,8 +5409,8 @@
           "assessment_refs": [],
           "review_refs": [],
           "component_context": {
-            "start_date": "2026-10-25",
-            "end_date": "2026-10-28",
+            "start_date": "2027-04-10",
+            "end_date": "2027-04-13",
             "duration_nights": 3,
             "planned_campfire": false
           },
@@ -8449,7 +8449,7 @@
     "fixture_id": "fixture-test-30",
     "test_id": "test-30",
     "test_mode": "COMPONENT",
-    "demo_clock": "2026-10-25T08:00:00+11:00",
+    "demo_clock": "2027-04-09T10:00:00+10:00",
     "actor": {
       "user_id": "founder-demo",
       "role": "FOUNDER",
@@ -8546,8 +8546,8 @@
           "assessment_refs": [],
           "review_refs": [],
           "component_context": {
-            "start_date": "2026-10-25",
-            "end_date": "2026-10-28",
+            "start_date": "2027-04-10",
+            "end_date": "2027-04-13",
             "duration_nights": 3,
             "planned_campfire": false
           },
