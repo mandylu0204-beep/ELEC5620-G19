@@ -228,6 +228,68 @@
           "mandatory_constraints": []
         }
       }
+    },
+    {
+      "id": "conflict_revision",
+      "settings": {
+        "execution_mode": "deterministic_demo",
+        "planning_enabled": true,
+        "dataset_path": "data/synthetic_demo_v2",
+        "demo_today": "2026-10-26",
+        "workflow_safety_case_ids": [
+          "safety-14",
+          "safety-08"
+        ],
+        "dataset_scenario_files": [],
+        "dataset_selection": {
+          "demo_input": "conflict_revision"
+        }
+      },
+      "request": {
+        "raw_text": "Two people in CampMate Demo Region from 2026-10-27 for two nights, AUD 400. We want ready-to-eat meals. Must have showers.",
+        "explicit_fields": {
+          "destination": "CampMate Demo Region",
+          "start_date": "2026-10-27",
+          "duration_nights": 2,
+          "budget_cents": 40000,
+          "preferences": [
+            "ready-to-eat meals"
+          ],
+          "mandatory_constraints": [
+            "showers"
+          ]
+        }
+      },
+      "revision_feedback": "change campsite"
+    },
+    {
+      "id": "no_match",
+      "settings": {
+        "execution_mode": "deterministic_demo",
+        "planning_enabled": true,
+        "dataset_path": "data/synthetic_demo_v2",
+        "demo_today": "2026-11-05",
+        "workflow_safety_case_ids": [
+          "safety-15"
+        ],
+        "dataset_scenario_files": [],
+        "dataset_selection": {
+          "demo_input": "no_match"
+        }
+      },
+      "request": {
+        "raw_text": "Two people in CampMate Demo Region from 2026-11-06 for two nights, AUD 1. We want ready-to-eat meals.",
+        "explicit_fields": {
+          "destination": "CampMate Demo Region",
+          "start_date": "2026-11-06",
+          "duration_nights": 2,
+          "budget_cents": 100,
+          "preferences": [
+            "ready-to-eat meals"
+          ],
+          "mandatory_constraints": []
+        }
+      }
     }
   ]
 }

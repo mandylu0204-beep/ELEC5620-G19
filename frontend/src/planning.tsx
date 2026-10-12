@@ -57,6 +57,7 @@ export function RetryPlanning({ data, refresh }: { data: PlanDetail; refresh: ()
   const command = useRef<{ runId: string; revision: number; key: string } | null>(null);
   const run = data.run;
   if (!run || run.status !== 'FAILED') return null;
+  if (run.error?.code === 'INPUT_INVALID') return <p className="muted">当前输入或修改意见需要调整。重试不会修改已登记的要求，请使用“调整需求并重新确认”入口。</p>;
   async function retry() {
     if (!run || !session || busy || !data.retry_available) return;
     if (command.current?.runId !== run.run_id || command.current.revision !== run.revision) {

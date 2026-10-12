@@ -2,7 +2,7 @@
 
 ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
 
-已实现登录、资料/需求确认、规划启动/重试、进度与产物展示、人工审核、修订/重新评估、最终快照与历史回读。B 的 synthetic_demo_v2 Adapter 和真实规则流程已接入 main；本轮 A-14 补齐前端资料取值和装备录入，并通过四个场景的真实浏览器验收。默认仍为 stub、规划禁用；使用下方演示入口明确启用 v2，不自动回退 v1。工厂约定见 [Agent 运行配置接入](docs/agent_runtime_handoff.md)。
+已实现登录、资料/需求确认、规划启动/重试、进度与产物展示、人工审核、修订/重新评估、最终快照与历史回读。B 的 synthetic_demo_v2 Adapter 和真实规则流程已接入 main；A-14 补齐前端资料取值和装备录入，通过四个场景的真实浏览器验收。A-15 增加异常引导、审核状态自动回读及需求复制后重新确认，并验证冲突修订/无匹配两个额外v2场景。默认仍为 stub、规划禁用；使用下方演示入口明确启用 v2，不自动回退 v1。工厂约定见 [Agent 运行配置接入](docs/agent_runtime_handoff.md)。
 
 > This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.
 
@@ -48,6 +48,8 @@ Linux/macOS 可分别创建 venv、按 `backend/requirements.lock` 安装依赖�
 ```
 
 打开 http://127.0.0.1:5173，登录、载入并明确保存演示资料，再填写和确认露营请求。脚本使用随包输入的固定时钟及独立数据库，不编辑个人 .env 或预先生成成功方案。其他场景为 budget_revision、missing_evidence、road_closure。每次停止服务、退出账户后切换场景；完整输入、浏览器步骤和结果见 [v2 演示指南](docs/demo/v2_browser_demo.md)。首次安装需要网络；业务演示无需 API key。
+
+额外可选 conflict_revision 和 no_match，见 [异常流程与审核后操作](docs/demo/a15_exception_flow.md)。高风险审核的独立v1夹具测试不代表正式v2高风险场景已交付；模型接入也不因规则演示通过而自动完成。
 
 ## 配置
 
