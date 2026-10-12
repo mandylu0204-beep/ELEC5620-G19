@@ -3,7 +3,9 @@
 日期：2026-10-12。B 分支：feature/llm-multi-agent-runtime，基于已合入 PR #3 的 main（57a378f）。
 本文是本轮组件交付与接线建议，不代表 A 已同意，也不代表真实模型 HTTP/浏览器闭环已经完成。本轮没有向 A 发送消息、注册应用工厂、修改个人应用 .env、commit 或 push。
 
-最新进度：成员 B 已提供校园代理连接及正常场景模型规划成功的 CLI 输出，已归档为 [真实运行文本](evidence/campus_llm_live_run_20261012.txt)。这是成员提供的实测记录，助手本次仅转存，没有重新调用模型；具体证据与边界见第 7 节。
+最新进度（2026-10-13）：完整六方法 HybridPlanningAgent 已实现，只有行程规划真实调用模型，其他业务步骤明确使用规则；checkpoint/heartbeat 复用原编排。构造、配置身份、恢复及 trace 待确认事项见 [HybridPlanningAgent 交接](hybrid_planning_agent.md)。应用 agent 注册、HTTP/browser 接线和正式 trace 持久化仍未完成。本次测试未调用校园模型。
+
+此前成员 B 已提供校园代理连接及正常场景模型规划成功的 CLI 输出，已归档为 [真实运行文本](evidence/campus_llm_live_run_20261012.txt)。这是成员提供的实测记录，助手仅转存，没有重新调用模型；具体证据与边界见第 7 节。以下 2026-10-12 的组件测试数字为历史记录。
 
 ## 1. 交付范围与完成边界
 
@@ -19,7 +21,7 @@ B 已实现：
 
 尚未实现/验证：
 
-- 完整的模型版 AgentPort、应用中的 agent 工厂与 HTTP/browser 接线。
+- 应用中的 agent 工厂与 HTTP/browser 接线；完整混合 AgentPort 已于 2026-10-13 实现。
 - 模型版请求解释、Gear/Logistics Agent、Safety Agent、模型修订。
 - PlanningTrace 的 A 侧持久化与 run/version/attempt 关联。
 - 代理原生 function calling 的兼容性（当前验证的是应用层 JSON 工具循环）。
@@ -143,15 +145,15 @@ PlanningOutcome 包含：
 
 代码根据有效逐晚安排生成保守 CAMP/休息条目。营地描述和休息段复用原规范文本，避免任意活动描述触发现有安全规则中的未分类活动。模型决策摘要单独标注为未经事实验证的模型意见。时间只是演示占位，不代表真实 check-in/旅行时长。
 
-既有 validate_itinerary 的 deterministic_demo 守卫没有放宽。本轮只提取了 validate_itinerary_content（纯日期/覆盖/关联校验）及 camp_entries（保守渲染），原规则行为仍通过全量回归。
+2026-10-12 仅提取了 validate_itinerary_content（纯日期/覆盖/关联校验）及 camp_entries（保守渲染）。2026-10-13 混合包装新增显式 expected_mode kernel 入口，validate_itinerary 默认和 RuleAgent 仍只接受 deterministic_demo；不通过改标签接入模型评估。
 
 ## 5. 请 A/B 确认的接线事项
 
 | 编号 | 协商项 | 建议职责 |
 | --- | --- | --- |
 | C-01 | agent 模式按数据版本注册 AgentBinding；主运行配置、规划可用性和错误提示接通，不改默认 stub/v1 | A 改应用接线，B 提供绑定/模型能力包装 |
-| C-02 | 完整 HybridPlanningAgent 实现六个 AgentPort 方法；只有规划真实调用模型，其余暂为规则工具，并明确显示混合阶段 | B 实现，A 核对能力开关 |
-| C-03 | 现有 Orchestrator 调用了 agent._input；现有 RuleAgent._input 和物流/安全的 validate_itinerary 拒绝 agent 模式 | B 提供显式模式校验与共用规则 kernel；A 确认绑定和持久化模式一致 |
+| C-02 | 完整 HybridPlanningAgent 六方法已实现；只有规划调用模型，其余规则步骤注明执行方式 | A 核对 PLAN-only 能力开关 |
+| C-03 | Hybrid 提供 agent._input 与显式 expected_mode kernel；保留原 RuleAgent 守卫 | B 已实现；A 确认应用绑定与保存模式一致 |
 | C-04 | Prompt/model/tool/validator 配置指纹纳入 A 保存上下文；保留全部 A 摘要、选用项和规范化身份 | A/B 冻结登记格式 |
 | C-05 | trace 通过 A 认可的持久化/审计入口关联 run、attempt、保存版本；处理丢失回执、重启与权限 | A 决定存储位置/签名，B 对接 |
 | C-06 | MVP 禁用尚不支持的模型修订/重评操作，或明确拒绝；不能注册幽灵 run 后才发现无能力 | A 确认 HTTP/UI 守卫，B 明确能力范围 |
@@ -166,7 +168,7 @@ C-05 请明确 trace 是否与版本写入原子保存，或有独立幂等审�
 
 工厂就绪检查仅调用 validate_configuration() 与数据/身份校验，不应在每次 GET ready/meta 或 resolve 时进行收费模型探测。真实连通性由显式 probe/live 测试单独记录。缺少凭据不能悄悄回退。
 
-请 A 回复确认 C-01～C-08，尤其是完整包装的责任划分、模式校验、trace 存储接口和首次接线的功能开关。确认后 B 再补 HybridPlanningAgent/工厂；不要把现有 PlanningCoordinator 直接当完整 AgentPort 注册。
+请 A 回复确认 C-01～C-08，尤其是 trace 存储接口和首次接线的功能开关。B 已完成 HybridPlanningAgent，A 可按新交接文档注册混合包装；不要把 PlanningCoordinator 直接当完整 AgentPort 注册。正式 trace 接口确认后 B 再对接，不另建数据库。
 
 ## 6. 本地使用与验证
 

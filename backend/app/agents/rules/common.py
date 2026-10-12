@@ -44,6 +44,19 @@ def ensure_demo(dataset: SyntheticDataset, demo: DemoContext) -> None:
         ))
 
 
+def ensure_execution_mode(dataset, demo, expected_mode):
+    """Explicit kernel entry guard; never convert or relabel an artifact."""
+    if expected_mode not in (ExecutionMode.DETERMINISTIC_DEMO, ExecutionMode.AGENT):
+        raise input_failure('Unsupported business-kernel execution mode.', 'execution_mode')
+    if demo.mode != expected_mode:
+        raise input_failure('Business input does not match the selected execution mode.', 'demo_context.mode')
+    if demo.dataset_version != dataset.context.dataset_version:
+        raise ContractFailure(ContractError(
+            code=ErrorCode.STALE_CONTEXT, message='Business input and dataset versions differ.',
+            allowed_actions=[AllowedAction.REFRESH],
+        ))
+
+
 def unique_sources(sources: list[SourceRef]) -> list[SourceRef]:
     result, seen = [], set()
     for source in sources:
@@ -61,10 +74,11 @@ def artifact(demo: DemoContext, sources=(), assumptions=(), uncertainties=()) ->
     }
 
 
-def validate_itinerary(dataset: SyntheticDataset, itinerary: ItineraryResult, requirements) -> dict[str, int]:
+def validate_itinerary(dataset: SyntheticDataset, itinerary: ItineraryResult, requirements, *,
+                       expected_mode=ExecutionMode.DETERMINISTIC_DEMO) -> dict[str, int]:
     """Count occupied nights, rejecting overlaps, wrong dates and unbound camps."""
-    if itinerary.execution_mode != ExecutionMode.DETERMINISTIC_DEMO:
-        raise input_failure('Itinerary must come from deterministic_demo.', 'saved_itinerary')
+    if expected_mode not in (ExecutionMode.DETERMINISTIC_DEMO, ExecutionMode.AGENT) or itinerary.execution_mode != expected_mode:
+        raise input_failure('Itinerary must match the explicitly selected execution mode.', 'saved_itinerary')
     return validate_itinerary_content(dataset, itinerary, requirements)
 
 
