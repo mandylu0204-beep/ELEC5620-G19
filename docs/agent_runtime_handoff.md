@@ -1,5 +1,13 @@
 # A-12 / A-13：规则运行配置与修订流程交接
 
+## 当前更新：v2 已接入，A-14 前端联调（2026-10-12）
+
+B 的修正版 PR #3 已合入 main 57a378f，本机已复核其 v2 路径保护和无障碍三态修复。A-14 使用该基线完成四套真实浏览器场景，见 [演示指南](demo/v2_browser_demo.md) 和 [记录证据](evidence/a14-browser-check.json)。下方 A12/A13 待接入内容保留为历史接口约定。
+
+Profile 的已知 experience_level 和 transport_type 在用户显式 PUT 保存时统一为 BEGINNER/INTERMEDIATE/EXPERIENCED/ADVANCED、CAR/PUBLIC_TRANSPORT/WALKING/OTHER；未知字符串保留，已确认 Profile 快照不重写。前端已有小写取值的资料提示核对并保存后建立新需求。B 工厂、DTO、共享 schema 1.0、A13 revision_feedback 约定未变。
+
+修订/重评成功后前端转到当前方案，不继续读取启动链接上固定的旧 run_id；历史 run 仍可独立回读。scripts/demo.py 从 docs/demo/v2_inputs.json 选择固定时钟、数据和证据，使用独立数据库，不改个人 .env。默认 stub/v1 不变；LLM、最新版 ZIP 干净安装和 Canvas 实际下载验收仍待完成。
+
 日期：2026-10-12。已将验证过的 main 合入本地 A11，B 的真实 v1 RuleAgent 已接入 A 的确认/启动/重试/完成提交路径；A13 又接通修订和重新评估公共入口及审核/最终化前的当前输入复核。v2 数据已经定稿，但 v2 Adapter 仍由 B 交付，本轮没有伪装来源或修改定稿数据。默认 v1/stub、planning_enabled=false、个人 .env 保持不变。
 
 完整 A11+A12+A13 已推送到远端 [feature/a12-agent-runtime](https://github.com/LyraWangDev/ELEC5620-G19/tree/feature/a12-agent-runtime)，应用代码提交为 230b7fb，前置提交依次包含 A11 的 69a712e、已合入最新 main 的 f253a83、A12 的 919584e。虽然分支名为 A12，它也包含 A13 的修订/重评入口。完整前置代码现已整体合入 main；不能只摘取依赖 dispatcher 的单次提交到旧基线。

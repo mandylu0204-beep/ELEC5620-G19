@@ -2,11 +2,11 @@
 
 ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
 
-当前已实现 A-01 至 A-11 的登录、资料/需求确认、方案/审核/最终快照、运行恢复及规划启动/重试，并整合 main 的 B 规则流程。A-12 提供按数据版本注册的 AgentBinding，将实际业务配置用于确认、调度、保存守卫及重试；Git v1 已接入 B 的真实 RuleAgent。默认仍为 stub、规划禁用。A-13 已接通方案修订与重新评估公共入口，并在审核/最终化前复核当前数据。定稿 v2 数据已包含，但对应业务 Adapter 和四个完整演示场景仍待 B 交付；不自动回退 v1。接入方式与给 B 的工厂约定见 [Agent 运行配置接入](docs/agent_runtime_handoff.md)。
+已实现登录、资料/需求确认、规划启动/重试、进度与产物展示、人工审核、修订/重新评估、最终快照与历史回读。B 的 synthetic_demo_v2 Adapter 和真实规则流程已接入 main；本轮 A-14 补齐前端资料取值和装备录入，并通过四个场景的真实浏览器验收。默认仍为 stub、规划禁用；使用下方演示入口明确启用 v2，不自动回退 v1。工厂约定见 [Agent 运行配置接入](docs/agent_runtime_handoff.md)。
 
 > This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.
 
-最终提交须满足 [Canvas 下载后演示验收](docs/canvas_submission.md)：下载 ZIP 后无需访问私有 GitHub 或使用作者电脑的配置，按随包说明可完成完整演示。当前规则流程已接入并有独立 HTTP 验证，v2 完整演示与最终包验收仍待完成。
+最终提交须满足 [Canvas 下载后演示验收](docs/canvas_submission.md)：下载 ZIP 后无需访问私有 GitHub 或使用作者电脑的配置，按随包说明可完成完整演示。四个 v2 规则场景已在本机真实浏览器验证，最新版干净 ZIP 安装、实际 Canvas 下载及另一台电脑复核仍待完成；模型版 Agent 尚未交付。
 
 ## 安装与启动
 
@@ -39,13 +39,24 @@ ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
 
 Linux/macOS 可分别创建 venv、按 `backend/requirements.lock` 安装依赖、在 backend 执行 `pip install --no-deps -e .`，在 frontend 执行 `npm ci`，再以该 venv 的 Python 运行 `scripts/dev.py`。此流程有 CI 配置，尚未在另一台电脑或 Linux 上实际执行。
 
+## 四个 v2 演示场景
+
+完成安装后，从项目根目录启动正常场景：
+
+```powershell
+.\.venv\Scripts\python.exe scripts/demo.py --case normal
+```
+
+打开 http://127.0.0.1:5173，登录、载入并明确保存演示资料，再填写和确认露营请求。脚本使用随包输入的固定时钟及独立数据库，不编辑个人 .env 或预先生成成功方案。其他场景为 budget_revision、missing_evidence、road_closure。每次停止服务、退出账户后切换场景；完整输入、浏览器步骤和结果见 [v2 演示指南](docs/demo/v2_browser_demo.md)。首次安装需要网络；业务演示无需 API key。
+
 ## 配置
 
 在 `.env` 使用 `.env.example` 中的变量。相对路径以项目根目录为基准，不依赖当前终端目录。
 
 | 配置 | 默认值 | 作用 |
 | --- | --- | --- |
-| CAMPMATE_EXECUTION_MODE | stub | 仅 stub 已注册；deterministic_demo / agent 尚未接入，配置后就绪检查失败，不能自动回退 |
+| CAMPMATE_EXECUTION_MODE | stub | deterministic_demo 已注册 v1/v2 真实规则；agent 模型模式尚未交付，不自动回退 |
+| CAMPMATE_PLANNING_ENABLED | false | 明确开启后才能启动/修订/重新评估；演示脚本按场景开启 |
 | CAMPMATE_DEMO_TODAY | 2026-10-08 | 固定演示时钟，与系统时间分开 |
 | CAMPMATE_DATASET_PATH | data/synthetic_demo | 原始包的完整副本；业务源文件在其 data 子目录 |
 | CAMPMATE_DATASET_SCENARIO_FILES | [] | 已选数据包 data/scenarios 下的独立运行输入 JSON；摘要纳入确认/run 上下文 |
@@ -82,7 +93,7 @@ Linux/macOS 可分别创建 venv、按 `backend/requirements.lock` 安装依赖�
 - `GET /api/v1/health/ready`：开发基础依赖、业务表迁移与数据包身份/输入摘要可验证；不表示完整业务规则或工作流已实现。
 - `GET /api/v1/meta`：演示模式、时钟、来源标签、disclaimer 与实际功能开关。
 
-请求预览是 loopback 开发工具；正式请求由登录后的 `/requests` 接口保存。审核使用 GET/POST `/api/v1/review/{plan_id}`；最终保存使用 POST `/api/v1/plans/{plan_id}/finalise`，快照回读使用 GET `/api/v1/plans/{plan_id}/finals/{final_id}`。规划执行尚未提供。写入要求 X-CampMate-Client: 1，已登录写入另要求 X-CSRF-Token；浏览器自动携带 HttpOnly 会话 Cookie。确认要求匹配 revision、明确 acknowledged=true 和幂等 command_key，资料或数据变化后需重新生成摘要。详见 [资料与请求流程](docs/profile_request_flow.md)。
+请求预览是 loopback 开发工具；正式请求由登录后的 `/requests` 接口保存。审核使用 GET/POST `/api/v1/review/{plan_id}`；最终保存使用 POST `/api/v1/plans/{plan_id}/finalise`，快照回读使用 GET `/api/v1/plans/{plan_id}/finals/{final_id}`。规划执行、失败重试、修订与重新评估已接通。写入要求 X-CampMate-Client: 1，已登录写入另要求 X-CSRF-Token；浏览器自动携带 HttpOnly 会话 Cookie。确认要求匹配 revision、明确 acknowledged=true 和幂等 command_key，资料或数据变化后需重新生成摘要。详见 [资料与请求流程](docs/profile_request_flow.md)。
 
 ## 文件位置与 B 接入
 
@@ -99,13 +110,15 @@ backend/app/application/request_rules.py A 侧字段规范化与数据上下文
 backend/app/storage/        SQLite 迁移、Repository 与持久化端口
 frontend/src/              页面、路由、样式与 HTTP 调用
 data/synthetic_demo/        原始 10 个数据文件的完整副本
+data/synthetic_demo_v2/     当前定稿 2.0.0 / 2026-10-12 修订版
+docs/demo/                 四套显式输入与浏览器复现步骤
 scripts/                   安装、启动、检查脚本
 docs/                      冻结设计、导出 schema 与实施证据
 ```
 
 A 提供的 DTO 是按基线形成的参考实现，B 首版 schema 需核对字段与规则。六个入口已在 AgentPort 定义；PersistencePort 已有按 owner/run 绑定的 SQLite 实现。A 登记 run 后向 B 传递受限端口，不让 B 创建审核或最终记录。实际绑定方式、限制与待对齐项见 [登录与存储说明](docs/storage_and_accounts.md)。B 通过 registry 注册 deterministic_demo 工厂；LLM 接入仍使用 synthetic 业务源及同一契约。
 
-v2 的来源标识与运行输入摘要接入准备见 [数据上下文交接](docs/dataset_context_handoff.md)。当前默认仍为原 v1，修正版尚未导入；实际包版本由 manifest/来源识别，不能仅改配置就宣称完整业务演示已通过。
+v2 的来源标识与运行输入摘要说明见 [数据上下文交接](docs/dataset_context_handoff.md)。当前默认仍为原 v1，v2 已随源码包含并通过 Adapter 接入。实际包版本由 manifest/来源识别，浏览器验收范围见 [实施状态](docs/implementation_status.md)。
 
 共同定义见 [端口代码](backend/app/contracts/ports.py) 和 [设计说明](docs/shared_contracts_spec.md)。[contracts.schema.json](docs/contracts.schema.json) 同时导出 validation 与 serialization schema；Decimal 数量输入和输出使用字符串，金额使用整数 cents。schema 更新后重新导出：
 
@@ -145,6 +158,6 @@ git push -u origin YOUR_FEATURE_BRANCH
 
 ## 参考与后续任务
 
-当前 A-10 提供源码打包、Python 安装入口与隔离 HTTP 部署检查，见 [部署准备](docs/deployment_preparation.md)；真实 B 调度、恢复端口与页面启动/重试仍待实际接入。内部启动回执、执行租约、迟到任务拒绝和恢复 checkpoint 见 [运行恢复交接](docs/run_recovery.md)。正式四个业务场景联调需要 B 首版实现及修订数据。任务与验收见 [开发 A 清单](docs/developer_a_backlog.md)。
+源码打包、Python 安装入口与隔离 HTTP 部署检查见 [部署准备](docs/deployment_preparation.md)。真实 B v2 规则已完成 HTTP 和本机浏览器联调；下一步验证最新版提交包的干净安装。启动回执、执行租约、迟到任务拒绝和恢复 checkpoint 见 [运行恢复交接](docs/run_recovery.md)。任务与验收见 [开发 A 清单](docs/developer_a_backlog.md)。
 
 实现参考：[React 构建说明](https://react.dev/learn/build-a-react-app-from-scratch)、[Vite 入门](https://vite.dev/guide/)、[FastAPI 测试](https://fastapi.tiangolo.com/tutorial/testing/)、[Pydantic 标准类型](https://docs.pydantic.dev/latest/api/standard_library_types/)。CI 的 checkout、Python 和 Node 设置采用官方示例的 v7 调用形式：[checkout](https://github.com/actions/checkout)、[setup-python](https://github.com/actions/setup-python)、[setup-node](https://github.com/actions/setup-node)。

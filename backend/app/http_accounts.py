@@ -74,7 +74,19 @@ def profile(request: Request, user: User = Depends(current_user)):
 
 @router.put('/profile')
 def save_profile(body: ProfileInput, request: Request, user: User = Depends(writing_user)):
-    return request.app.state.repository.save_profile(user, body.profile, body.expected_revision)
+    # Canonicalize known UI aliases only when the owner explicitly saves a
+    # profile. Historical confirmed snapshots are never rewritten.
+    profile = body.profile
+    experience = profile.experience_level
+    transport = profile.transport.transport_type
+    levels = {value.casefold(): value for value in ('BEGINNER', 'INTERMEDIATE', 'EXPERIENCED', 'ADVANCED')}
+    modes = {value.casefold(): value for value in ('CAR', 'PUBLIC_TRANSPORT', 'WALKING', 'OTHER')}
+    profile = profile.model_copy(update={
+        'experience_level': levels.get(experience.strip().casefold(), experience) if experience else experience,
+        'transport': profile.transport.model_copy(update={
+            'transport_type': modes.get(transport.strip().casefold(), transport) if transport else transport}),
+    })
+    return request.app.state.repository.save_profile(user, profile, body.expected_revision)
 
 
 @router.get('/plans')

@@ -1,0 +1,268 @@
+{
+  "date": "2026-10-12",
+  "base_commit": "57a378f65bb810eeeac577309562b8acb8f5a500",
+  "method": "Real browser UI, real v2 rules, HTTP authentication and separate SQLite databases; SELECT-only record audit.",
+  "cases": {
+    "normal": {
+      "plan_id": "79646d8062ee4960b3119138501f9b32",
+      "active_run_id": "c30967abc6934bf2b487191f5dac4544",
+      "current_version_id": "588bad0f5297454f803adc9e2b8a363f",
+      "runs": [
+        {
+          "id": "c30967abc6934bf2b487191f5dac4544",
+          "status": "SUCCEEDED",
+          "stage": "COMPLETED"
+        }
+      ],
+      "versions": [
+        {
+          "id": "588bad0f5297454f803adc9e2b8a363f",
+          "version_number": 1,
+          "status": "FINALISED",
+          "content_sha256": "e5e17eb5dca3c60becbf7a94f72f4e0f42ab34527a3b877bb85b0723e67f12c2"
+        }
+      ],
+      "assessments": [
+        {
+          "id": "c9449b51b7514e73aef344bad5e9c652",
+          "run_id": "c30967abc6934bf2b487191f5dac4544",
+          "version_id": "588bad0f5297454f803adc9e2b8a363f",
+          "kind": "LOGISTICS",
+          "outcome": "PASSED"
+        },
+        {
+          "id": "5b0e9f4ff0844652b32e8f9e2117890b",
+          "run_id": "c30967abc6934bf2b487191f5dac4544",
+          "version_id": "588bad0f5297454f803adc9e2b8a363f",
+          "kind": "SAFETY",
+          "outcome": "PASSED"
+        }
+      ],
+      "reviews": [],
+      "finals": [
+        {
+          "id": "685e7b7d78b741688f137fcc34331c44",
+          "run_id": "c30967abc6934bf2b487191f5dac4544",
+          "version_id": "588bad0f5297454f803adc9e2b8a363f",
+          "snapshot_sha256": "91ef2ef5dc457065930099925ad9f43f4274d039fc3e24338311e7bc404a268c"
+        }
+      ]
+    },
+    "budget_revision": {
+      "plan_id": "28567ca8a04b4a689b20da5fee585051",
+      "active_run_id": "60c9ad3898704500ad3c2e9e4abdb352",
+      "current_version_id": "e62906c53f6f4bcc8d9b20c1a21438e2",
+      "runs": [
+        {
+          "id": "6a761238a860457aa4ef7c4ac45aead9",
+          "status": "SUCCEEDED",
+          "stage": "COMPLETED"
+        },
+        {
+          "id": "7513c265cb5e42949a0238a1a6b3a300",
+          "status": "SUCCEEDED",
+          "stage": "COMPLETED"
+        },
+        {
+          "id": "60c9ad3898704500ad3c2e9e4abdb352",
+          "status": "SUCCEEDED",
+          "stage": "COMPLETED"
+        }
+      ],
+      "versions": [
+        {
+          "id": "456fdd62857b4e1bb425792a52776acd",
+          "version_number": 1,
+          "status": "REVISION_REQUIRED",
+          "content_sha256": "eb97af9ed148fc6cb88d3656cb9e9ece543e1f28d9d81ad382a10e018624322b"
+        },
+        {
+          "id": "e62906c53f6f4bcc8d9b20c1a21438e2",
+          "version_number": 2,
+          "status": "ELIGIBLE_FOR_FINALISATION",
+          "content_sha256": "35acedcafdb41dad10218bc06dcac2307a777809e6387e34600a1da4ed11560b"
+        }
+      ],
+      "assessments": [
+        {
+          "id": "07a5e529407a4ec28b1333d9d4c180e7",
+          "run_id": "6a761238a860457aa4ef7c4ac45aead9",
+          "version_id": "456fdd62857b4e1bb425792a52776acd",
+          "kind": "LOGISTICS",
+          "outcome": "REVISION"
+        },
+        {
+          "id": "6d1df7ffdb96410c97654f274509e214",
+          "run_id": "6a761238a860457aa4ef7c4ac45aead9",
+          "version_id": "456fdd62857b4e1bb425792a52776acd",
+          "kind": "SAFETY",
+          "outcome": "PASSED"
+        },
+        {
+          "id": "24f57b6e7a864d2d88188a23f6305980",
+          "run_id": "7513c265cb5e42949a0238a1a6b3a300",
+          "version_id": "e62906c53f6f4bcc8d9b20c1a21438e2",
+          "kind": "LOGISTICS",
+          "outcome": "PASSED"
+        },
+        {
+          "id": "2ea2c1899d4f4db79c2e2658ca836db1",
+          "run_id": "7513c265cb5e42949a0238a1a6b3a300",
+          "version_id": "e62906c53f6f4bcc8d9b20c1a21438e2",
+          "kind": "SAFETY",
+          "outcome": "PASSED"
+        },
+        {
+          "id": "c129db4013d24ae6bc2da6edad456895",
+          "run_id": "60c9ad3898704500ad3c2e9e4abdb352",
+          "version_id": "e62906c53f6f4bcc8d9b20c1a21438e2",
+          "kind": "LOGISTICS",
+          "outcome": "PASSED"
+        },
+        {
+          "id": "4783161a47af4994b1eb91fc3b5f3a7a",
+          "run_id": "60c9ad3898704500ad3c2e9e4abdb352",
+          "version_id": "e62906c53f6f4bcc8d9b20c1a21438e2",
+          "kind": "SAFETY",
+          "outcome": "PASSED"
+        }
+      ],
+      "reviews": [],
+      "finals": [
+        {
+          "id": "d01ac1f0dfff44a8ba6f1c7c9b3ff294",
+          "run_id": "7513c265cb5e42949a0238a1a6b3a300",
+          "version_id": "e62906c53f6f4bcc8d9b20c1a21438e2",
+          "snapshot_sha256": "7770c634935113993c25893ef8abc158ab9e98ba9ce76efef89bc76bd89abd31"
+        }
+      ]
+    },
+    "missing_evidence": {
+      "plan_id": "6fb7c1f7ce36446aa44c2402af548d39",
+      "active_run_id": "baf40f88acc94496be3876b81f765aa1",
+      "current_version_id": "3a95708c3be449e387b1952d9c4f5642",
+      "runs": [
+        {
+          "id": "baf40f88acc94496be3876b81f765aa1",
+          "status": "SUCCEEDED",
+          "stage": "COMPLETED"
+        }
+      ],
+      "versions": [
+        {
+          "id": "3a95708c3be449e387b1952d9c4f5642",
+          "version_number": 1,
+          "status": "REVISION_REQUIRED",
+          "content_sha256": "875daf3d3e2bd7444e81f82dd3c755a6f5b0c3c3a1059d47e29c80bab49eda06"
+        }
+      ],
+      "assessments": [
+        {
+          "id": "18088a0573e941c9ac05e2dcc53cdbd1",
+          "run_id": "baf40f88acc94496be3876b81f765aa1",
+          "version_id": "3a95708c3be449e387b1952d9c4f5642",
+          "kind": "LOGISTICS",
+          "outcome": "REVISION"
+        },
+        {
+          "id": "201fcb5b59f140418a5f6cad6668b7fa",
+          "run_id": "baf40f88acc94496be3876b81f765aa1",
+          "version_id": "3a95708c3be449e387b1952d9c4f5642",
+          "kind": "SAFETY",
+          "outcome": "REVIEW"
+        }
+      ],
+      "reviews": [
+        {
+          "assessment_ids": [
+            "18088a0573e941c9ac05e2dcc53cdbd1",
+            "201fcb5b59f140418a5f6cad6668b7fa"
+          ],
+          "decision": "REQUEST_REVISION",
+          "reason": "演示验收：补齐覆盖整个行程的天气证据并重新评估；本次审核不能代替缺失证据。",
+          "review_id": "5802862cd63042c18260029f634870cf",
+          "reviewer_user_id": "founder",
+          "version_context": {
+            "input_fingerprint": "675f327708becf54770e4ef04d04f242575a4ecd2ce698d4f9ce9d917313c611",
+            "plan_id": "6fb7c1f7ce36446aa44c2402af548d39",
+            "plan_version_id": "3a95708c3be449e387b1952d9c4f5642",
+            "run_id": "baf40f88acc94496be3876b81f765aa1"
+          }
+        }
+      ],
+      "finals": []
+    },
+    "road_closure": {
+      "plan_id": "ea64494b0ab4495a88897c1df852b4b5",
+      "active_run_id": "2a11a76d4140415ea0f38b043f03d441",
+      "current_version_id": "3f929b9c8010424795e99423f5d3e01e",
+      "runs": [
+        {
+          "id": "2a11a76d4140415ea0f38b043f03d441",
+          "status": "SUCCEEDED",
+          "stage": "COMPLETED"
+        }
+      ],
+      "versions": [
+        {
+          "id": "3f929b9c8010424795e99423f5d3e01e",
+          "version_number": 1,
+          "status": "REJECTED",
+          "content_sha256": "fa604ac107338d9fb9ac005b9101474d2763545dabc680ca0fc44cc8c024aca2"
+        }
+      ],
+      "assessments": [
+        {
+          "id": "fba47cfaef49410c99ef9507ae5ecc80",
+          "run_id": "2a11a76d4140415ea0f38b043f03d441",
+          "version_id": "3f929b9c8010424795e99423f5d3e01e",
+          "kind": "LOGISTICS",
+          "outcome": "PASSED"
+        },
+        {
+          "id": "7c65be001c29450280ecdcbb6539906f",
+          "run_id": "2a11a76d4140415ea0f38b043f03d441",
+          "version_id": "3f929b9c8010424795e99423f5d3e01e",
+          "kind": "SAFETY",
+          "outcome": "BLOCKED"
+        }
+      ],
+      "reviews": [
+        {
+          "assessment_ids": [
+            "7c65be001c29450280ecdcbb6539906f",
+            "fba47cfaef49410c99ef9507ae5ecc80"
+          ],
+          "decision": "REJECT",
+          "reason": "演示验收：适用日期道路关闭，不能批准或最终保存；应修订可通行营地并重新评估。",
+          "review_id": "b5277c2a7b5748839c5a4a97e7e04b1f",
+          "reviewer_user_id": "founder",
+          "version_context": {
+            "input_fingerprint": "9078c4fce553848541b7237d07ace559b8a5930273f16237e7303bc7592188df",
+            "plan_id": "ea64494b0ab4495a88897c1df852b4b5",
+            "plan_version_id": "3f929b9c8010424795e99423f5d3e01e",
+            "run_id": "2a11a76d4140415ea0f38b043f03d441"
+          }
+        }
+      ],
+      "finals": []
+    }
+  },
+  "browser_checks": {
+    "normal_final_saved": true,
+    "budget_revision_navigation_to_active_run": true,
+    "history_final_after_reassessment": true,
+    "missing_evidence_approve_disabled": true,
+    "missing_evidence_request_revision_saved_and_final_still_disabled": true,
+    "road_closed_approve_disabled": true,
+    "road_closed_reject_saved_and_final_still_disabled": true,
+    "normal_service_restart_preserves_final": true,
+    "camper_b_owner_final_read_denied": true,
+    "console_errors": []
+  },
+  "limitations": [
+    "Existing development installation on this Windows computer.",
+    "Not a clean ZIP installation, actual Canvas download or second-computer acceptance.",
+    "Deterministic rules only; no LLM acceptance; not all 58 data acceptance specifications."
+  ]
+}

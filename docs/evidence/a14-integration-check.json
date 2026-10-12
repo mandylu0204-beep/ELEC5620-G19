@@ -1,0 +1,18 @@
+{
+  "date": "2026-10-12",
+  "base_commit": "57a378f65bb810eeeac577309562b8acb8f5a500",
+  "platform": "Windows / Python 3.12 / Node.js 22",
+  "checks": {
+    "scripts/check.py": {"exit_code": 0, "backend_passed": 507, "backend_skipped": 44, "warnings": 1, "backend_seconds": 198.89},
+    "targeted_profile_accounts_v2_http": {"passed": 12, "seconds": 43.61},
+    "schema": "up to date; shared version 1.0 unchanged",
+    "frontend": {"typescript": "passed", "vite": "passed", "modules": 51, "seconds": 1.68},
+    "pip_check": "No broken requirements found",
+    "git_diff_check": "passed"
+  },
+  "skips": "Windows file symlink creation privilege; existing junction cases passed. Skips are not passing tests.",
+  "warning": "Existing Starlette/httpx TestClient deprecation warning.",
+  "browser_evidence": "a14-browser-check.json",
+  "unchanged": ["personal .env", "default application database", "sealed synthetic_demo_v2 data", "shared Agent/Persistence DTO and schema"],
+  "remaining": ["latest ZIP clean installation", "actual Canvas download and hash verification", "second-computer acceptance", "LLM Agent", "all 58 dataset acceptance specifications"]
+}
