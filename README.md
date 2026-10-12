@@ -2,11 +2,11 @@
 
 ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
 
-当前已实现 A-01 至 A-05 基础、登录、持久化、Profile 编辑和请求确认、A-06 已保存规划进度与方案展示、A-07 Founder 审核、A-08 最终化与历史快照，以及 A-09 内部运行管理与恢复边界。审批与最终保存绑定当前版本及证据，不能绕过 blocker；最终快照不会被后续修订或评估覆盖。解释器目前仍为 stub，需手动填写明确字段；真实 Agent、规划/修订调度和页面启动/重试尚未接入。首轮四个业务联调 fixture 尚待 B 与数据负责人准备。
+当前已实现 A-01 至 A-11 的登录、资料/需求确认、方案/审核/最终快照、运行恢复及规划启动/重试，并整合 main 的 B 规则流程。A-12 提供按数据版本注册的 AgentBinding，将实际业务配置用于确认、调度、保存守卫及重试；Git v1 已接入 B 的真实 RuleAgent。默认仍为 stub、规划禁用。A-13 已接通方案修订与重新评估公共入口，并在审核/最终化前复核当前数据。定稿 v2 数据已包含，但对应业务 Adapter 和四个完整演示场景仍待 B 交付；不自动回退 v1。接入方式与给 B 的工厂约定见 [Agent 运行配置接入](docs/agent_runtime_handoff.md)。
 
 > This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.
 
-最终提交须满足 [Canvas 下载后演示验收](docs/canvas_submission.md)：下载 ZIP 后无需访问私有 GitHub 或使用作者电脑的配置，按随包说明可完成完整演示。当前仍待 B 工作流接入与最终包验收。
+最终提交须满足 [Canvas 下载后演示验收](docs/canvas_submission.md)：下载 ZIP 后无需访问私有 GitHub 或使用作者电脑的配置，按随包说明可完成完整演示。当前规则流程已接入并有独立 HTTP 验证，v2 完整演示与最终包验收仍待完成。
 
 ## 安装与启动
 
@@ -71,7 +71,7 @@ Linux/macOS 可分别创建 venv、按 `backend/requirements.lock` 安装依赖�
 
 - 项目概览：根据实际后端状态显示 source readability、数据库迁移与当前入口是否可用。
 - 露营资料 `/profile`：查看和编辑人数、经验、儿童、装备数量/容量、交通及无障碍需求；未知值保留为 null。
-- 露营请求 `/request`：保存草稿、生成摘要、澄清冲突、勾选确认并保存快照；从已保存列表恢复。两晚对应三天，日期冲突先澄清。确认尚不启动规划。
+- 露营请求 `/request`：保存草稿、生成摘要、澄清冲突、勾选确认并保存快照；从已保存列表恢复。两晚对应三天，日期冲突先澄清。启用对应模式与工厂后，确认页面可以开始规划并进入保存进度。
 - 开发预览 `/dev/request-preview`：`POST /api/v1/dev/interpret`，仅回显字段，不保存请求。
 - 登录：`POST /auth/login`、`GET /auth/me`、`POST /auth/logout` 管理会话。
 - Profile：`GET/PUT /profile`；Requests：`GET/POST /requests`、`GET/PATCH /requests/{id}`、`POST /requests/{id}/interpret`、`POST /requests/{id}/confirm`（均在 `/api/v1` 下）。

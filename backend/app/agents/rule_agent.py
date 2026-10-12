@@ -55,6 +55,6 @@ class RuleAgent:
         from ..workflow.configuration import WorkflowConfiguration
         from ..workflow.orchestration import Orchestrator
         configuration = self.workflow_configuration or WorkflowConfiguration(self.dataset)
-        if configuration.context.file_digests != self.dataset.context.file_digests or configuration.context.dataset_version != self.dataset.context.dataset_version:
+        if any(configuration.context.file_digests.get(key) != value for key, value in self.dataset.context.file_digests.items()) or configuration.context.dataset_version != self.dataset.context.dataset_version:
             raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='Workflow configuration belongs to a different dataset snapshot.'))
         return await Orchestrator(self, configuration, persistence, heartbeat_interval=self.heartbeat_interval).run(input)

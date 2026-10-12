@@ -1,4 +1,4 @@
-"""A-owned durable command/recovery boundary; no B business rules or scheduler.
+"""A-owned durable command/recovery boundary; no B business rules.
 
 The trusted dispatcher supplies current demo/data context and passes only the
 claimed persistence capability to B. Attempt IDs never come from HTTP or B.
@@ -8,8 +8,8 @@ import time
 from uuid import uuid4
 
 from ..auth import fail, require_role
-from ..contracts.dto import ConfirmedContext, RunScope, StoredRecommendations, StoredAssessment, RouteResult
-from ..contracts.enums import ErrorCode
+from ..contracts.dto import ConfirmedContext, RunScope, RunSnapshot, StoredRecommendations, StoredAssessment, RouteResult
+from ..contracts.enums import ErrorCode, RunStage, RunStatus
 from ..contracts.errors import ContractError
 from .port import SqlitePersistencePort
 from .repository import Repository, encode, fingerprint, now
@@ -28,19 +28,43 @@ class RecoveryPort(SqlitePersistencePort):
         super().__init__(workflow.db, user.id, attempt.scope, attempt_id=attempt.attempt_id, clock=workflow.clock)
         self.workflow, self.user, self.attempt = workflow, user, attempt
 
+    def active(self, connection, *, writing=False, execution=False):
+        if self.workflow.context_provider is not None:
+            demo, dataset = self.workflow.context_provider(self.scope)
+            if demo != self.scope.demo_context or dataset != self.scope.dataset_context:
+                fail(ErrorCode.STALE_CONTEXT, '本次运行的数据、模式或时钟已变化，请开启新 run。')
+        return super().active(connection, writing=writing, execution=execution)
+
     async def load_checkpoint(self):
         return self.workflow.checkpoint(self.user, self.attempt)
 
     async def heartbeat(self):
         self.workflow.renew(self.user, self.attempt)
 
+    async def report_stage(self, stage, status, error):
+        if self.workflow.context_provider is not None and RunStatus(status) == RunStatus.SUCCEEDED:
+            # The dispatcher commits success only after validating orchestrate's
+            # return. Until then finalisation must remain unavailable.
+            with self.db.transaction(write=False) as connection:
+                _, run = self.active(connection, writing=True)
+                if run['status'] != 'RUNNING' or error is not None:
+                    fail(ErrorCode.INVALID_STATE, '当前运行不能结束。')
+                self.validate_completion(connection, RunStage(stage))
+                return RunSnapshot(run_id=self.scope.run_id, execution_mode=self.scope.demo_context.mode,
+                    run_status='SUCCEEDED', stage='COMPLETED', revision=run['revision'] + 1)
+        return await super().report_stage(stage, status, error)
+
+    async def commit_success(self):
+        return await super().report_stage('COMPLETED', 'SUCCEEDED', None)
+
 
 class WorkflowService:
-    def __init__(self, database, *, clock=time.time, lease_seconds=120):
+    def __init__(self, database, *, clock=time.time, lease_seconds=120, context_provider=None):
         if lease_seconds <= 0:
             raise ValueError('lease_seconds must be positive')
         self.db, self.clock, self.lease_seconds = database, clock, lease_seconds
         self.repository = Repository(database)
+        self.context_provider = context_provider
 
     @staticmethod
     def command_key(key):
@@ -48,11 +72,35 @@ class WorkflowService:
             fail(ErrorCode.INPUT_INVALID, 'command_key 必须为 1 至 128 位非空字符串。')
 
     def start(self, user, request_id, demo, dataset, *, command_key, plan_id=None,
-              operation='PLAN', expected_current_version_id=None, expected_active_run_id=None):
+              operation='PLAN', expected_current_version_id=None, expected_active_run_id=None,
+              expected_request_revision=None, single_plan=False,
+              expected_version_revision=None, expected_run_revision=None):
         self.command_key(command_key)
         return self.repository.begin_run(user, request_id, demo, dataset, plan_id=plan_id,
             operation=operation, expected_current_version_id=expected_current_version_id,
-            expected_active_run_id=expected_active_run_id, command_key=command_key)
+            expected_active_run_id=expected_active_run_id, command_key=command_key,
+            expected_request_revision=expected_request_revision, single_plan=single_plan,
+            expected_version_revision=expected_version_revision, expected_run_revision=expected_run_revision)
+
+    def fail_dispatch(self, user, run_id, error, *, attempt=None):
+        """A can record execution failure even when current data no longer matches.
+
+        An old attempt never overwrites a replacement. A malformed final return
+        may invalidate provisional success reported by B before it returned.
+        """
+        with self.db.transaction() as connection:
+            _, run, _ = self.owned_active(connection, user, run_id)
+            if attempt is None:
+                if run['status'] != 'PENDING':
+                    return
+            else:
+                lease = connection.execute('SELECT * FROM run_leases WHERE run_id=?', (run_id,)).fetchone()
+                if not lease or lease['attempt_id'] != attempt.attempt_id or lease['expires_at'] <= self.clock() or run['status'] not in {'RUNNING', 'SUCCEEDED'}:
+                    return
+            stage = 'ROUTING' if run['stage'] == 'COMPLETED' else run['stage']
+            connection.execute("UPDATE runs SET status='FAILED',stage=?,revision=revision+1,error=? WHERE id=?", (stage, encode(error), run_id))
+            connection.execute('INSERT INTO run_events(run_id,stage,status,error,created_at) VALUES(?,?,?,?,?)', (run_id, stage, 'FAILED', encode(error), now()))
+            connection.execute('UPDATE run_leases SET expires_at=0 WHERE run_id=?', (run_id,))
 
     def owned_active(self, connection, user, run_id):
         require_role(user, 'CAMPER')
@@ -154,11 +202,20 @@ class WorkflowService:
             recommendations = connection.execute('SELECT payload FROM recommendations WHERE run_id=?', (attempt.scope.run_id,)).fetchone()
             binding = connection.execute('SELECT 1 FROM run_versions WHERE run_id=?', (attempt.scope.run_id,)).fetchone()
             route = connection.execute("SELECT result FROM write_receipts WHERE run_id=? AND operation='route'", (attempt.scope.run_id,)).fetchone()
+            previous_version = None
+            if not binding and attempt.scope.operation == 'REVISE':
+                previous = connection.execute('''SELECT r.scope FROM runs r JOIN run_versions rv ON rv.run_id=r.id
+                    WHERE rv.plan_id=? AND rv.version_id=? ORDER BY r.created_at DESC,r.id DESC LIMIT 1''',
+                    (attempt.scope.plan_id, attempt.scope.expected_current_version_id)).fetchone()
+                if previous is None:
+                    fail(ErrorCode.STALE_CONTEXT, '原方案版本不存在。')
+                previous_version = Repository.stored_version(connection, RunScope.model_validate_json(previous['scope']))
             return {
                 'stage': run['stage'], 'run_status': run['status'],
                 'confirmed_context': ConfirmedContext.model_validate_json(run['confirmed_context']),
                 'recommendations': StoredRecommendations.model_validate_json(recommendations['payload']) if recommendations else None,
                 'version': Repository.stored_version(connection, attempt.scope) if binding else None,
+                'previous_version': previous_version,
                 'assessments': [StoredAssessment.model_validate_json(row['payload']) for row in connection.execute('SELECT payload FROM assessments WHERE run_id=? ORDER BY kind', (attempt.scope.run_id,))],
                 'route': RouteResult.model_validate_json(route['result']) if route else None,
             }

@@ -1,0 +1,26 @@
+{
+  "kind": "A12_REAL_RULE_RUNTIME_INTEGRATION",
+  "date": "2026-10-12",
+  "main_baseline": "7720863117f2ea60d9a88ae95cf2f4ea7b9b2630",
+  "tests": {
+    "errors": "0",
+    "failures": "0",
+    "skipped": "2",
+    "tests": "466",
+    "time": "201.392"
+  },
+  "new_runtime_tests": 10,
+  "schema": "up_to_date_1.0",
+  "frontend": {
+    "modules": 50,
+    "build_seconds": 1.65
+  },
+  "modes": {
+    "v1_rule_workflow": "registered_and_http_verified",
+    "v2_rule_workflow": "unregistered_explicitly_not_ready",
+    "llm": "unregistered"
+  },
+  "default_env_unchanged": true,
+  "test_inputs": "Independent Profile and ScenarioContext; actual RuleAgent; no oracle business input",
+  "full_demo_or_canvas_acceptance": false
+}

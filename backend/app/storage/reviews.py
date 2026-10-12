@@ -8,6 +8,7 @@ from ..auth import fail, require_role
 from ..contracts.base import ContractModel, Identifier
 from ..contracts.dto import RunScope, ValidReview, VersionContext
 from ..contracts.enums import ErrorCode, ReviewDecision
+from ..contracts.errors import ContractFailure
 from .plan_queries import PlanQueries
 from .port import SqlitePersistencePort
 from .repository import Repository, encode, fingerprint, now
@@ -31,8 +32,8 @@ class ReviewInput(ContractModel):
 
 
 class ReviewService:
-    def __init__(self, database):
-        self.db = database
+    def __init__(self, database, *, context_guard=None):
+        self.db, self.context_guard = database, context_guard
 
     def queue(self, user):
         require_role(user, 'FOUNDER')
@@ -52,6 +53,14 @@ class ReviewService:
         if data['version']['status'] not in {'ESCALATED','BLOCKED','REVISION_REQUIRED'} and not data['reviews']:
             fail(ErrorCode.FORBIDDEN, '此方案不属于人工审核范围。')
         data['review_available'] = (not data['reviews'] and data['version']['status'] in {'ESCALATED','BLOCKED','REVISION_REQUIRED'})
+        if self.context_guard is not None:
+            with self.db.transaction(write=False) as connection:
+                run = connection.execute('SELECT scope FROM runs WHERE id=?', (data['run']['run_id'],)).fetchone()
+            try:
+                self.context_guard(RunScope.model_validate_json(run['scope']))
+            except ContractFailure as exc:
+                data['review_available'] = False
+                data['current_inputs_error'] = exc.error.message
         return data
 
     def submit(self, user, plan_id, body: ReviewInput):
@@ -64,6 +73,8 @@ class ReviewService:
             if not run or body.version_context.plan_id != plan_id:
                 fail(ErrorCode.STALE_CONTEXT, '审核上下文已变化，请刷新。')
             scope = RunScope.model_validate_json(run['scope'])
+            if self.context_guard is not None:
+                self.context_guard(scope)
             port = SqlitePersistencePort(self.db, plan['owner_id'], scope)
             _, _, version = port.context(connection, body.version_context)
             assessments = port.assessments(connection, body.version_context)

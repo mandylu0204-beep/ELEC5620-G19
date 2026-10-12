@@ -89,7 +89,7 @@ class Repository:
         with self.db.transaction() as connection:
             connection.execute('INSERT INTO requests VALUES(?,?,?,?,?,?,?,?)', (context.request_id, user.id, raw_text, 'CONFIRMED', 1, encode(context.requirements), encode(context), now()))
 
-    def begin_run(self, user: User, request_id: str, demo: DemoContext, dataset: DatasetContext, *, plan_id=None, operation='PLAN', expected_current_version_id=None, command_key=None, expected_active_run_id=None):
+    def begin_run(self, user: User, request_id: str, demo: DemoContext, dataset: DatasetContext, *, plan_id=None, operation='PLAN', expected_current_version_id=None, command_key=None, expected_active_run_id=None, expected_request_revision=None, single_plan=False, expected_version_revision=None, expected_run_revision=None):
         """Only trusted A workflow services call this; no B-supplied RunScope accepted."""
         require_role(user, 'CAMPER')
         if operation not in {'PLAN', 'REVISE', 'REASSESS'}:
@@ -98,6 +98,8 @@ class Repository:
             fail(ErrorCode.INPUT_INVALID, 'command_key 必须为 1 至 128 位非空字符串。')
         input_hash = fingerprint({'operation': operation, 'request_id': request_id, 'plan_id': plan_id,
             'expected_current_version_id': expected_current_version_id, 'expected_active_run_id': expected_active_run_id,
+            'expected_request_revision': expected_request_revision, 'single_plan': single_plan,
+            'expected_version_revision': expected_version_revision, 'expected_run_revision': expected_run_revision,
             'demo': demo.model_dump(mode='json'), 'dataset': dataset.model_dump(mode='json')})
         with self.db.transaction() as connection:
             if command_key is not None:
@@ -111,6 +113,10 @@ class Repository:
                 fail(ErrorCode.NOT_FOUND, '请求不存在。')
             if request['status'] != 'CONFIRMED':
                 fail(ErrorCode.REQUEST_NOT_CONFIRMED, '请先确认请求。')
+            if expected_request_revision is not None and request['revision'] != expected_request_revision:
+                fail(ErrorCode.VERSION_CONFLICT, '需求记录已更新，请刷新后开始规划。')
+            if single_plan and connection.execute('SELECT 1 FROM plans WHERE request_id=? AND owner_id=?', (request_id, user.id)).fetchone():
+                fail(ErrorCode.INVALID_STATE, '此请求已有规划记录，请查看现有方案或重试失败运行。')
             context = ConfirmedContext.model_validate_json(request['confirmed_context'])
             context = ConfirmedContext.model_validate(context.model_copy(update={'demo_context': demo, 'dataset_context': dataset}))
             if plan_id is None:
@@ -122,6 +128,15 @@ class Repository:
                 plan = self.own_plan(connection, user, plan_id)
                 if command_key is not None and plan['active_run_id'] != expected_active_run_id:
                     fail(ErrorCode.STALE_CONTEXT, '当前运行已变化，请刷新后启动新任务。')
+                if expected_run_revision is not None:
+                    current_run = connection.execute('SELECT revision,status FROM runs WHERE id=?', (plan['active_run_id'],)).fetchone()
+                    current_version = connection.execute('SELECT revision FROM versions WHERE id=? AND plan_id=?', (expected_current_version_id, plan_id)).fetchone()
+                    if not current_run or not current_version or current_run['revision'] != expected_run_revision or current_version['revision'] != expected_version_revision:
+                        fail(ErrorCode.VERSION_CONFLICT, '版本或运行已更新，请刷新。')
+                    if current_run['status'] in {'PENDING','RUNNING'}:
+                        fail(ErrorCode.INVALID_STATE, '当前任务尚未结束，请等待后再启动新任务。')
+                    if plan['request_id'] != request_id:
+                        fail(ErrorCode.STALE_CONTEXT, '方案需求已变化，请刷新。')
                 restart_before_version = operation == 'PLAN' and command_key is not None and plan['current_version_id'] is None and expected_current_version_id is None
                 if not restart_before_version and (operation == 'PLAN' or plan['current_version_id'] != expected_current_version_id or expected_current_version_id is None):
                     fail(ErrorCode.VERSION_CONFLICT, '当前版本已变化。')

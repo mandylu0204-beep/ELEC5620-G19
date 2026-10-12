@@ -59,7 +59,13 @@ class PlanQueries:
                       'run': None, 'run_history': history, 'confirmed_context': None, 'events': [],
                       'recommendations': None, 'version': None, 'assessments': [], 'route': None,
                       'eligibility': None, 'reviews': [], 'last_final': None, 'selected_final': None,
-                      'final_history': [], 'planning_available': False, 'finalisation_available': False}
+                      'final_history': [], 'planning_available': False, 'retry_available': False,
+                      'retry_unavailable_reason': None, 'finalisation_available': False,
+                      'current_version_revision': None, 'revision_available': False,
+                      'reassessment_available': False, 'current_inputs_error': None}
+            current_version = connection.execute('SELECT revision FROM versions WHERE id=? AND plan_id=?',
+                (plan['current_version_id'], plan_id)).fetchone()
+            result['current_version_revision'] = current_version['revision'] if current_version else None
             if not review:
                 result['final_history'] = [final_index(row, plan) for row in connection.execute(
                     'SELECT * FROM final_records WHERE plan_id=? ORDER BY rowid DESC', (plan_id,))]

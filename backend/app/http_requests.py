@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, Request
 from pydantic import Field, StrictBool, StrictInt, ValidationError, field_validator
 from starlette.concurrency import run_in_threadpool
 
-from .application.request_rules import data_context, normalize
+from .application.request_rules import normalize
 from .auth import User, fail
 from .contracts.base import ContractModel
-from .contracts.dto import DemoContext, InterpretRequestResult, TripRequirements
+from .contracts.dto import InterpretRequestResult, TripRequirements
 from .contracts.enums import ErrorCode, AllowedAction
 from .contracts.errors import ContractError, ContractFailure
 from .http_accounts import current_user, writing_user
@@ -52,8 +52,8 @@ router = APIRouter(prefix='/api/v1')
 def request_context(request: Request, user: User = Depends(current_user)):
     from .auth import require_role
     require_role(user, 'CAMPER')
-    _, regions = data_context(request.app.state.settings)
-    return {'supported_destinations': regions, 'execution_mode': request.app.state.settings.execution_mode.value, 'demo_today': request.app.state.settings.demo_today.isoformat(), 'planning_available': False}
+    snapshot = request.app.state.runtime.resolve()
+    return {'supported_destinations': snapshot.descriptor.regions, 'execution_mode': snapshot.demo.mode.value, 'demo_today': snapshot.demo.demo_today.isoformat(), 'planning_available': request.app.state.dispatcher.available}
 
 
 @router.get('/requests')
@@ -68,7 +68,14 @@ def create_request(body: RequestInput, request: Request, user: User = Depends(wr
 
 @router.get('/requests/{request_id}')
 def read_request(request_id: str, request: Request, user: User = Depends(current_user)):
-    return request.app.state.requests.get(user, request_id)
+    return planning_fields(request, user, request.app.state.requests.get(user, request_id))
+
+
+def planning_fields(request, user, result):
+    with request.app.state.database.transaction(write=False) as connection:
+        plan = connection.execute('SELECT id FROM plans WHERE request_id=? AND owner_id=? ORDER BY created_at DESC LIMIT 1', (result['request_id'], user.id)).fetchone()
+    return {**result, 'planning_plan_id': plan['id'] if plan else None,
+            'planning_available': request.app.state.dispatcher.available}
 
 
 @router.patch('/requests/{request_id}')
@@ -81,11 +88,12 @@ async def interpret_request(request_id: str, body: RevisionInput, request: Reque
     # Authorization/ownership is checked before accessing datasets or calling B.
     repository = request.app.state.requests
     await run_in_threadpool(repository.get, user, request_id)
-    agent, config = request.app.state.agent, request.app.state.settings
+    snapshot = await run_in_threadpool(request.app.state.runtime.resolve)
+    agent, config = snapshot.agent, request.app.state.settings
     if agent is None:
         fail(ErrorCode.AGENT_FAILURE, '当前解释器尚未接入；请求草稿已保留。')
-    dataset, regions = await run_in_threadpool(data_context, config)
-    demo = DemoContext(mode=config.execution_mode, demo_today=config.demo_today, dataset_version=dataset.dataset_version)
+    dataset, regions = snapshot.dataset, snapshot.descriptor.regions
+    demo = snapshot.demo
     revision, input = await run_in_threadpool(repository.begin_analysis, user, request_id, body.expected_revision, demo, dataset)
     try:
         result = InterpretRequestResult.model_validate(await agent.interpret_request(input))
@@ -113,7 +121,6 @@ async def interpret_request(request_id: str, body: RevisionInput, request: Reque
 @router.post('/requests/{request_id}/confirm')
 def confirm_request(request_id: str, body: ConfirmInput, request: Request, user: User = Depends(writing_user)):
     request.app.state.requests.get(user, request_id)
-    config = request.app.state.settings
-    dataset, _ = data_context(config)
-    demo = DemoContext(mode=config.execution_mode, demo_today=config.demo_today, dataset_version=dataset.dataset_version)
-    return request.app.state.requests.confirm(user, request_id, body.expected_revision, body.command_key, demo, dataset)
+    snapshot = request.app.state.runtime.resolve()
+    dataset, demo = snapshot.dataset, snapshot.demo
+    return planning_fields(request, user, request.app.state.requests.confirm(user, request_id, body.expected_revision, body.command_key, demo, dataset))

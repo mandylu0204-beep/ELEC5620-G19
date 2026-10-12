@@ -70,7 +70,7 @@ def create(output):
                 files[entry.filename[len(PREFIX):]] = hashlib.sha256(source.read(entry)).hexdigest()
     committed_at = datetime.fromtimestamp(int(git('show', '-s', '--format=%ct', commit)), timezone.utc).isoformat()
     manifest = {'format_version': 1, 'commit': commit, 'committed_at': committed_at,
-        'scope': 'A development source package; B workflow and business integration pending',
+        'scope': 'A/B development source package; v1 rule runtime integrated; v2 and full demo integration pending',
         'default_execution_mode': 'stub', 'files': dict(sorted(files.items()))}
     result = io.BytesIO(payload)
     with zipfile.ZipFile(result, 'a', compression=zipfile.ZIP_DEFLATED) as archive:

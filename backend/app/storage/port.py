@@ -231,6 +231,12 @@ class SqlitePersistencePort:
         with self.db.transaction(write=False) as connection:
             return self.decision(connection, context)[1]
 
+    def validate_completion(self, connection, stage):
+        recommendation = connection.execute('SELECT payload FROM recommendations WHERE run_id=?', (self.scope.run_id,)).fetchone()
+        no_match = recommendation and StoredRecommendations.model_validate_json(recommendation['payload']).result.search_outcome == 'NO_MATCH' and not connection.execute('SELECT 1 FROM run_versions WHERE run_id=?', (self.scope.run_id,)).fetchone()
+        if stage != RunStage.COMPLETED or not (no_match or connection.execute("SELECT 1 FROM write_receipts WHERE run_id=? AND operation='route'", (self.scope.run_id,)).fetchone()):
+            fail(ErrorCode.INVALID_STATE, '保存路由后才能结束工作流。')
+
     async def report_stage(self, stage: RunStage, status: RunStatus, error):
         stage, status = RunStage(stage), RunStatus(status)
         if status not in {RunStatus.RUNNING, RunStatus.FAILED, RunStatus.SUCCEEDED}:
@@ -243,10 +249,7 @@ class SqlitePersistencePort:
             if run['status'] in {'SUCCEEDED','FAILED','CANCELLED','SUPERSEDED'} or stages.index(stage) < stages.index(RunStage(run['stage'])):
                 fail(ErrorCode.INVALID_STATE, '已结束或陈旧的阶段不能重新推进。')
             if status == RunStatus.SUCCEEDED:
-                recommendation = connection.execute('SELECT payload FROM recommendations WHERE run_id=?', (self.scope.run_id,)).fetchone()
-                no_match = recommendation and StoredRecommendations.model_validate_json(recommendation['payload']).result.search_outcome == 'NO_MATCH' and not connection.execute('SELECT 1 FROM run_versions WHERE run_id=?', (self.scope.run_id,)).fetchone()
-                if stage != RunStage.COMPLETED or not (no_match or connection.execute("SELECT 1 FROM write_receipts WHERE run_id=? AND operation='route'", (self.scope.run_id,)).fetchone()):
-                    fail(ErrorCode.INVALID_STATE, '保存路由后才能结束工作流。')
+                self.validate_completion(connection, stage)
             elif stage == RunStage.COMPLETED:
                 fail(ErrorCode.INVALID_STATE, 'COMPLETED 必须与 SUCCEEDED 一致。')
             connection.execute('UPDATE runs SET stage=?,status=?,revision=revision+1,error=? WHERE id=?', (stage.value, status.value, encode(error) if error else None, self.scope.run_id))

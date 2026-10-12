@@ -1,5 +1,43 @@
 # 开发 A 实施状态
 
+## A-13：方案修订、重新评估与当前输入检查（2026-10-12，完整 A11–A13 已合 main）
+
+A11+A12+A13 已发布到 feature/a12-agent-runtime，应用代码提交为 230b7fb；包含最新远端 main 7720863。用户随后要求整体合入 main，已采用 merge commit 保留完整历史，未创建新 PR。分支 35fc879 与应用代码 230b7fb 的 GitHub CI 均通过；B 可从更新 main 建立 v2 接入分支。此次合并仅更新交接状态，业务代码与已检查分支一致；具体顺序见 [分支交接说明](agent_runtime_handoff.md)。后面的 A12/A11 发布状态保留为当时历史记录。
+
+已接通 Camper 的 revise/reassess HTTP 和方案页入口。修订传递原方案快照、登记反馈后生成新版本；重新评估复用内容并开启新 run、生成新评估。旧审批和最终快照不自动沿用。指针/revision 比较、owner/CSRF、幂等收据、旧端口失效与失败重试延续既有守卫。审核及最终化提交现在复核 A 绑定运行的当前数据/配置/时钟；来源变化时禁用页面操作并拒绝旧结果放行。
+
+新增 13 项独立 HTTP/SQLite/真实 v1 规则联调测试全部通过（28.73 秒）；随后最终化、审核和新流程 50 项复测通过（66.29 秒）。首次完整回归发现两项读取字段一致性问题，已在 PlanQueries 中统一新增字段，不修改数据库结构或弱化守卫。最终 scripts/check.py 退出 0：477 passed / 2 skipped / 1 条既有 Starlette 警告（164.78 秒），schema 1.0 同步，前端构建通过。两项跳过仅为 Windows 符号链接权限；之后补充前端步骤显示和间距，最终前端独立重建通过（50 模块，1.60 秒）。证据见 [A13 检查摘要](evidence/a13-plan-changes-check.json)。
+
+当前 v1 支持更换营地/更便宜营地，其他修改由实际 Agent 能力决定，需求变化必须重新确认。本轮沿用已确认的需求/Profile 快照；当前资料的新修改不会悄悄覆盖旧确认。默认配置、个人 .env 和定稿数据不变，无数据库迁移。共享 schema 仍为 1.0。新绑定身份为 a-runtime-bindings-v2，A12 旧运行需重新评估。
+
+B 工厂接口签名保持不变，但需消费 a_revision_feedback 并返回一致的 revision_feedback。细节见 [A13 修订流程](plan_changes.md) 与 [给 B 的接入交接](agent_runtime_handoff.md)。v2 Adapter、LLM、四个完整业务场景、真实浏览器演示及 Canvas 干净安装验收仍待完成；后续同步应包含完整 A11+A12+A13。
+
+## A-12：真实规则运行配置接入（2026-10-12，本地未发布）
+
+已将 main 的 B01–03 和定稿 v2 数据合入本地 A11。新增受信 AgentRuntime / AgentBinding 和按数据来源注册的工厂，v1 的真实 RuleAgent 使用完整业务 context 贯穿请求解释/确认、首次规划、claim、保存、失败重试和完成提交。B WorkflowConfiguration 保留 A 的文件/manifest/场景原始摘要、选用项和规则身份；每次操作重新核对当前输入，未注册 v2 不回退 v1。
+
+新增 10 项独立接入测试，使用实际 RuleAgent、HTTP 鉴权和临时 SQLite，覆盖正常流程至最终化回读、缺失证据、封路审批/最终化守卫、保存回执丢失恢复、输入变化、工厂遗漏摘要、v2 未就绪和并发上下文一致性。首次测试输入试图直接修改 frozen SourceRef，改为构造新快照；补充封路测试原假设批准可保存，按现有守卫调整为 Founder APPROVE 被拒绝。均未放宽应用守卫。
+
+最终后端回归为 464 passed / 2 skipped / 1 条既有 Starlette 警告（201.48 秒），跳过仅 Windows symlink 权限测试；新接入测试 10 项通过；schema 1.0 同步；前端 50 模块构建成功（1.65 秒）。证据见 [A-12 检查摘要](evidence/a12-runtime-check.json)。并发保护前的完整 scripts/check.py 亦退出 0（463 passed / 2 skipped、schema、前端通过），之后补充并发检查并完成最终全后端回归；没有声称此次执行新的浏览器演示。
+
+默认 v1/stub、个人 .env、定稿 v2 业务内容均未改；本地依赖按仓库锁文件补充 tzdata 2026.5。v2 Adapter、LLM、四个完整业务场景、修订/重评公共入口、审核/最终化对磁盘最新输入的独立复核及 Canvas 完整安装演示仍待后续。转交 B 的工厂接口见 [Agent 运行接入交接](agent_runtime_handoff.md)，此项依赖 A11，后续应同步完整 A11+A12 基线。
+
+## 当前本地实现：A-11 规划启动与失败重试（2026-10-11）
+
+基于 main 2c647e6，在 feature/a11-planning-entry 实现 Camper 规划启动/重试 HTTP、页面入口与本地异步 dispatcher。确认、owner、CSRF、revision、命令回执和当前数据上下文先检查；重复新 key 不能为同一请求重复建 plan。执行租约自动续期、旧 attempt 拒绝、服务退出记录失败、重启恢复 PENDING；失败清理过程中收到的重试仍可调度。B 返回内容校验后才由 A 提交成功，避免提前开放最终化。
+
+| 检查 | 最终结果 |
+| --- | --- |
+| 完整 scripts/check.py | 退出码 0；172 passed，1 个已有 Starlette 测试工具弃用提示；113.09 秒 |
+| 共同 schema | up to date；冻结的 1.0 Protocol/DTO 未变 |
+| 前端 | TypeScript 与 Vite 构建成功，50 模块，1.64 秒 |
+| 新增 A 独立验收 | 23 项：禁用模式、确认/权限/回执、checkpoint、租约、退出/重启、输入变化、返回校验、收尾竞争及事务回滚 |
+| 浏览器实际操作 | 独立 18011/15181 端口、var/a11-browser-test.sqlite3；启动后注入失败、点击重试、同一运行/版本完成、刷新恢复、已有方案链接、stub 按钮禁用 |
+
+证据见 [A-11 检查摘要](evidence/a11-planning-check.json)、[失败重试页面](evidence/a11-retry.png)、[恢复完成页面](evidence/a11-recovered.png)、[stub 禁用状态](evidence/a11-stub-disabled.png)。浏览器执行使用 backend/tests/test_planning_entry.py 中明确的 TestOnlyAgent，启动脚本和测试数据库只在忽略的 var 中；未注册到实际应用。前一轮完整回归发现 HTTP 与 PlanQueries 默认重试字段不一致，统一返回结构后重新完整通过。测试服务与标签已关闭。
+
+默认仍为 v1/stub，个人 .env 与演示数据库未修改；真实 B 实现、修订/重评公共执行入口、修订数据和四个业务场景仍待联调。当前输入变化后的新 run 尚无页面入口；审核/最终化对磁盘最新数据的独立检查仍待下一阶段补全。此次不代表真实 Agent 已完成，也不代表 Canvas 最终 ZIP 已验收。需要转交 B 的新增接入说明见 [规划执行接入](planning_entry.md)。本轮为本地分支提交，尚未发布到 GitHub。
+
 ## 当前发布：A-10 部署与数据上下文准备（2026-10-11）
 
 按用户授权，feature/a10-submission-preparation 的累计改动直接合并发布至 main，不创建 PR：安装/打包/隔离部署检查、Canvas 下载验收清单、v2 独立复核，以及数据来源/版本/运行输入摘要。功能代码自已验证的 f1450ae 未变，本次只更新发布说明。远端检查结果以 [main CI](https://github.com/LyraWangDev/ELEC5620-G19/actions/workflows/ci.yml?query=branch%3Amain) 对应提交为准，不沿用 A-09 的 129 项结果。

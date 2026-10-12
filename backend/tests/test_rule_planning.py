@@ -227,8 +227,11 @@ def test_rule_agent_cannot_impersonate_other_execution_modes(agent, mode):
     assert failure.value.error.code == ErrorCode.AGENT_FAILURE
 
 
-def test_rule_agent_registration_still_requires_a_and_orchestration_requires_recovery_port(agent):
+def test_rule_agent_registration_is_dataset_bound_and_orchestration_requires_recovery_port(agent):
+    from app.application.agent_runtime import DATASET_AGENT_FACTORIES
     assert ExecutionMode.DETERMINISTIC_DEMO not in AGENT_FACTORIES
+    assert (ExecutionMode.DETERMINISTIC_DEMO, 'CampMate Synthetic Demo Dataset v1') in DATASET_AGENT_FACTORIES
+    assert (ExecutionMode.DETERMINISTIC_DEMO, 'CampMate Synthetic Demo Dataset v2') not in DATASET_AGENT_FACTORIES
     with pytest.raises(ContractFailure) as failure:
         call(agent.orchestrate(None, None))
     assert failure.value.error.code == ErrorCode.CONTRACT_INVALID
