@@ -2,7 +2,23 @@
 
 日期：2026-10-12。已将验证过的 main 合入本地 A11，B 的真实 v1 RuleAgent 已接入 A 的确认/启动/重试/完成提交路径；A13 又接通修订和重新评估公共入口及审核/最终化前的当前输入复核。v2 数据已经定稿，但 v2 Adapter 仍由 B 交付，本轮没有伪装来源或修改定稿数据。默认 v1/stub、planning_enabled=false、个人 .env 保持不变。
 
-这份接入依赖完整 A11+A12+A13，本轮仍为本地实现，尚未发布到远端 main。后续同步应带上完整分支，不能只摘取依赖 dispatcher 的单次提交到旧基线。
+完整 A11+A12+A13 已推送到远端 [feature/a12-agent-runtime](https://github.com/LyraWangDev/ELEC5620-G19/tree/feature/a12-agent-runtime)，应用代码提交为 230b7fb，前置提交依次包含 A11 的 69a712e、已合入最新 main 的 f253a83、A12 的 919584e。虽然分支名为 A12，它也包含 A13 的修订/重评入口。当前尚未合入远端 main；不能只摘取依赖 dispatcher 的单次提交到旧基线。
+
+## 分支与合并顺序（2026-10-12）
+
+推送前已读取远端 main（7720863），确认它是本完整分支的祖先，工作区干净。A13 的本地完整检查为 477 passed / 2 skipped，schema 1.0 同步，最终前端构建通过；远端 CI 请核对所采用提交的运行结果，不把本地检查等同于 GitHub 已完成检查。
+
+建议先整体合并 feature/a12-agent-runtime 到 main，保留完整前置路径，不单独 cherry-pick A12 或 A13。若使用 PR，base=main、head=feature/a12-agent-runtime，使用 Create a merge commit；若由维护者直接合并，也需同步最新 main 后整体 merge 该分支。本次只发布分支，没有创建 PR 或修改 main。
+
+B 随后更新 main，并从更新后的 main 创建自己提出的 feature/a13-v2-runtime-integration，实施 v2 Adapter/工厂、runtime/装备/费用/安全映射及四套实际演示输入。如果 main 尚未合入而 B 希望先开发，可直接从 origin/feature/a12-agent-runtime 创建其 v2 分支；合并时仍需包含完整前置提交，并以随后更新的 main 为比较基线。
+
+```sh
+git fetch origin
+# Before the full A branch is merged into main:
+git switch -c feature/a13-v2-runtime-integration origin/feature/a12-agent-runtime
+```
+
+已合入 A 分支后，则应从更新的 main 开始。v2 分支同时必须保留本文末尾 A13 的反馈字段约定，不能仅使用旧 A12 文件说明。当前默认仍为 stub，完整运行模式由明确配置开启，v2 不回退 v1。
 
 ## 给 B 的工厂接口
 
