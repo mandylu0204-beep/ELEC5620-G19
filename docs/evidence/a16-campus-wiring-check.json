@@ -124,5 +124,21 @@
     "Canvas download",
     "second computer"
   ],
-  "publication": "local branch only; not pushed or merged to remote main"
+  "publication_at_test": "local branch only; not pushed or merged to remote main",
+  "publication_update": {
+    "date": "2026-10-13",
+    "branch": "feature/a16-campus-wiring",
+    "application_commit": "2d88ad34c13c2d62b87c62c72cf14b6b4da11c9b",
+    "application_commit_ci": {
+      "run_id": 38322599358,
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/LyraWangDev/ELEC5620-G19/actions/runs/38322599358"
+    },
+    "pushed": true,
+    "merged_to_remote_main": false,
+    "real_model_call": false,
+    "local_preflight": "Credential missing or invalid; campus endpoint TCP timeout outside sandbox",
+    "user_scope": "GitHub sync and handoff only; real model validation deferred"
+  }
 }

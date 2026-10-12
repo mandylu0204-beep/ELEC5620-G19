@@ -1,6 +1,10 @@
 # A-16：校园模型应用接线交付
 
-日期：2026-10-13。本地分支 `feature/a16-campus-wiring`；包含 A14/A15、B `5c4a093` 的完整 HybridPlanningAgent 和本次 A16。当前未推送，也未合入远端 main。请使用完整分支集成，不能把 A16 单独摘到缺少 B 组件的旧 main。原确认事项见 [C-01～C-08](campus_llm_a_reply.md)。
+日期：2026-10-13。完整分支 `feature/a16-campus-wiring` 已推送 GitHub；应用提交 `2d88ad3`，包含 A14/A15、B `5c4a093` 的完整 HybridPlanningAgent 和本次 A16。尚未合入远端 main，也未创建 PR。请使用完整分支集成，不能把 A16 单独摘到缺少 B 组件的旧 main。原确认事项见 [C-01～C-08](campus_llm_a_reply.md)。
+
+发布后本机检查：校园密钥未配置，代理TCP连接超时。用户选择暂时只完成 GitHub 同步与交接，未执行真实模型请求；已生成忽略的本地空密钥配置模板，不提交该文件。校园 HTTP/浏览器联合验收仍待网络和凭据就绪。
+
+应用提交2d88ad3的 [远端CI](https://github.com/LyraWangDev/ELEC5620-G19/actions/runs/38322599358) 已通过。给B的完整分支交接见 [发布说明](a16_b_branch_handoff.md)。
 
 ## 已实现的边界
 
