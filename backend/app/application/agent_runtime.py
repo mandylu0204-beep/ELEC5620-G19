@@ -1,0 +1,119 @@
+"""Trusted application bindings. Factories consume the inspected dataset snapshot.
+
+Legacy factories remain useful for stub and independent test doubles. Dataset
+factories return the actual Agent together with its complete workflow context.
+"""
+from dataclasses import dataclass
+import hashlib
+import json
+from threading import RLock
+
+from pydantic import ValidationError
+
+from ..contracts.dto import DatasetContext, DemoContext, ScenarioContext
+from ..contracts.enums import ErrorCode, ExecutionMode
+from ..contracts.errors import ContractError, ContractFailure
+from ..contracts.ports import AgentPort
+from .agent_registry import create_agent
+from .datasets import DatasetDescriptor, inspect_dataset, scenario_path
+
+
+@dataclass(frozen=True)
+class AgentBinding:
+    agent: AgentPort
+    context: DatasetContext
+
+
+@dataclass(frozen=True)
+class RuntimeSnapshot:
+    agent: AgentPort | None
+    demo: DemoContext
+    dataset: DatasetContext
+    descriptor: DatasetDescriptor
+
+
+def configured_scenarios(settings, descriptor):
+    scenarios = []
+    for name in settings.dataset_scenario_files:
+        try:
+            payload = scenario_path(settings.dataset_path, name).read_bytes()
+        except OSError as exc:
+            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='场景文件在加载期间不可读，请重新读取。')) from exc
+        if hashlib.sha256(payload).hexdigest() != descriptor.context.fixture_digests[name]:
+            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='场景文件在加载期间变化，请重新读取。'))
+        try:
+            value = json.loads(payload.decode('utf-8-sig'))
+            scenarios.extend(ScenarioContext.model_validate(item) for item in (value if isinstance(value, list) else [value]))
+        except (ValueError, TypeError, ValidationError) as exc:
+            raise ContractFailure(ContractError(code=ErrorCode.ADAPTER_FAILURE, message='登记的场景不是有效的 ScenarioContext。', context={'dataset_file': name})) from exc
+    return scenarios
+
+
+def build_v1_rule_binding(settings, descriptor):
+    # Import on demand: default stub installation does not load business rules.
+    from ..adapters import SyntheticDatasetAdapter
+    from ..agents.rule_agent import RuleAgent
+    from ..workflow import WorkflowConfiguration
+
+    dataset = SyntheticDatasetAdapter(settings.dataset_path).load()
+    if dataset.context.dataset_version != descriptor.context.dataset_version or any(
+        descriptor.context.file_digests.get(name) != value for name, value in dataset.context.file_digests.items()
+    ):
+        raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='Adapter 消费的字节与应用登记的输入不一致。'))
+    base = descriptor.context.model_copy(update={'rules_version': descriptor.context.rules_version + '/a-runtime-bindings-v1'})
+    configuration = WorkflowConfiguration(dataset, safety_case_ids=settings.workflow_safety_case_ids,
+        scenarios=configured_scenarios(settings, descriptor), registered_context=base)
+    return AgentBinding(RuleAgent(dataset, workflow_configuration=configuration), configuration.context)
+
+
+# B can register v2 under its own explicit source family. No fallback to v1.
+DATASET_AGENT_FACTORIES = {
+    (ExecutionMode.DETERMINISTIC_DEMO, 'CampMate Synthetic Demo Dataset v1'): build_v1_rule_binding,
+}
+
+
+class AgentRuntime:
+    def __init__(self, state):
+        self.state = state
+        self._lock = RLock()
+        self.configured_agent = None
+        state.agent = create_agent(state.settings.execution_mode)
+        self.managed_mode = state.settings.execution_mode if state.agent is None and state.settings.execution_mode == ExecutionMode.DETERMINISTIC_DEMO else None
+        self.error = None
+        if self.managed_mode is not None:
+            try:
+                self.resolve()
+            except ContractFailure as exc:
+                self.error = exc.error
+
+    def resolve(self):
+        # HTTP reads run in worker threads while the supervisor runs on asyncio.
+        # Keep the managed Agent marker and state.agent replacement consistent.
+        with self._lock:
+            return self._resolve()
+
+    def _resolve(self):
+        settings = self.state.settings
+        descriptor = inspect_dataset(settings)
+        agent, context = self.state.agent, descriptor.context
+        managed = (self.configured_agent is not None and agent is self.configured_agent) or (
+            self.configured_agent is None and agent is None and self.managed_mode is not None)
+        if managed:
+            if settings.execution_mode != self.managed_mode:
+                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='执行模式已变化，请重新启动对应模式的应用。'))
+            factory = DATASET_AGENT_FACTORIES.get((settings.execution_mode, descriptor.provenance.source_name))
+            if factory is None:
+                raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='该数据版本的业务 Adapter 尚未注册，不能启动规划。', context={'dataset_version': context.dataset_version}))
+            binding = factory(settings, descriptor)
+            agent, context = binding.agent, binding.context
+            if context.dataset_version != descriptor.context.dataset_version or any(
+                context.file_digests.get(name) != value for name, value in descriptor.context.file_digests.items()
+            ) or any(context.fixture_digests.get(name) != value for name, value in descriptor.context.fixture_digests.items()) or any(
+                context.selection_config.get(name) != value for name, value in descriptor.context.selection_config.items()
+            ) or not context.rules_version.startswith(descriptor.context.rules_version + '/'):
+                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='业务配置遗漏或改变了应用登记的数据、选用项或规则身份。'))
+            self.configured_agent = agent
+            self.state.agent = agent
+        self.error = None
+        return RuntimeSnapshot(agent, DemoContext(mode=settings.execution_mode, demo_today=settings.demo_today,
+            dataset_version=context.dataset_version), context, descriptor)

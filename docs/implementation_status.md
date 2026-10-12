@@ -1,5 +1,15 @@
 # 开发 A 实施状态
 
+## A-12：真实规则运行配置接入（2026-10-12，本地未发布）
+
+已将 main 的 B01–03 和定稿 v2 数据合入本地 A11。新增受信 AgentRuntime / AgentBinding 和按数据来源注册的工厂，v1 的真实 RuleAgent 使用完整业务 context 贯穿请求解释/确认、首次规划、claim、保存、失败重试和完成提交。B WorkflowConfiguration 保留 A 的文件/manifest/场景原始摘要、选用项和规则身份；每次操作重新核对当前输入，未注册 v2 不回退 v1。
+
+新增 10 项独立接入测试，使用实际 RuleAgent、HTTP 鉴权和临时 SQLite，覆盖正常流程至最终化回读、缺失证据、封路审批/最终化守卫、保存回执丢失恢复、输入变化、工厂遗漏摘要、v2 未就绪和并发上下文一致性。首次测试输入试图直接修改 frozen SourceRef，改为构造新快照；补充封路测试原假设批准可保存，按现有守卫调整为 Founder APPROVE 被拒绝。均未放宽应用守卫。
+
+最终后端回归为 464 passed / 2 skipped / 1 条既有 Starlette 警告（201.48 秒），跳过仅 Windows symlink 权限测试；新接入测试 10 项通过；schema 1.0 同步；前端 50 模块构建成功（1.65 秒）。证据见 [A-12 检查摘要](evidence/a12-runtime-check.json)。并发保护前的完整 scripts/check.py 亦退出 0（463 passed / 2 skipped、schema、前端通过），之后补充并发检查并完成最终全后端回归；没有声称此次执行新的浏览器演示。
+
+默认 v1/stub、个人 .env、定稿 v2 业务内容均未改；本地依赖按仓库锁文件补充 tzdata 2026.5。v2 Adapter、LLM、四个完整业务场景、修订/重评公共入口、审核/最终化对磁盘最新输入的独立复核及 Canvas 完整安装演示仍待后续。转交 B 的工厂接口见 [Agent 运行接入交接](agent_runtime_handoff.md)，此项依赖 A11，后续应同步完整 A11+A12 基线。
+
 ## 当前本地实现：A-11 规划启动与失败重试（2026-10-11）
 
 基于 main 2c647e6，在 feature/a11-planning-entry 实现 Camper 规划启动/重试 HTTP、页面入口与本地异步 dispatcher。确认、owner、CSRF、revision、命令回执和当前数据上下文先检查；重复新 key 不能为同一请求重复建 plan。执行租约自动续期、旧 attempt 拒绝、服务退出记录失败、重启恢复 PENDING；失败清理过程中收到的重试仍可调度。B 返回内容校验后才由 A 提交成功，避免提前开放最终化。

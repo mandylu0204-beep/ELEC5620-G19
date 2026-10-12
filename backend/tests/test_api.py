@@ -34,14 +34,14 @@ def test_foundation_ready_does_not_claim_business_workflows(tmp_path):
 
 
 def test_unimplemented_mode_never_falls_back_to_stub(tmp_path):
-    app = create_app(Settings(_env_file=None, dataset_path=make_dataset(tmp_path), execution_mode='deterministic_demo'))
+    app = create_app(Settings(_env_file=None, dataset_path=make_dataset(tmp_path), execution_mode='agent'))
     with TestClient(app) as client:
         assert client.get('/api/v1/health/live').status_code == 200
         assert client.get('/api/v1/health/ready').status_code == 503
         response = client.post('/api/v1/dev/interpret', json={'raw_text': 'Trip', 'explicit_fields': {}})
         assert response.status_code == 503
         assert response.json()['error']['code'] == 'AGENT_FAILURE'
-        assert client.get('/api/v1/meta').json()['execution_mode'] == 'deterministic_demo'
+        assert client.get('/api/v1/meta').json()['execution_mode'] == 'agent'
 
 
 def test_preview_echoes_explicit_fields_and_remains_unsaved(tmp_path):

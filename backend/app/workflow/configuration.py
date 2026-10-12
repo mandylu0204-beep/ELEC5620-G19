@@ -8,7 +8,7 @@ from ..contracts.enums import AllowedAction, ErrorCode
 from ..contracts.errors import ContractError, ContractFailure
 from ..agents.rules.common import RULES_VERSION
 
-WORKFLOW_VERSION = 'b03-checkpoint-1'
+WORKFLOW_VERSION = 'b03-checkpoint-2'
 
 
 def failure(code, message, *, recoverable=False):
@@ -30,7 +30,7 @@ class WorkflowConfiguration:
     canonical DTO bytes (not claimed to be the hash of an original source file).
     No test files, expected labels or implicit fixture loader are involved.
     """
-    def __init__(self, dataset: SyntheticDataset, *, safety_case_ids=(), feedback=None, scenarios=()):
+    def __init__(self, dataset: SyntheticDataset, *, safety_case_ids=(), feedback=None, scenarios=(), registered_context=None):
         ids = tuple(safety_case_ids)
         if any(not isinstance(value, str) or not value for value in ids) or len(set(ids)) != len(ids):
             raise failure(ErrorCode.INPUT_INVALID, 'Safety case IDs must be unique, explicit strings.')
@@ -50,15 +50,20 @@ class WorkflowConfiguration:
         if supplements:
             payload = json.dumps([item.model_dump(mode='json') for item in supplements], sort_keys=True, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
             fixture_digests['b03-explicit-scenarios.canonical.json'] = hashlib.sha256(payload).hexdigest()
-        base = dataset.context
+        base = DatasetContext.model_validate(registered_context) if registered_context is not None else dataset.context
+        if base.dataset_version != dataset.context.dataset_version or any(base.file_digests.get(key) != value for key, value in dataset.context.file_digests.items()):
+            raise failure(ErrorCode.STALE_CONTEXT, 'Registered context does not identify the consumed dataset snapshot.')
+        choices = {
+            'safety_case_ids': json.dumps(ids, separators=(',', ':')),
+            'supplement_scenario_ids': json.dumps([item.scenario_id for item in supplements], separators=(',', ':')),
+            'revision_feedback': feedback or '',
+        }
+        if any(key in base.selection_config and base.selection_config[key] != value for key, value in choices.items()):
+            raise failure(ErrorCode.INPUT_INVALID, 'Registered selection disagrees with workflow choices.')
         self._context = DatasetContext(
             dataset_version=base.dataset_version, file_digests=base.file_digests,
-            fixture_digests=fixture_digests,
-            selection_config={
-                'safety_case_ids': json.dumps(ids, separators=(',', ':')),
-                'supplement_scenario_ids': json.dumps([item.scenario_id for item in supplements], separators=(',', ':')),
-                'revision_feedback': feedback or '',
-            },
+            fixture_digests={**base.fixture_digests, **fixture_digests},
+            selection_config={**base.selection_config, **choices},
             rules_version=f'{base.rules_version}/{ADAPTER_VERSION}/{RULES_VERSION}/{WORKFLOW_VERSION}',
         )
         self._scenarios = tuple(selected)

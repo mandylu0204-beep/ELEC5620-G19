@@ -4,11 +4,13 @@ export interface Meta {
   dataset_version: string | null;
   provenance: { source_type: string; source_name: string; source_date: string; demo_only: boolean } | null;
   features: Record<string, boolean>;
+  agent_configuration_error?: ApiError['error'] | null;
 }
 export interface Ready {
   status: 'ready' | 'not_ready'; execution_mode: Mode;
   checks: { dataset_readable: boolean; dataset_context_valid: boolean; sqlite_driver: boolean; database_migrated: boolean; configured_agent_available: boolean };
   missing_files: string[]; business_persistence_implemented: boolean; real_agents_implemented: boolean;
+  agent_configuration_error?: ApiError['error'] | null;
 }
 export interface ApiError {
   error: { code: string; message: string; recoverable: boolean; field_errors: { field: string; message: string }[]; allowed_actions: string[]; context: Record<string, string> };

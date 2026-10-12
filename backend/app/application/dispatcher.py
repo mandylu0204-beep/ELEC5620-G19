@@ -5,11 +5,10 @@ import logging
 from pydantic import ValidationError
 
 from ..auth import User, fail
-from ..contracts.dto import DemoContext, OrchestrateInput, RunResult
+from ..contracts.dto import OrchestrateInput, RunResult
 from ..contracts.enums import ErrorCode, ExecutionMode
 from ..contracts.errors import ContractError, ContractFailure
 from ..storage.repository import Repository
-from .datasets import inspect_dataset
 
 logger = logging.getLogger(__name__)
 
@@ -24,19 +23,21 @@ class PlanningDispatcher:
 
     @property
     def available(self):
-        return (not self.closing and self.state.settings.planning_enabled
-                and self.state.settings.execution_mode != ExecutionMode.STUB
-                and self.state.agent is not None)
+        if self.closing or not self.state.settings.planning_enabled or self.state.settings.execution_mode == ExecutionMode.STUB:
+            return False
+        try:
+            return self.state.runtime.resolve().agent is not None
+        except ContractFailure as exc:
+            self.state.runtime.error = exc.error
+            return False
 
     def require_available(self):
         if not self.available:
             fail(ErrorCode.AGENT_FAILURE, '规划流程尚未启用；需接入对应模式的 Agent 和 Adapter。Stub 不生成方案。')
 
     def context(self):
-        config = self.state.settings
-        dataset = inspect_dataset(config).context
-        return DemoContext(mode=config.execution_mode, demo_today=config.demo_today,
-                           dataset_version=dataset.dataset_version), dataset
+        snapshot = self.state.runtime.resolve()
+        return snapshot.demo, snapshot.dataset
 
     def enqueue(self, user, run_id):
         self.require_available()
@@ -126,7 +127,8 @@ class PlanningDispatcher:
         worker = heartbeat = None
         workflow = self.state.workflows
         try:
-            demo, dataset = self.context()
+            snapshot = self.state.runtime.resolve()
+            demo, dataset = snapshot.demo, snapshot.dataset
             # Re-delivered HTTP receipts do not restart an already running/ended run.
             with workflow.db.transaction(write=False) as connection:
                 _, run, _ = workflow.owned_active(connection, user, run_id)
@@ -137,7 +139,7 @@ class PlanningDispatcher:
             checkpoint = workflow.checkpoint(user, attempt)
             input = OrchestrateInput(run_scope=attempt.scope, confirmed_context=checkpoint['confirmed_context'],
                                      previous_version=checkpoint['version'])
-            worker = asyncio.create_task(self.state.agent.orchestrate(input, port))
+            worker = asyncio.create_task(snapshot.agent.orchestrate(input, port))
             heartbeat = asyncio.create_task(self.keep_alive(user, attempt))
             done, _ = await asyncio.wait({worker, heartbeat}, return_when=asyncio.FIRST_COMPLETED)
             if heartbeat in done:

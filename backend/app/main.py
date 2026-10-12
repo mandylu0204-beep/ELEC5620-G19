@@ -8,7 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import ValidationError
 from starlette.exceptions import HTTPException
 
-from .application.agent_registry import create_agent
+from .application.agent_runtime import AgentRuntime
 from .application.dispatcher import PlanningDispatcher
 from .application.datasets import BUSINESS_FILES, inspect_dataset
 from .auth import AuthService
@@ -57,7 +57,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     application = FastAPI(title='CampMate AI', version='0.6.0', description='Local synthetic demo: Founder review and immutable final snapshots. B planning is pending.', lifespan=lifespan)
     application.state.settings = config
-    application.state.agent = create_agent(config.execution_mode)
+    application.state.runtime = AgentRuntime(application.state)
     application.state.database = database
     application.state.auth = auth
     application.state.repository = Repository(database)
@@ -122,7 +122,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         except ContractFailure:
             descriptor = None
         sqlite_available = database.ready()
-        agent_available = application.state.agent is not None
+        try:
+            runtime = application.state.runtime.resolve()
+            agent_available = runtime.agent is not None
+            application.state.runtime.error = None
+        except ContractFailure as exc:
+            application.state.runtime.error = exc.error
+            agent_available = False
         ready = not missing and descriptor is not None and sqlite_available and agent_available
         return JSONResponse(status_code=200 if ready else 503, content={
             'status': 'ready' if ready else 'not_ready', 'scope': 'development_foundation',
@@ -131,8 +137,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             'dataset_version': descriptor.context.dataset_version if descriptor else None,
             'missing_files': missing,
             'business_persistence_implemented': True,
-            'business_workflows_implemented': False,
+            'business_workflows_implemented': application.state.dispatcher.available,
             'real_agents_implemented': False,
+            'rule_agents_available': agent_available and config.execution_mode == ExecutionMode.DETERMINISTIC_DEMO,
+            'agent_configuration_error': application.state.runtime.error.model_dump(mode='json') if application.state.runtime.error else None,
+            'planning_available': application.state.dispatcher.available,
         })
 
     @application.get('/api/v1/meta')
@@ -148,6 +157,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             'provenance': descriptor.provenance.model_dump(mode='json') if descriptor else None,
             'dataset_version': descriptor.context.dataset_version if descriptor else None,
             'features': {'request_preview': config.execution_mode == ExecutionMode.STUB and application.state.agent is not None, 'authentication': True, 'persistence': True, 'profiles': True, 'request_confirmation': True, 'plan_reading': True, 'planning': application.state.dispatcher.available, 'human_review': True, 'finalisation': True},
+            'agent_configuration_error': application.state.runtime.error.model_dump(mode='json') if application.state.runtime.error else None,
         }
 
     @application.post('/api/v1/dev/interpret', response_model=InterpretRequestResult)
