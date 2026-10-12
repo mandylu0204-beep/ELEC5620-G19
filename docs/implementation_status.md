@@ -1,5 +1,15 @@
 # 开发 A 实施状态
 
+## A-16：校园模型应用接线（2026-10-13，本地未发布）
+
+本地 `feature/a16-campus-wiring` 合入 B `5c4a093` 完整 Hybrid，注册 v2/agent 工厂，保持确认/run/产物/评估为agent模式。首版仅PLAN、单营地、最多30晚；模型生成行程，其余阶段使用规则，meta与页面明确显示。unsupported修订/重评在创建run前拒绝，无静默回退。
+
+迁移6和 `app.application.model_audit.ModelPlanningPersistencePort` 已实现。版本/trace/幂等收据同事务；恢复复用已保存版本与原生成trace，缺失必需trace拒绝继续放行；最终快照保留调用记录，保持用户隔离和原安全/审批守卫。共同schema仍1.0，个人配置、默认数据库与封存v2包未改。
+
+新增15项HTTP/SQLite集成测试；最终scripts/check.py退出0：638 passed、44 Windows文件符号链接权限跳过、1条既有Starlette警告，407.75秒。junction实际通过；schema同步；TypeScript/Vite53模块构建通过（1.57秒），pip check和git diff --check通过。另修正B两项Windows测试稳定性。独立数据库上的真实浏览器完成登录/资料/确认/调度/最终保存/刷新回读，trace随快照保留，无前端error。截图明确标示离线模型响应，测试没有调用校园代理或读取个人密钥；不能当作真实模型闭环验收。
+
+实际导入/端口、当前开关和给B的联合验收流程见 [A16交付](campus_model_wiring.md)，证据见 [A16检查摘要](evidence/a16-campus-wiring-check.json)。验收服务与标签已关闭。此分支包含A14/A15与B组件，后续应整体集成；尚未推送/合入远端main。真实校园HTTP/浏览器、模型修订/重评、最新版干净安装及Canvas/另一电脑验收仍待完成，不提前生成最终提交ZIP。
+
 ## A-15：异常场景与审核后引导（2026-10-12执行，2026-10-13整理，本地未发布）
 
 新增“接下来怎么做”提示，区分无匹配、不支持的输入、技术执行中断、待修订、待审核及证据缺失/过期/冲突。保留服务器eligibility为唯一放行依据；当前待审核方案自动回读状态，Founder必须明确选择决定。

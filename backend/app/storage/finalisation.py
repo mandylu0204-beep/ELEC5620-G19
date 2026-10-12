@@ -10,6 +10,7 @@ from ..contracts.dto import ConfirmedContext, RunScope, VersionContext
 from ..contracts.enums import ErrorCode
 from .port import SqlitePersistencePort
 from .repository import Repository, encode, fingerprint, now
+from ..application.model_audit import load_model_trace
 
 
 class FinaliseInput(ContractModel):
@@ -96,6 +97,7 @@ class FinalisationService:
                 'version_context': body.version_context.model_dump(mode='json'), 'version_number': version.version_number,
                 'version_revision': version.revision + 1, 'confirmed_context': confirmed.model_dump(mode='json'),
                 'content': version.content.model_dump(mode='json'), 'assessments': [item.model_dump(mode='json') for item in assessments],
+                'model_planning_trace': load_model_trace(connection, scope, version),
                 'review': review.model_dump(mode='json') if review else None,
                 'eligibility_at_finalisation': eligibility.model_dump(mode='json'),
                 'recommendations': json.loads(recommendation['payload']) if recommendation else None,

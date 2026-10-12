@@ -146,15 +146,24 @@ class Orchestrator:
                     if recommendations.result.search_outcome == 'NO_MATCH':
                         return await self.finish(scope)
                     await self.advance(RunStage.GENERATING)
-                    content = await self.call(lambda: self.agent.generate_or_revise_itinerary(ItineraryInput(
+                    itinerary_input = ItineraryInput(
                         confirmed_requirements=confirmed.requirements, profile_snapshot=confirmed.profile_snapshot,
                         recommendations=recommendations.result, previous_version=input.previous_version if scope.operation == 'REVISE' else None,
                         feedback=self.config.feedback, demo_context=scope.demo_context,
-                    )))
+                    )
+                    if scope.dataset_context.selection_config.get('a_model_trace_required') == '1':
+                        outcome = await self.call(lambda: self.agent.plan_with_trace(itinerary_input))
+                        content = outcome.itinerary
+                    else:
+                        outcome = None
+                        content = await self.call(lambda: self.agent.generate_or_revise_itinerary(itinerary_input))
                     if content.requested_requirement_changes is not None:
                         raise failure(ErrorCode.REQUEST_NOT_CONFIRMED, 'Proposed requirements must be reconfirmed before creating a version.')
                     await self.advance(RunStage.SAVING_VERSION)
-                    version = await self.call(lambda: self.port.append_plan_version(scope.expected_current_version_id, content, scope.request_id, content.revision_reason, scope.write_keys['version']))
+                    if outcome is not None:
+                        version = await self.call(lambda: self.port.append_model_plan(scope.expected_current_version_id, content, scope.request_id, content.revision_reason, outcome.trace.model_dump(mode='json'), scope.write_keys['version']))
+                    else:
+                        version = await self.call(lambda: self.port.append_plan_version(scope.expected_current_version_id, content, scope.request_id, content.revision_reason, scope.write_keys['version']))
                     self.refs['version'] = version.version_context.plan_version_id
                 context = version.version_context
                 if logistics is None:

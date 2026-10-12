@@ -4,6 +4,8 @@ export interface Meta {
   dataset_version: string | null;
   provenance: { source_type: string; source_name: string; source_date: string; demo_only: boolean } | null;
   features: Record<string, boolean>;
+  supported_operations?: string[];
+  planning_stages?: Record<string,string>;
   agent_configuration_error?: ApiError['error'] | null;
 }
 export interface Ready {

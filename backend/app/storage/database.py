@@ -143,6 +143,21 @@ CREATE TRIGGER no_delete_workflow_command BEFORE DELETE ON workflow_commands
 """
 
 
+MIGRATION_6 = """
+CREATE TABLE model_planning_traces(
+ id TEXT PRIMARY KEY, plan_id TEXT NOT NULL, run_id TEXT NOT NULL UNIQUE,
+ version_id TEXT NOT NULL, owner_id TEXT NOT NULL REFERENCES users(id),
+ input_fingerprint TEXT NOT NULL, attempt_id TEXT NOT NULL,
+ payload TEXT NOT NULL, payload_sha256 TEXT NOT NULL, created_at TEXT NOT NULL,
+ FOREIGN KEY(plan_id,version_id) REFERENCES versions(plan_id,id),
+ FOREIGN KEY(run_id,version_id) REFERENCES run_versions(run_id,version_id));
+CREATE TRIGGER immutable_model_trace BEFORE UPDATE ON model_planning_traces
+ BEGIN SELECT RAISE(ABORT, 'immutable model trace'); END;
+CREATE TRIGGER no_delete_model_trace BEFORE DELETE ON model_planning_traces
+ BEGIN SELECT RAISE(ABORT, 'immutable model trace'); END;
+"""
+
+
 def execute_migration(connection, script):
     statement = ''
     for line in script.splitlines():
@@ -188,7 +203,11 @@ class Database:
                 execute_migration(connection, MIGRATION_5)
                 connection.execute("INSERT INTO schema_migrations VALUES(5, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
                 versions.append(5)
-            if versions != [1, 2, 3, 4, 5]:
+            if versions == [1, 2, 3, 4, 5]:
+                execute_migration(connection, MIGRATION_6)
+                connection.execute("INSERT INTO schema_migrations VALUES(6, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
+                versions.append(6)
+            if versions != [1, 2, 3, 4, 5, 6]:
                 raise RuntimeError('Unsupported database schema version')
 
     @contextmanager
@@ -218,6 +237,6 @@ class Database:
         try:
             with self.transaction(write=False) as connection:
                 versions = [row[0] for row in connection.execute('SELECT version FROM schema_migrations ORDER BY version')]
-                return versions == [1, 2, 3, 4, 5]
+                return versions == [1, 2, 3, 4, 5, 6]
         except ContractFailure:
             return False

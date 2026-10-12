@@ -14,6 +14,7 @@ from ..contracts.enums import (
 )
 from .database import Database
 from .repository import Repository, encode, fingerprint, now
+from ..application.model_audit import required as model_trace_required, trace_payload, validate_trace, trace_hash, load_model_trace
 
 
 class SqlitePersistencePort:
@@ -84,6 +85,18 @@ class SqlitePersistencePort:
         return self.write('recommendations', write_key, result, StoredRecommendations, save)
 
     async def append_plan_version(self, expected_current_version_id, content: ItineraryResult, request_id: str, reason: str, write_key: str):
+        if model_trace_required(self.scope):
+            fail(ErrorCode.CONTRACT_INVALID, '已登记的模型规划必须同时保存版本和审计。')
+        return self.append_version(expected_current_version_id, content, request_id, reason, write_key)
+
+    async def append_model_plan(self, expected_current_version_id, content, request_id, reason, trace, write_key):
+        if not self.attempt_id:
+            fail(ErrorCode.STALE_CONTEXT, '模型保存必须使用已领取的执行端口。')
+        return self.append_version(expected_current_version_id, content, request_id, reason, write_key, trace_payload(trace))
+
+    def append_version(self, expected_current_version_id, content, request_id, reason, write_key, trace=None):
+        if model_trace_required(self.scope) and trace is None:
+            fail(ErrorCode.CONTRACT_INVALID, '模型版本不能绕过必要审计。')
         content = ItineraryResult.model_validate(content)
         self.validate_mode(content)
         if request_id != self.scope.request_id or expected_current_version_id != self.scope.expected_current_version_id or self.scope.operation == 'REASSESS':
@@ -92,6 +105,11 @@ class SqlitePersistencePort:
             fail(ErrorCode.REQUEST_NOT_CONFIRMED, '需求变化必须重新确认后才能保存方案。')
         def save(connection):
             plan, run = self.active(connection)
+            if trace is not None:
+                row = connection.execute('SELECT payload FROM recommendations WHERE run_id=?', (self.scope.run_id,)).fetchone()
+                if not row:
+                    fail(ErrorCode.CONTRACT_INVALID, '模型版本必须基于本次保存的推荐。')
+                validate_trace(self.scope, content, trace, StoredRecommendations.model_validate_json(row['payload']))
             if plan['current_version_id'] != expected_current_version_id:
                 fail(ErrorCode.VERSION_CONFLICT, '方案已产生新版本。')
             version_id = uuid4().hex
@@ -100,8 +118,16 @@ class SqlitePersistencePort:
             confirmed = ConfirmedContext.model_validate_json(run['confirmed_context'])
             Repository.bind_version(connection, self.scope, confirmed, version_id, content.model_dump(mode='json'))
             connection.execute('UPDATE plans SET current_version_id=? WHERE id=?', (version_id, self.scope.plan_id))
-            return Repository.stored_version(connection, self.scope)
-        return self.write('version', write_key, {'expected': expected_current_version_id, 'content': content.model_dump(mode='json'), 'request_id': request_id, 'reason': reason}, StoredVersion, save)
+            version = Repository.stored_version(connection, self.scope)
+            if trace is not None:
+                connection.execute('INSERT INTO model_planning_traces VALUES(?,?,?,?,?,?,?,?,?,?)',
+                    (uuid4().hex, self.scope.plan_id, self.scope.run_id, version_id, self.owner_id,
+                    version.version_context.input_fingerprint, self.attempt_id, encode(trace), trace_hash(trace), now()))
+            return version
+        payload = {'expected': expected_current_version_id, 'content': content.model_dump(mode='json'), 'request_id': request_id, 'reason': reason}
+        if trace is not None:
+            payload['model_planning_trace'] = trace.model_dump(mode='json')
+        return self.write('version', write_key, payload, StoredVersion, save)
 
     async def save_assessment(self, context: VersionContext, kind: AssessmentKind, result, write_key: str):
         kind = AssessmentKind(kind)
@@ -139,6 +165,8 @@ class SqlitePersistencePort:
 
     def decision(self, connection, context):
         _, run, version = self.context(connection, context)
+        if model_trace_required(self.scope):
+            load_model_trace(connection, self.scope, version)
         confirmed = ConfirmedContext.model_validate_json(run['confirmed_context'])
         rows = self.assessments(connection, context)
         by_kind = {item.kind: item for item in rows}
@@ -232,6 +260,8 @@ class SqlitePersistencePort:
             return self.decision(connection, context)[1]
 
     def validate_completion(self, connection, stage):
+        if model_trace_required(self.scope) and connection.execute('SELECT 1 FROM run_versions WHERE run_id=?', (self.scope.run_id,)).fetchone():
+            load_model_trace(connection, self.scope, Repository.stored_version(connection, self.scope))
         recommendation = connection.execute('SELECT payload FROM recommendations WHERE run_id=?', (self.scope.run_id,)).fetchone()
         no_match = recommendation and StoredRecommendations.model_validate_json(recommendation['payload']).result.search_outcome == 'NO_MATCH' and not connection.execute('SELECT 1 FROM run_versions WHERE run_id=?', (self.scope.run_id,)).fetchone()
         if stage != RunStage.COMPLETED or not (no_match or connection.execute("SELECT 1 FROM write_receipts WHERE run_id=? AND operation='route'", (self.scope.run_id,)).fetchone()):

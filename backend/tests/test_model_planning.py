@@ -184,9 +184,10 @@ def test_invalid_or_unsupported_input_is_rejected_before_model_call(problem):
     assert not messages
 
 
-def test_existing_rule_agent_guard_and_application_registration_are_not_weakened():
+def test_hybrid_registration_does_not_weaken_existing_rule_agent_guard():
     dataset, input = model_input()
-    assert ('agent', 'CampMate Synthetic Demo Dataset v2') not in DATASET_AGENT_FACTORIES
+    from app.application.agent_runtime import build_v2_hybrid_binding
+    assert DATASET_AGENT_FACTORIES[('agent', 'CampMate Synthetic Demo Dataset v2')] is build_v2_hybrid_binding
     with pytest.raises(ContractFailure):
         asyncio.run(RuleAgent(dataset).recommend_campsites(RecommendCampsitesInput(
             confirmed_requirements=input.confirmed_requirements,

@@ -267,8 +267,13 @@ def test_agent_assessments_reject_deterministic_saved_itinerary():
 def test_heartbeat_renews_during_async_client_wait(tmp_path):
     agent, input, requests = components(interval=.005)
     original = agent.coordinator.client.transport
+    waiting, renewed = asyncio.Event(), asyncio.Event()
+    renewals_during_wait = []
     async def slow(request):
-        await asyncio.sleep(.035)
+        waiting.set()
+        await asyncio.wait_for(renewed.wait(), timeout=2)
+        waiting.clear()
+        renewed.clear()
         return await original.handle_async_request(request)
     agent.coordinator.client.transport = httpx.MockTransport(slow)
     service, _, _, run_input, port = start(tmp_path, agent, input)
@@ -276,10 +281,14 @@ def test_heartbeat_renews_during_async_client_wait(tmp_path):
         beats = 0
         async def heartbeat(self):
             self.beats += 1
-            return await self.port.heartbeat()
+            result = await self.port.heartbeat()
+            if waiting.is_set():
+                renewals_during_wait.append(True)
+                renewed.set()
+            return result
     tracked = CountingPort(port)
     result = call(agent.orchestrate(run_input, tracked))
-    assert result.run_status == 'SUCCEEDED' and tracked.beats > 25 and len(requests) == 2
+    assert result.run_status == 'SUCCEEDED' and len(renewals_during_wait) >= 2 and len(requests) == 2
 
 
 def test_lost_lease_cancels_model_without_saving_then_retries(tmp_path):

@@ -105,7 +105,7 @@ def test_upstream_model_identity_may_differ_from_proxy_alias():
 
 
 @pytest.mark.parametrize('body', [b'not JSON', b'{"choices":[],"choices":[]}',
-    b'x' * (MAX_RESPONSE_BYTES + 1)])
+    b'x' * (MAX_RESPONSE_BYTES + 1)], ids=['invalid-json','duplicate-key','oversized-body'])
 def test_invalid_duplicate_or_oversized_body_is_not_accepted(body):
     client = CampusModelClient(model_settings(), transport=httpx.MockTransport(
         lambda request: httpx.Response(200, content=body)))

@@ -13,6 +13,7 @@ from ..contracts.enums import ErrorCode, RunStage, RunStatus
 from ..contracts.errors import ContractError
 from .port import SqlitePersistencePort
 from .repository import Repository, encode, fingerprint, now
+from ..application.model_audit import load_model_trace
 
 
 @dataclass(frozen=True)
@@ -215,6 +216,7 @@ class WorkflowService:
                 'confirmed_context': ConfirmedContext.model_validate_json(run['confirmed_context']),
                 'recommendations': StoredRecommendations.model_validate_json(recommendations['payload']) if recommendations else None,
                 'version': Repository.stored_version(connection, attempt.scope) if binding else None,
+                'model_planning_trace': load_model_trace(connection, attempt.scope, Repository.stored_version(connection, attempt.scope)) if binding else None,
                 'previous_version': previous_version,
                 'assessments': [StoredAssessment.model_validate_json(row['payload']) for row in connection.execute('SELECT payload FROM assessments WHERE run_id=? ORDER BY kind', (attempt.scope.run_id,))],
                 'route': RouteResult.model_validate_json(route['result']) if route else None,

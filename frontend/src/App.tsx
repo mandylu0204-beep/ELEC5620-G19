@@ -53,7 +53,7 @@ function AppContent() {
     <div className="workspace">
       <header className="topbar"><span>小组项目 · 开发预览</span><div className="topbar-right"><span className={`connection ${status?.ready.status === 'ready' ? 'connected' : ''}`}><i />{error ? '服务未连接' : status ? (status.ready.status === 'ready' ? '开发基础可用' : '依赖未就绪') : '正在连接…'}</span><AccountControl /></div></header>
       <main>
-        <div className="mode-notice"><strong>{status?.meta.execution_mode.toUpperCase() ?? '开发环境'}</strong><span>{status?.meta.agent_configuration_error ? '当前数据与运行配置未就绪，暂不能开始规划。已保存的资料和方案仍可查看。' : status?.meta.features.planning ? '确认需求后可开始规划，查看保存进度；可恢复的失败可在方案页重试。' : '资料、需求确认、方案展示、人工审核与最终化已接入。规划流程尚未启用。'}</span></div>
+        <div className="mode-notice"><strong>{status?.meta.execution_mode.toUpperCase() ?? '开发环境'}</strong><span>{status?.meta.agent_configuration_error ? '当前数据与运行配置未就绪，暂不能开始规划。已保存的资料和方案仍可查看。' : status?.meta.features.model_planning ? '混合模式：仅行程规划调用校园模型；需求解释、装备费用及安全使用规则。首版不支持修订或重新评估。' : status?.meta.features.planning ? '确认需求后可开始规划，查看保存进度；可恢复的失败可在方案页重试。' : '资料、需求确认、方案展示、人工审核与最终化已接入。规划流程尚未启用。'}</span></div>
         {error && <div className="error-box" role="alert"><strong>无法连接后端</strong><p>{error}。请检查启动终端。</p><button onClick={() => setRefresh(value => value + 1)}>重新连接</button></div>}
         <Routes>
           <Route path="/" element={<Overview status={status} />} />
@@ -61,7 +61,7 @@ function AppContent() {
           <Route path="/request/:requestId" element={<Protected role="CAMPER"><RequestDetail /></Protected>} />
           <Route path="/dev/request-preview" element={<RequestPreview enabled={status?.meta.features.request_preview === true && status.ready.status === 'ready'} />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/profile" element={<Protected role="CAMPER"><ProfilePage demoAvailable={status?.meta.execution_mode === 'deterministic_demo' && status.meta.dataset_version === '2.0.0'} datasetVersion={status?.meta.dataset_version} /></Protected>} />
+          <Route path="/profile" element={<Protected role="CAMPER"><ProfilePage demoAvailable={['deterministic_demo','agent'].includes(status?.meta.execution_mode ?? '') && status?.meta.dataset_version === '2.0.0'} datasetVersion={status?.meta.dataset_version} /></Protected>} />
           <Route path="/plans" element={<Protected role="CAMPER"><PlansPage /></Protected>} />
           <Route path="/plans/:planId/finals/:finalId" element={<Protected role="CAMPER"><FinalPage /></Protected>} />
           <Route path="/plans/:planId" element={<Protected role="CAMPER"><PlanPage /></Protected>} />
@@ -80,7 +80,7 @@ function Overview({ status }: { status: Status | null }) {
   return <>
     <section className="hero"><div><span className="eyebrow">A LITTLE LESS GUESSWORK</span><h1>一次露营，<br />从一份清晰的计划开始。</h1><p>确认需求、规划行程、检查装备与安全，<br className="desktop-break" />把每一次调整保留为可追溯的版本。</p><Link className="primary-button" to="/request">填写露营请求 <span>↗</span></Link></div><div className="hero-art"><span>EXPLORE WITH CLARITY</span><Mountain /><div>PLAN · CHECK · REVIEW</div></div></section>
     <section className="stats" aria-label="环境状态">
-      <div><span>运行模式</span><strong>{status?.meta.execution_mode ?? '—'}</strong><small>{status?.meta.execution_mode === 'deterministic_demo' ? '规则演示，使用登记的合成输入' : status?.meta.execution_mode === 'agent' ? '模型模式需配置对应服务' : '字段预览，规划未启用'}</small></div>
+      <div><span>运行模式</span><strong>{status?.meta.execution_mode ?? '—'}</strong><small>{status?.meta.execution_mode === 'deterministic_demo' ? '规则演示，使用登记的合成输入' : status?.meta.execution_mode === 'agent' ? '混合模式：模型规划，规则评估' : '字段预览，规划未启用'}</small></div>
       <div><span>演示时钟</span><strong>{status?.meta.demo_today ?? '—'}</strong><small>与实际系统日期分开</small></div>
       <div><span>数据来源</span><strong>{status?.meta.dataset_version ? `Synthetic ${status.meta.dataset_version}` : '—'}</strong><small>{checks ? (checks.dataset_context_valid ? '数据版本与运行输入可验证' : '数据包或场景配置未就绪') : '正在检查源文件…'}</small></div>
     </section>

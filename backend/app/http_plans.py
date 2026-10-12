@@ -55,6 +55,7 @@ async def new_evaluation(plan_id, body, request, user, operation):
     with state.database.transaction(write=False) as connection:
         plan = dict(Repository.own_plan(connection, user, plan_id))
     state.dispatcher.require_available()
+    state.runtime.resolve().require_operation(operation)
     snapshot = state.runtime.resolve(feedback=body.feedback if operation == 'REVISE' else None)
     scope = state.workflows.start(user, plan['request_id'], snapshot.demo, snapshot.dataset,
         command_key=body.command_key, plan_id=plan_id, operation=operation,
@@ -81,7 +82,11 @@ async def start_planning(request_id: str, body: StartPlanningInput, request: Req
     state = request.app.state
     state.requests.get(user, request_id)  # Owner check before capability/data access.
     state.dispatcher.require_available()
-    demo, dataset = state.dispatcher.context()
+    snapshot = state.runtime.resolve()
+    confirmed = state.requests.get(user, request_id).get('confirmed_context')
+    from .contracts.dto import ConfirmedRequirements
+    snapshot.require_operation('PLAN', ConfirmedRequirements.model_validate(confirmed['requirements']) if confirmed else None)
+    demo, dataset = snapshot.demo, snapshot.dataset
     scope = state.workflows.start(user, request_id, demo, dataset, command_key=body.command_key,
         expected_request_revision=body.expected_request_revision, single_plan=True)
     state.dispatcher.enqueue(user, scope.run_id)
@@ -125,7 +130,10 @@ def retry_fields(request, user, data):
                     raise
                 reason = exc.error.message
         data['retry_unavailable_reason'] = None if data['retry_available'] else reason
-    data['revision_available'] = data['reassessment_available'] = bool(available and data['current_version_revision'] is not None and run and run['is_active'] and run['status'] not in {'PENDING','RUNNING'})
+    can_change = bool(available and data['current_version_revision'] is not None and run and run['is_active'] and run['status'] not in {'PENDING','RUNNING'})
+    operations = state.runtime.resolve().supported_operations if available else frozenset()
+    data['revision_available'] = can_change and 'REVISE' in operations
+    data['reassessment_available'] = can_change and 'REASSESS' in operations
     data['current_inputs_error'] = None
     if run and run['is_active']:
         with state.database.transaction(write=False) as connection:

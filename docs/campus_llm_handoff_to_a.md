@@ -1,5 +1,7 @@
 # B → A：校园模型 Planning Coordinator 接线协商
 
+**A于2026-10-13补充：本地 A-16 已完成应用工厂与 trace 持久化/恢复，见 [当前接线交付](campus_model_wiring.md)。以下B组件交接与“尚未实现”清单保留为历史；真实校园HTTP/浏览器联合验收仍未完成。**
+
 日期：2026-10-12。B 分支：feature/llm-multi-agent-runtime，基于已合入 PR #3 的 main（57a378f）。
 本文是本轮组件交付与接线建议，不代表 A 已同意，也不代表真实模型 HTTP/浏览器闭环已经完成。本轮没有向 A 发送消息、注册应用工厂、修改个人应用 .env、commit 或 push。
 

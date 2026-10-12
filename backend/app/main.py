@@ -55,7 +55,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         finally:
             await application.state.dispatcher.close()
 
-    application = FastAPI(title='CampMate AI', version='0.6.0', description='Local synthetic demo: Founder review and immutable final snapshots. B planning is pending.', lifespan=lifespan)
+    application = FastAPI(title='CampMate AI', version='0.6.0', description='Local synthetic prototype: rule/hybrid planning, review and immutable final snapshots.', lifespan=lifespan)
     application.state.settings = config
     application.state.runtime = AgentRuntime(application.state)
     application.state.database = database
@@ -150,13 +150,19 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             descriptor = inspect_dataset(config)
         except ContractFailure:
             descriptor = None
+        planning = application.state.dispatcher.available
+        operations = sorted(application.state.runtime.resolve().supported_operations) if planning else []
         return {
             'project': 'CampMate AI', 'version': '0.6.0', 'schema_version': SCHEMA_VERSION,
+            'supported_operations': operations,
+            'planning_stages': {'interpretation':'rules', 'recommendation':'rules',
+                'itinerary':'model' if config.execution_mode == ExecutionMode.AGENT else 'rules',
+                'logistics':'rules', 'safety':'rules'} if config.execution_mode != ExecutionMode.STUB else {},
             'execution_mode': config.execution_mode.value, 'demo_today': config.demo_today.isoformat(),
             'disclaimer': DEMO_DISCLAIMER,
             'provenance': descriptor.provenance.model_dump(mode='json') if descriptor else None,
             'dataset_version': descriptor.context.dataset_version if descriptor else None,
-            'features': {'request_preview': config.execution_mode == ExecutionMode.STUB and application.state.agent is not None, 'authentication': True, 'persistence': True, 'profiles': True, 'request_confirmation': True, 'plan_reading': True, 'planning': application.state.dispatcher.available, 'human_review': True, 'finalisation': True},
+            'features': {'request_preview': config.execution_mode == ExecutionMode.STUB and application.state.agent is not None, 'authentication': True, 'persistence': True, 'profiles': True, 'request_confirmation': True, 'plan_reading': True, 'planning': planning, 'model_planning': planning and config.execution_mode == ExecutionMode.AGENT, 'human_review': True, 'finalisation': True},
             'agent_configuration_error': application.state.runtime.error.model_dump(mode='json') if application.state.runtime.error else None,
         }
 

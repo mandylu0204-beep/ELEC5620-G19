@@ -6,11 +6,13 @@ ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
 
 > This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.
 
-最终提交须满足 [Canvas 下载后演示验收](docs/canvas_submission.md)：下载 ZIP 后无需访问私有 GitHub 或使用作者电脑的配置，按随包说明可完成完整演示。四个 v2 规则场景已在本机真实浏览器验证，最新版干净 ZIP 安装、实际 Canvas 下载及另一台电脑复核仍待完成；模型版 Agent 尚未交付。
+本地 A-16 已接入 B 的校园 HybridPlanningAgent：行程调用模型，其余步骤使用规则；仅支持首次 PLAN。调用 trace 与版本原子保存，并保留到最终快照。638项检查通过，模拟模型响应的 HTTP/浏览器闭环通过；真实校园代理应用闭环尚未验收。实际接口、明确启用方式及给B的交接见 [校园模型接线](docs/campus_model_wiring.md)。当前新增A14–A16尚未发布到远端main。
+
+最终提交须满足 [Canvas 下载后演示验收](docs/canvas_submission.md)：下载 ZIP 后无需访问私有 GitHub 或使用作者电脑的配置，按随包说明可完成完整规则演示。四个 v2 规则场景已在本机真实浏览器验证，最新版干净 ZIP 安装、实际 Canvas 下载及另一台电脑复核仍待完成。校园模型模式另需校园凭据与网络可达，不能把离线规则演示当作模型验收。
 
 ## 安装与启动
 
-测试环境：Windows、Python 3.12.14、Node.js 22.20.0。使用 Python 3.12 与 Node.js 22.12+；其他版本尚未做完整部署验证。依赖下载需要网络，业务运行只使用本地 synthetic 数据。
+测试环境：Windows、Python 3.12.14、Node.js 22.20.0。使用 Python 3.12 与 Node.js 22.12+；其他版本尚未做完整部署验证。依赖下载需要网络；规则模式使用本地 synthetic 数据，明确启用校园模型后规划需要连接校园代理。
 
 在项目根目录打开 PowerShell：
 
@@ -57,7 +59,7 @@ Linux/macOS 可分别创建 venv、按 `backend/requirements.lock` 安装依赖�
 
 | 配置 | 默认值 | 作用 |
 | --- | --- | --- |
-| CAMPMATE_EXECUTION_MODE | stub | deterministic_demo 已注册 v1/v2 真实规则；agent 模型模式尚未交付，不自动回退 |
+| CAMPMATE_EXECUTION_MODE | stub | deterministic_demo 已注册 v1/v2规则；agent 已注册v2 Hybrid，仅PLAN，不自动回退 |
 | CAMPMATE_PLANNING_ENABLED | false | 明确开启后才能启动/修订/重新评估；演示脚本按场景开启 |
 | CAMPMATE_DEMO_TODAY | 2026-10-08 | 固定演示时钟，与系统时间分开 |
 | CAMPMATE_DATASET_PATH | data/synthetic_demo | 原始包的完整副本；业务源文件在其 data 子目录 |

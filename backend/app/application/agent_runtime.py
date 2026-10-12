@@ -31,6 +31,18 @@ class RuntimeSnapshot:
     dataset: DatasetContext
     descriptor: DatasetDescriptor
 
+    @property
+    def supported_operations(self):
+        if self.agent is None or self.demo.mode == ExecutionMode.STUB:
+            return frozenset()
+        return getattr(self.agent, 'supported_operations', frozenset({'PLAN','REVISE','REASSESS'}))
+
+    def require_operation(self, operation, requirements=None):
+        if operation not in self.supported_operations:
+            raise ContractFailure(ContractError(code=ErrorCode.INPUT_INVALID, message='当前模式不支持该操作，请新建并确认需求。'))
+        if self.demo.mode == ExecutionMode.AGENT and requirements is not None and requirements.duration_nights > 30:
+            raise ContractFailure(ContractError(code=ErrorCode.INPUT_INVALID, message='首版混合规划最多支持30晚，未创建运行。'))
+
 
 def configured_scenarios(settings, descriptor):
     scenarios = []
@@ -83,9 +95,35 @@ def build_v2_binding(settings, descriptor):
 
 
 # B can register v2 under its own explicit source family. No fallback to v1.
+def build_v2_hybrid_binding(settings, descriptor):
+    from ..adapters.synthetic_dataset_v2 import SyntheticDatasetV2Adapter
+    from ..agents.hybrid_planning_agent import HybridPlanningAgent, build_hybrid_configuration
+    from ..llm.config import CampusModelSettings
+    from ..llm.client import CampusModelClient
+    from ..llm.coordinator import PlanningCoordinator
+    try:
+        client = CampusModelClient(CampusModelSettings())
+    except (ValidationError, ValueError):
+        raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='校园模型本地配置无效，请检查配置项。')) from None
+    client.validate_configuration()
+    dataset = SyntheticDatasetV2Adapter(settings.dataset_path).load(expected_context=descriptor.context)
+    coordinator = PlanningCoordinator(dataset, client)
+    identity = coordinator.identity
+    choices = {**descriptor.context.selection_config, 'a_model_trace_required':'1', 'a_model_trace_contract':'1.0',
+        'a_model_prompt_sha256':identity['prompt_sha256'], 'a_model_tool_version':identity['tool_version'],
+        'a_model_requested_model':client.settings.model}
+    base = descriptor.context.model_copy(update={'selection_config':choices,
+        'rules_version':descriptor.context.rules_version + '/a-runtime-bindings-v2/a-model-audit-v1'})
+    configuration = build_hybrid_configuration(dataset, coordinator,
+        safety_case_ids=settings.workflow_safety_case_ids, scenarios=configured_scenarios(settings, descriptor), registered_context=base)
+    agent = HybridPlanningAgent(dataset, coordinator, workflow_configuration=configuration)
+    return AgentBinding(agent, configuration.context)
+
+
 DATASET_AGENT_FACTORIES = {
     (ExecutionMode.DETERMINISTIC_DEMO, 'CampMate Synthetic Demo Dataset v1'): build_v1_rule_binding,
     (ExecutionMode.DETERMINISTIC_DEMO, 'CampMate Synthetic Demo Dataset v2'): build_v2_binding,
+    (ExecutionMode.AGENT, 'CampMate Synthetic Demo Dataset v2'): build_v2_hybrid_binding,
 }
 
 
@@ -95,7 +133,7 @@ class AgentRuntime:
         self._lock = RLock()
         self.configured_agent = None
         state.agent = create_agent(state.settings.execution_mode)
-        self.managed_mode = state.settings.execution_mode if state.agent is None and state.settings.execution_mode == ExecutionMode.DETERMINISTIC_DEMO else None
+        self.managed_mode = state.settings.execution_mode if state.agent is None and state.settings.execution_mode in {ExecutionMode.DETERMINISTIC_DEMO, ExecutionMode.AGENT} else None
         self.error = None
         if self.managed_mode is not None:
             try:
