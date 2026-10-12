@@ -1,0 +1,9 @@
+# Copy this public template to the repository root as .env.llm.local.
+# Obtain your own key and connect to USYD VPN if direct access is unavailable.
+ELEC5620_API_KEY=
+ELEC5620_BASE_URL=http://10.167.60.148:8000/v1
+ELEC5620_MODEL=campus-qwen
+ELEC5620_TIMEOUT_SECONDS=45
+ELEC5620_MAX_COMPLETION_TOKENS=2048
+ELEC5620_MAX_ATTEMPTS=2
+ELEC5620_MAX_TURNS=4

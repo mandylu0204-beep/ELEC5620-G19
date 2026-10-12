@@ -3,8 +3,8 @@ from decimal import Decimal, ROUND_CEILING, ROUND_HALF_UP
 from functools import reduce
 
 from ...contracts.dto import Blocker, Clarification, CostLine, GearItem, LogisticsResult
-from ...contracts.enums import AssessmentOutcome
-from .common import artifact, input_failure, meal_mode, rule_failure, validate_itinerary
+from ...contracts.enums import AssessmentOutcome, ExecutionMode
+from .common import artifact, ensure_execution_mode, input_failure, meal_mode, rule_failure, validate_itinerary
 from .planning import validate_constraints, violations
 
 ITEMS = {
@@ -182,12 +182,13 @@ def _required(rule, context):
     raise rule_failure(f'Unsupported gear quantity rule: {rule.quantity_rule}.', 'gear_rules')
 
 
-def assess(dataset, input) -> LogisticsResult:
+def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, safety_case_ids=None) -> LogisticsResult:
+    ensure_execution_mode(dataset, input.demo_context, expected_mode)
     requirements, profile = input.confirmed_requirements, input.profile_snapshot
     if profile.group_size is None:
         raise input_failure('Group size is required for gear and costs.', 'profile.group_size')
     validate_constraints(requirements)
-    nights = validate_itinerary(dataset, input.saved_itinerary, requirements)
+    nights = validate_itinerary(dataset, input.saved_itinerary, requirements, expected_mode=expected_mode)
     campsites = [dataset.get_campsite(key) for key in nights]
     group, mode = Decimal(profile.group_size), meal_mode(requirements)
     policy_values = {}
@@ -198,7 +199,7 @@ def assess(dataset, input) -> LogisticsResult:
         stove_count = _available(profile, 'camping_stove', 'item')
         vehicle_count = profile.transport.vehicle_count
         fire_prohibited = 'no_fires' in requirements.mandatory_constraints or any(camp.fire_allowed is not True for camp in campsites)
-        selected_ids = set(getattr(dataset, 'selected_safety_case_ids', ()))
+        selected_ids = set(getattr(dataset, 'selected_safety_case_ids', ()) if safety_case_ids is None else safety_case_ids)
         facts = []
         for case in dataset.safety_cases:
             if case.safety_case_id not in selected_ids or case.campsite_id not in {camp.campsite_id for camp in campsites}:

@@ -3,9 +3,9 @@ import re
 
 from ...contracts.dto import Blocker, Evidence, SafetyResult, StoredAssessment
 from ...contracts.enums import (
-    AssessmentKind, AssessmentOutcome, Confidence, DataQuality, PlanVersionStatus, RiskLevel, RoadState,
+    AssessmentKind, AssessmentOutcome, Confidence, DataQuality, ExecutionMode, PlanVersionStatus, RiskLevel, RoadState,
 )
-from .common import REST_DESCRIPTION, artifact, camp_description, input_failure, validate_itinerary
+from .common import REST_DESCRIPTION, artifact, camp_description, ensure_execution_mode, input_failure, validate_itinerary
 
 KINDS = ('WEATHER', 'FIRE', 'ROAD', 'RESTRICTION')
 QUALITY_ORDER = {DataQuality.AVAILABLE: 0, DataQuality.MISSING: 1, DataQuality.STALE: 2, DataQuality.CONFLICTING: 3}
@@ -26,9 +26,10 @@ def _weather_risk(summary):
     return RiskLevel.UNKNOWN
 
 
-def assess(dataset, input) -> SafetyResult:
+def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO) -> SafetyResult:
+    ensure_execution_mode(dataset, input.demo_context, expected_mode)
     requirements, scenario = input.confirmed_requirements, input.scenario_context
-    selected = set(validate_itinerary(dataset, input.saved_itinerary, requirements))
+    selected = set(validate_itinerary(dataset, input.saved_itinerary, requirements, expected_mode=expected_mode))
     if not selected.issubset(scenario.campsite_ids):
         raise input_failure('Scenario does not apply to every selected campsite.', 'scenario_context.campsite_ids')
     if input.saved_logistics_assessment.result.execution_mode != input.demo_context.mode:

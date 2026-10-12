@@ -13,10 +13,11 @@ dependencies = [
   "pydantic-settings>=2.7,<3",
   "tzdata>=2026.5; platform_system == 'Windows'",
   "uvicorn>=0.30,<1",
+  "httpx>=0.28,<1",
 ]
 
 [project.optional-dependencies]
-dev = ["httpx>=0.27,<1", "pytest>=8,<10"]
+dev = ["pytest>=8,<10"]
 
 [tool.setuptools.packages.find]
 include = ["app*"]
