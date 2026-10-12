@@ -10,13 +10,14 @@ from pathlib import Path
 from ..contracts.dto import DatasetContext, Evidence, Provenance, ScenarioContext, SourceRef, Transport, ProfileSnapshot
 from ..contracts.enums import DataQuality, ErrorCode, RoadState
 from ..contracts.errors import ContractError, ContractFailure
+from ..dataset_paths import data_file_path, manifest_file_path
 from .dataset_mapping import COST_CATEGORIES, aud_to_cents, csv_boolean, csv_list, decimal_value, optional_integer, optional_text, required_text, source_date, string_list
 from .models import CampsiteRecord, CostReferenceRecord, GearRuleRecord, ProfileRecord, RequestRecord, SafetyRecord
 from .synthetic_dataset import SyntheticDataset, _index, _unique_object
 
 SOURCE_NAME = 'CampMate Synthetic Demo Dataset v2'
-ADAPTER_VERSION_V2 = 'b01-v2-adapter-1'
-V2_RULES_VERSION = 'b02-v2-rules-1'
+ADAPTER_VERSION_V2 = 'b01-v2-adapter-2'
+V2_RULES_VERSION = 'b02-v2-rules-2'
 BUSINESS_FILES = (
     'synthetic_campsites.csv', 'synthetic_gear_rules.csv', 'synthetic_cost_reference.csv',
     'synthetic_profiles.json', 'synthetic_requests.json', 'synthetic_safety_scenarios.json',
@@ -175,8 +176,9 @@ class SyntheticDatasetV2Adapter:
             root = self.dataset_path.resolve(strict=True)
             payloads = {}
             for filename in (*BUSINESS_FILES, *RUNTIME_FILES):
-                payloads[filename] = (root / 'data' / filename).read_bytes()
-            manifest = (root / 'manifest.json').read_bytes()
+                payloads[filename] = data_file_path(root, filename).read_bytes()
+            filename = 'manifest.json'
+            manifest = manifest_file_path(root).read_bytes()
             actual = {name: hashlib.sha256(data).hexdigest() for name, data in payloads.items()}
             actual['manifest.json'] = hashlib.sha256(manifest).hexdigest()
             if expected_context is not None and any(expected_context.file_digests.get(name) != value for name, value in actual.items()):

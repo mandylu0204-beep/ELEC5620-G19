@@ -7,7 +7,7 @@ from ...contracts.dto import DemoContext, ItineraryResult, SourceRef
 from ...contracts.enums import AllowedAction, ErrorCode, ExecutionMode
 from ...contracts.errors import ContractError, ContractFailure
 
-RULES_VERSION = 'b02-v1-rules-1'
+RULES_VERSION = 'b02-v1-rules-2'
 TRIP_ZONE = ZoneInfo('Australia/Sydney')
 REST_DESCRIPTION = 'Uncommitted rest period at campsite; no travel time or activity availability inferred.'
 

@@ -37,7 +37,7 @@ def configured_scenarios(settings, descriptor):
     for name in settings.dataset_scenario_files:
         try:
             payload = scenario_path(settings.dataset_path, name).read_bytes()
-        except OSError as exc:
+        except (OSError, ValueError) as exc:
             raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='场景文件在加载期间不可读，请重新读取。')) from exc
         if hashlib.sha256(payload).hexdigest() != descriptor.context.fixture_digests[name]:
             raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='场景文件在加载期间变化，请重新读取。'))

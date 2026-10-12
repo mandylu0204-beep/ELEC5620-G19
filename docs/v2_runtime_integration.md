@@ -57,7 +57,7 @@ Added synthetic safety-15..18 to match automatically selected sites and dates, r
 
 The package's independent static success fixture still uses Pine Camp/AUD 261; it is not the normal HTTP demo. Do not change that oracle just to match the new HTTP example.
 
-## Verification run (2026-10-12)
+## Pre-review verification run (2026-10-12)
 
 - Backend: 486 passed, no skips/failures, Python 3.12 and backend/requirements.lock; includes all seven sealed-release regression tests.
 - Focused v2 adapter/HTTP tests: 7 passed (four scenarios plus budget reassessment and saved-version retry).
@@ -70,3 +70,23 @@ The package's independent static success fixture still uses Pine Camp/AUD 261; i
 - One existing Starlette test-client deprecation warning remains; no dependency was upgraded to suppress it.
 
 B's four backend HTTP scenarios, revision/reassessment and recovery now pass; no new A backend prerequisite is needed for these paths. A should next review/merge this branch and verify browser UI, fresh install and final submission/demo integration. LLM mode, remote CI, browser/Canvas acceptance and execution of every package acceptance specification are not claimed complete.
+
+## PR review fixes R-01 / R-02 (2026-10-12)
+
+R-01: app/dataset_paths.py is the shared pre-read boundary for A's inspect_dataset and B's v2 Adapter. Each of the six business and two runtime files resolves strictly and must remain under the anchored root/data directory. The allowlist is not resolved through a redirected data directory. Manifest must resolve to the root's actual manifest.json, not an alias in tests, elsewhere in the package, or outside. A's registered scenarios likewise stay inside root/data/scenarios on both inspection and binding reads. A late unsafe scenario redirect returns a contract error rather than escaping as an unhandled ValueError. Missing legacy v1 manifests remain supported.
+
+R-02: step_free_path=True satisfies the hard path requirement; False rejects it even if legacy facilities say accessible path. Only None falls back to wheelchair_accessible=True together with accessible path. Recommendation and logistics use the same violations function. Unit tests cover the tri-state combinations against both v1 and v2.
+
+Implementation identities are now b01-v2-adapter-2, b02-v2-rules-2 and (for the shared v1 rule change) b02-v1-rules-2. A's normalization identity and shared contract 1.0 stay unchanged. Saved runs under prior rule identities must not silently resume under new rules; use A's reassessment flow for a new assessment context. An HTTP regression verifies a changed rule identity blocks old finalisation until fresh assessments are saved.
+
+Validation after the fixes:
+
+- Focused path/accessibility/A inspection/v2 adapter/HTTP tests: 89 passed.
+- Full backend under Python 3.12 and requirements.lock: 548 passed, 0 skipped, 0 failed, including the four HTTP demo paths, budget revision/reassessment, saved-version recovery and seven release regression tests.
+- New path regressions: 49 cases, including unchanged sealed bytes redirected via individual files or parent directories, manifest aliases/broken links, scenario redirects and positive digest compatibility. Read guards prove forbidden targets are rejected before read_bytes.
+- New accessibility regressions: 12 cases covering explicit True/False and legacy None, consistent recommendation exclusion and logistics HARD_CONSTRAINT blockers.
+- Schema check, pip check, 68 static package checks, TypeScript/Vite build and git diff --check passed.
+- No sealed dataset, release manifest, shared schema, dependency lockfile, default settings or personal .env change was needed.
+- Directory redirection tests explicitly use Windows junctions on Windows and symlinks on macOS. This run was macOS; it does not claim Windows junction execution. Existing Windows file-symlink permission skips remain possible.
+- The existing Starlette test-client deprecation warning remains. Experience-level casing is outside these two fixes and still needs A/B UI integration work.
+- Remote CI, browser acceptance, Canvas/fresh-install acceptance and all 58 package acceptance specifications remain outside this local validation.

@@ -48,9 +48,12 @@ def violations(campsite, requirements, profile, *, include_budget=True):
         reasons.append('Public transport access is unavailable or unknown.')
     for requirement in profile.accessibility_requirements:
         normalized = requirement.strip().casefold()
+        # Legacy facilities are a fallback only when the explicit attribute is
+        # absent; they must never override a confirmed False value.
         supported = {
             'wheelchair-accessible toilet': campsite.wheelchair_accessible is True and campsite.toilets is True,
-            'step-free path': campsite.step_free_path is True or campsite.wheelchair_accessible is True and 'accessible path' in campsite.facilities,
+            'step-free path': (campsite.wheelchair_accessible is True and 'accessible path' in campsite.facilities)
+                if campsite.step_free_path is None else campsite.step_free_path,
             'wheelchair access': campsite.wheelchair_accessible is True,
         }
         if supported.get(normalized) is not True:

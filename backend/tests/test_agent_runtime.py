@@ -83,7 +83,7 @@ def test_real_rule_http_flow_preserves_full_context_and_finalisation(dataset, tm
         assert 'manifest.json' in context['file_digests']
         assert 'data/scenarios/rule-integration.json' in context['fixture_digests']
         assert 'b03-explicit-scenarios.canonical.json' in context['fixture_digests']
-        assert 'b02-v1-rules-1' in context['rules_version']
+        assert 'b02-v1-rules-2' in context['rules_version']
         ids = launch(client, headers, request)
         result = wait_run(client, ids['run_id'], 'SUCCEEDED')
         assert result['finalisation_available'], result

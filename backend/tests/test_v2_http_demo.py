@@ -60,7 +60,7 @@ def launch(client, headers, case_id):
     assert context['selection_config']['a_runtime_bound'] == '1'
     assert context['selection_config']['demo_input'] == case_id
     assert 'a-runtime-bindings-v2' in context['rules_version']
-    assert 'b02-v2-rules-1' in context['rules_version']
+    assert 'b02-v2-rules-2' in context['rules_version']
     assert len(detail['assessments']) == 2
     assert assessment(detail, 'SAFETY')['depends_on_assessment_id'] == assessment(detail, 'LOGISTICS')['assessment_id']
     return detail
@@ -233,3 +233,27 @@ def test_v2_revision_http_retry_reuses_saved_bytes_without_regeneration(tmp_path
         assert current['finalisation_available']
         with app.state.database.transaction(write=False) as connection:
             assert connection.execute('SELECT COUNT(*) FROM versions').fetchone()[0] == 2
+
+
+def test_v2_rule_identity_change_requires_fresh_assessments_before_finalisation(tmp_path, monkeypatch):
+    from app.adapters import synthetic_dataset_v2
+
+    app = application('normal', tmp_path)
+    with TestClient(app) as client:
+        headers = sign_in(client)
+        old = launch(client, headers, 'normal')
+        # Simulate a subsequent rule release, not a change to sealed source data.
+        monkeypatch.setattr(synthetic_dataset_v2, 'V2_RULES_VERSION', 'b02-v2-rules-test-next')
+        path = '/api/v1/plans/' + old['plan']['plan_id']
+        stale = client.get(path).json()
+        assert stale['current_inputs_error'] and not stale['finalisation_available']
+        blocked = client.post(path + '/finalise', headers=headers, json=final_command(old))
+        assert blocked.status_code == 409 and blocked.json()['error']['code'] == 'STALE_CONTEXT'
+        response = change(client, headers, stale, key='v2-new-rule-reassess-123456')
+        assert response.status_code == 202, response.text
+        current = wait_run(client, response.json()['run_id'], 'SUCCEEDED')
+        assert current['version']['content'] == old['version']['content']
+        assert current['version']['version_context']['plan_version_id'] == old['version']['version_context']['plan_version_id']
+        assert {a['assessment_id'] for a in current['assessments']}.isdisjoint(a['assessment_id'] for a in old['assessments'])
+        assert 'b02-v2-rules-test-next' in current['confirmed_context']['dataset_context']['rules_version']
+        assert current['finalisation_available']
