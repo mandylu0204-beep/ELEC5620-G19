@@ -8,6 +8,8 @@ node_modules/
 dist/
 *.tsbuildinfo
 .env
+# School proxy key is local-only; never stage or package this file.
+.env.llm.local
 .env.*
 !.env.example
 var/

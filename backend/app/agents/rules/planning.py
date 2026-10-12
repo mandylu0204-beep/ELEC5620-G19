@@ -154,14 +154,7 @@ def itinerary(dataset, input) -> ItineraryResult:
         else:
             raise input_failure('Unsupported revision feedback; use structured, reconfirmed requirements.', 'feedback')
     campsite = dataset.get_campsite(viable[0].campsite_id)
-    entries = []
-    for offset in range(requirements.duration_nights):
-        day = requirements.start_date + timedelta(days=offset)
-        start = datetime.combine(day, time(12 if offset == 0 else 17), TRIP_ZONE)
-        end = datetime.combine(day + timedelta(days=1), time(10 if offset == requirements.duration_nights - 1 else 8), TRIP_ZONE)
-        entries.append(ItineraryEntry(entry_kind='CAMP', start_at=start, end_at=end, campsite_id=campsite.campsite_id, description=camp_description(campsite)))
-        if offset < requirements.duration_nights - 1:
-            entries.append(ItineraryEntry(entry_kind='ACTIVITY', start_at=end, end_at=datetime.combine(day + timedelta(days=1), time(17), TRIP_ZONE), campsite_id=campsite.campsite_id, description=REST_DESCRIPTION))
+    entries = camp_entries(campsite, requirements)
     result = ItineraryResult(
         itinerary_entries=entries, selected_campsite_ids=[campsite.campsite_id],
         revision_reason=input.feedback or ('Deterministic draft revision.' if input.previous_version else 'Initial deterministic draft.'),
@@ -172,3 +165,16 @@ def itinerary(dataset, input) -> ItineraryResult:
     )
     validate_itinerary(dataset, result, requirements)
     return result
+
+
+def camp_entries(campsite, requirements):
+    """Conservative common renderer: no invented bookings, activities or travel."""
+    entries = []
+    for offset in range(requirements.duration_nights):
+        day = requirements.start_date + timedelta(days=offset)
+        start = datetime.combine(day, time(12 if offset == 0 else 17), TRIP_ZONE)
+        end = datetime.combine(day + timedelta(days=1), time(10 if offset == requirements.duration_nights - 1 else 8), TRIP_ZONE)
+        entries.append(ItineraryEntry(entry_kind='CAMP', start_at=start, end_at=end, campsite_id=campsite.campsite_id, description=camp_description(campsite)))
+        if offset < requirements.duration_nights - 1:
+            entries.append(ItineraryEntry(entry_kind='ACTIVITY', start_at=end, end_at=datetime.combine(day + timedelta(days=1), time(17), TRIP_ZONE), campsite_id=campsite.campsite_id, description=REST_DESCRIPTION))
+    return entries

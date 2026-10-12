@@ -65,6 +65,11 @@ def validate_itinerary(dataset: SyntheticDataset, itinerary: ItineraryResult, re
     """Count occupied nights, rejecting overlaps, wrong dates and unbound camps."""
     if itinerary.execution_mode != ExecutionMode.DETERMINISTIC_DEMO:
         raise input_failure('Itinerary must come from deterministic_demo.', 'saved_itinerary')
+    return validate_itinerary_content(dataset, itinerary, requirements)
+
+
+def validate_itinerary_content(dataset: SyntheticDataset, itinerary: ItineraryResult, requirements) -> dict[str, int]:
+    """Pure domain checks; the caller must separately validate its execution mode."""
     selected = itinerary.selected_campsite_ids
     if not selected or len(selected) != len(set(selected)):
         raise input_failure('Selected campsite IDs must be nonempty and unique.', 'selected_campsite_ids')
