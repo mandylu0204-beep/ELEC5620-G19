@@ -1,5 +1,7 @@
 # A → B：A-16 完整分支交接
 
+**追加：A在本机校园VPN连接及密钥配置后，已完成正常场景真实模型HTTP/浏览器闭环、最终保存、重启回读和用户隔离；报告见 [真实校园验收](campus_live_browser_acceptance.md)。以下发布时“未配置/未验收”描述保留为历史。最新报告目前只在本地分支，尚未推送。**
+
 日期：2026-10-13。
 
 完整分支：[feature/a16-campus-wiring](https://github.com/LyraWangDev/ELEC5620-G19/tree/feature/a16-campus-wiring)。应用提交：`2d88ad34c13c2d62b87c62c72cf14b6b4da11c9b`；后续仅补充本次发布/验收状态文档。

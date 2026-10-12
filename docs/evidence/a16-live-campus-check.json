@@ -1,0 +1,156 @@
+{
+  "date": "2026-10-13",
+  "timezone": "Australia/Sydney",
+  "source_commit": "3b7abf248ed2fb522a0dbe5eac005346d18d8cf8",
+  "branch": "feature/a16-campus-wiring",
+  "response_source": "real campus proxy over user-connected USYD VPN; default httpx network transport; no mocking",
+  "configuration": "root .env.llm.local loaded by actual application; credential values excluded",
+  "database": "var/campus-live/normal.sqlite3",
+  "ports": [
+    8640,
+    5240
+  ],
+  "counts": {
+    "requests": 1,
+    "plans": 1,
+    "runs": 1,
+    "versions": 1,
+    "recommendations": 1,
+    "model_planning_traces": 1,
+    "assessments": 2,
+    "final_records": 1
+  },
+  "flow": [
+    "actual browser login as Camper A",
+    "load and explicitly save synthetic Profile",
+    "save normal request draft",
+    "interpret and explicitly confirm",
+    "actual HTTP dispatcher PLAN",
+    "campus model planning with search_campsites",
+    "rule logistics and safety assessments",
+    "explicit final save",
+    "stop and restart actual services using same database",
+    "reload original immutable final with same trace",
+    "Camper B denied access to Camper A final"
+  ],
+  "input": {
+    "case": "normal",
+    "demo_today": "2026-11-05",
+    "start_date": "2026-11-06",
+    "end_date": "2026-11-08",
+    "nights": 2,
+    "days": 3,
+    "group_size": 2,
+    "budget_cents": 32000,
+    "preferences": [
+      "quiet",
+      "ready-to-eat meals"
+    ],
+    "safety_case_ids": [
+      "safety-15"
+    ]
+  },
+  "run": {
+    "plan_id": "fe646141ba41476e9ae14712ab3803cc",
+    "run_id": "9f588a471c824b299e67302fb3e26adc",
+    "version_id": "6b1d7c6805a7458eb79a2de9b434eaee",
+    "producer_attempt_id": "22ba937238ec4a8e9a62475b58204fd3",
+    "final_id": "19b4396ad5424ec7b9ee8a76a32c3a0c",
+    "status": "SUCCEEDED",
+    "stage": "COMPLETED",
+    "version_status": "FINALISED",
+    "finalised_at": "2026-10-12T23:44:14.365738+00:00"
+  },
+  "model_planning_trace": {
+    "id": "671ee75fc7404c3d99ffa16f52aa86a0",
+    "plan_id": "fe646141ba41476e9ae14712ab3803cc",
+    "run_id": "9f588a471c824b299e67302fb3e26adc",
+    "version_id": "6b1d7c6805a7458eb79a2de9b434eaee",
+    "input_fingerprint": "9bbe01b64dfbfbbcccb0623a185f28d8ac5c976b17bf35afd9ab2bdd43561405",
+    "attempt_id": "22ba937238ec4a8e9a62475b58204fd3",
+    "created_at": "2026-10-12T23:44:04.892954+00:00",
+    "trace": {
+      "requested_model": "campus-qwen",
+      "served_models": [
+        "Qwen/Qwen3.8-27B-FP8"
+      ],
+      "configuration_fingerprint": "07ba89635f53697515c4c658937b36765f5f7453e735cf8a4b748c2bc5646e0d",
+      "prompt_sha256": "21fe0b1a06f87d74e4ff43b42b50a866b4fea6b2d82e71e0a524d8e4ae35bd05",
+      "tool_version": "b04-campsite-tool-1",
+      "turns": 2,
+      "http_attempts": 2,
+      "elapsed_ms": 9625,
+      "tool_calls": [
+        "search_campsites"
+      ],
+      "candidate_ids": [
+        "demo-wattle-rest",
+        "demo-pine-camp",
+        "demo-sandstone-grove",
+        "demo-moonlit-field",
+        "demo-river-flat",
+        "demo-ridge-lookout",
+        "demo-lake-meadow",
+        "demo-granite-ledge"
+      ],
+      "selected_campsite_id": "demo-wattle-rest",
+      "decision_summary": "Demo Wattle Rest is selected because it is marked as quiet and has the lowest known nightly fee among quiet candidates: AUD 30.00 per night, AUD 60.00 for the two listed nights. It includes toilets, water, and picnic tables, which can support the ready-to-eat meal preference without inventing additional facilities.",
+      "response_sha256": [
+        "b587e0e067bf350e2a3fb3d9cd12990ac0527897769120ab251f4c3189ab119d",
+        "2a7bf92961b3cf3550425b9d69d35e018e503fe641d22acffcd7cf2f65b7da8f"
+      ],
+      "usage": {
+        "completion_tokens": 681,
+        "prompt_tokens": 3825,
+        "total_tokens": 4506
+      },
+      "validation_passed": true
+    }
+  },
+  "trace_payload_sha256": "1589c22ea8462c85665418a1db05419d246a2639624f9cd96b35063bb6425c9b",
+  "assessment": {
+    "logistics_outcome": "PASSED",
+    "safety_outcome": "PASSED",
+    "total_cents": 25100,
+    "budget_remaining_cents": 6900,
+    "eligibility_at_finalisation": true
+  },
+  "checks": {
+    "final_trace_matches_persisted_audit": true,
+    "audit_revalidated_against_recommendations_and_scope": true,
+    "final_version_identity_and_content_match": true,
+    "sqlite_integrity": "ok",
+    "foreign_key_violations": 0,
+    "same_final_reloaded_after_service_restart": true,
+    "camper_b_final_access": "NOT_FOUND; no model/audit content displayed",
+    "normal_and_restart_browser_errors": [],
+    "no_additional_saved_run_or_trace_after_restart": true,
+    "revision_or_reassessment_not_used": true,
+    "services_stopped": true,
+    "ports_released": [
+      8640,
+      5240
+    ]
+  },
+  "screenshots": [
+    "docs/evidence/a16-live-campus-final.png",
+    "docs/evidence/a16-live-campus-trace.png",
+    "docs/evidence/a16-live-campus-owner-isolation.png"
+  ],
+  "limitations": [
+    "one actual normal scenario only",
+    "other real-campus failure/blocker scenarios not rerun",
+    "no actual failed-task recovery injected; covered by separate offline integration tests",
+    "single model role: planning; other stages use rules",
+    "model revision/reassessment not implemented",
+    "clean install/Canvas download/second computer not verified",
+    "served model is proxy-reported identity; weights not independently identified",
+    "usage covers returned successful completions; not a complete billing report"
+  ],
+  "preserved": [
+    "personal application .env",
+    "personal default database",
+    "sealed synthetic data",
+    "credential file retained locally and ignored by Git"
+  ]
+}
