@@ -3,7 +3,7 @@
 Legacy factories remain useful for stub and independent test doubles. Dataset
 factories return the actual Agent together with its complete workflow context.
 """
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import json
 from threading import RLock
@@ -60,9 +60,10 @@ def build_v1_rule_binding(settings, descriptor):
         descriptor.context.file_digests.get(name) != value for name, value in dataset.context.file_digests.items()
     ):
         raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='Adapter 消费的字节与应用登记的输入不一致。'))
-    base = descriptor.context.model_copy(update={'rules_version': descriptor.context.rules_version + '/a-runtime-bindings-v1'})
+    base = descriptor.context.model_copy(update={'rules_version': descriptor.context.rules_version + '/a-runtime-bindings-v2'})
     configuration = WorkflowConfiguration(dataset, safety_case_ids=settings.workflow_safety_case_ids,
-        scenarios=configured_scenarios(settings, descriptor), registered_context=base)
+        scenarios=configured_scenarios(settings, descriptor), registered_context=base,
+        feedback=base.selection_config.get('a_revision_feedback') or None)
     return AgentBinding(RuleAgent(dataset, workflow_configuration=configuration), configuration.context)
 
 
@@ -86,19 +87,37 @@ class AgentRuntime:
             except ContractFailure as exc:
                 self.error = exc.error
 
-    def resolve(self):
+    def resolve(self, *, feedback=None):
         # HTTP reads run in worker threads while the supervisor runs on asyncio.
         # Keep the managed Agent marker and state.agent replacement consistent.
         with self._lock:
-            return self._resolve()
+            return self._resolve(feedback=feedback)
 
-    def _resolve(self):
+    def for_scope(self, scope):
+        return self.resolve(feedback=scope.dataset_context.selection_config.get('a_revision_feedback') or None)
+
+    def validate_scope(self, scope):
+        # Internal legacy fixtures predate runtime bindings. All HTTP-created
+        # runs from the managed runtime carry this server-owned marker.
+        choices = scope.dataset_context.selection_config
+        if choices.get('a_runtime_bound') != '1' and '/a-runtime-bindings-v1/' not in scope.dataset_context.rules_version:
+            return
+        snapshot = self.for_scope(scope)
+        if snapshot.demo != scope.demo_context or snapshot.dataset != scope.dataset_context:
+            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='本次运行的数据、配置或时钟已变化，请重新评估。'))
+
+    def _resolve(self, *, feedback=None):
         settings = self.state.settings
         descriptor = inspect_dataset(settings)
         agent, context = self.state.agent, descriptor.context
         managed = (self.configured_agent is not None and agent is self.configured_agent) or (
             self.configured_agent is None and agent is None and self.managed_mode is not None)
         if managed:
+            choices = {key: value for key, value in descriptor.context.selection_config.items() if key != 'a_revision_feedback'}
+            choices['a_runtime_bound'] = '1'
+            if feedback is not None:
+                choices['a_revision_feedback'] = feedback
+            descriptor = replace(descriptor, context=descriptor.context.model_copy(update={'selection_config': choices}))
             if settings.execution_mode != self.managed_mode:
                 raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='执行模式已变化，请重新启动对应模式的应用。'))
             factory = DATASET_AGENT_FACTORIES.get((settings.execution_mode, descriptor.provenance.source_name))
@@ -106,6 +125,8 @@ class AgentRuntime:
                 raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='该数据版本的业务 Adapter 尚未注册，不能启动规划。', context={'dataset_version': context.dataset_version}))
             binding = factory(settings, descriptor)
             agent, context = binding.agent, binding.context
+            if feedback is not None and context.selection_config.get('revision_feedback') != feedback:
+                raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='当前 Adapter 尚未接通修改意见，不能启动修订。'))
             if context.dataset_version != descriptor.context.dataset_version or any(
                 context.file_digests.get(name) != value for name, value in descriptor.context.file_digests.items()
             ) or any(context.fixture_digests.get(name) != value for name, value in descriptor.context.fixture_digests.items()) or any(
@@ -114,6 +135,8 @@ class AgentRuntime:
                 raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='业务配置遗漏或改变了应用登记的数据、选用项或规则身份。'))
             self.configured_agent = agent
             self.state.agent = agent
+        elif feedback is not None:
+            raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='当前 Agent 尚未接通方案修订。'))
         self.error = None
         return RuntimeSnapshot(agent, DemoContext(mode=settings.execution_mode, demo_today=settings.demo_today,
             dataset_version=context.dataset_version), context, descriptor)

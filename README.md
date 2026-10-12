@@ -2,7 +2,7 @@
 
 ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
 
-当前已实现 A-01 至 A-11 的登录、资料/需求确认、方案/审核/最终快照、运行恢复及规划启动/重试，并整合 main 的 B 规则流程。A-12 提供按数据版本注册的 AgentBinding，将实际业务配置用于确认、调度、保存守卫及重试；Git v1 已接入 B 的真实 RuleAgent。默认仍为 stub、规划禁用。定稿 v2 数据已包含，但对应业务 Adapter、修订/重评公共入口和四个完整演示场景仍待交付；不自动回退 v1。接入方式与给 B 的工厂约定见 [Agent 运行配置接入](docs/agent_runtime_handoff.md)。
+当前已实现 A-01 至 A-11 的登录、资料/需求确认、方案/审核/最终快照、运行恢复及规划启动/重试，并整合 main 的 B 规则流程。A-12 提供按数据版本注册的 AgentBinding，将实际业务配置用于确认、调度、保存守卫及重试；Git v1 已接入 B 的真实 RuleAgent。默认仍为 stub、规划禁用。A-13 已接通方案修订与重新评估公共入口，并在审核/最终化前复核当前数据。定稿 v2 数据已包含，但对应业务 Adapter 和四个完整演示场景仍待 B 交付；不自动回退 v1。接入方式与给 B 的工厂约定见 [Agent 运行配置接入](docs/agent_runtime_handoff.md)。
 
 > This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.
 

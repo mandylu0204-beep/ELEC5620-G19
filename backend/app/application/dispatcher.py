@@ -35,8 +35,8 @@ class PlanningDispatcher:
         if not self.available:
             fail(ErrorCode.AGENT_FAILURE, '规划流程尚未启用；需接入对应模式的 Agent 和 Adapter。Stub 不生成方案。')
 
-    def context(self):
-        snapshot = self.state.runtime.resolve()
+    def context(self, scope=None):
+        snapshot = self.state.runtime.for_scope(scope) if scope is not None else self.state.runtime.resolve()
         return snapshot.demo, snapshot.dataset
 
     def enqueue(self, user, run_id):
@@ -127,18 +127,18 @@ class PlanningDispatcher:
         worker = heartbeat = None
         workflow = self.state.workflows
         try:
-            snapshot = self.state.runtime.resolve()
-            demo, dataset = snapshot.demo, snapshot.dataset
             # Re-delivered HTTP receipts do not restart an already running/ended run.
             with workflow.db.transaction(write=False) as connection:
-                _, run, _ = workflow.owned_active(connection, user, run_id)
+                _, run, scope = workflow.owned_active(connection, user, run_id)
                 if run['status'] != 'PENDING':
                     return
+            snapshot = self.state.runtime.for_scope(scope)
+            demo, dataset = snapshot.demo, snapshot.dataset
             attempt = workflow.claim(user, run_id, demo, dataset)
             port = workflow.port(user, attempt)
             checkpoint = workflow.checkpoint(user, attempt)
             input = OrchestrateInput(run_scope=attempt.scope, confirmed_context=checkpoint['confirmed_context'],
-                                     previous_version=checkpoint['version'])
+                                     previous_version=checkpoint['version'] or checkpoint['previous_version'])
             worker = asyncio.create_task(snapshot.agent.orchestrate(input, port))
             heartbeat = asyncio.create_task(self.keep_alive(user, attempt))
             done, _ = await asyncio.wait({worker, heartbeat}, return_when=asyncio.FIRST_COMPLETED)

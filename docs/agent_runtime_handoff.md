@@ -1,8 +1,8 @@
-# A-12：真实规则流程的应用配置接入
+# A-12 / A-13：规则运行配置与修订流程交接
 
-日期：2026-10-12。已将验证过的 main 合入本地 A11，B 的真实 v1 RuleAgent 已接入 A 的确认/启动/重试/完成提交路径。v2 数据已经定稿，但 v2 Adapter 仍由 B 交付，本轮没有伪装来源或修改定稿数据。默认 v1/stub、planning_enabled=false、个人 .env 保持不变。
+日期：2026-10-12。已将验证过的 main 合入本地 A11，B 的真实 v1 RuleAgent 已接入 A 的确认/启动/重试/完成提交路径；A13 又接通修订和重新评估公共入口及审核/最终化前的当前输入复核。v2 数据已经定稿，但 v2 Adapter 仍由 B 交付，本轮没有伪装来源或修改定稿数据。默认 v1/stub、planning_enabled=false、个人 .env 保持不变。
 
-这份接入依赖 A11 和本轮代码，尚未发布到远端 main。后续同步应带上完整 A11+A12 分支，不能只摘取依赖 dispatcher 的 A12 提交到没有 A11 的旧基线。
+这份接入依赖完整 A11+A12+A13，本轮仍为本地实现，尚未发布到远端 main。后续同步应带上完整分支，不能只摘取依赖 dispatcher 的单次提交到旧基线。
 
 ## 给 B 的工厂接口
 
@@ -11,7 +11,9 @@
 ```python
 def build_v2_binding(settings, descriptor):
     # Consume v2 business/runtime bytes, validate their digests against descriptor.
-    # Build the actual v2 dataset, workflow choices and corresponding Agent.
+    feedback = descriptor.context.selection_config.get("a_revision_feedback") or None
+    # Build the actual v2 workflow configuration with feedback and registered context.
+    # Return selection_config["revision_feedback"] equal to feedback or "".
     return AgentBinding(agent=agent, context=configuration.context)
 
 DATASET_AGENT_FACTORIES[
@@ -32,7 +34,7 @@ RuleAgent 的配置检查核对其实际消费的全部源摘要，同时允许 
 - 请求解释与确认通过 AgentRuntime.resolve() 使用真实业务 context、Profile 确认快照和 DemoContext。
 - 首次规划、claim、retry、端口 active 守卫及完成校验均使用同一个配置构建入口。
 - 每次 resolve 重新验证当前磁盘输入；开始执行时取得明确的 Agent 快照，不在后续其他请求修改全局 Agent 后改用另一份配置。
-- 已确认输入/场景/规则发生变化，旧运行的重试被拒绝。现有新 run 的业务公共入口仍待下一步补齐，不自动修改历史记录。
+- 已确认输入/场景/规则发生变化，旧运行的重试被拒绝。方案页已接通新 run 的修订与重新评估入口，不自动修改历史记录。
 - 同步场景文件加载时验证读取字节与刚检查的 digest 相符，文件变化不能藏在两次读取之间。
 - report_stage(COMPLETED, SUCCEEDED) 为完成意向；A 核对 RunResult、route、实际产物 IDs 后提交 SUCCEEDED，随后页面查询最终 eligibility。此顺序延续 A11，B 不自行最终化。
 
@@ -60,4 +62,16 @@ CAMPMATE_DATASET_SELECTION={}
 
 覆盖正常解释→确认→推荐→保存版本→物流→安全→提交成功→最终化/快照回读；缺失证据阻断；封路时 Founder APPROVE 被拒绝且 Camper 仍无法最终化；保存版本后回执丢失再重试复用版本；原场景字节变化拒绝旧 retry；加载期间数据变化；manifest 与场景双摘要保存；工厂不允许遗漏 A 场景摘要；v2 工厂缺失显式未就绪。现有 A11 的权限、旧 attempt、关闭/重启和返回校验测试继续保留。
 
-本轮没有接入 LLM，也未执行完整四场景、v2 或 Canvas 干净安装演示。B 下一步请提供 v2 的 AgentBinding 工厂、runtime/装备/费用/安全证据到共同 DTO 的完整映射，以及四套运行输入；A 随后完成其接线验证、修订/重评公共入口与最终提交验收。当前审核/最终化对最新磁盘输入的独立复核仍是后续工作，不把保存时的 guard 宣称为所有入口的实时检查。
+本轮没有接入 LLM，也未执行完整四场景、v2 或 Canvas 干净安装演示。B 下一步请提供 v2 的 AgentBinding 工厂、runtime/装备/费用/安全证据到共同 DTO 的完整映射，以及四套运行输入；A 随后完成其接线与最终提交验收。A13 已补齐修订/重评公共入口和审核/最终化前的当前输入复核。
+
+## A13 对 B 的新增约定
+
+工厂签名不变：build_v2_binding(settings, descriptor) -> AgentBinding。A 会在 descriptor.context.selection_config 保留 a_runtime_bound="1"；REVISE 还登记 a_revision_feedback。请将该值传入实际 workflow configuration，返回 context 时保留 A 的全部登记项，同时设置 revision_feedback 为实际配置的相同意见。普通 PLAN/REASSESS 不带修订意见。工厂遗漏意见时 A 会在登记 run 之前拒绝修订。
+
+A 的 v1 绑定规则身份现为 a-runtime-bindings-v2（这里的 v2 是 A 接入实现版本，不代表 v2 数据 Adapter 已实现）。版本变化后的 A12 旧 run 需要重新评估。
+
+Dispatcher、retry、RecoveryPort 的当前输入守卫均从保存的 scope 恢复本次反馈，再加载当前磁盘配置。不是读取上一个请求留在全局 Agent 上的意见。修订首次执行时，A 将原版本快照放入 OrchestrateInput.previous_version。RecoveryPort.load_checkpoint 的 previous_version 为补充信息，version 仍只代表本 run 已保存的新版本；失败重试优先复用本 run 的保存记录。
+
+公共接口为 POST /plans/{plan_id}/revise（反馈加当前指针/revision/key）和 /reassess（当前指针/revision/key）。B 仍通过同一个 orchestrate/持久化端口执行，不能写 FINALISED。重新评估的新 run 不能使用旧评估 IDs 或旧审核。若修改涉及确认需求，继续返回 requested_requirement_changes；A 不保存未确认的新版本。
+
+当前 v1 已通过实际规则的更换营地、新版本保存、修订丢失回执重试、同版本重评、旧批准隔离、来源变化后拒绝旧审核/最终化等 HTTP 测试。独立测试事实不作为生产演示数据。B 的 v2 四场景、LLM 与 Canvas 干净安装演示仍待完成。详细字段、用户操作和验证范围见 [A13 修订与重新评估](plan_changes.md)。

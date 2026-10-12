@@ -1,5 +1,15 @@
 # 开发 A 实施状态
 
+## A-13：方案修订、重新评估与当前输入检查（2026-10-12，本地未发布）
+
+已接通 Camper 的 revise/reassess HTTP 和方案页入口。修订传递原方案快照、登记反馈后生成新版本；重新评估复用内容并开启新 run、生成新评估。旧审批和最终快照不自动沿用。指针/revision 比较、owner/CSRF、幂等收据、旧端口失效与失败重试延续既有守卫。审核及最终化提交现在复核 A 绑定运行的当前数据/配置/时钟；来源变化时禁用页面操作并拒绝旧结果放行。
+
+新增 13 项独立 HTTP/SQLite/真实 v1 规则联调测试全部通过（28.73 秒）；随后最终化、审核和新流程 50 项复测通过（66.29 秒）。首次完整回归发现两项读取字段一致性问题，已在 PlanQueries 中统一新增字段，不修改数据库结构或弱化守卫。最终 scripts/check.py 退出 0：477 passed / 2 skipped / 1 条既有 Starlette 警告（164.78 秒），schema 1.0 同步，前端构建通过。两项跳过仅为 Windows 符号链接权限；之后补充前端步骤显示和间距，最终前端独立重建通过（50 模块，1.60 秒）。证据见 [A13 检查摘要](evidence/a13-plan-changes-check.json)。
+
+当前 v1 支持更换营地/更便宜营地，其他修改由实际 Agent 能力决定，需求变化必须重新确认。本轮沿用已确认的需求/Profile 快照；当前资料的新修改不会悄悄覆盖旧确认。默认配置、个人 .env 和定稿数据不变，无数据库迁移。共享 schema 仍为 1.0。新绑定身份为 a-runtime-bindings-v2，A12 旧运行需重新评估。
+
+B 工厂接口签名保持不变，但需消费 a_revision_feedback 并返回一致的 revision_feedback。细节见 [A13 修订流程](plan_changes.md) 与 [给 B 的接入交接](agent_runtime_handoff.md)。v2 Adapter、LLM、四个完整业务场景、真实浏览器演示及 Canvas 干净安装验收仍待完成；后续同步应包含完整 A11+A12+A13。
+
 ## A-12：真实规则运行配置接入（2026-10-12，本地未发布）
 
 已将 main 的 B01–03 和定稿 v2 数据合入本地 A11。新增受信 AgentRuntime / AgentBinding 和按数据来源注册的工厂，v1 的真实 RuleAgent 使用完整业务 context 贯穿请求解释/确认、首次规划、claim、保存、失败重试和完成提交。B WorkflowConfiguration 保留 A 的文件/manifest/场景原始摘要、选用项和规则身份；每次操作重新核对当前输入，未注册 v2 不回退 v1。

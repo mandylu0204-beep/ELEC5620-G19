@@ -30,7 +30,7 @@ class RecoveryPort(SqlitePersistencePort):
 
     def active(self, connection, *, writing=False, execution=False):
         if self.workflow.context_provider is not None:
-            demo, dataset = self.workflow.context_provider()
+            demo, dataset = self.workflow.context_provider(self.scope)
             if demo != self.scope.demo_context or dataset != self.scope.dataset_context:
                 fail(ErrorCode.STALE_CONTEXT, '本次运行的数据、模式或时钟已变化，请开启新 run。')
         return super().active(connection, writing=writing, execution=execution)
@@ -73,12 +73,14 @@ class WorkflowService:
 
     def start(self, user, request_id, demo, dataset, *, command_key, plan_id=None,
               operation='PLAN', expected_current_version_id=None, expected_active_run_id=None,
-              expected_request_revision=None, single_plan=False):
+              expected_request_revision=None, single_plan=False,
+              expected_version_revision=None, expected_run_revision=None):
         self.command_key(command_key)
         return self.repository.begin_run(user, request_id, demo, dataset, plan_id=plan_id,
             operation=operation, expected_current_version_id=expected_current_version_id,
             expected_active_run_id=expected_active_run_id, command_key=command_key,
-            expected_request_revision=expected_request_revision, single_plan=single_plan)
+            expected_request_revision=expected_request_revision, single_plan=single_plan,
+            expected_version_revision=expected_version_revision, expected_run_revision=expected_run_revision)
 
     def fail_dispatch(self, user, run_id, error, *, attempt=None):
         """A can record execution failure even when current data no longer matches.
@@ -200,11 +202,20 @@ class WorkflowService:
             recommendations = connection.execute('SELECT payload FROM recommendations WHERE run_id=?', (attempt.scope.run_id,)).fetchone()
             binding = connection.execute('SELECT 1 FROM run_versions WHERE run_id=?', (attempt.scope.run_id,)).fetchone()
             route = connection.execute("SELECT result FROM write_receipts WHERE run_id=? AND operation='route'", (attempt.scope.run_id,)).fetchone()
+            previous_version = None
+            if not binding and attempt.scope.operation == 'REVISE':
+                previous = connection.execute('''SELECT r.scope FROM runs r JOIN run_versions rv ON rv.run_id=r.id
+                    WHERE rv.plan_id=? AND rv.version_id=? ORDER BY r.created_at DESC,r.id DESC LIMIT 1''',
+                    (attempt.scope.plan_id, attempt.scope.expected_current_version_id)).fetchone()
+                if previous is None:
+                    fail(ErrorCode.STALE_CONTEXT, '原方案版本不存在。')
+                previous_version = Repository.stored_version(connection, RunScope.model_validate_json(previous['scope']))
             return {
                 'stage': run['stage'], 'run_status': run['status'],
                 'confirmed_context': ConfirmedContext.model_validate_json(run['confirmed_context']),
                 'recommendations': StoredRecommendations.model_validate_json(recommendations['payload']) if recommendations else None,
                 'version': Repository.stored_version(connection, attempt.scope) if binding else None,
+                'previous_version': previous_version,
                 'assessments': [StoredAssessment.model_validate_json(row['payload']) for row in connection.execute('SELECT payload FROM assessments WHERE run_id=? ORDER BY kind', (attempt.scope.run_id,))],
                 'route': RouteResult.model_validate_json(route['result']) if route else None,
             }

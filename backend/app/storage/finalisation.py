@@ -38,8 +38,8 @@ def final_index(row, plan):
 
 
 class FinalisationService:
-    def __init__(self, database):
-        self.db = database
+    def __init__(self, database, *, context_guard=None):
+        self.db, self.context_guard = database, context_guard
 
     def detail(self, user, plan_id, final_id):
         with self.db.transaction(write=False) as connection:
@@ -57,6 +57,8 @@ class FinalisationService:
             if not run or body.version_context.plan_id != plan_id:
                 fail(ErrorCode.STALE_CONTEXT, '最终化上下文已变化，请刷新。')
             scope = RunScope.model_validate_json(run['scope'])
+            if self.context_guard is not None:
+                self.context_guard(scope)
             port = SqlitePersistencePort(self.db, user.id, scope)
             _, _, version = port.context(connection, body.version_context)
             assessments = port.assessments(connection, body.version_context)
