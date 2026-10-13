@@ -47,7 +47,7 @@ export function NextSteps({ data }: { data: PlanDetail }) {
     description = '按审核理由调整。若只更换营地，可使用方案修订；若改变日期、预算、人数或偏好，请新建并确认需求。';
   } else if (reasons.size === 1 && reasons.has('REVIEW_REQUIRED')) {
     title = '等待 Founder 审核';
-    description = '当前评估需要人工判断，尚不能最终保存。页面会定期读取审核状态；审核只适用于本次版本和评估。';
+    description = '当前方案需要负责人审核，审核完成后可继续。';
   } else if (reasons.has('REVISION_REQUIRED')) {
     title = '需要修订后再检查';
     description = '按费用差额、装备缺口和审核理由处理。补充露营资料不会改写本次快照；资料变化后需新建并确认需求。';
@@ -56,6 +56,5 @@ export function NextSteps({ data }: { data: PlanDetail }) {
     {review && <div className="clarifications"><strong>本次审核理由</strong><p>{review.reason}</p></div>}
     <div className="plan-actions"><Link className="text-link" to={'/request?copy_from=' + encodeURIComponent(data.plan.request_id)}>调整需求并重新确认 ↗</Link>
       <Link className="text-link" to="/profile">修改露营资料 ↗</Link></div>
-    <p className="muted">调整需求入口只载入可编辑表单，不会自动保存、确认或覆盖已有方案。</p>
   </section>;
 }

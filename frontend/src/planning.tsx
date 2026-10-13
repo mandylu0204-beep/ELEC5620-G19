@@ -38,8 +38,8 @@ export function ChangePlanning({ data, refresh }: { data: PlanDetail; refresh: (
     } finally { setBusy(false); }
   }
   return <section className="panel planning-change"><h2>调整方案与重新检查</h2>
-    <p>修改方案会生成新版本。重新评估会保留当前行程，用最新证据重新检查装备、费用和安全。两种操作都会开启新运行，原有审核和最终方案保留在历史记录中。</p>
-    <p className="muted">本次沿用已确认的需求和露营资料快照。若人数、日期、预算或资料改变，请先重新提交并确认需求。</p>
+    <p>修改方案生成新版本；重新评估保留行程，更新装备、费用与安全检查。</p>
+    <p className="muted">人数、日期、预算或露营资料有变化？请重新确认需求。</p>
     <label htmlFor="revision-choice">修改目标</label><select id="revision-choice" value={choice} disabled={busy} onChange={event => setChoice(event.target.value)}>
       <option value="change campsite">更换营地</option><option value="cheaper campsite">寻找费用更低的营地</option><option value="custom">填写其他修改意见</option>
     </select>

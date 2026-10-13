@@ -7,7 +7,7 @@ export function ModelTracePanel({value,currentRunId}:{value:ModelTrace|null|unde
   if(!value)return null;
   const trace=value.trace;
   const reused=!!currentRunId&&currentRunId!==value.run_id;
-  return <section className="panel"><h2>模型规划调用记录</h2>{reused&&<p className="mode-notice">本次重评复用原行程，未调用规划模型。以下是原版本生成时的记录，Token usage不是本次重评的消耗。</p>}{trace.served_models.includes('offline-test-only')
+  return <section className="panel"><details className="planning-details"><summary>AI 规划说明</summary><h2>模型规划调用记录</h2>{reused&&<p className="mode-notice">本次重评复用原行程，未调用规划模型。以下是原版本生成时的记录，Token usage不是本次重评的消耗。</p>}{trace.served_models.includes('offline-test-only')
     ? <p className="mode-notice">离线接线测试：本次使用模拟模型响应，未调用校园模型。</p>
     : <p>{reused?'原版本行程选择':'本次行程选择'}由校园模型完成。需求解释、营地筛选、装备费用和安全评估仍由规则执行。</p>}
     <dl className="summary-list"><div><dt>请求模型</dt><dd>{trace.requested_model}</dd></div>
@@ -19,5 +19,5 @@ export function ModelTracePanel({value,currentRunId}:{value:ModelTrace|null|unde
     <h3>模型选择与意见</h3><p>{trace.selected_campsite_id}</p><p>{trace.decision_summary}</p>
     <details><summary>审计关联与配置摘要</summary><p className="identifier">run：{value.run_id} · version：{value.version_id} · attempt：{value.attempt_id}</p>
       <p className="identifier">配置：{trace.configuration_fingerprint}</p><p className="identifier">Prompt：{trace.prompt_sha256}</p><p>工具版本：{trace.tool_version}</p></details>
-  </section>;
+  </details></section>;
 }

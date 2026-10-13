@@ -8,17 +8,8 @@ import { ProfilePage } from './profile';
 import { RequestDetail, RequestsPage } from './requests';
 import { PlansPage, PlanPage } from './plans';
 
-const DISCLAIMER = 'This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.';
+const DISCLAIMER = '本项目使用模拟数据，仅供演示，请勿据此安排真实出行。';
 type Status = { meta: Meta; ready: Ready };
-
-function modeDescription(meta: Meta | undefined) {
-  if (meta?.agent_configuration_error) return '当前数据与运行配置未就绪，暂不能开始规划。已保存的资料和方案仍可查看。';
-  if (meta?.features.model_planning) {
-    const operations = new Set(meta.supported_operations ?? []);
-    return `混合模式：${operations.has('REVISE') ? '初次规划和方案修订' : '行程规划'}调用校园模型；需求解释、装备费用及安全使用规则。${operations.has('REASSESS') ? '重新评估复用原行程，不调用规划模型。' : '当前模式尚未启用重新评估。'}${operations.has('REVISE') ? '' : '当前模式尚未启用方案修订。'}`;
-  }
-  return meta?.features.planning ? '确认需求后可开始规划，查看保存进度；可恢复的失败可在方案页重试。' : '资料、需求确认、方案展示、人工审核与最终化已接入。规划流程尚未启用。';
-}
 
 function Mountain({ small = false }: { small?: boolean }) {
   return <svg viewBox="0 0 240 150" fill="none" aria-hidden="true" className={small ? 'brand-icon' : 'mountain'}>
@@ -51,21 +42,21 @@ function AppContent() {
       <Link className="brand" to="/"><Mountain small /><span>CampMate<span className="brand-ai">AI</span></span></Link>
       <div className="sidebar-caption">YOUR CAMPING COMPANION</div>
       <nav aria-label="主导航">
-        <NavLink to="/" end><span>◫</span>项目概览</NavLink>
+        <NavLink to="/" end><span>◫</span>首页</NavLink>
         <NavLink to="/request"><span>↗</span>露营请求</NavLink>
         <NavLink to="/profile"><span>◎</span>露营资料</NavLink>
         <NavLink to="/plans"><span>≋</span>方案与历史</NavLink>
         {session?.user.role === 'FOUNDER' && <NavLink to="/review"><span>◇</span>人工审核</NavLink>}
       </nav>
-      <div className="sidebar-note"><span className="eyebrow">STAGE 2 / FOUNDATION</span><p>从清晰的需求开始，<br />让每一步都有依据。</p><span className="tag">Synthetic demo only</span></div>
+      <div className="sidebar-note"><span className="eyebrow">PLAN YOUR NEXT ESCAPE</span><p>从清晰的需求开始，<br />让每一步都有依据。</p></div>
     </aside>
     <div className="workspace">
-      <header className="topbar"><span>小组项目 · 开发预览</span><div className="topbar-right"><span className={`connection ${status?.ready.status === 'ready' ? 'connected' : ''}`}><i />{error ? '服务未连接' : status ? (status.ready.status === 'ready' ? '开发基础可用' : '依赖未就绪') : '正在连接…'}</span><AccountControl /></div></header>
+      <header className="topbar"><span>你的露营伙伴</span><div className="topbar-right"><span className={`connection ${status?.ready.status === 'ready' ? 'connected' : ''}`}><i />{error ? '服务未连接' : status ? (status.ready.status === 'ready' ? '服务可用' : '服务暂不可用') : '正在连接…'}</span><AccountControl /></div></header>
       <main>
-        <div className="mode-notice"><strong>{status?.meta.execution_mode.toUpperCase() ?? '开发环境'}</strong><span>{modeDescription(status?.meta)}</span></div>
-        {error && <div className="error-box" role="alert"><strong>无法连接后端</strong><p>{error}。请检查启动终端。</p><button onClick={() => setRefresh(value => value + 1)}>重新连接</button></div>}
+        <>{status?.meta.agent_configuration_error && <p className="mode-notice" role="alert">规划服务暂不可用，请稍后重试。</p>}</>
+        {error && <div className="error-box" role="alert"><strong>无法连接服务</strong><p>{error}。请稍后刷新重试。</p><button onClick={() => setRefresh(value => value + 1)}>重新连接</button></div>}
         <Routes>
-          <Route path="/" element={<Overview status={status} />} />
+          <Route path="/" element={<Overview />} />
           <Route path="/request" element={<Protected role="CAMPER"><RequestsPage /></Protected>} />
           <Route path="/request/:requestId" element={<Protected role="CAMPER"><RequestDetail /></Protected>} />
           <Route path="/dev/request-preview" element={<RequestPreview enabled={status?.meta.features.request_preview === true && status.ready.status === 'ready'} />} />
@@ -76,26 +67,20 @@ function AppContent() {
           <Route path="/plans/:planId" element={<Protected role="CAMPER"><PlanPage /></Protected>} />
           <Route path="/review/:planId" element={<Protected role="FOUNDER"><ReviewPage /></Protected>} />
           <Route path="/review" element={<Protected role="FOUNDER"><ReviewQueue /></Protected>} />
-          <Route path="*" element={<Upcoming title="页面不存在" description="请使用左侧导航返回项目概览。" />} />
+          <Route path="*" element={<Upcoming title="页面不存在" description="请使用左侧导航返回首页。" />} />
         </Routes>
       </main>
-      <footer><span className="tag">SYNTHETIC</span><p>{status?.meta.disclaimer ?? DISCLAIMER}</p><span>CampMate AI · ELEC5620</span></footer>
+      <footer><span className="tag">演示数据</span><p>{DISCLAIMER}</p><span>CampMate AI · ELEC5620</span></footer>
     </div>
   </div>;
 }
 
-function Overview({ status }: { status: Status | null }) {
-  const checks = status?.ready.checks;
+function Overview() {
   return <>
-    <section className="hero"><div><span className="eyebrow">A LITTLE LESS GUESSWORK</span><h1>一次露营，<br />从一份清晰的计划开始。</h1><p>确认需求、规划行程、检查装备与安全，<br className="desktop-break" />把每一次调整保留为可追溯的版本。</p><Link className="primary-button" to="/request">填写露营请求 <span>↗</span></Link></div><div className="hero-art"><span>EXPLORE WITH CLARITY</span><Mountain /><div>PLAN · CHECK · REVIEW</div></div></section>
-    <section className="stats" aria-label="环境状态">
-      <div><span>运行模式</span><strong>{status?.meta.execution_mode ?? '—'}</strong><small>{status?.meta.execution_mode === 'deterministic_demo' ? '规则演示，使用登记的合成输入' : status?.meta.execution_mode === 'agent' ? '混合模式：模型规划，规则评估' : '字段预览，规划未启用'}</small></div>
-      <div><span>演示时钟</span><strong>{status?.meta.demo_today ?? '—'}</strong><small>与实际系统日期分开</small></div>
-      <div><span>数据来源</span><strong>{status?.meta.dataset_version ? `Synthetic ${status.meta.dataset_version}` : '—'}</strong><small>{checks ? (checks.dataset_context_valid ? '数据版本与运行输入可验证' : '数据包或场景配置未就绪') : '正在检查源文件…'}</small></div>
-    </section>
-    <section className="section-heading"><div><span className="eyebrow">THE JOURNEY</span><h2>从请求到最终方案</h2></div><span>{status?.meta.features.planning ? '按已保存结果继续下一步' : '规划入口等待运行配置就绪'}</span></section>
-    <div className="journey">{[['01', '确认需求', '资料 · 澄清 · 摘要确认'], ['02', '生成与检查', '推荐 · 行程 · 装备 · 安全'], ['03', '审核与调整', '人工审核 · 修订 · 重新评估'], ['04', '保存与交付', '最终化守卫 · 历史回读']].map(([number, title, description]) => <div key={number}><span className="step-number">{number}</span><h3>{title}</h3><p>{description}</p><span className="pending-label">{number==='01'?'可填写与确认':number==='02'?(status?.meta.features.planning?'可执行':'未启用'):number==='03'?'审核可用':'通过检查后可保存'}</span></div>)}</div>
-    <div className="bottom-grid"><section className="panel"><span className="eyebrow">FOUNDATION CHECKS</span><h2>当前可验证的基础</h2><ul className="check-list">{[['业务源文件', checks?.dataset_readable], ['SQLite 数据库迁移', checks?.database_migrated], ['配置的 Agent 入口', checks?.configured_agent_available]].map(([title, value]) => <li key={String(title)}><span>{title}</span><span className={value === true ? 'check-ok' : 'check-wait'}>{value === undefined ? '检查中' : value ? '可用' : '未就绪'}</span></li>)}</ul><p className="muted">来源可读不代表业务数据已通过验收。开发预览见 <Link className="text-link" to="/dev/request-preview">字段交接工具</Link>。</p></section><section className="panel next-panel"><span className="eyebrow">NEXT MILESTONE</span><h2>验证四个演示场景</h2><p>已保存的规划阶段与产物可以查看。Founder 可以审核当前证据。Camper 可以保存通过检查的最终快照。已接通方案修订与重新评估。v2 规则流程已接入，四个场景可独立启动。模型版与最终提交验收仍在推进。</p><div className="chips"><span>v2 规则已接入</span><span>修订与重新评估</span><span>四个联调场景</span></div></section></div>
+    <section className="hero"><div><span className="eyebrow">A LITTLE LESS GUESSWORK</span><h1>一次露营，<br />从一份清晰的计划开始。</h1><p>规划行程，准备装备，<br className="desktop-break" />让下一次出发更从容。</p><Link className="primary-button" to="/request">开始规划 <span>↗</span></Link></div><div className="hero-art"><span>EXPLORE WITH CLARITY</span><Mountain /><div>PLAN · CHECK · REVIEW</div></div></section>
+    <section className="section-heading"><div><span className="eyebrow">THE JOURNEY</span><h2>为下一次出发做好准备</h2></div></section>
+    <div className="journey">{[['01', '说说你的计划', '目的地、日期与预算'], ['02', '找到合适的营地', '比较营地，查看行程'], ['03', '准备好再出发', '核对装备、费用与安全'], ['04', '保存你的方案', '保留方案，随时回看']].map(([number, title, description]) => <div key={number}><span className="step-number">{number}</span><h3>{title}</h3><p>{description}</p></div>)}</div>
+    <div className="bottom-grid"><section className="panel"><span className="eyebrow">YOUR GROUP</span><h2>完善露营资料</h2><p>告诉我们同行人数、已有装备和交通安排。</p><Link className="text-link" to="/profile">编辑资料 ↗</Link></section><section className="panel next-panel"><span className="eyebrow">YOUR PLANS</span><h2>继续你的计划</h2><p>查看已有方案，调整行程或回看保存的安排。</p><Link className="text-link" to="/plans">查看我的方案 ↗</Link></section></div>
   </>;
 }
 
@@ -128,5 +113,5 @@ function RequestPreview({ enabled }: { enabled: boolean }) {
 }
 
 function Upcoming({ title, description }: { title: string; description: string }) {
-  return <><div className="page-heading"><span className="eyebrow">COMING NEXT</span><h1>{title}</h1></div><section className="panel upcoming"><Mountain /><h2>页面位置已预留</h2><p>{description}</p><Link to="/request" className="text-link">先查看当前可用的请求预览 ↗</Link></section></>;
+  return <><div className="page-heading"><span className="eyebrow">PAGE NOT FOUND</span><h1>{title}</h1></div><section className="panel upcoming"><Mountain /><h2>没有找到这个页面</h2><p>{description}</p><Link to="/request" className="text-link">开始规划 ↗</Link></section></>;
 }
