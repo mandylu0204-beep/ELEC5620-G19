@@ -38,16 +38,55 @@ class ReviewService:
     def queue(self, user):
         require_role(user, 'FOUNDER')
         with self.db.transaction(write=False) as connection:
-            return [dict(row) for row in connection.execute('''SELECT p.id AS plan_id,
-                v.id AS plan_version_id,p.active_run_id AS run_id,v.status,v.version_number,v.created_at
+            rows = connection.execute('''SELECT p.id AS plan_id,
+                v.id AS plan_version_id,p.active_run_id AS run_id,v.status,v.version_number,v.created_at,
+                r.confirmed_context,v.content,u.display_name AS owner_display_name
                 FROM plans p JOIN versions v ON v.id=p.current_version_id
                 JOIN runs r ON r.id=p.active_run_id
+                JOIN run_versions rv ON rv.run_id=r.id AND rv.version_id=v.id
+                JOIN users u ON u.id=p.owner_id
                 WHERE v.status IN ('ESCALATED','BLOCKED','REVISION_REQUIRED') AND r.status='SUCCEEDED'
                 AND NOT EXISTS (SELECT 1 FROM reviews h WHERE h.run_id=r.id AND h.version_id=v.id)
-                ORDER BY v.created_at,p.id''')]
+                ORDER BY v.created_at,p.id''').fetchall()
+            result = []
+            for row in rows:
+                item = dict(row)
+                confirmed = json.loads(item.pop('confirmed_context'))
+                content = json.loads(item.pop('content'))
+                # Project only this active run's bound version. Older evidence
+                # must never supply the queue's risk or cost summary.
+                assessments = {saved['kind']: json.loads(saved['payload'])['result']
+                    for saved in connection.execute(
+                        'SELECT kind,payload FROM assessments WHERE run_id=? AND version_id=?',
+                        (item['run_id'], item['plan_version_id']))}
+                logistics, safety = assessments.get('LOGISTICS', {}), assessments.get('SAFETY', {})
+                route = connection.execute(
+                    "SELECT result FROM write_receipts WHERE run_id=? AND operation='route'",
+                    (item['run_id'],)).fetchone()
+                eligibility = json.loads(route['result'])['eligibility'] if route else {}
+                requirements = confirmed['requirements']
+                item['summary'] = {
+                    'campsite_ids': content['selected_campsite_ids'],
+                    'destination': requirements['destination'],
+                    'start_date': requirements['start_date'], 'end_date': requirements['end_date'],
+                    'total_cents': logistics.get('total_cents'),
+                    'budget_difference_cents': logistics.get('budget_difference_cents'),
+                    'risk_level': safety.get('risk_level'), 'confidence': safety.get('confidence'),
+                    'data_quality': safety.get('data_quality', {}),
+                    # The routing receipt precedes terminal completion. Its
+                    # execution-state warning is obsolete for this SUCCEEDED
+                    # queue; the current version status is shown separately.
+                    'blocking_reasons': [reason for reason in eligibility.get('blocking_reasons', [])
+                        if reason['code'] not in {'RUN_NOT_SUCCEEDED', 'VERSION_STATE'}],
+                }
+                result.append(item)
+            return result
 
     def detail(self, user, plan_id):
         data = PlanQueries(self.db).detail(user, plan_id, review=True)
+        with self.db.transaction(write=False) as connection:
+            owner = connection.execute('SELECT u.display_name FROM users u JOIN plans p ON p.owner_id=u.id WHERE p.id=?', (plan_id,)).fetchone()
+        data['owner_display_name'] = owner['display_name'] if owner else None
         if not data['version'] or not data['route'] or data['run']['status'] != 'SUCCEEDED':
             fail(ErrorCode.INVALID_STATE, '当前运行尚未完成评估和路由，请等待。')
         if data['version']['status'] not in {'ESCALATED','BLOCKED','REVISION_REQUIRED'} and not data['reviews']:
