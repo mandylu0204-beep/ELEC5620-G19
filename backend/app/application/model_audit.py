@@ -7,7 +7,7 @@ from pydantic import Field, StrictInt, StrictStr, ValidationError, field_validat
 
 from ..auth import fail
 from ..contracts.base import ContractModel
-from ..contracts.dto import ItineraryResult, StoredVersion
+from ..contracts.dto import ConfirmedContext, ItineraryResult, RunScope, StoredVersion
 from ..contracts.enums import ErrorCode
 
 Hash = Annotated[StrictStr, Field(pattern=r'^[0-9a-f]{64}$')]
@@ -59,7 +59,7 @@ def trace_payload(raw):
 
 def validate_trace(scope, content, trace, recommendation):
     values = scope.dataset_context.selection_config
-    if scope.demo_context.mode != 'agent' or scope.operation != 'PLAN' or not required(scope):
+    if scope.demo_context.mode != 'agent' or scope.operation not in {'PLAN', 'REVISE'} or not required(scope):
         fail(ErrorCode.CONTRACT_INVALID, '当前运行未登记模型规划审计。')
     expected = {'configuration_fingerprint': 'hybrid_planning_fingerprint',
         'prompt_sha256': 'a_model_prompt_sha256', 'tool_version': 'a_model_tool_version',
@@ -82,6 +82,8 @@ def trace_hash(trace):
 
 
 def load_model_trace(connection, scope, version):
+    if scope.operation == 'REASSESS' and required(scope):
+        return load_origin_trace(connection, scope, version)
     row = connection.execute('SELECT * FROM model_planning_traces WHERE run_id=?', (scope.run_id,)).fetchone()
     if not row:
         if required(scope):
@@ -105,3 +107,53 @@ def load_model_trace(connection, scope, version):
     validate_trace(scope, version.content, trace, StoredRecommendations.model_validate_json(recommendation['payload']))
     return {**{key: row[key] for key in ('id','plan_id','run_id','version_id','input_fingerprint','attempt_id','created_at')},
         'trace': trace.model_dump(mode='json')}
+
+
+def load_origin_trace(connection, scope, version):
+    """Reassessment references immutable generation audit; never clones a call.
+
+    The current run's fingerprint belongs to new assessments. Validate the
+    generating run's trace against ITS original confirmation and binding, not
+    against the current model/evidence configuration. No new audit row is made.
+    """
+    if (scope.demo_context.mode != 'agent'
+            or scope.dataset_context.selection_config.get('a_model_trace_binding') != 'origin-version-v1'
+            or version.version_context.run_id != scope.run_id
+            or version.version_context.plan_id != scope.plan_id
+            or version.version_context.plan_version_id != scope.expected_current_version_id):
+        fail(ErrorCode.STALE_CONTEXT, '重评没有登记有效的原版本审计关联。')
+    binding = connection.execute('SELECT * FROM run_versions WHERE run_id=?', (scope.run_id,)).fetchone()
+    rows = connection.execute('SELECT * FROM model_planning_traces WHERE plan_id=? AND version_id=?',
+        (scope.plan_id, version.version_context.plan_version_id)).fetchall()
+    if len(rows) != 1 or not binding or binding['version_id'] != scope.expected_current_version_id or binding['fingerprint'] != version.version_context.input_fingerprint:
+        fail(ErrorCode.PERSISTENCE_FAILURE, '重评版本缺少唯一且有效的原生成审计。')
+    origin = rows[0]
+    run = connection.execute('SELECT * FROM runs WHERE id=?', (origin['run_id'],)).fetchone()
+    if not run:
+        fail(ErrorCode.PERSISTENCE_FAILURE, '原模型生成运行不存在。')
+    try:
+        original_scope = RunScope.model_validate_json(run['scope'])
+        confirmed = ConfirmedContext.model_validate_json(run['confirmed_context'])
+    except (ValueError, TypeError):
+        fail(ErrorCode.PERSISTENCE_FAILURE, '原模型生成上下文无法解码。')
+    if (original_scope.operation not in {'PLAN', 'REVISE'} or not required(original_scope)
+            or original_scope.run_id != origin['run_id'] or original_scope.plan_id != scope.plan_id
+            or original_scope.request_id != scope.request_id or original_scope.demo_context.mode != 'agent'
+            or confirmed.request_id != original_scope.request_id
+            or confirmed.demo_context != original_scope.demo_context
+            or confirmed.dataset_context != original_scope.dataset_context):
+        fail(ErrorCode.STALE_CONTEXT, '原模型审计关联的生成运行不匹配。')
+    from ..storage.repository import Repository
+    original_version = Repository.stored_version(connection, original_scope)
+    current_run = connection.execute('SELECT confirmed_context FROM runs WHERE id=?', (scope.run_id,)).fetchone()
+    current_confirmed = ConfirmedContext.model_validate_json(current_run['confirmed_context']) if current_run else None
+    if (original_version.content != version.content or original_version.content.execution_mode != 'agent'
+            or original_version.version_context.plan_version_id != scope.expected_current_version_id
+            or original_version.version_context.input_fingerprint != Repository.input_fingerprint(original_scope, confirmed, original_version.content.model_dump(mode='json'))
+            or current_confirmed is None or current_confirmed.request_id != scope.request_id
+            or current_confirmed.requirements != confirmed.requirements or current_confirmed.profile_snapshot != confirmed.profile_snapshot
+            or current_confirmed.demo_context != scope.demo_context or current_confirmed.dataset_context != scope.dataset_context
+            or version.version_context.input_fingerprint != Repository.input_fingerprint(scope, current_confirmed, version.content.model_dump(mode='json'))):
+        fail(ErrorCode.STALE_CONTEXT, '原生成内容或重评绑定的输入身份不一致。')
+    # Recurses only to a PLAN/REVISE scope. Original IDs/attempt/time stay intact.
+    return load_model_trace(connection, original_scope, original_version)

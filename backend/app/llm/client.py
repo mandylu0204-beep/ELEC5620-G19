@@ -17,7 +17,8 @@ RETRYABLE_STATUS = {429, 500, 502, 503, 504}
 def model_failure(message, *, recoverable=False, code=ErrorCode.AGENT_FAILURE, status=None):
     return ContractFailure(ContractError(
         code=code, message=message, recoverable=recoverable,
-        allowed_actions=[AllowedAction.RETRY] if recoverable else [AllowedAction.CONTACT_OPERATOR],
+        allowed_actions=[AllowedAction.RETRY] if recoverable else [
+            AllowedAction.EDIT_INPUT if code == ErrorCode.REQUEST_NOT_CONFIRMED else AllowedAction.CONTACT_OPERATOR],
         context={'component': 'campus_model', **({'http_status': str(status)} if status else {})},
     ))
 

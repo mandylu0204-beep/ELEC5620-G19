@@ -1,5 +1,7 @@
 # B → A：校园模型 Planning Coordinator 接线协商
 
+最新分支更新（2026-10-13）：A16 已合 main，模型首次规划的应用注册与 trace 持久化已完成。本分支新增修订/同版本重评及原生成 trace 引用语义，详见 [修订重评交接](model_revision_reassessment_handoff.md)，待 A 复核和真实校园新增能力验收。以下旧待办与初版计数是历史记录。
+
 **A于2026-10-13补充：本地 A-16 已完成应用工厂与 trace 持久化/恢复，见 [当前接线交付](campus_model_wiring.md)。以下B组件交接与“尚未实现”清单保留为历史；真实校园HTTP/浏览器联合验收仍未完成。**
 
 日期：2026-10-12。B 分支：feature/llm-multi-agent-runtime，基于已合入 PR #3 的 main（57a378f）。

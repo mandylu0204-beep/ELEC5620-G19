@@ -133,6 +133,11 @@ class Orchestrator:
                 previous = input.previous_version
                 if previous is None or previous.version_context.plan_id != scope.plan_id or previous.version_context.plan_version_id != scope.expected_current_version_id:
                     raise failure(ErrorCode.STALE_CONTEXT, 'REVISE requires A current previous-version snapshot.')
+                if scope.demo_context.mode == 'agent':
+                    if not self.config.feedback:
+                        raise failure(ErrorCode.INPUT_INVALID, 'Model revision requires registered feedback.')
+                    if checkpoint.get('previous_version') is None or StoredVersion.model_validate(checkpoint['previous_version']) != previous:
+                        raise failure(ErrorCode.STALE_CONTEXT, 'Caller previous version differs from A checkpoint.')
             # Saved route means no recommendation/generation/assessment calls at all.
             if route is None:
                 if version is None:

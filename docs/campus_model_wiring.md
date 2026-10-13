@@ -1,5 +1,7 @@
 # A-16：校园模型应用接线交付
 
+后续 B 分支（2026-10-13）：A16 已合 main。`feature/llm-revision-reassessment` 实现模型 REVISE 和同版本 REASSESS，含现有 A 审计入口的关联扩展；请 A 复核 [新交接](model_revision_reassessment_handoff.md)。本文其余 PLAN-only 描述及验收数字属于 A16 首版，不能作为后续能力已实测的证明。
+
 **最新追加（2026-10-13）：用户配置密钥/连接USYD VPN后，正常场景真实校园HTTP和浏览器闭环已通过，包括最终保存、重启回读和用户隔离。服务返回Qwen/Qwen3.8-27B-FP8，2轮/2次，9625ms。当前结果见 [真实校园验收](campus_live_browser_acceptance.md)。以下发布时未连通/离线验收说明保留为当时记录；其他真实校园失败场景与模型角色仍待完成。**
 
 日期：2026-10-13。完整分支 `feature/a16-campus-wiring` 已推送 GitHub；应用提交 `2d88ad3`，包含 A14/A15、B `5c4a093` 的完整 HybridPlanningAgent 和本次 A16。尚未合入远端 main，也未创建 PR。请使用完整分支集成，不能把 A16 单独摘到缺少 B 组件的旧 main。原确认事项见 [C-01～C-08](campus_llm_a_reply.md)。

@@ -186,14 +186,14 @@ def test_hybrid_rejects_other_modes_before_business_writes(tmp_path, mode):
     assert counts(service)['recommendations'] == 0 and not requests
 
 
-@pytest.mark.parametrize('operation', ['REVISE', 'REASSESS'])
+@pytest.mark.parametrize('operation', ['UNKNOWN'])
 def test_unsupported_operation_is_explicit_and_does_not_touch_port(tmp_path, operation):
     agent, input, requests = components()
     _, _, _, run_input, _ = start(tmp_path, agent, input)
     run_input = run_input.model_copy(update={'run_scope': run_input.run_scope.model_copy(update={'operation': operation})})
     with pytest.raises(ContractFailure) as error:
         call(agent.orchestrate(run_input, object()))
-    assert error.value.error.code == 'INPUT_INVALID' and not requests
+    assert error.value.error.code == 'CONTRACT_INVALID' and not requests
 
 
 def test_registered_context_preserves_all_a_identity_and_guards_drift(tmp_path):

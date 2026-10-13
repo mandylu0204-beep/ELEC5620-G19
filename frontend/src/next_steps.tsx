@@ -16,9 +16,12 @@ export function NextSteps({ data }: { data: PlanDetail }) {
     title = '当前输入已变化';
     description = '当前数据或运行配置与这次评估不同。先核对配置和需求，再按当前输入重新确认或评估。旧结果不能直接放行。';
   } else if (run.status === 'FAILED') {
-    if (run.error?.code === 'INPUT_INVALID') {
+    if (run.error?.code === 'REQUEST_NOT_CONFIRMED') {
+      title = '需要重新确认需求';
+      description = '本次修改涉及已确认的预算、日期或约束。原需求没有被改写；请新建需求，核对新摘要并明确确认后再规划。';
+    } else if (run.error?.code === 'INPUT_INVALID') {
       title = '本次要求未能执行';
-      description = '当前规则不支持本次输入或修改意见。请查看执行原因，调整需求并重新确认；重复重试不会改变不支持的要求。';
+      description = '当前模式不支持本次输入或修改意见。请查看执行原因，调整需求并重新确认；重复重试不会改变不支持的要求。';
     } else {
       title = '规划执行中断';
       description = data.retry_available

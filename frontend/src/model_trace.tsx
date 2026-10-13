@@ -3,12 +3,13 @@ export type ModelTrace = {id:string;run_id:string;version_id:string;attempt_id:s
     turns:number;http_attempts:number;elapsed_ms:number;candidate_ids:string[];selected_campsite_id:string;decision_summary:string;
     usage:Record<string,number>;validation_passed:boolean}};
 
-export function ModelTracePanel({value}:{value:ModelTrace|null|undefined}) {
+export function ModelTracePanel({value,currentRunId}:{value:ModelTrace|null|undefined;currentRunId?:string}) {
   if(!value)return null;
   const trace=value.trace;
-  return <section className="panel"><h2>模型规划调用记录</h2>{trace.served_models.includes('offline-test-only')
+  const reused=!!currentRunId&&currentRunId!==value.run_id;
+  return <section className="panel"><h2>模型规划调用记录</h2>{reused&&<p className="mode-notice">本次重评复用原行程，未调用规划模型。以下是原版本生成时的记录，Token usage不是本次重评的消耗。</p>}{trace.served_models.includes('offline-test-only')
     ? <p className="mode-notice">离线接线测试：本次使用模拟模型响应，未调用校园模型。</p>
-    : <p>本次行程选择由校园模型完成。需求解释、营地筛选、装备费用和安全评估仍由规则执行。</p>}
+    : <p>{reused?'原版本行程选择':'本次行程选择'}由校园模型完成。需求解释、营地筛选、装备费用和安全评估仍由规则执行。</p>}
     <dl className="summary-list"><div><dt>请求模型</dt><dd>{trace.requested_model}</dd></div>
       <div><dt>服务返回模型</dt><dd>{trace.served_models.join('、')||'未提供'}</dd></div>
       <div><dt>工具轮数 / HTTP尝试</dt><dd>{trace.turns} / {trace.http_attempts}</dd></div>
