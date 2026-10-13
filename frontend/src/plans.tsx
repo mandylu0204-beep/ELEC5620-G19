@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { FinalisePanel } from './finalise';
 import { RetryPlanning, ChangePlanning } from './planning';
@@ -6,7 +6,7 @@ import { NextSteps } from './next_steps';
 import { NearMatches, type RecommendationGuidance } from './near_matches';
 import { ModelTracePanel, type ModelTrace } from './model_trace';
 import { ApiFailure, type ApiError, type Requirements } from './api';
-import { ProfileSummary, type Profile } from './profile';
+import { ProfileSummary, equipmentLabel, type Profile } from './profile';
 import { privateApi, useSession } from './session';
 
 type Source = { dataset_file:string; record_id:string; provenance:{source_name:string; source_type:string; source_date:string; demo_only:boolean}; valid_from:string|null; valid_to:string|null };
@@ -57,23 +57,149 @@ export function PlanPage(){const {planId}=useParams();const [search,setSearch]=u
   if(!data)return <><div className="page-heading"><h1>读取规划记录</h1></div>{error&&<p className="error-box" role="alert">{error}</p>}<button className="secondary-button" onClick={refresh}>重新读取</button><Link className="text-link" to="/plans">返回方案列表 ↗</Link></>;
   return <PlanView data={data} error={error} refresh={refresh} current={()=>setSearch({})}/>;
 }
+const CAMPSITE_NAMES: Record<string, string> = {
+  'demo-pine-camp':'Demo Pine Camp', 'demo-river-flat':'Demo River Flat', 'demo-ridge-lookout':'Demo Ridge Lookout',
+  'demo-fern-walk':'Demo Fern Walk', 'demo-lake-meadow':'Demo Lake Meadow', 'demo-sandstone-grove':'Demo Sandstone Grove',
+  'demo-cloud-gully':'Demo Cloud Gully', 'demo-wattle-rest':'Demo Wattle Rest', 'demo-granite-ledge':'Demo Granite Ledge',
+  'demo-moonlit-field':'Demo Moonlit Field',
+};
+const campName = (id: string) => CAMPSITE_NAMES[id] ?? id;
+const unitName = (unit: string) => ({item:'件',person_space:'人位',litre:'升',portion:'份',vehicle:'辆',plan:'份计划',per_night:'晚',per_kilometre:'公里',per_vehicle:'辆',per_person_per_day:'人天',one_time:'次'} as Record<string,string>)[unit] ?? unit;
+type PlanSection = 'itinerary' | 'gear' | 'cost' | 'safety' | 'history';
+const PLAN_SECTIONS: {id:PlanSection; title:string}[] = [
+  {id:'itinerary',title:'行程'},{id:'gear',title:'装备'},{id:'cost',title:'费用'},
+  {id:'safety',title:'安全'},{id:'history',title:'记录'},
+];
+
 export function PlanView({data,error,refresh,current,review=false,snapshot=false}:{data:PlanDetail;error:string;refresh:()=>void;current?:()=>void;review?:boolean;snapshot?:boolean}) {
-  const logistics=data.assessments.find(item=>item.kind==='LOGISTICS')?.result as Logistics|undefined;const safety=data.assessments.find(item=>item.kind==='SAFETY')?.result as Safety|undefined;const recommendation=data.recommendations?.result;const noMatch=recommendation?.search_outcome==='NO_MATCH';const version=data.version;const run=data.run;const confirmed=data.confirmed_context;const stageSaved=[!!recommendation,!!version,!!version,!!logistics,!!safety,!!data.route,run?.status==='SUCCEEDED'];
-  return <><div className="page-heading"><span className="eyebrow">{snapshot?'FINAL / SAVED SNAPSHOT':'PLAN / SAVED PROGRESS'}</span><h1>{confirmed?.requirements.destination??'露营方案'}</h1><p>{version?`版本 ${version.version_number} · ${label(version.status)}`:'尚未保存行程版本'} · {label(run?.status)}</p></div>{error&&<p className="error-box" role="alert">读取更新失败：{error}</p>}<div className="plan-actions"><button className="secondary-button" onClick={refresh}>刷新</button><Link className="text-link" to={review?'/review':'/plans'}>{review?'返回审核队列 ↗':'返回方案列表 ↗'}</Link>{!review&&!snapshot&&<Link className="text-link" to={'/request/'+(data.confirmed_context?.request_id??data.plan.request_id)}>查看已确认需求 ↗</Link>}</div>
-    {!snapshot&&run&&!run.is_active&&<p className="mode-notice">正在查看历史运行；其中评估和来源属于当时的证据。<button className="secondary-button" onClick={current}>查看当前运行</button></p>}
-    {run&&<p className="muted">{label(run.operation)}</p>}
-    {!snapshot&&!review&&data.last_final&&<section className="panel"><h2>{data.last_final.is_current?'当前最终方案已保存':'保留了一份历史最终方案'}</h2><p>{data.last_final.is_current?'这份快照对应当前版本和运行。':'当前已有新修订或重新评估，旧最终方案不能代表本次放行结果。'}</p><Link className="text-link" to={'/plans/'+data.plan.plan_id+'/finals/'+data.last_final.final_id}>查看已保存最终方案 ↗</Link></section>}
-    {data.current_inputs_error&&<p className="mode-notice" role="alert">{data.current_inputs_error} 当前显示的是此前保存的结果。</p>}
+  const [section,setSection] = useState<PlanSection>('itinerary');
+  const tabRefs = useRef<(HTMLButtonElement|null)[]>([]);
+  const prefix = useId().replaceAll(':','');
+  const logistics = data.assessments.find(item=>item.kind==='LOGISTICS')?.result as Logistics|undefined;
+  const safety = data.assessments.find(item=>item.kind==='SAFETY')?.result as Safety|undefined;
+  const recommendation = data.recommendations?.result;
+  const noMatch = recommendation?.search_outcome==='NO_MATCH';
+  const {version,run,confirmed_context:confirmed} = data;
+  const requirements = confirmed?.requirements;
+  const title = version?.content.selected_campsite_ids.map(campName).join(' / ') || requirements?.destination || '我的露营方案';
+  const stepSaved = [!!recommendation,!!version,!!version,!!logistics,!!safety,!!data.route,run?.status==='SUCCEEDED'];
+  const qualityIssues = safety ? Object.entries(safety.data_quality).filter(([,value])=>value!=='AVAILABLE') : [];
+  const safetyText = !safety ? '尚未评估' : qualityIssues.length ? '证据待核实' : safety.requires_human_review ? '需要审核' : label(safety.outcome);
+  const warnings = [...new Set((data.eligibility?.blocking_reasons??[]).map(item=>item.message))];
+  const overBudget = logistics?.budget_difference_cents != null && logistics.budget_difference_cents > 0;
+  const hasSafetyIssue = !!safety && (qualityIssues.length>0 || safety.outcome!=='PASSED' || safety.requires_human_review);
+  const tone = data.current_inputs_error ? 'warning' : run?.status==='FAILED' || ['BLOCKED','REJECTED'].includes(version?.status??'') ? 'danger'
+    : ['REVISION_REQUIRED','ESCALATED'].includes(version?.status??'') || noMatch ? 'warning'
+    : ['FINALISED','ELIGIBLE_FOR_FINALISATION'].includes(version?.status??'') ? 'success' : 'neutral';
+  const stateText = data.current_inputs_error ? '需要重新评估' : run&&['PENDING','RUNNING'].includes(run.status) ? label(run.status)
+    : run?.status==='FAILED' ? '执行未完成' : noMatch ? '需要调整需求' : version ? label(version.status) : label(run?.status);
+  useEffect(()=>setSection('itinerary'),[run?.run_id,version?.version_context.plan_version_id]);
+  function keyboardTabs(event:KeyboardEvent<HTMLButtonElement>,index:number) {
+    let target=index;
+    if(event.key==='ArrowRight')target=(index+1)%PLAN_SECTIONS.length;
+    else if(event.key==='ArrowLeft')target=(index+PLAN_SECTIONS.length-1)%PLAN_SECTIONS.length;
+    else if(event.key==='Home')target=0;
+    else if(event.key==='End')target=PLAN_SECTIONS.length-1;
+    else return;
+    event.preventDefault();setSection(PLAN_SECTIONS[target].id);tabRefs.current[target]?.focus();
+  }
+  const pane = (id:PlanSection) => ({id:prefix+'-'+id,role:'tabpanel' as const,'aria-labelledby':prefix+'-tab-'+id,hidden:section!==id,className:'plan-tab-panel',tabIndex:0});
+  return <div className="plan-result">
+    <div className="plan-toolbar"><Link className="text-link" to={review?'/review':'/plans'}>← {review?'审核队列':'我的方案'}</Link><div>
+      {!review&&!snapshot&&<Link className="text-link" to={'/request/'+(confirmed?.request_id??data.plan.request_id)}>查看需求 ↗</Link>}
+      <button className="secondary-button" onClick={refresh}>刷新</button>
+    </div></div>
+    <header className="plan-overview">
+      <div className="plan-overview-title"><span className="eyebrow">{snapshot?'YOUR SAVED PLAN':'YOUR CAMPING PLAN'}</span>
+        <h1>{title}</h1><p>{requirements?.destination??'目的地待确认'}{version&&' · 版本 '+version.version_number}</p>
+      </div>
+      <span className={'plan-status plan-status-'+tone}><i aria-hidden="true"/>{stateText}</span>
+      <dl className="plan-facts">
+        <div><dt>出行日期</dt><dd>{requirements?.start_date??'待确认'} <span>—</span> {requirements?.end_date??'待确认'}</dd><small>{requirements?.duration_nights??'—'} 晚 · {requirements?.duration_days??'—'} 天 · {confirmed?.profile_snapshot.group_size??'—'} 人</small></div>
+        <div className={overBudget?'fact-attention':''}><dt>{data.current_inputs_error?'此前费用估算':'行程费用估算'}</dt><dd>{aud(logistics?.total_cents)}</dd><small>预算 {aud(requirements?.budget_cents)}{logistics?.budget_difference_cents!=null&&' · '+(overBudget?'超出 ':'剩余 ')+aud(Math.abs(logistics.budget_difference_cents))}</small></div>
+        <div className={hasSafetyIssue?'fact-attention':''}><dt>安全评估</dt><dd>{safetyText}</dd><small>{safety?'风险 '+label(safety.risk_level)+' · 置信度 '+label(safety.confidence):'规划完成后查看检查结果'}</small></div>
+      </dl>
+    </header>
+    {error&&<p className="error-box" role="alert">读取更新失败：{error}</p>}
+    {!snapshot&&run&&!run.is_active&&<div className="mode-notice"><span>正在查看历史方案，评估属于当时的证据。</span>{current&&<button className="secondary-button" onClick={current}>查看当前方案</button>}</div>}
+    {data.current_inputs_error&&<p className="error-box" role="alert">{data.current_inputs_error} 请先重新评估。</p>}
+    {run?.error&&<div className="error-box" role="alert"><strong>本次执行未完成</strong><p>{run.error.message}</p>{!review&&!snapshot&&<RetryPlanning data={data} refresh={refresh}/>}</div>}
+    {(warnings.length>0 || overBudget || hasSafetyIssue)&&<section className="plan-attention" role="alert" aria-label="需要处理的问题">
+      <div><span className="attention-mark" aria-hidden="true">!</span><div><h2>先处理这些问题</h2><ul>
+        {overBudget&&<li>行程估算超出预算 {aud(logistics?.budget_difference_cents)}。</li>}
+        {qualityIssues.map(([kind,status])=><li key={kind}>{label(kind)}证据{label(status)}，请核对后重新评估。</li>)}
+        {warnings.map(message=><li key={message}>{message}</li>)}
+        {hasSafetyIssue&&!qualityIssues.length&&!warnings.length&&<li>安全评估{label(safety?.outcome)}，请查看风险与建议。</li>}
+      </ul></div></div>
+      {hasSafetyIssue&&<button className="secondary-button" onClick={()=>{setSection('safety');tabRefs.current[3]?.focus();}}>查看安全依据</button>}
+    </section>}
     {!review&&!snapshot&&<NextSteps data={data}/>}
-    {noMatch&&<NearMatches value={data.recommendation_guidance} requestId={data.plan.request_id}/>}
-    {!review&&!snapshot&&<ChangePlanning key={data.run?.run_id} data={data} refresh={refresh}/>}
-    <section className="panel progress-panel"><h2>规划进度</h2>{run?<><ol className="progress-stages">{STAGES.map((stage,index)=>{const skipped=(noMatch&&run.status==='SUCCEEDED'&&index>0&&index<6)||(run.operation==='REASSESS'&&index===0);const current=run.stage===stage&&!stageSaved[index]&&!skipped;return <li key={stage} className={stageSaved[index]?'stage-saved':current?'stage-current':''}><span>{index+1}</span><strong>{label(stage)}</strong><small>{skipped?'无需执行':stageSaved[index]?run.operation==='REASSESS'&&(index===1||index===2)?'复用已保存':'已保存':current?run.status==='FAILED'?'在此停止':run.status==='PENDING'?'等待执行':'当前阶段':'尚无产物'}</small></li>;})}</ol>{run.error&&<div className="error-box" role="alert"><strong>{run.error.code==='INPUT_INVALID'?'输入或修改意见未能执行':'执行发生故障'} · {run.error.code}</strong><p>{run.error.message}</p></div>}{!review&&!snapshot&&<RetryPlanning data={data} refresh={refresh}/>}<details><summary>实际阶段事件（{data.events.length}）</summary>{data.events.length?<ol className="event-list">{data.events.map(event=><li key={event.id}>{time(event.created_at)} · {label(event.stage)} · {label(event.status)}{event.error&&<p>{event.error.message}</p>}</li>)}</ol>:<p className="muted">尚无阶段事件；不会模拟进度。</p>}</details></>:<p>尚未登记运行。</p>}</section>
-    <div className="artifact-grid"><section className="panel"><h2>营地推荐</h2>{recommendation?<>{noMatch?<div className="clarifications"><h3>没有符合当前需求的营地</h3><p>请先查看上方“最接近的营地”，比较未满足条件和具体差异；调整后重新确认需求。</p></div>:<ol className="candidate-list">{recommendation.candidates.map(item=><li key={item.campsite_id}><h3>#{item.rank} · {item.campsite_id}</h3><ul>{item.reasons.map((reason,index)=><li key={index}>{reason}</li>)}</ul>{item.material_uncertainties.map((uncertainty,index)=><p className="muted" key={index}>尚不确定：{uncertainty}</p>)}</li>)}</ol>}{recommendation.excluded_candidates.length>0&&<details><summary>全部被排除营地及原始理由</summary>{recommendation.excluded_candidates.map(item=><div key={item.campsite_id}><h3>{item.campsite_id}</h3><ul>{item.reasons.map((reason,index)=><li key={index}>{reason}</li>)}</ul></div>)}</details>}<Notes artifact={recommendation}/></>:<p className="muted">尚未保存推荐结果。</p>}</section>
-    <section className="panel"><h2>行程安排</h2>{version?<>{run?.operation==='REASSESS'&&<p className="muted">本次复用已保存行程，重新检查当前证据；未生成新行程版本。</p>}<p>修订说明：{version.content.revision_reason}</p><p>采用营地：{version.content.selected_campsite_ids.join('、')||'未提供'}</p>{version.content.itinerary_entries.length?<ol className="itinerary-list">{version.content.itinerary_entries.map((entry,index)=><li key={index}><span className="tag">{label(entry.entry_kind)}</span><h3>{entry.description}</h3><p>{time(entry.start_at)} → {time(entry.end_at)}</p>{entry.campsite_id&&<p>营地：{entry.campsite_id}</p>}</li>)}</ol>:<p className="muted">没有提供行程条目。</p>}<Notes artifact={version.content}/></>:<p className="muted">尚未保存行程；已有推荐不代表方案完成。</p>}</section></div>
-    <section className="panel"><h2>装备与物流</h2>{logistics?<><p>评估：{label(logistics.outcome)} · 交通可行性：{logistics.transport_feasible===null?'未知':logistics.transport_feasible?'可行':'不可行'}</p><div className="table-scroll"><table><caption>装备数量与缺口</caption><thead><tr>{['装备','所需','已具备','缺口','单位','容量要求','安排','必要'].map(title=><th key={title}>{title}</th>)}</tr></thead><tbody>{logistics.gear_checklist.map((item,index)=><tr key={index}><td>{item.item_key}</td><td>{item.required_quantity??'未知'}</td><td>{item.available_quantity??'未知'}</td><td>{item.missing_quantity??'未知'}</td><td>{item.unit}</td><td>{item.capacity_requirement===null?'未知':`${item.capacity_requirement} 人`}</td><td>{label(item.arrangement_status)}</td><td>{item.essential?'是':'否'}</td></tr>)}</tbody></table></div>{!logistics.gear_checklist.length&&<p className="muted">没有提供装备清单。</p>}<Blockers items={logistics.mandatory_blockers}/>{logistics.clarifications.map((item,index)=><p className="clarifications" key={index}>{item.question} · {item.reason}</p>)}<Notes artifact={logistics}/></>:<p className="muted">尚未保存装备与物流评估。</p>}</section>
-    <section className="panel"><h2>费用与预算</h2>{logistics?<><div className="cost-summary"><div><span>全部费用</span><strong>{aud(logistics.total_cents)}</strong></div><div><span>已知部分小计</span><strong>{aud(logistics.known_subtotal_cents)}</strong></div><div><span>已确认小组预算</span><strong>{aud(confirmed?.requirements.budget_cents)}</strong></div><div><span>{logistics.budget_difference_cents===null?'预算差额':logistics.budget_difference_cents>0?'超出预算':'预算剩余'}</span><strong>{aud(logistics.budget_difference_cents===null?null:Math.abs(logistics.budget_difference_cents))}</strong></div></div>{logistics.total_cents===null&&<p className="clarifications">费用尚不完整，已知小计不能作为最终总费用。</p>}<div className="table-scroll"><table><caption>费用明细（AUD）</caption><thead><tr>{['分类 / 项目','数量 / 单位','单价','小计','依据'].map(title=><th key={title}>{title}</th>)}</tr></thead><tbody>{logistics.cost_breakdown.map((line,index)=><tr key={index}><td>{label(line.category)} · {line.item_key}</td><td>{line.quantity??'未知'} {line.unit}</td><td>{aud(line.unit_price_cents)}</td><td>{aud(line.subtotal_cents)}</td><td>{line.assumption&&<details><summary>计算说明</summary><p>{line.assumption}</p></details>}{line.source_ref?<Sources refs={[line.source_ref]}/>:<span>来源未提供</span>}</td></tr>)}</tbody></table></div></>:<p className="muted">尚未保存费用，金额未知。</p>}</section>
-    <section className="panel"><h2>安全与证据</h2>{safety?<><div className="chips"><span>风险：{label(safety.risk_level)}</span><span>置信度：{label(safety.confidence)}</span><span>结果：{label(safety.outcome)}</span><span>{safety.requires_human_review?'需要人工审核':'未要求人工审核'}</span></div><div className="evidence-cards">{Object.entries(safety.data_quality).map(([kind,status])=><p key={kind}>{label(kind)} · <strong>{label(status)}</strong></p>)}</div><ul>{safety.hazards.map((item,index)=><li key={index}>{item}</li>)}</ul><Blockers items={safety.mandatory_blockers}/>{safety.unresolved_conflicts.length>0&&<><h3>未解决的冲突</h3><ul>{safety.unresolved_conflicts.map((item,index)=><li key={index}>{item}</li>)}</ul></>}{safety.recommended_actions.length>0&&<><h3>修改与行动建议</h3><ul>{safety.recommended_actions.map((item,index)=><li key={index}>{item}</li>)}</ul></>}{safety.evidence.length?safety.evidence.map((item,index)=><div className="evidence-item" key={index}><h3>{label(item.kind)} · {label(item.status)}</h3><p>{item.summary??'缺少证据摘要'}</p><p>来源日期：{item.source_date??'未知'} · 有效范围：{item.valid_from??'未知'} 至 {item.valid_to??'未知'}{item.road_state&&` · 道路：${label(item.road_state)}`}</p><Sources refs={item.source_refs}/></div>):<p className="clarifications">没有提供安全证据。</p>}<Notes artifact={safety}/></>:<p className="muted">尚未保存安全评估，不能据此认定安全。</p>}</section>
-    <section className="panel"><h2>{snapshot?'保存时的方案状态':run&&!run.is_active?'历史方案状态':'当前决定与下一步'}</h2><p>{version?label(version.status):noMatch?'没有匹配营地，尚无方案':'等待保存方案和评估'}</p><Blockers items={data.eligibility?.blocking_reasons??[]}/>{snapshot?<p>以下内容来自保存时的完整快照，不会由后续评估或资料修改覆盖。</p>:!review&&<FinalisePanel key={version?.version_context.input_fingerprint??run?.run_id} data={data}/>}</section>
-    <ModelTracePanel value={data.model_planning_trace} currentRunId={run?.run_id}/><section className="panel"><h2>审核记录</h2>{data.reviews.length?data.reviews.map(item=><div key={item.review_id}><h3>{item.decision==='APPROVE'?'已批准':item.decision==='REJECT'?'已拒绝':'要求修订'}</h3><p>{item.reason}</p><small>审核人：{item.reviewer_user_id} · 编号：{item.review_id}</small></div>):<p className="muted">尚无审核决定。</p>}</section><section className="panel"><h2>本次需求</h2>{confirmed&&<><p>{confirmed.requirements.start_date} → {confirmed.requirements.end_date} · {confirmed.requirements.duration_nights} 晚 / {confirmed.requirements.duration_days} 天 · {aud(confirmed.requirements.budget_cents)}</p><details><summary>本次采用的资料</summary><ProfileSummary profile={confirmed.profile_snapshot}/></details></>}<details><summary>运行编号与输入指纹</summary><p className="identifier">{run?.run_id??'未登记'}</p><p className="identifier">{version?.version_context.input_fingerprint??'尚未保存版本指纹'}</p></details>{!review&&!snapshot&&<><h3>最终方案记录</h3><ul>{data.final_history.map(item=><li key={item.final_id}><Link to={'/plans/'+data.plan.plan_id+'/finals/'+item.final_id}>版本 {item.version_number} · {item.is_current?'当前最终方案':'历史最终方案'} · {time(item.finalised_at)}</Link></li>)}</ul><h3>已保存的运行</h3><ul className="run-history">{data.run_history.map(item=><li key={item.run_id}><Link to={'/plans/'+data.plan.plan_id+'?run_id='+encodeURIComponent(item.run_id)}>{item.version_number?`版本 ${item.version_number}`:'尚无版本'} · {label(item.status)} · {time(item.created_at)}</Link>{item.run_id===data.plan.active_run_id&&<span className="tag">当前运行</span>}</li>)}</ul></>}</section>
-  </>;
+    {!snapshot&&!review&&data.last_final&&<div className="saved-plan-notice"><span>{data.last_final.is_current?'当前最终方案已保存':'保留了一份历史最终方案'}</span><Link className="text-link" to={'/plans/'+data.plan.plan_id+'/finals/'+data.last_final.final_id}>查看保存的方案 ↗</Link></div>}
+    {!review&&!snapshot&&(data.revision_available||data.reassessment_available)&&<details className="plan-adjust" key={run?.run_id}>
+      <summary>调整方案或重新评估 <span aria-hidden="true">↗</span></summary><ChangePlanning data={data} refresh={refresh}/>
+    </details>}
+    {run&&['PENDING','RUNNING'].includes(run.status)&&<div className="plan-live-progress" role="status"><span className="progress-pulse" aria-hidden="true"/><span>正在{label(run.stage)}，完成后会自动更新。</span></div>}
+    <div className="plan-tabs" role="tablist" aria-label="方案内容">
+      {PLAN_SECTIONS.map((tab,index)=><button key={tab.id} ref={node=>{tabRefs.current[index]=node;}} id={prefix+'-tab-'+tab.id} type="button" role="tab" aria-selected={section===tab.id} aria-controls={prefix+'-'+tab.id} tabIndex={section===tab.id?0:-1} onClick={()=>setSection(tab.id)} onKeyDown={event=>keyboardTabs(event,index)}>
+        {noMatch&&tab.id==='itinerary'?'营地对照':tab.title}{((tab.id==='safety'&&hasSafetyIssue)||(tab.id==='cost'&&overBudget))&&<i className="tab-alert" aria-label="有待处理的问题"/>}
+      </button>)}
+    </div>
+    <div {...pane('itinerary')}>
+      {noMatch?data.recommendation_guidance?<NearMatches value={data.recommendation_guidance} requestId={data.plan.request_id}/>:<section className="panel"><h2>没有满足需求的营地</h2><p>请在“记录”中查看被排除营地的理由，调整条件并重新确认需求。</p></section>:<section className="panel itinerary-panel"><div className="section-title"><span className="eyebrow">YOUR ITINERARY</span><h2>行程安排</h2></div>
+        {version?<><div className="itinerary-camps">{version.content.selected_campsite_ids.map(id=><span key={id}>{campName(id)}</span>)}</div>
+          {run?.operation==='REASSESS'&&<p className="muted">行程保持不变，已重新检查装备、费用与安全。</p>}
+          {version.content.itinerary_entries.length?<ol className="plan-timeline">{version.content.itinerary_entries.map((entry,index)=><li key={index}>
+            <div className="timeline-time"><span>{label(entry.entry_kind)}</span><time>{time(entry.start_at)}</time></div>
+            <div className="timeline-content"><h3>{entry.campsite_id?campName(entry.campsite_id):label(entry.entry_kind)}</h3><p>{entry.description}</p><small>至 {time(entry.end_at)}</small></div>
+          </li>)}</ol>:<p className="muted">没有提供行程条目。</p>}
+          <details className="source-details"><summary>查看本次规划说明</summary><p>{version.content.revision_reason}</p></details><Notes artifact={version.content}/>
+        </>:<div className="plan-empty"><span aria-hidden="true">⌁</span><h3>行程正在准备中</h3><p>{run?.status==='FAILED'?'先处理上方的执行问题，再继续规划。':'规划完成后，可在这里查看露营安排。'}</p></div>}
+      </section>}
+      {recommendation&&!noMatch&&<details className="panel recommendation-panel"><summary>比较其他推荐营地 <span>{recommendation.candidates.length} 个</span></summary>
+        <ol className="candidate-list">{recommendation.candidates.map(item=><li key={item.campsite_id}><h3>#{item.rank} · {campName(item.campsite_id)}</h3><ul>{item.reasons.map((reason,index)=><li key={index}>{reason}</li>)}</ul>{item.material_uncertainties.map((uncertainty,index)=><p className="muted" key={index}>尚不确定：{uncertainty}</p>)}</li>)}</ol><Notes artifact={recommendation}/>
+      </details>}
+    </div>
+    <div {...pane('gear')}><section className="panel"><div className="section-title"><span className="eyebrow">PACK & PREPARE</span><h2>装备与物流</h2></div>
+      {logistics?<><p>评估：{label(logistics.outcome)} · 交通：{logistics.transport_feasible===null?'待核实':logistics.transport_feasible?'可行':'不可行'}</p>
+        <div className="table-scroll"><table><caption>装备数量与缺口</caption><thead><tr>{['装备','所需','已具备','缺口','单位','容量要求','安排','必要'].map(title=><th key={title}>{title}</th>)}</tr></thead><tbody>{logistics.gear_checklist.map((item,index)=><tr key={index} className={item.essential&&(item.missing_quantity==null||Number(item.missing_quantity)>0)?'gear-gap':''}>
+          <td>{equipmentLabel(item.item_key)}</td><td>{item.required_quantity??'未知'}</td><td>{item.available_quantity??'未知'}</td><td>{item.missing_quantity??'未知'}</td><td>{unitName(item.unit)}</td><td>{item.capacity_requirement===null?'未知':`${item.capacity_requirement} 人`}</td><td>{label(item.arrangement_status)}</td><td>{item.essential?'是':'否'}</td>
+        </tr>)}</tbody></table></div>{!logistics.gear_checklist.length&&<p className="muted">没有提供装备清单。</p>}
+        <Blockers items={logistics.mandatory_blockers}/>{logistics.clarifications.map((item,index)=><p className="clarifications" key={index}>{item.question} · {item.reason}</p>)}<Notes artifact={logistics}/>
+      </>:<p className="plan-empty-text">尚未保存装备与物流评估。</p>}
+    </section></div>
+    <div {...pane('cost')}><section className="panel"><div className="section-title"><span className="eyebrow">YOUR BUDGET</span><h2>费用与预算</h2></div>
+      {logistics?<><div className="cost-summary"><div><span>费用估算</span><strong>{aud(logistics.total_cents)}</strong></div><div><span>已知部分小计</span><strong>{aud(logistics.known_subtotal_cents)}</strong></div><div><span>小组预算</span><strong>{aud(requirements?.budget_cents)}</strong></div><div className={overBudget?'cost-over-budget':''}><span>{logistics.budget_difference_cents===null?'预算差额':overBudget?'超出预算':'预算剩余'}</span><strong>{aud(logistics.budget_difference_cents===null?null:Math.abs(logistics.budget_difference_cents))}</strong></div></div>
+        {logistics.total_cents===null&&<p className="clarifications">费用尚不完整，已知小计不能作为最终总费用。</p>}
+        <div className="table-scroll"><table><caption>费用明细（AUD）</caption><thead><tr>{['项目','数量 / 单位','单价','小计','依据'].map(title=><th key={title}>{title}</th>)}</tr></thead><tbody>{logistics.cost_breakdown.map((line,index)=><tr key={index}>
+          <td>{label(line.category)}{line.category==='CAMPSITE'&&<small className="cost-site">{campName(line.item_key)}</small>}</td><td>{line.quantity??'未知'} {unitName(line.unit)}</td><td>{aud(line.unit_price_cents)}</td><td>{aud(line.subtotal_cents)}</td><td>{line.assumption&&<details><summary>计算说明</summary><p>{line.assumption}</p></details>}{line.source_ref?<Sources refs={[line.source_ref]}/>:<span>来源未提供</span>}</td>
+        </tr>)}</tbody></table></div><Notes artifact={logistics}/>
+      </>:<p className="plan-empty-text">尚未保存费用，金额未知。</p>}
+    </section></div>
+    <div {...pane('safety')}><section className="panel"><div className="section-title"><span className="eyebrow">CHECK BEFORE YOU GO</span><h2>安全与证据</h2></div>
+      {safety?<><div className="safety-summary"><span>风险：{label(safety.risk_level)}</span><span>置信度：{label(safety.confidence)}</span><strong>{label(safety.outcome)}</strong><span>{safety.requires_human_review?'需要人工审核':'未要求人工审核'}</span></div>
+        <div className="safety-quality">{Object.entries(safety.data_quality).map(([kind,status])=><div className={status==='AVAILABLE'?'quality-available':'quality-issue'} key={kind}><span>{label(kind)}</span><strong>{label(status)}</strong></div>)}</div>
+        {safety.hazards.length>0&&<><h3>需要留意的风险</h3><ul>{safety.hazards.map((item,index)=><li key={index}>{item}</li>)}</ul></>}
+        <Blockers items={safety.mandatory_blockers}/>{safety.unresolved_conflicts.length>0&&<><h3>未解决的冲突</h3><ul>{safety.unresolved_conflicts.map((item,index)=><li key={index}>{item}</li>)}</ul></>}
+        {safety.recommended_actions.length>0&&<><h3>修改与行动建议</h3><ul>{safety.recommended_actions.map((item,index)=><li key={index}>{item}</li>)}</ul></>}
+        {safety.evidence.length?safety.evidence.map((item,index)=><article className="evidence-item" key={index}><h3>{label(item.kind)} · {label(item.status)}</h3><p>{item.summary??'缺少证据摘要'}</p><p>来源日期：{item.source_date??'未知'} · 有效范围：{item.valid_from??'未知'} 至 {item.valid_to??'未知'}{item.road_state&&` · 道路：${label(item.road_state)}`}</p><Sources refs={item.source_refs}/></article>):<p className="clarifications">没有提供安全证据。</p>}<Notes artifact={safety}/>
+      </>:<p className="plan-empty-text">尚未保存安全评估。</p>}
+    </section></div>
+    <div {...pane('history')}>
+      <section className="panel progress-panel"><div className="section-title"><span className="eyebrow">PLAN HISTORY</span><h2>规划记录</h2></div>
+        {run?<><p>{label(run.operation)} · {label(run.status)}</p><ol className="progress-stages">{STAGES.map((stage,index)=>{const skipped=(noMatch&&run.status==='SUCCEEDED'&&index>0&&index<6)||(run.operation==='REASSESS'&&index===0);const currentStage=run.stage===stage&&!stepSaved[index]&&!skipped;return <li key={stage} className={stepSaved[index]?'stage-saved':currentStage?'stage-current':''}><span>{index+1}</span><strong>{label(stage)}</strong><small>{skipped?'无需执行':stepSaved[index]?run.operation==='REASSESS'&&(index===1||index===2)?'复用已保存':'已保存':currentStage?run.status==='FAILED'?'在此停止':'当前阶段':'尚无产物'}</small></li>;})}</ol>
+          <details><summary>查看执行记录（{data.events.length}）</summary>{data.events.length?<ol className="event-list">{data.events.map(event=><li key={event.id}>{time(event.created_at)} · {label(event.stage)} · {label(event.status)}{event.error&&<p>{event.error.message}</p>}</li>)}</ol>:<p className="muted">尚无执行记录。</p>}</details>
+        </>:<p className="muted">尚未登记规划。</p>}
+      </section>
+      <ModelTracePanel value={data.model_planning_trace} currentRunId={run?.run_id}/>
+      <section className="panel"><h2>审核记录</h2>{data.reviews.length?data.reviews.map(item=><article key={item.review_id}><h3>{item.decision==='APPROVE'?'已批准':item.decision==='REJECT'?'已拒绝':'要求修订'}</h3><p>{item.reason}</p><small>审核人：{item.reviewer_user_id}</small></article>):<p className="muted">尚无审核决定。</p>}</section>
+      <section className="panel"><h2>本次需求</h2>{confirmed&&<><p>{requirements?.start_date} → {requirements?.end_date} · {requirements?.duration_nights} 晚 / {requirements?.duration_days} 天 · {aud(requirements?.budget_cents)}</p><details><summary>本次采用的资料</summary><ProfileSummary profile={confirmed.profile_snapshot}/></details></>}
+        <details className="source-details"><summary>记录编号与输入指纹</summary><p className="identifier">{run?.run_id??'未登记'}</p><p className="identifier">{version?.version_context.input_fingerprint??'尚未保存版本指纹'}</p></details>
+        {recommendation&&recommendation.excluded_candidates.length>0&&<details className="source-details"><summary>被排除营地的原始理由</summary>{recommendation.excluded_candidates.map(item=><article key={item.campsite_id}><h3>{campName(item.campsite_id)}</h3><ul>{item.reasons.map((reason,index)=><li key={index}>{reason}</li>)}</ul></article>)}</details>}
+        {!review&&!snapshot&&<><h3>保存的方案</h3>{data.final_history.length?<ul className="plan-history-list">{data.final_history.map(item=><li key={item.final_id}><Link to={'/plans/'+data.plan.plan_id+'/finals/'+item.final_id}>版本 {item.version_number} · {item.is_current?'当前方案':'历史方案'}<small>{time(item.finalised_at)}</small></Link></li>)}</ul>:<p className="muted">尚未保存最终方案。</p>}
+          <h3>版本与评估历史</h3><ul className="plan-history-list">{data.run_history.map(item=><li key={item.run_id}><Link to={'/plans/'+data.plan.plan_id+'?run_id='+encodeURIComponent(item.run_id)}>{item.version_number?`版本 ${item.version_number}`:'尚无版本'} · {label(item.status)}<small>{time(item.created_at)}</small></Link>{item.run_id===data.plan.active_run_id&&<span className="tag">当前</span>}</li>)}</ul>
+        </>}
+      </section>
+    </div>
+    {!review&&!snapshot&&<section className="panel plan-save" id={prefix+'-save'}><div><span className="eyebrow">SAVE YOUR PLAN</span><h2>{version?.status==='FINALISED'?'方案已保存':'保存露营方案'}</h2>{!data.finalisation_available&&version?.status!=='FINALISED'&&<p className="muted">完成必要的评估和审核后，即可保存。</p>}</div><FinalisePanel key={version?.version_context.input_fingerprint??run?.run_id} data={data}/></section>}
+  </div>;
 }
