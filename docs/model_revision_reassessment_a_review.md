@@ -2,6 +2,8 @@
 
 日期：2026-10-13（Australia/Sydney）。审查 PR [#4](https://github.com/LyraWangDev/ELEC5620-G19/pull/4)，提交 `22f0681c31519666f140148d2e1c60800eaec4d6`，共同基线 main `9996e74`。本报告只确认所列代码审查与离线验证，不代表真实校园调用、浏览器闭环或 Canvas 部署验收已经完成。
 
+后续状态：A19 已解决 R-01、完整整合 A18，完成真实校园修订、同版本重评、浏览器及受控保存恢复验收，见 [A19 实测](model_revision_reassessment_live_acceptance.md)。下文保留 PR 初次审查时的结果与边界；最终 Canvas 部署仍未验收。
+
 ## 结论
 
 A 接受 `origin-version-v1` 的设计与现有实现方向。没有发现本轮变更放宽跨用户权限、最终化 blocker 或版本与 trace 的原子保存要求。合并前需要修正下面的页面提示，并完成真实校园修订、重评及浏览器验收。
