@@ -27,7 +27,7 @@ export function NextSteps({ data }: { data: PlanDetail }) {
     }
   } else if (data.recommendations?.result.search_outcome === 'NO_MATCH') {
     title = '没有满足需求的营地';
-    description = '这是本次需求的搜索结果。请查看被排除的营地和原因，调整预算、日期或必须条件后重新确认需求。';
+    description = '下方会比较最接近的营地，逐项说明未满足条件和待核实信息。参考差异调整预算、日期或必须条件，再重新确认需求。';
   } else if (data.version?.status === 'FINALISED') {
     return null;
   } else if (data.finalisation_available && data.eligibility?.eligible) {

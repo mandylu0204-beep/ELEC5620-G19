@@ -58,7 +58,7 @@ class PlanQueries:
                 LEFT JOIN versions v ON v.id=rv.version_id WHERE r.plan_id=? ORDER BY r.created_at DESC,r.id''', (plan_id,))]
             result = {'plan': {'plan_id': plan_id, **{key: plan[key] for key in ('request_id','current_version_id','active_run_id','final_version_id','created_at')}},
                       'run': None, 'run_history': history, 'confirmed_context': None, 'events': [],
-                      'recommendations': None, 'version': None, 'assessments': [], 'route': None,
+                      'recommendations': None, 'recommendation_guidance': None, 'version': None, 'assessments': [], 'route': None,
                       'eligibility': None, 'reviews': [], 'last_final': None, 'selected_final': None,
                       'final_history': [], 'planning_available': False, 'retry_available': False,
                       'retry_unavailable_reason': None, 'finalisation_available': False,

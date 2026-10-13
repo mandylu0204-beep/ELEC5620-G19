@@ -2,6 +2,8 @@
 
 ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
 
+A18本地新增无匹配时的“最接近的营地”对照：直接展示3个营地、未满足/未核实条件、预算差额与调整建议，修改后仍需用户确认。使用方法及接口边界见 [营地比较](docs/near_match_guidance.md)。当前尚未推送/合main。
+
 已实现登录、资料/需求确认、规划启动/重试、进度与产物展示、人工审核、修订/重新评估、最终快照与历史回读。B 的 synthetic_demo_v2 Adapter 和真实规则流程已接入 main；A-14 补齐前端资料取值和装备录入，通过四个场景的真实浏览器验收。A-15 增加异常引导、审核状态自动回读及需求复制后重新确认，并验证冲突修订/无匹配两个额外v2场景。默认仍为 stub、规划禁用；使用下方演示入口明确启用 v2，不自动回退 v1。工厂约定见 [Agent 运行配置接入](docs/agent_runtime_handoff.md)。
 
 > This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.

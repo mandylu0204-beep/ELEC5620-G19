@@ -4,7 +4,7 @@ from pydantic import Field, StrictInt, field_validator
 from .auth import User
 from .contracts.base import ContractModel
 from .contracts.dto import RunScope
-from .contracts.errors import ContractFailure
+from .contracts.errors import ContractError, ContractFailure
 from .contracts.enums import ErrorCode
 from .http_accounts import current_user, writing_user
 from .storage.finalisation import FinaliseInput
@@ -143,6 +143,22 @@ def retry_fields(request, user, data):
         except ContractFailure as exc:
             data['current_inputs_error'] = exc.error.message
             data['finalisation_available'] = False
+    recommendation = (data.get('recommendations') or {}).get('result')
+    data['recommendation_guidance'] = None
+    if recommendation and recommendation['search_outcome'] == 'NO_MATCH':
+        from .application.near_matches import guidance
+        dataset, note = None, None
+        try:
+            with state.database.transaction(write=False) as connection:
+                row = connection.execute('SELECT scope FROM runs WHERE id=?', (run['run_id'],)).fetchone()
+            scope = RunScope.model_validate_json(row['scope'])
+            snapshot = state.runtime.for_scope(scope)
+            if snapshot.dataset != scope.dataset_context or snapshot.demo != scope.demo_context:
+                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='比较资料的输入身份已变化。'))
+            dataset = getattr(snapshot.agent, 'dataset', None)
+        except ContractFailure:
+            note = '当前来源或运行配置已变化，仅根据本次保存的排除理由比较；原报价、容量和设施值无法核对，保持未知。'
+        data['recommendation_guidance'] = guidance(data, dataset, metadata_note=note)
     return data
 
 
