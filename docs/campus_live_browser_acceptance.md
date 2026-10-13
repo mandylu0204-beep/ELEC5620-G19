@@ -1,5 +1,7 @@
 # A-16：真实校园模型正常场景验收
 
+发布更新：本文及完整A16已合远端main（9996e74），[main CI](https://github.com/LyraWangDev/ELEC5620-G19/actions/runs/38324923871)通过。后续真实异常和受控保存恢复验收见 [A17报告](campus_exception_acceptance.md)。下方“报告先保存在本地”等文字保留为本次原始验收记录。
+
 日期：2026-10-13（Australia/Sydney）。测试源提交 `3b7abf248ed2fb522a0dbe5eac005346d18d8cf8`，分支 `feature/a16-campus-wiring`。本次实际执行，使用用户已连接的 USYD VPN、本机 `.env.llm.local` 和真实校园代理；没有模拟模型 transport，也没有预存成功结果。此前离线证据仍独立保留。
 
 ## 实际结果

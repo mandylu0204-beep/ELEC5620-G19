@@ -6,7 +6,7 @@ ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
 
 > This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.
 
-A-16 已接入 B 的校园 HybridPlanningAgent：行程调用模型，其余步骤使用规则；仅支持首次 PLAN。调用 trace 与版本原子保存，并保留到最终快照。638项检查通过；正常场景的真实校园HTTP/浏览器流程、最终保存、服务重启回读和用户隔离已通过，见 [真实校园验收](docs/campus_live_browser_acceptance.md)。实际接口、明确启用方式及给B的交接见 [校园模型接线](docs/campus_model_wiring.md)。完整A14–A16和B组件已推送 `feature/a16-campus-wiring`，尚未合入远端main；最新真实验收报告仍在本地分支。
+A-16 已接入 B 的校园 HybridPlanningAgent：行程调用模型，其余步骤使用规则；仅支持首次 PLAN。调用 trace 与版本原子保存，并保留到最终快照。638项检查通过；正常场景的真实校园HTTP/浏览器流程、最终保存、服务重启回读和用户隔离已通过，见 [真实校园验收](docs/campus_live_browser_acceptance.md)。完整A14–A16和B组件已合入main（9996e74），远端CI通过。A17另验证真实模型超预算、证据缺失、封路守卫及受控保存失败恢复，见 [异常验收](docs/campus_exception_acceptance.md)。实际接口、明确启用方式及给B的交接见 [校园模型接线](docs/campus_model_wiring.md)。
 
 最终提交须满足 [Canvas 下载后演示验收](docs/canvas_submission.md)：下载 ZIP 后无需访问私有 GitHub 或使用作者电脑的配置，按随包说明可完成完整规则演示。四个 v2 规则场景已在本机真实浏览器验证，最新版干净 ZIP 安装、实际 Canvas 下载及另一台电脑复核仍待完成。校园模型模式另需校园凭据与网络可达，不能把离线规则演示当作模型验收。
 

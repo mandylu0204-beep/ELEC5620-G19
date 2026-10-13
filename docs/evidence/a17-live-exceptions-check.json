@@ -1,0 +1,406 @@
+{
+  "date": "2026-10-13",
+  "source_commit": "9996e74c80fd2b18feb01717d5a98eee03d29694",
+  "branch": "feature/a17-campus-exceptions",
+  "release": {
+    "remote_main": "9996e74c80fd2b18feb01717d5a98eee03d29694",
+    "merge_method": "fast-forward; preserves A14/A15, B original commits and A16 history",
+    "feature_ci": "https://github.com/LyraWangDev/ELEC5620-G19/actions/runs/38324483104",
+    "main_ci": "https://github.com/LyraWangDev/ELEC5620-G19/actions/runs/38324923871",
+    "ci_conclusion": "success"
+  },
+  "actual_campus_plans": 4,
+  "actual_http_attempts": 8,
+  "successful_response_usage": {
+    "prompt_tokens": 14594,
+    "completion_tokens": 2802,
+    "total_tokens": 17396
+  },
+  "cases": [
+    {
+      "case": "budget_revision",
+      "database": "var\\a17-live\\budget_revision\\http.sqlite3",
+      "plan_id": "d014936b32be421082239ae58735b7e2",
+      "run_id": "935d546f1f704927bd7f3d76f3d5d78c",
+      "version_id": "0e333a65fa0649138647c95edc593ad1",
+      "version_status": "REVISION_REQUIRED",
+      "selected_campsites": [
+        "demo-wattle-rest"
+      ],
+      "budget_cents": 24500,
+      "total_cents": 25100,
+      "logistics_outcome": "REVISION",
+      "safety_outcome": "PASSED",
+      "data_quality": {
+        "FIRE": "AVAILABLE",
+        "RESTRICTION": "AVAILABLE",
+        "ROAD": "AVAILABLE",
+        "WEATHER": "AVAILABLE"
+      },
+      "mandatory_blockers": [],
+      "trace": {
+        "id": "2701d2a61a8344aaa8d35c70eee53f0c",
+        "plan_id": "d014936b32be421082239ae58735b7e2",
+        "run_id": "935d546f1f704927bd7f3d76f3d5d78c",
+        "version_id": "0e333a65fa0649138647c95edc593ad1",
+        "input_fingerprint": "186eb548f585b2539fc41a5c85bb6c9f49746b0686f8de1a39051fc54fb4626d",
+        "attempt_id": "583a07777e214e888e20e69e218107df",
+        "created_at": "2026-10-12T23:58:05.304551+00:00",
+        "trace": {
+          "requested_model": "campus-qwen",
+          "served_models": [
+            "Qwen/Qwen3.8-27B-FP8"
+          ],
+          "configuration_fingerprint": "07ba89635f53697515c4c658937b36765f5f7453e735cf8a4b748c2bc5646e0d",
+          "prompt_sha256": "21fe0b1a06f87d74e4ff43b42b50a866b4fea6b2d82e71e0a524d8e4ae35bd05",
+          "tool_version": "b04-campsite-tool-1",
+          "turns": 2,
+          "http_attempts": 2,
+          "elapsed_ms": 10015,
+          "tool_calls": [
+            "search_campsites"
+          ],
+          "candidate_ids": [
+            "demo-wattle-rest",
+            "demo-pine-camp",
+            "demo-sandstone-grove",
+            "demo-moonlit-field",
+            "demo-river-flat",
+            "demo-ridge-lookout",
+            "demo-lake-meadow",
+            "demo-granite-ledge"
+          ],
+          "selected_campsite_id": "demo-wattle-rest",
+          "decision_summary": "Selected Demo Wattle Rest for the two confirmed nights. It is marked as a quiet environment, matching the quiet preference, and has known water and picnic-table facilities relevant to ready-to-eat meals. Its known fee is 3,000 AUD cents per night, or 6,000 AUD cents for the two nights. This proposal does not confirm booking, safety, approval, or that the entire trip is within budget.",
+          "response_sha256": [
+            "b587e0e067bf350e2a3fb3d9cd12990ac0527897769120ab251f4c3189ab119d",
+            "36e1b1cf2a653ff7598374c1d23b75b2788fad7c97f00ebdcbf078593561ee14"
+          ],
+          "usage": {
+            "completion_tokens": 870,
+            "prompt_tokens": 3887,
+            "total_tokens": 4757
+          },
+          "validation_passed": true
+        }
+      },
+      "counts": {
+        "runs": 1,
+        "versions": 1,
+        "model_planning_traces": 1,
+        "assessments": 2,
+        "reviews": 0,
+        "final_records": 0
+      },
+      "audit_revalidated": true,
+      "sqlite_integrity": "ok",
+      "finalise_http": 409,
+      "finalise_error": "FINALISATION_BLOCKED",
+      "browser": {
+        "url": "http://127.0.0.1:5251/plans/d014936b32be421082239ae58735b7e2",
+        "finalButtonCount": 0,
+        "finalEnabled": false,
+        "errors": []
+      }
+    },
+    {
+      "case": "missing_evidence",
+      "database": "var\\a17-live\\missing_evidence\\http.sqlite3",
+      "plan_id": "de9386140aeb4e3b9903bc6bebedd2b9",
+      "run_id": "0a86091d37964f2e8b284e29b0017ca7",
+      "version_id": "8c238c46b0044580aa8acca74cf82d8b",
+      "version_status": "BLOCKED",
+      "selected_campsites": [
+        "demo-river-flat"
+      ],
+      "budget_cents": 32000,
+      "total_cents": 24100,
+      "logistics_outcome": "REVISION",
+      "safety_outcome": "REVIEW",
+      "data_quality": {
+        "FIRE": "AVAILABLE",
+        "RESTRICTION": "AVAILABLE",
+        "ROAD": "AVAILABLE",
+        "WEATHER": "MISSING"
+      },
+      "mandatory_blockers": [],
+      "trace": {
+        "id": "be61cd2bc6c942bd936fb547c50774d6",
+        "plan_id": "de9386140aeb4e3b9903bc6bebedd2b9",
+        "run_id": "0a86091d37964f2e8b284e29b0017ca7",
+        "version_id": "8c238c46b0044580aa8acca74cf82d8b",
+        "input_fingerprint": "b7ea10d16fbda216ce9e6afeddb3e580ac6df8949a255a9d9494eeb57cdab5e1",
+        "attempt_id": "3d5cc842559f4a9eb5428075b6c6564a",
+        "created_at": "2026-10-12T23:58:16.476035+00:00",
+        "trace": {
+          "requested_model": "campus-qwen",
+          "served_models": [
+            "Qwen/Qwen3.8-27B-FP8"
+          ],
+          "configuration_fingerprint": "07ba89635f53697515c4c658937b36765f5f7453e735cf8a4b748c2bc5646e0d",
+          "prompt_sha256": "21fe0b1a06f87d74e4ff43b42b50a866b4fea6b2d82e71e0a524d8e4ae35bd05",
+          "tool_version": "b04-campsite-tool-1",
+          "turns": 2,
+          "http_attempts": 2,
+          "elapsed_ms": 6782,
+          "tool_calls": [
+            "search_campsites"
+          ],
+          "candidate_ids": [
+            "demo-river-flat",
+            "demo-lake-meadow"
+          ],
+          "selected_campsite_id": "demo-river-flat",
+          "decision_summary": "Selected Demo River Flat because it meets the mandatory shower requirement and has a lower known nightly fee than Demo Lake Meadow: 2,500 cents per night for two nights, versus 5,500 cents per night. Ready-to-eat meals are a soft preference only and are not claimed as an available facility.",
+          "response_sha256": [
+            "9880ca8f6a3eea0c9e73c65df1e0e29e037aebc350db7dfa081f44f602a42755",
+            "da4e056fbc8bd366b2371173dd51d7106a75542f8ebb458d66c9c4fcea24fb29"
+          ],
+          "usage": {
+            "completion_tokens": 563,
+            "prompt_tokens": 2946,
+            "total_tokens": 3509
+          },
+          "validation_passed": true
+        }
+      },
+      "counts": {
+        "runs": 1,
+        "versions": 1,
+        "model_planning_traces": 1,
+        "assessments": 2,
+        "reviews": 0,
+        "final_records": 0
+      },
+      "audit_revalidated": true,
+      "sqlite_integrity": "ok",
+      "approve_http": 409,
+      "approve_error": "INVALID_STATE",
+      "finalise_http": 409,
+      "finalise_error": "FINALISATION_BLOCKED",
+      "browser": {
+        "url": "http://127.0.0.1:5252/plans/de9386140aeb4e3b9903bc6bebedd2b9",
+        "finalButtonCount": 0,
+        "finalEnabled": false,
+        "errors": []
+      }
+    },
+    {
+      "case": "road_closure",
+      "database": "var\\a17-live\\road_closure\\http.sqlite3",
+      "plan_id": "d463677d56b94519a44fb8a62ebaafd2",
+      "run_id": "182775f481f34c4894e79829c8cc3651",
+      "version_id": "633143efed154dca9f9c305598692677",
+      "version_status": "BLOCKED",
+      "selected_campsites": [
+        "demo-moonlit-field"
+      ],
+      "budget_cents": 32000,
+      "total_cents": 23100,
+      "logistics_outcome": "PASSED",
+      "safety_outcome": "BLOCKED",
+      "data_quality": {
+        "FIRE": "AVAILABLE",
+        "RESTRICTION": "AVAILABLE",
+        "ROAD": "AVAILABLE",
+        "WEATHER": "AVAILABLE"
+      },
+      "mandatory_blockers": [
+        {
+          "code": "ROAD_CLOSED",
+          "message": "demo-moonlit-field: road access is closed.",
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "provenance": {
+                "demo_only": true,
+                "source_date": "2026-10-07",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_type": "SYNTHETIC"
+              },
+              "record_id": "demo-moonlit-field",
+              "valid_from": "2027-04-10",
+              "valid_to": "2027-04-12"
+            }
+          ]
+        }
+      ],
+      "trace": {
+        "id": "e6807678cacd4aedae3a578b49666f23",
+        "plan_id": "d463677d56b94519a44fb8a62ebaafd2",
+        "run_id": "182775f481f34c4894e79829c8cc3651",
+        "version_id": "633143efed154dca9f9c305598692677",
+        "input_fingerprint": "a60e455fdc34b3c8037c16afd65ec9a0dd4d1b0fcf03509958a01e056cc6ce05",
+        "attempt_id": "248eef6ee86840a5af55e41bc683bd59",
+        "created_at": "2026-10-12T23:58:29.124172+00:00",
+        "trace": {
+          "requested_model": "campus-qwen",
+          "served_models": [
+            "Qwen/Qwen3.8-27B-FP8"
+          ],
+          "configuration_fingerprint": "07ba89635f53697515c4c658937b36765f5f7453e735cf8a4b748c2bc5646e0d",
+          "prompt_sha256": "21fe0b1a06f87d74e4ff43b42b50a866b4fea6b2d82e71e0a524d8e4ae35bd05",
+          "tool_version": "b04-campsite-tool-1",
+          "turns": 2,
+          "http_attempts": 2,
+          "elapsed_ms": 8405,
+          "tool_calls": [
+            "search_campsites"
+          ],
+          "candidate_ids": [
+            "demo-moonlit-field",
+            "demo-river-flat",
+            "demo-wattle-rest",
+            "demo-pine-camp",
+            "demo-sandstone-grove",
+            "demo-ridge-lookout",
+            "demo-lake-meadow",
+            "demo-cloud-gully"
+          ],
+          "selected_campsite_id": "demo-moonlit-field",
+          "decision_summary": "Selected Demo Moonlit Field as the lowest-fee exposed candidate at 2000 AUD cents per night, for a known two-night site fee of 4000 AUD cents. No candidate explicitly lists ready-to-eat meals, so the confirmed soft preference could not be matched directly; the known site fee was the deciding factor. Other trip costs, booking, safety, and approval remain unconfirmed.",
+          "response_sha256": [
+            "9880ca8f6a3eea0c9e73c65df1e0e29e037aebc350db7dfa081f44f602a42755",
+            "4f1f1d1156695e8cbc5cd1aaa2afc167724d8877412a4ba2fc899e06e0dffcb5"
+          ],
+          "usage": {
+            "completion_tokens": 728,
+            "prompt_tokens": 3874,
+            "total_tokens": 4602
+          },
+          "validation_passed": true
+        }
+      },
+      "counts": {
+        "runs": 1,
+        "versions": 1,
+        "model_planning_traces": 1,
+        "assessments": 2,
+        "reviews": 0,
+        "final_records": 0
+      },
+      "audit_revalidated": true,
+      "sqlite_integrity": "ok",
+      "approve_http": 409,
+      "approve_error": "INVALID_STATE",
+      "finalise_http": 409,
+      "finalise_error": "FINALISATION_BLOCKED",
+      "browser": {
+        "url": "http://127.0.0.1:5253/plans/d463677d56b94519a44fb8a62ebaafd2",
+        "finalButtonCount": 0,
+        "finalEnabled": false,
+        "errors": []
+      }
+    },
+    {
+      "case": "saved_receipt_recovery",
+      "database": "var\\a17-live\\saved_receipt_recovery\\http.sqlite3",
+      "plan_id": "a0268c07b58a4eb8aff59b369e913411",
+      "run_id": "4b35d465f700452a96746c4d57d93789",
+      "version_id": "99d2298042b44f8a80db4ba5d8cdd61f",
+      "version_status": "ELIGIBLE_FOR_FINALISATION",
+      "selected_campsites": [
+        "demo-wattle-rest"
+      ],
+      "budget_cents": 32000,
+      "total_cents": 25100,
+      "logistics_outcome": "PASSED",
+      "safety_outcome": "PASSED",
+      "data_quality": {
+        "FIRE": "AVAILABLE",
+        "RESTRICTION": "AVAILABLE",
+        "ROAD": "AVAILABLE",
+        "WEATHER": "AVAILABLE"
+      },
+      "mandatory_blockers": [],
+      "trace": {
+        "id": "bd77c1dc40144679aebaf105b047a69d",
+        "plan_id": "a0268c07b58a4eb8aff59b369e913411",
+        "run_id": "4b35d465f700452a96746c4d57d93789",
+        "version_id": "99d2298042b44f8a80db4ba5d8cdd61f",
+        "input_fingerprint": "8334ecb62f9c6c3fadae951a3d818390fd60566e3ab47481170ea1d264b0c98c",
+        "attempt_id": "0277af0eb6a14f13ba2bf68ed091cee1",
+        "created_at": "2026-10-12T23:58:40.991678+00:00",
+        "trace": {
+          "requested_model": "campus-qwen",
+          "served_models": [
+            "Qwen/Qwen3.8-27B-FP8"
+          ],
+          "configuration_fingerprint": "07ba89635f53697515c4c658937b36765f5f7453e735cf8a4b748c2bc5646e0d",
+          "prompt_sha256": "21fe0b1a06f87d74e4ff43b42b50a866b4fea6b2d82e71e0a524d8e4ae35bd05",
+          "tool_version": "b04-campsite-tool-1",
+          "turns": 2,
+          "http_attempts": 2,
+          "elapsed_ms": 7390,
+          "tool_calls": [
+            "search_campsites"
+          ],
+          "candidate_ids": [
+            "demo-wattle-rest",
+            "demo-pine-camp",
+            "demo-sandstone-grove",
+            "demo-moonlit-field",
+            "demo-river-flat",
+            "demo-ridge-lookout",
+            "demo-lake-meadow",
+            "demo-granite-ledge"
+          ],
+          "selected_campsite_id": "demo-wattle-rest",
+          "decision_summary": "Selected Demo Wattle Rest because it is marked as quiet and costs 3,000 cents per night, totaling 6,000 cents in campsite fees for the two occupied nights. Its toilets, water, and picnic tables align with the quiet and meal-preparation preferences. This is a proposal only and does not confirm booking, safety, approval, or total trip cost.",
+          "response_sha256": [
+            "9880ca8f6a3eea0c9e73c65df1e0e29e037aebc350db7dfa081f44f602a42755",
+            "91eb152b9532754291ce144de6e73a44ea8583941d1c4f19cd9f9b9ac1c70fcf"
+          ],
+          "usage": {
+            "completion_tokens": 641,
+            "prompt_tokens": 3887,
+            "total_tokens": 4528
+          },
+          "validation_passed": true
+        }
+      },
+      "counts": {
+        "runs": 1,
+        "versions": 1,
+        "model_planning_traces": 1,
+        "assessments": 2,
+        "reviews": 0,
+        "final_records": 0
+      },
+      "audit_revalidated": true,
+      "sqlite_integrity": "ok",
+      "controlled_failure": "lost A save response after version/trace commit; actual campus calls unchanged",
+      "initial_status": "FAILED",
+      "retry_after_app_restart": "SUCCEEDED",
+      "additional_model_calls_after_restart_retry": 0,
+      "trace_and_content_identical": true
+    }
+  ],
+  "browser_boundary": "auth/confirmation/dispatch via real TestClient HTTP first; browser logs in and reads three persisted anomaly results, not three browser-created model workflows",
+  "initial_test_issue": "Two assertions expected FINALISATION_BLOCKED for approval; actual HTTP409 INVALID_STATE matches existing ReviewService guard. Rechecked saved runs without another model call; application unchanged.",
+  "cleanup": {
+    "browser_tabs_closed": true,
+    "services_stopped": true,
+    "ports_released": [
+      8651,
+      8652,
+      8653,
+      5251,
+      5252,
+      5253
+    ]
+  },
+  "limitations": [
+    "campus network failure/timeouts not injected; tested lost persistence response after actual model success",
+    "only planning role uses model",
+    "model REVISE/REASSESS still unsupported",
+    "no Canvas download/clean install/second computer verification"
+  ],
+  "preserved": [
+    "personal .env",
+    ".env.llm.local",
+    "default application database",
+    "sealed datasets",
+    "production application code"
+  ]
+}
