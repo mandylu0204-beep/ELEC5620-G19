@@ -18,7 +18,7 @@ from ..workflow.configuration import WorkflowConfiguration, failure
 from .rules import interpretation, logistics, planning, safety
 from .rules.common import RULES_VERSION, ensure_execution_mode, input_failure
 
-HYBRID_VERSION = 'b05-hybrid-planning-1'
+HYBRID_VERSION = 'b05-hybrid-planning-2'
 
 
 def _identity(coordinator):
@@ -29,7 +29,7 @@ def _identity(coordinator):
     }
 
 
-def build_hybrid_configuration(dataset, coordinator, *, safety_case_ids=(), scenarios=(), registered_context=None):
+def build_hybrid_configuration(dataset, coordinator, *, safety_case_ids=(), scenarios=(), feedback=None, registered_context=None):
     """A must register this exact context BEFORE confirming/starting an agent run.
 
     Preserve A's complete source/fixture/selection identity. Key collisions fail
@@ -46,17 +46,16 @@ def build_hybrid_configuration(dataset, coordinator, *, safety_case_ids=(), scen
         'rules_version': f'{base.rules_version}/{HYBRID_VERSION}/{identity["hybrid_planning_fingerprint"]}',
     }, deep=True)
     return WorkflowConfiguration(dataset, safety_case_ids=safety_case_ids, scenarios=scenarios,
-                                 registered_context=registered)
+                                 feedback=feedback, registered_context=registered)
 
 
 class HybridPlanningAgent:
-    """Complete six-method AgentPort, with first PLAN as the MVP operation.
+    """Complete AgentPort: model PLAN/REVISE and same-version rule REASSESS.
 
     agent denotes the mixed runtime, not a claim that every step uses an LLM.
-    Only generate_or_revise_itinerary invokes the model; REVISE/REASSESS are
-    explicitly unsupported until implemented and enabled by A.
+    Only PLAN/REVISE generate a model itinerary; REASSESS does not call it.
     """
-    supported_operations = frozenset({'PLAN'})
+    supported_operations = frozenset({'PLAN', 'REVISE', 'REASSESS'})
     rules_version = HYBRID_VERSION
 
     def __init__(self, dataset, coordinator: PlanningCoordinator, *, workflow_configuration=None,
@@ -113,7 +112,7 @@ class HybridPlanningAgent:
         return outcome
 
     async def generate_or_revise_itinerary(self, input: ItineraryInput) -> ItineraryResult:
-        # Coordinator rejects revision; no deterministic fallback on any failure.
+        # No deterministic fallback on any model planning/revision failure.
         return (await self.plan_with_trace(input)).itinerary
 
     async def assess_gear_and_logistics(self, input: LogisticsInput) -> LogisticsResult:
@@ -133,7 +132,7 @@ class HybridPlanningAgent:
         except (ValidationError, ValueError, TypeError) as exc:
             raise failure(ErrorCode.CONTRACT_INVALID, 'Hybrid orchestration input violates contract 1.0.') from exc
         if validated.run_scope.operation not in self.supported_operations:
-            raise input_failure('Hybrid MVP supports PLAN only; model revision/reassessment is not enabled.', 'operation')
+            raise input_failure('Unsupported Hybrid operation.', 'operation')
         # The shared orchestrator checks mode/config against A's checkpoint,
         # renews leases during model waits and reuses all saved artifacts.
         return await Orchestrator(self, self.workflow_configuration, persistence,

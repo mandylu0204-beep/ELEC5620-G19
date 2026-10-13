@@ -30,7 +30,7 @@ def test_actual_campus_components_through_http_save_trace_and_immutable_final(tm
     app = application(tmp_path)
     with TestClient(app) as client:
         meta = client.get('/api/v1/meta').json()
-        assert meta['supported_operations'] == ['PLAN'] and meta['features']['model_planning']
+        assert meta['supported_operations'] == ['PLAN', 'REASSESS', 'REVISE'] and meta['features']['model_planning']
         assert meta['planning_stages']['itinerary']=='model' and meta['planning_stages']['safety']=='rules'
         assert requests == []  # readiness/meta must never probe the model
         headers=sign_in(client)
@@ -42,12 +42,8 @@ def test_actual_campus_components_through_http_save_trace_and_immutable_final(tm
         assert trace['input_fingerprint']==detail['version']['version_context']['input_fingerprint']
         assert trace['trace']['configuration_fingerprint']==detail['confirmed_context']['dataset_context']['selection_config']['hybrid_planning_fingerprint']
         assert trace['trace']['served_models']==['offline-test-only']
-        assert detail['finalisation_available'] and not detail['revision_available'] and not detail['reassessment_available']
+        assert detail['finalisation_available'] and detail['revision_available'] and detail['reassessment_available']
         assert all(row['result']['execution_mode']=='agent' for row in detail['assessments'])
-        before=counts(app)
-        for operation in ['revise','reassess']:
-            assert change(client,headers,detail,operation,feedback='change campsite' if operation=='revise' else None).status_code==422
-        assert counts(app)==before and len(requests)==2
         path, record=finalise(client,headers,detail)
         assert record['model_planning_trace']==trace
         other=sign_in(client,'camper.b','CampMate-B-2026!')

@@ -110,12 +110,14 @@ def build_v2_hybrid_binding(settings, descriptor):
     coordinator = PlanningCoordinator(dataset, client)
     identity = coordinator.identity
     choices = {**descriptor.context.selection_config, 'a_model_trace_required':'1', 'a_model_trace_contract':'1.0',
+        'a_model_trace_binding':'origin-version-v1',
         'a_model_prompt_sha256':identity['prompt_sha256'], 'a_model_tool_version':identity['tool_version'],
         'a_model_requested_model':client.settings.model}
     base = descriptor.context.model_copy(update={'selection_config':choices,
-        'rules_version':descriptor.context.rules_version + '/a-runtime-bindings-v2/a-model-audit-v1'})
+        'rules_version':descriptor.context.rules_version + '/a-runtime-bindings-v2/a-model-audit-v2'})
     configuration = build_hybrid_configuration(dataset, coordinator,
-        safety_case_ids=settings.workflow_safety_case_ids, scenarios=configured_scenarios(settings, descriptor), registered_context=base)
+        safety_case_ids=settings.workflow_safety_case_ids, scenarios=configured_scenarios(settings, descriptor), registered_context=base,
+        feedback=base.selection_config.get('a_revision_feedback') or None)
     agent = HybridPlanningAgent(dataset, coordinator, workflow_configuration=configuration)
     return AgentBinding(agent, configuration.context)
 

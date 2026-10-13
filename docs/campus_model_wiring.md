@@ -2,6 +2,8 @@
 
 **发布更新：完整A16及正常场景真实验收已快进合入远端main（9996e74），main CI通过；B可直接从更新main开始。新增异常/受控保存恢复验收见 [A17交接](campus_exception_acceptance.md)。下文此前“尚未合main/未发布”的描述保留为阶段历史。**
 
+2026-10-13 后续集成：B `feature/llm-revision-reassessment` 新增模型 REVISE 和同版本 REASSESS，审计关联语义为 origin-version-v1，见 [B 交接](model_revision_reassessment_handoff.md) 与 [A 审查](model_revision_reassessment_a_review.md)。A19 同时保留 A18 相近营地比较；下文 PLAN-only 描述及验收数字属于 A16 首版。
+
 **最新追加（2026-10-13）：用户配置密钥/连接USYD VPN后，正常场景真实校园HTTP和浏览器闭环已通过，包括最终保存、重启回读和用户隔离。服务返回Qwen/Qwen3.8-27B-FP8，2轮/2次，9625ms。当前结果见 [真实校园验收](campus_live_browser_acceptance.md)。以下发布时未连通/离线验收说明保留为当时记录；其他真实校园失败场景与模型角色仍待完成。**
 
 日期：2026-10-13。完整分支 `feature/a16-campus-wiring` 已推送 GitHub；应用提交 `2d88ad3`，包含 A14/A15、B `5c4a093` 的完整 HybridPlanningAgent 和本次 A16。尚未合入远端 main，也未创建 PR。请使用完整分支集成，不能把 A16 单独摘到缺少 B 组件的旧 main。原确认事项见 [C-01～C-08](campus_llm_a_reply.md)。

@@ -1,5 +1,7 @@
 # B → A：HybridPlanningAgent 实现与接线边界
 
+当前分支更新（2026-10-13）：A16 已合 main；本分支新增模型修订与同版本重评，见 [最新交接](model_revision_reassessment_handoff.md)。以下 PLAN-only 和 trace 待接线描述保留为初版历史，不代表当前代码；新增审计关联语义待 A 复核。
+
 日期：2026-10-13。此前 Coordinator 组件说明见 [campus_llm_handoff_to_a.md](campus_llm_handoff_to_a.md)。本文是 B 的实现交付说明，不表示 A 已确认 trace 保存接口或应用接线已经完成。
 
 ## 1. 本次实现

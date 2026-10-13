@@ -11,6 +11,15 @@ import { PlansPage, PlanPage } from './plans';
 const DISCLAIMER = 'This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.';
 type Status = { meta: Meta; ready: Ready };
 
+function modeDescription(meta: Meta | undefined) {
+  if (meta?.agent_configuration_error) return '当前数据与运行配置未就绪，暂不能开始规划。已保存的资料和方案仍可查看。';
+  if (meta?.features.model_planning) {
+    const operations = new Set(meta.supported_operations ?? []);
+    return `混合模式：${operations.has('REVISE') ? '初次规划和方案修订' : '行程规划'}调用校园模型；需求解释、装备费用及安全使用规则。${operations.has('REASSESS') ? '重新评估复用原行程，不调用规划模型。' : '当前模式尚未启用重新评估。'}${operations.has('REVISE') ? '' : '当前模式尚未启用方案修订。'}`;
+  }
+  return meta?.features.planning ? '确认需求后可开始规划，查看保存进度；可恢复的失败可在方案页重试。' : '资料、需求确认、方案展示、人工审核与最终化已接入。规划流程尚未启用。';
+}
+
 function Mountain({ small = false }: { small?: boolean }) {
   return <svg viewBox="0 0 240 150" fill="none" aria-hidden="true" className={small ? 'brand-icon' : 'mountain'}>
     <path d="M9 134L83 24l40 60 27-35 82 85H9Z" fill="currentColor" opacity=".12" />
@@ -53,7 +62,7 @@ function AppContent() {
     <div className="workspace">
       <header className="topbar"><span>小组项目 · 开发预览</span><div className="topbar-right"><span className={`connection ${status?.ready.status === 'ready' ? 'connected' : ''}`}><i />{error ? '服务未连接' : status ? (status.ready.status === 'ready' ? '开发基础可用' : '依赖未就绪') : '正在连接…'}</span><AccountControl /></div></header>
       <main>
-        <div className="mode-notice"><strong>{status?.meta.execution_mode.toUpperCase() ?? '开发环境'}</strong><span>{status?.meta.agent_configuration_error ? '当前数据与运行配置未就绪，暂不能开始规划。已保存的资料和方案仍可查看。' : status?.meta.features.model_planning ? '混合模式：仅行程规划调用校园模型；需求解释、装备费用及安全使用规则。首版不支持修订或重新评估。' : status?.meta.features.planning ? '确认需求后可开始规划，查看保存进度；可恢复的失败可在方案页重试。' : '资料、需求确认、方案展示、人工审核与最终化已接入。规划流程尚未启用。'}</span></div>
+        <div className="mode-notice"><strong>{status?.meta.execution_mode.toUpperCase() ?? '开发环境'}</strong><span>{modeDescription(status?.meta)}</span></div>
         {error && <div className="error-box" role="alert"><strong>无法连接后端</strong><p>{error}。请检查启动终端。</p><button onClick={() => setRefresh(value => value + 1)}>重新连接</button></div>}
         <Routes>
           <Route path="/" element={<Overview status={status} />} />

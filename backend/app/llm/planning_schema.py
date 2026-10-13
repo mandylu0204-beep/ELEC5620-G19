@@ -6,14 +6,14 @@ from typing import Annotated, Literal
 from pydantic import Field, TypeAdapter, ValidationError, field_validator
 
 from ..contracts.base import ContractModel, Identifier
-from ..contracts.dto import ItineraryResult
+from ..contracts.dto import ItineraryResult, TripRequirements
 from ..contracts.enums import ErrorCode, ExecutionMode
 from ..contracts.errors import ContractFailure
 from ..agents.rules.common import artifact, validate_itinerary_content
 from ..agents.rules.planning import camp_entries, violations
 from .client import model_failure, strict_json
 
-VALIDATION_VERSION = 'b04-planning-validation-1'
+VALIDATION_VERSION = 'b04-planning-validation-2'
 
 
 class PlanningProposal(ContractModel):
@@ -47,7 +47,13 @@ class FinalAction(ContractModel):
     proposal: PlanningProposal
 
 
-ACTION = TypeAdapter(Annotated[SearchAction | FinalAction, Field(discriminator='action')])
+class RequirementsChangeAction(ContractModel):
+    """A proposal for reconfirmation, never permission to change saved input."""
+    action: Literal['requirements_change']
+    requested_requirement_changes: TripRequirements
+
+
+ACTION = TypeAdapter(Annotated[SearchAction | FinalAction | RequirementsChangeAction, Field(discriminator='action')])
 
 
 def parse_action(text):
@@ -78,10 +84,20 @@ def validated_itinerary(dataset, input, proposal, exposed_ids):
         campsite = dataset.get_campsite(proposal.campsite_id)
         if violations(campsite, input.confirmed_requirements, input.profile_snapshot):
             raise ValueError('Hard campsite constraints are not satisfied')
+        if input.previous_version is not None:
+            previous = input.previous_version.content
+            feedback = input.feedback.strip().casefold()
+            if feedback in {'change campsite', '更换营地'} and proposal.campsite_id in previous.selected_campsite_ids:
+                raise ValueError('The requested campsite change was not made')
+            if feedback in {'cheaper campsite', '更便宜的营地'}:
+                old_fees = [dataset.get_campsite(key).nightly_fee_cents for key in previous.selected_campsite_ids]
+                if len(old_fees) != 1 or campsite.nightly_fee_cents >= old_fees[0]:
+                    raise ValueError('The requested lower campsite fee was not achieved')
         result = ItineraryResult(
             itinerary_entries=camp_entries(campsite, input.confirmed_requirements),
             selected_campsite_ids=[campsite.campsite_id],
-            revision_reason='Initial campus-qwen planned proposal; assessments remain required.',
+            revision_reason=input.feedback.strip() if input.previous_version is not None else
+                'Initial campus-qwen planned proposal; assessments remain required.',
             **artifact(input.demo_context, [campsite.source_ref], assumptions=[
                 'Planning decision summary (model-generated, not a verified fact): ' + proposal.decision_summary,
                 'Sydney-local draft times are placeholders, not verified check-in or travel times.',
