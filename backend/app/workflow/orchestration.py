@@ -96,6 +96,36 @@ class Orchestrator:
             by_kind[assessment.kind] = assessment
             self.refs[assessment.kind.value.lower()] = assessment.assessment_id
         logistics, safety = by_kind.get(AssessmentKind.LOGISTICS), by_kind.get(AssessmentKind.SAFETY)
+        if scope.dataset_context.selection_config.get('a_logistics_audit_required') == '1':
+            try:
+                audits = value['model_assessment_audits']
+                if not isinstance(audits, dict) or set(audits) != ({'LOGISTICS'} if logistics else set()):
+                    raise ValueError('Missing or unexpected logistics audit')
+                if logistics:
+                    audit = audits['LOGISTICS']
+                    expected = {'audit_contract_version': '1.0', 'kind': 'LOGISTICS',
+                        'plan_id': scope.plan_id, 'run_id': scope.run_id,
+                        'plan_version_id': version.version_context.plan_version_id,
+                        'assessment_id': logistics.assessment_id, 'gear_checklist_id': logistics.gear_checklist_id,
+                        'input_fingerprint': version.version_context.input_fingerprint}
+                    if (any(audit[key] != item for key, item in expected.items())
+                            or any(not isinstance(audit[key], str) or not audit[key] for key in ('audit_id', 'attempt_id', 'created_at'))
+                            or audit['configuration_fingerprint'] != audit['trace']['configuration_fingerprint']):
+                        raise ValueError('Audit associations differ')
+                    logistics_input = LogisticsInput(version_context=version.version_context, saved_itinerary=version.content,
+                        confirmed_requirements=confirmed.requirements, profile_snapshot=confirmed.profile_snapshot,
+                        demo_context=scope.demo_context)
+                    self.agent.validate_logistics_artifacts(logistics_input, logistics.result, audit['plan'], audit['trace'])
+                    from ..llm.coordinator import canonical, digest
+                    hashed = digest(canonical({'context': version.version_context.model_dump(mode='json'),
+                        'kind': 'LOGISTICS', 'result': logistics.result.model_dump(mode='json'),
+                        'plan': audit['plan'], 'trace': audit['trace']}))
+                    if audit['payload_sha256'] != hashed:
+                        raise ValueError('Audit payload hash differs')
+            except (ContractFailure, KeyError, TypeError, ValueError, AttributeError) as exc:
+                if isinstance(exc, ContractFailure) and exc.error.code == ErrorCode.STALE_CONTEXT:
+                    raise
+                raise failure(ErrorCode.PERSISTENCE_FAILURE, 'Saved logistics model audit is incomplete or inconsistent; do not regenerate it.') from exc
         if safety and (logistics is None or safety.depends_on_assessment_id != logistics.assessment_id):
             raise failure(ErrorCode.CONTRACT_INVALID, 'Saved safety does not depend on saved logistics.')
         if route:
@@ -125,6 +155,14 @@ class Orchestrator:
             ))
             if scope.dataset_context != self.config.context:
                 raise failure(ErrorCode.STALE_CONTEXT, 'Dataset bytes, rules or workflow choices changed; start a new run.')
+            if scope.dataset_context.selection_config.get('a_logistics_audit_required') == '1' and (
+                    scope.demo_context.mode != 'agent'
+                    or scope.dataset_context.selection_config.get('a_logistics_mode') != 'model'
+                    or scope.dataset_context.selection_config.get('a_logistics_audit_contract') != '1.0'
+                    or getattr(self.agent, 'logistics_audit_contract', None) != '1.0'
+                    or not all(callable(getattr(self.agent, name, None)) for name in ('assess_logistics_with_trace', 'validate_logistics_artifacts'))
+                    or not callable(getattr(self.port, 'save_model_logistics_assessment', None))):
+                raise failure(ErrorCode.CONTRACT_INVALID, 'Registered model logistics requires the complete agent/audit persistence capabilities.')
             if any(not scope.write_keys.get(key) for key in ('recommendations', 'version', 'logistics', 'safety', 'route')) or len(set(scope.write_keys.values())) != len(scope.write_keys):
                 raise failure(ErrorCode.CONTRACT_INVALID, 'A must register distinct write keys for all steps.')
             if self.config.feedback and scope.operation != 'REVISE':
@@ -173,11 +211,18 @@ class Orchestrator:
                 context = version.version_context
                 if logistics is None:
                     await self.advance(RunStage.ASSESSING_LOGISTICS)
-                    result = await self.call(lambda: self.agent.assess_gear_and_logistics(LogisticsInput(
+                    logistics_input = LogisticsInput(
                         version_context=context, saved_itinerary=version.content, confirmed_requirements=confirmed.requirements,
                         profile_snapshot=confirmed.profile_snapshot, demo_context=scope.demo_context,
-                    )))
-                    logistics = await self.call(lambda: self.port.save_assessment(context, AssessmentKind.LOGISTICS, result, scope.write_keys['logistics']))
+                    )
+                    if scope.dataset_context.selection_config.get('a_logistics_audit_required') == '1':
+                        outcome = await self.call(lambda: self.agent.assess_logistics_with_trace(logistics_input))
+                        logistics = await self.call(lambda: self.port.save_model_logistics_assessment(
+                            context, outcome.assessment, outcome.plan.model_dump(mode='json'),
+                            outcome.trace.model_dump(mode='json'), scope.write_keys['logistics']))
+                    else:
+                        result = await self.call(lambda: self.agent.assess_gear_and_logistics(logistics_input))
+                        logistics = await self.call(lambda: self.port.save_assessment(context, AssessmentKind.LOGISTICS, result, scope.write_keys['logistics']))
                     self.refs['logistics'] = logistics.assessment_id
                 if safety is None:
                     await self.advance(RunStage.ASSESSING_SAFETY)
@@ -202,8 +247,6 @@ class Orchestrator:
                 # contradictory failure after the returned success result.
                 raise
             error = exc.error if isinstance(exc, ContractFailure) else failure(ErrorCode.AGENT_FAILURE, 'Unexpected workflow failure; retry resumes persisted steps.', recoverable=True).error
-            if error.code == ErrorCode.PERSISTENCE_FAILURE and not error.recoverable:
-                error = error.model_copy(update={'recoverable': True, 'allowed_actions': ['RETRY']})
             try:
                 await self.call(lambda: self.port.report_stage(self.stage, RunStatus.FAILED, error))
             except Exception as recording_error:

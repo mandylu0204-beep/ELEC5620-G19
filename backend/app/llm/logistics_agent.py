@@ -2,8 +2,9 @@
 from dataclasses import dataclass
 import json
 import time
+from typing import Annotated, Literal
 
-from pydantic import ValidationError
+from pydantic import Field, StrictBool, StrictInt, StrictStr, ValidationError, model_validator
 
 from ..agents.rules import logistics
 from ..agents.rules.common import RULES_VERSION, ensure_execution_mode
@@ -51,22 +52,34 @@ No database, purchasing, rentals, approvals or finalisation tools are available.
 
 
 class LogisticsTrace(ContractModel):
-    role: str
-    requested_model: str
-    served_models: list[str]
-    configuration_fingerprint: str
-    input_sha256: str
-    rule_facts_sha256: str
-    proposal_sha256: str
-    prompt_sha256: str
-    tool_version: str
-    turns: int
-    http_attempts: int
-    elapsed_ms: int
-    tool_calls: list[str]
-    response_sha256: list[str]
-    usage: dict[str, int]
-    validation_passed: bool
+    role: Literal['LOGISTICS']
+    requested_model: Annotated[StrictStr, Field(min_length=1, max_length=200)]
+    served_models: list[Annotated[StrictStr, Field(min_length=1, max_length=200)]] = Field(max_length=6)
+    configuration_fingerprint: Annotated[StrictStr, Field(pattern=r'^[0-9a-f]{64}$')]
+    input_sha256: Annotated[StrictStr, Field(pattern=r'^[0-9a-f]{64}$')]
+    rule_facts_sha256: Annotated[StrictStr, Field(pattern=r'^[0-9a-f]{64}$')]
+    proposal_sha256: Annotated[StrictStr, Field(pattern=r'^[0-9a-f]{64}$')]
+    prompt_sha256: Annotated[StrictStr, Field(pattern=r'^[0-9a-f]{64}$')]
+    tool_version: Annotated[StrictStr, Field(min_length=1, max_length=200)]
+    turns: StrictInt = Field(ge=3, le=6)
+    http_attempts: StrictInt = Field(ge=3, le=18)
+    elapsed_ms: StrictInt = Field(ge=0, le=2**63-1)
+    tool_calls: list[Literal['read_logistics_facts', 'evaluate_logistics_plan']] = Field(min_length=2, max_length=5)
+    response_sha256: list[Annotated[StrictStr, Field(pattern=r'^[0-9a-f]{64}$')]] = Field(min_length=3, max_length=6)
+    usage: dict[Literal['prompt_tokens', 'completion_tokens', 'total_tokens'], Annotated[StrictInt, Field(ge=0, le=2**63-1)]]
+    validation_passed: StrictBool
+
+    @model_validator(mode='after')
+    def valid_success(self):
+        if (not self.validation_passed or len(self.response_sha256) != self.turns
+                or len(self.tool_calls) != self.turns - 1
+                or self.tool_calls[0] != 'read_logistics_facts'
+                or 'evaluate_logistics_plan' not in self.tool_calls
+                or len(self.served_models) > self.turns
+                or len(set(self.served_models)) != len(self.served_models)
+                or not self.turns <= self.http_attempts <= self.turns * 3):
+            raise ValueError('Invalid successful logistics trace')
+        return self
 
 
 @dataclass(frozen=True)
