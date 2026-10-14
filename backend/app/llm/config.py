@@ -20,7 +20,7 @@ class CampusModelSettings(BaseSettings):
     model: Literal['campus-qwen'] = Field(default='campus-qwen', validation_alias='ELEC5620_MODEL')
     timeout_seconds: float = Field(default=45, gt=0, le=120, allow_inf_nan=False,
         validation_alias='ELEC5620_TIMEOUT_SECONDS')
-    max_completion_tokens: int = Field(default=2048, ge=128, le=8192,
+    max_completion_tokens: int = Field(default=4096, ge=128, le=8192,
         validation_alias='ELEC5620_MAX_COMPLETION_TOKENS')
     max_attempts: int = Field(default=2, ge=1, le=3, validation_alias='ELEC5620_MAX_ATTEMPTS')
     max_turns: int = Field(default=4, ge=2, le=6, validation_alias='ELEC5620_MAX_TURNS')
