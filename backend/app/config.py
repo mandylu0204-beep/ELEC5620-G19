@@ -1,5 +1,6 @@
 from datetime import date
 from pathlib import Path
+from typing import Literal
 
 from pydantic import field_validator
 from pydantic import Field
@@ -17,6 +18,7 @@ class Settings(BaseSettings):
     )
     execution_mode: ExecutionMode = ExecutionMode.STUB
     planning_enabled: bool = False
+    logistics_execution: Literal['rules', 'model'] = 'rules'
     demo_today: date = date(2026, 10, 8)
     dataset_path: Path = APP_ROOT / "data" / "synthetic_demo"
     dataset_scenario_files: list[str] = Field(default_factory=list)

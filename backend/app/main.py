@@ -157,7 +157,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             'supported_operations': operations,
             'planning_stages': {'interpretation':'rules', 'recommendation':'rules',
                 'itinerary':'model' if config.execution_mode == ExecutionMode.AGENT else 'rules',
-                'logistics':'rules', 'safety':'rules'} if config.execution_mode != ExecutionMode.STUB else {},
+                'logistics':'model' if planning and config.logistics_execution == 'model' else 'rules', 'safety':'rules'} if config.execution_mode != ExecutionMode.STUB else {},
             'execution_mode': config.execution_mode.value, 'demo_today': config.demo_today.isoformat(),
             'disclaimer': DEMO_DISCLAIMER,
             'provenance': descriptor.provenance.model_dump(mode='json') if descriptor else None,

@@ -158,6 +158,23 @@ CREATE TRIGGER no_delete_model_trace BEFORE DELETE ON model_planning_traces
 """
 
 
+MIGRATION_7 = """
+CREATE TABLE model_logistics_audits(
+ id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES users(id),
+ plan_id TEXT NOT NULL, run_id TEXT NOT NULL UNIQUE, version_id TEXT NOT NULL,
+ assessment_id TEXT NOT NULL UNIQUE, gear_checklist_id TEXT NOT NULL UNIQUE REFERENCES gear_checklists(id),
+ attempt_id TEXT NOT NULL, input_fingerprint TEXT NOT NULL,
+ configuration_fingerprint TEXT NOT NULL, payload_sha256 TEXT NOT NULL,
+ created_at TEXT NOT NULL, payload TEXT NOT NULL,
+ FOREIGN KEY(plan_id,version_id) REFERENCES versions(plan_id,id),
+ FOREIGN KEY(run_id,version_id,assessment_id) REFERENCES assessments(run_id,version_id,id));
+CREATE TRIGGER immutable_logistics_audit BEFORE UPDATE ON model_logistics_audits
+ BEGIN SELECT RAISE(ABORT, 'immutable logistics audit'); END;
+CREATE TRIGGER no_delete_logistics_audit BEFORE DELETE ON model_logistics_audits
+ BEGIN SELECT RAISE(ABORT, 'immutable logistics audit'); END;
+"""
+
+
 def execute_migration(connection, script):
     statement = ''
     for line in script.splitlines():
@@ -207,7 +224,11 @@ class Database:
                 execute_migration(connection, MIGRATION_6)
                 connection.execute("INSERT INTO schema_migrations VALUES(6, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
                 versions.append(6)
-            if versions != [1, 2, 3, 4, 5, 6]:
+            if versions == [1, 2, 3, 4, 5, 6]:
+                execute_migration(connection, MIGRATION_7)
+                connection.execute("INSERT INTO schema_migrations VALUES(7, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
+                versions.append(7)
+            if versions != [1, 2, 3, 4, 5, 6, 7]:
                 raise RuntimeError('Unsupported database schema version')
 
     @contextmanager
@@ -221,9 +242,15 @@ class Database:
         except sqlite3.Error as exc:
             if connection is not None:
                 connection.rollback()
+            # Structural/association failures require an operator, not another
+            # worker or model call. Other IO/locking failures retain recovery.
+            text = str(exc).lower()
+            permanent = ((getattr(exc, 'sqlite_errorcode', 0) & 255) in {sqlite3.SQLITE_CORRUPT, sqlite3.SQLITE_NOTADB, sqlite3.SQLITE_SCHEMA}
+                or any(part in text for part in ('no such table','no such column','unique constraint failed',
+                    'foreign key constraint failed','check constraint failed','immutable ')))
             raise ContractFailure(ContractError(
                 code=ErrorCode.PERSISTENCE_FAILURE, message='保存或读取失败，事务已回滚。',
-                recoverable=True, allowed_actions=[AllowedAction.RETRY],
+                recoverable=not permanent, allowed_actions=[AllowedAction.CONTACT_OPERATOR if permanent else AllowedAction.RETRY],
             )) from exc
         except BaseException:
             if connection is not None:
@@ -237,6 +264,6 @@ class Database:
         try:
             with self.transaction(write=False) as connection:
                 versions = [row[0] for row in connection.execute('SELECT version FROM schema_migrations ORDER BY version')]
-                return versions == [1, 2, 3, 4, 5, 6]
+            return versions == [1, 2, 3, 4, 5, 6, 7]
         except ContractFailure:
             return False

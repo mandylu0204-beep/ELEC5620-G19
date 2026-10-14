@@ -20,10 +20,22 @@ class PlanningDispatcher:
         self.redeliveries = {}
         self.closing = False
         state.workflows.context_provider = self.context
+        state.workflows.logistics_facts_provider = self.logistics_facts
+
+    def logistics_facts(self, scope, input):
+        from ..agents.rules import logistics
+        import json
+        snapshot = self.state.runtime.for_scope(scope)
+        if snapshot.demo != scope.demo_context or snapshot.dataset != scope.dataset_context:
+            fail(ErrorCode.STALE_CONTEXT, '物流验证配置已变化，请开启新运行。')
+        return logistics.assess(snapshot.agent.dataset, input, expected_mode=ExecutionMode.AGENT,
+            safety_case_ids=json.loads(scope.dataset_context.selection_config['safety_case_ids']))
 
     @property
     def available(self):
         if self.closing or not self.state.settings.planning_enabled or self.state.settings.execution_mode == ExecutionMode.STUB:
+            return False
+        if self.state.settings.logistics_execution == 'model' and not self.state.database.ready():
             return False
         try:
             return self.state.runtime.resolve().agent is not None
@@ -156,8 +168,6 @@ class PlanningDispatcher:
             workflow.fail_dispatch(user, run_id, ContractError(code='CONTRACT_INVALID', message='工作流返回内容与保存记录不一致，请联系开发负责人。', allowed_actions=['CONTACT_OPERATOR']), attempt=attempt)
         except ContractFailure as exc:
             error = exc.error
-            if error.code == ErrorCode.PERSISTENCE_FAILURE:
-                error = error.model_copy(update={'recoverable': True, 'allowed_actions': ['RETRY']})
             try:
                 workflow.fail_dispatch(user, run_id, error, attempt=attempt)
             except ContractFailure:

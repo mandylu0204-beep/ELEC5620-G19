@@ -11,6 +11,7 @@ from ..contracts.enums import ErrorCode
 from .port import SqlitePersistencePort
 from .repository import Repository, encode, fingerprint, now
 from ..application.model_audit import load_model_trace
+from ..application.logistics_audit import load_audits
 
 
 class FinaliseInput(ContractModel):
@@ -48,7 +49,14 @@ class FinalisationService:
             row = connection.execute('SELECT * FROM final_records WHERE id=? AND plan_id=?', (final_id, plan_id)).fetchone()
             if not row:
                 fail(ErrorCode.NOT_FOUND, '最终方案不存在。')
-            return {'final_record': json.loads(row['payload']), **final_index(row, plan)}
+            snapshot = json.loads(row['payload'])
+            run = connection.execute('SELECT scope FROM runs WHERE id=?', (row['run_id'],)).fetchone()
+            scope = RunScope.model_validate_json(run['scope'])
+            audits = load_audits(connection, scope, Repository.stored_version(connection, scope))
+            if snapshot.get('model_assessment_audits', {}) != audits:
+                from ..application.logistics_audit import integrity
+                integrity()
+            return {'final_record': snapshot, **final_index(row, plan)}
 
     def submit(self, user, plan_id, body: FinaliseInput):
         require_role(user, 'CAMPER')
@@ -98,6 +106,7 @@ class FinalisationService:
                 'version_revision': version.revision + 1, 'confirmed_context': confirmed.model_dump(mode='json'),
                 'content': version.content.model_dump(mode='json'), 'assessments': [item.model_dump(mode='json') for item in assessments],
                 'model_planning_trace': load_model_trace(connection, scope, version),
+                'model_assessment_audits': load_audits(connection, scope, version),
                 'review': review.model_dump(mode='json') if review else None,
                 'eligibility_at_finalisation': eligibility.model_dump(mode='json'),
                 'recommendations': json.loads(recommendation['payload']) if recommendation else None,

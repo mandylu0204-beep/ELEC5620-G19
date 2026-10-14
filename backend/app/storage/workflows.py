@@ -4,16 +4,18 @@ The trusted dispatcher supplies current demo/data context and passes only the
 claimed persistence capability to B. Attempt IDs never come from HTTP or B.
 """
 from dataclasses import dataclass
+from typing import Mapping
 import time
 from uuid import uuid4
 
 from ..auth import fail, require_role
-from ..contracts.dto import ConfirmedContext, RunScope, RunSnapshot, StoredRecommendations, StoredAssessment, RouteResult
+from ..contracts.dto import ConfirmedContext, RunScope, RunSnapshot, StoredRecommendations, StoredAssessment, RouteResult, VersionContext, LogisticsResult
 from ..contracts.enums import ErrorCode, RunStage, RunStatus
 from ..contracts.errors import ContractError
 from .port import SqlitePersistencePort
 from .repository import Repository, encode, fingerprint, now
 from ..application.model_audit import load_model_trace
+from ..application.logistics_audit import load_audits, save as save_logistics
 
 
 @dataclass(frozen=True)
@@ -38,6 +40,10 @@ class RecoveryPort(SqlitePersistencePort):
 
     async def load_checkpoint(self):
         return self.workflow.checkpoint(self.user, self.attempt)
+
+    async def save_model_logistics_assessment(self, context: VersionContext, result: LogisticsResult,
+            plan: Mapping[str, object], trace: Mapping[str, object], write_key: str) -> StoredAssessment:
+        return await save_logistics(self, context, result, plan, trace, write_key)
 
     async def heartbeat(self):
         self.workflow.renew(self.user, self.attempt)
@@ -66,6 +72,7 @@ class WorkflowService:
         self.db, self.clock, self.lease_seconds = database, clock, lease_seconds
         self.repository = Repository(database)
         self.context_provider = context_provider
+        self.logistics_facts_provider = None
 
     @staticmethod
     def command_key(key):
@@ -120,6 +127,7 @@ class WorkflowService:
         binding = connection.execute('SELECT * FROM run_versions WHERE run_id=?', (scope.run_id,)).fetchone()
         if binding:
             version = Repository.stored_version(connection, scope)
+            load_audits(connection, scope, version)
             if plan['current_version_id'] != version.version_context.plan_version_id or Repository.input_fingerprint(scope, confirmed, version.content.model_dump(mode='json')) != binding['fingerprint']:
                 fail(ErrorCode.STALE_CONTEXT, '版本或 fingerprint 已变化，不能恢复旧运行。')
         elif plan['current_version_id'] != scope.expected_current_version_id:
@@ -217,6 +225,7 @@ class WorkflowService:
                 'recommendations': StoredRecommendations.model_validate_json(recommendations['payload']) if recommendations else None,
                 'version': Repository.stored_version(connection, attempt.scope) if binding else None,
                 'model_planning_trace': load_model_trace(connection, attempt.scope, Repository.stored_version(connection, attempt.scope)) if binding else None,
+                'model_assessment_audits': load_audits(connection, attempt.scope, Repository.stored_version(connection, attempt.scope)) if binding else {},
                 'previous_version': previous_version,
                 'assessments': [StoredAssessment.model_validate_json(row['payload']) for row in connection.execute('SELECT payload FROM assessments WHERE run_id=? ORDER BY kind', (attempt.scope.run_id,))],
                 'route': RouteResult.model_validate_json(route['result']) if route else None,

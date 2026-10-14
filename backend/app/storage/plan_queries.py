@@ -8,6 +8,7 @@ from .port import SqlitePersistencePort
 from .repository import Repository
 from .finalisation import final_index
 from ..application.model_audit import load_model_trace
+from ..application.logistics_audit import load_audits
 
 
 def unpack(row, column):
@@ -102,6 +103,7 @@ class PlanQueries:
                         stored['status'] = 'FINALISED'
                 result['version'] = stored
                 result['model_planning_trace'] = load_model_trace(connection, scope, version)
+                result['model_assessment_audits'] = load_audits(connection, scope, version)
                 result['assessments'] = [StoredAssessment.model_validate_json(row['payload']).model_dump(mode='json')
                     for row in connection.execute('SELECT payload FROM assessments WHERE run_id=? AND version_id=? ORDER BY kind', (run['id'], binding['version_id']))]
                 if active and plan['current_version_id'] == binding['version_id'] and version.status != 'FINALISED':

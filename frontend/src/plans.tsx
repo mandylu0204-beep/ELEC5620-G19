@@ -5,6 +5,7 @@ import { RetryPlanning, ChangePlanning } from './planning';
 import { NextSteps } from './next_steps';
 import { NearMatches, type RecommendationGuidance } from './near_matches';
 import { ModelTracePanel, type ModelTrace } from './model_trace';
+import { LogisticsPlanPanel, LogisticsTracePanel, type LogisticsAudit } from './logistics_plan';
 import { ApiFailure, type ApiError, type Requirements } from './api';
 import { ProfileSummary, equipmentLabel, type Profile } from './profile';
 import { privateApi, useSession } from './session';
@@ -20,7 +21,7 @@ type Safety = Artifact & {outcome:string;risk_level:string;confidence:string;req
 type Assessment = {assessment_id:string;kind:string;version_context:Version['version_context'];result:Logistics|Safety};
 type Eligibility = {eligible:boolean;blocking_reasons:Blocker[];review_required:boolean;valid_review_id:string|null};
 export type FinalIndex = {final_id:string;plan_version_id:string;run_id:string;version_number:number;finalised_at:string;is_current:boolean};
-export type PlanDetail = {recommendation_guidance?:RecommendationGuidance|null;model_planning_trace?:ModelTrace|null;revision_available?:boolean;reassessment_available?:boolean;current_version_revision?:number|null;current_inputs_error?:string|null;planning_available?:boolean;retry_available?:boolean;retry_unavailable_reason?:string|null;finalisation_available:boolean;last_final:FinalIndex|null;selected_final:FinalIndex|null;final_history:FinalIndex[];reviews:{review_id:string;decision:string;reason:string;reviewer_user_id:string}[];review_available?:boolean;plan:{plan_id:string;request_id:string;active_run_id:string|null;current_version_id:string|null;final_version_id:string|null;created_at:string};run:Run|null;run_history:{run_id:string;status:string;stage:string;created_at:string;plan_version_id:string|null;version_number:number|null}[];confirmed_context:{request_id:string;requirements:Requirements;profile_snapshot:Profile;demo_context:{demo_today:string;mode:string};dataset_context:{dataset_version:string;rules_version:string}}|null;events:{id:number;stage:string;status:string;error:ErrorInfo|null;created_at:string}[];version:Version|null;assessments:Assessment[];recommendations:{recommendation_id:string;result:Artifact & {search_outcome:string;candidates:{campsite_id:string;rank:number;reasons:string[];material_uncertainties:string[]}[];excluded_candidates:{campsite_id:string;reasons:string[]}[]}}|null;route:{status:string;eligibility:Eligibility}|null;eligibility:Eligibility|null};
+export type PlanDetail = {model_assessment_audits?:Record<string,LogisticsAudit>;recommendation_guidance?:RecommendationGuidance|null;model_planning_trace?:ModelTrace|null;revision_available?:boolean;reassessment_available?:boolean;current_version_revision?:number|null;current_inputs_error?:string|null;planning_available?:boolean;retry_available?:boolean;retry_unavailable_reason?:string|null;finalisation_available:boolean;last_final:FinalIndex|null;selected_final:FinalIndex|null;final_history:FinalIndex[];reviews:{review_id:string;decision:string;reason:string;reviewer_user_id:string}[];review_available?:boolean;plan:{plan_id:string;request_id:string;active_run_id:string|null;current_version_id:string|null;final_version_id:string|null;created_at:string};run:Run|null;run_history:{run_id:string;status:string;stage:string;created_at:string;plan_version_id:string|null;version_number:number|null}[];confirmed_context:{request_id:string;requirements:Requirements;profile_snapshot:Profile;demo_context:{demo_today:string;mode:string};dataset_context:{dataset_version:string;rules_version:string}}|null;events:{id:number;stage:string;status:string;error:ErrorInfo|null;created_at:string}[];version:Version|null;assessments:Assessment[];recommendations:{recommendation_id:string;result:Artifact & {search_outcome:string;candidates:{campsite_id:string;rank:number;reasons:string[];material_uncertainties:string[]}[];excluded_candidates:{campsite_id:string;reasons:string[]}[]}}|null;route:{status:string;eligibility:Eligibility}|null;eligibility:Eligibility|null};
 type PlanRow = {last_final:FinalIndex|null;plan_id:string;request_id:string;destination:string|null;created_at:string;execution_mode:string|null;run_status:string|null;stage:string|null;version_status:string|null;version_number:number|null};
 const LABEL:{[key:string]:string} = {PENDING:'等待执行',RUNNING:'执行中',SUCCEEDED:'流程已结束',FAILED:'执行失败',CANCELLED:'已取消',SUPERSEDED:'已被新运行取代',RECOMMENDING:'推荐营地',GENERATING:'生成行程',SAVING_VERSION:'保存版本',ASSESSING_LOGISTICS:'装备与物流',ASSESSING_SAFETY:'安全评估',ROUTING:'判断下一步',COMPLETED:'流程结束',DRAFT:'草稿',ASSESSING:'正在评估',REVISION_REQUIRED:'需要修订',ESCALATED:'等待人工审核',BLOCKED:'禁止放行',ELIGIBLE_FOR_FINALISATION:'可以保存方案',REJECTED:'审核未通过',FINALISED:'已保存',PASSED:'评估通过',REVISION:'需要修订',REVIEW:'需要审核',WEATHER:'天气',FIRE:'营火限制',ROAD:'道路',RESTRICTION:'营地限制',AVAILABLE:'可用',MISSING:'缺失',STALE:'过期',CONFLICTING:'冲突',LOW:'低',MEDIUM:'中',HIGH:'高',UNKNOWN:'未知',OPEN:'开放',CLOSED:'关闭',OWNED:'已自备',CONFIRMED_RENTAL:'已确认租借',UNCONFIRMED:'未确认',CAMPSITE:'营地',TRANSPORT:'交通',FOOD:'食物',WATER:'饮用水',ADDITIONAL_GEAR:'新增装备',PLAN:'初次规划',REASSESS:'重新评估',REVISE:'方案修订',TRAVEL:'交通',CAMP:'露营',ACTIVITY:'活动'};
 const STAGES=['RECOMMENDING','GENERATING','SAVING_VERSION','ASSESSING_LOGISTICS','ASSESSING_SAFETY','ROUTING','COMPLETED'];
@@ -64,7 +65,7 @@ const CAMPSITE_NAMES: Record<string, string> = {
   'demo-moonlit-field':'Demo Moonlit Field',
 };
 export const campName = (id: string) => CAMPSITE_NAMES[id] ?? id;
-const unitName = (unit: string) => ({item:'件',person_space:'人位',litre:'升',portion:'份',vehicle:'辆',plan:'份计划',per_night:'晚',per_kilometre:'公里',per_vehicle:'辆',per_person_per_day:'人天',one_time:'次'} as Record<string,string>)[unit] ?? unit;
+const unitName = (unit: string) => ({item:'件',person_space:'人位',litre:'升',portion:'份',vehicle:'辆',plan:'份计划',per_night:'晚',per_kilometre:'公里',per_vehicle:'辆',per_person_per_day:'人天',one_time:'次',not_procured:'暂不采购'} as Record<string,string>)[unit] ?? unit;
 type PlanSection = 'itinerary' | 'gear' | 'cost' | 'safety' | 'history';
 const PLAN_SECTIONS: {id:PlanSection; title:string}[] = [
   {id:'itinerary',title:'行程'},{id:'gear',title:'装备'},{id:'cost',title:'费用'},
@@ -78,6 +79,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
   const logistics = data.assessments.find(item=>item.kind==='LOGISTICS')?.result as Logistics|undefined;
   const safety = data.assessments.find(item=>item.kind==='SAFETY')?.result as Safety|undefined;
   const recommendation = data.recommendations?.result;
+  const logisticsAudit = data.model_assessment_audits?.LOGISTICS;
   const noMatch = recommendation?.search_outcome==='NO_MATCH';
   const {version,run,confirmed_context:confirmed} = data;
   const validApproval = !data.current_inputs_error&&data.reviews.some(item=>item.decision==='APPROVE'&&(
@@ -149,7 +151,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
     <div {...pane('itinerary')}>
       {noMatch?data.recommendation_guidance?<NearMatches value={data.recommendation_guidance} requestId={data.plan.request_id}/>:<section className="panel"><h2>没有满足需求的营地</h2><p>请在“记录”中查看被排除营地的理由，调整条件并重新确认需求。</p></section>:<section className="panel itinerary-panel"><div className="section-title"><span className="eyebrow">YOUR ITINERARY</span><h2>行程安排</h2></div>
         {version?<><div className="itinerary-camps">{version.content.selected_campsite_ids.map(id=><span key={id}>{campName(id)}</span>)}</div>
-          {run?.operation==='REASSESS'&&<p className="muted">行程保持不变，已重新检查装备、费用与安全。</p>}
+          {run?.operation==='REASSESS'&&<p className="muted">行程保持不变，已重新检查装备、费用与安全。{logisticsAudit&&'本次装备与预算建议由模型重新评估。'}</p>}
           {version.content.itinerary_entries.length?<ol className="plan-timeline">{version.content.itinerary_entries.map((entry,index)=><li key={index}>
             <div className="timeline-time"><span>{label(entry.entry_kind)}</span><time>{time(entry.start_at)}</time></div>
             <div className="timeline-content"><h3>{entry.campsite_id?campName(entry.campsite_id):label(entry.entry_kind)}</h3><p>{entry.description}</p><small>至 {time(entry.end_at)}</small></div>
@@ -168,7 +170,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
         </tr>)}</tbody></table></div>{!logistics.gear_checklist.length&&<p className="muted">没有提供装备清单。</p>}
         <Blockers items={logistics.mandatory_blockers}/>{logistics.clarifications.map((item,index)=><p className="clarifications" key={index}>{item.question} · {item.reason}</p>)}<Notes artifact={logistics}/>
       </>:<p className="plan-empty-text">尚未保存装备与物流评估。</p>}
-    </section></div>
+    </section><LogisticsPlanPanel value={logisticsAudit} section="gear" money={aud} itemName={equipmentLabel} unitName={unitName}/></div>
     <div {...pane('cost')}><section className="panel"><div className="section-title"><span className="eyebrow">YOUR BUDGET</span><h2>费用与预算</h2></div>
       {logistics?<><div className="cost-summary"><div><span>费用估算</span><strong>{aud(logistics.total_cents)}</strong></div><div><span>已知部分小计</span><strong>{aud(logistics.known_subtotal_cents)}</strong></div><div><span>小组预算</span><strong>{aud(requirements?.budget_cents)}</strong></div><div className={overBudget?'cost-over-budget':''}><span>{logistics.budget_difference_cents===null?'预算差额':overBudget?'超出预算':'预算剩余'}</span><strong>{aud(logistics.budget_difference_cents===null?null:Math.abs(logistics.budget_difference_cents))}</strong></div></div>
         {logistics.total_cents===null&&<p className="clarifications">费用尚不完整，已知小计不能作为最终总费用。</p>}
@@ -176,7 +178,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
           <td>{label(line.category)}{line.category==='CAMPSITE'&&<small className="cost-site">{campName(line.item_key)}</small>}</td><td>{line.quantity??'未知'} {unitName(line.unit)}</td><td>{aud(line.unit_price_cents)}</td><td>{aud(line.subtotal_cents)}</td><td>{line.assumption&&<details><summary>计算说明</summary><p>{line.assumption}</p></details>}{line.source_ref?<Sources refs={[line.source_ref]}/>:<span>来源未提供</span>}</td>
         </tr>)}</tbody></table></div><Notes artifact={logistics}/>
       </>:<p className="plan-empty-text">尚未保存费用，金额未知。</p>}
-    </section></div>
+    </section><LogisticsPlanPanel value={logisticsAudit} section="cost" money={aud} itemName={equipmentLabel} unitName={unitName}/></div>
     <div {...pane('safety')}><section className="panel"><div className="section-title"><span className="eyebrow">CHECK BEFORE YOU GO</span><h2>安全与证据</h2></div>
       {safety?<><div className="safety-summary"><span>风险：{label(safety.risk_level)}</span><span>置信度：{label(safety.confidence)}</span><strong>评估：{label(safety.outcome)}</strong><span>{validApproval?'人工审核已批准':safety.requires_human_review?'需要人工审核':'未要求人工审核'}</span></div>
         <div className="safety-quality">{Object.entries(safety.data_quality).map(([kind,status])=><div className={status==='AVAILABLE'?'quality-available':'quality-issue'} key={kind}><span>{label(kind)}证据</span><strong>{status==='AVAILABLE'?'已提供':label(status)}</strong></div>)}</div>
@@ -192,7 +194,8 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
           <details><summary>查看执行记录（{data.events.length}）</summary>{data.events.length?<ol className="event-list">{data.events.map(event=><li key={event.id}>{time(event.created_at)} · {label(event.stage)} · {label(event.status)}{event.error&&<p>{event.error.message}</p>}</li>)}</ol>:<p className="muted">尚无执行记录。</p>}</details>
         </>:<p className="muted">尚未登记规划。</p>}
       </section>
-      <ModelTracePanel value={data.model_planning_trace} currentRunId={run?.run_id}/>
+      <ModelTracePanel value={data.model_planning_trace} currentRunId={run?.run_id} logisticsModel={!!logisticsAudit}/>
+      <LogisticsTracePanel value={logisticsAudit}/>
       <section className="panel"><h2>审核记录</h2>{data.reviews.length?data.reviews.map(item=><article key={item.review_id}><h3>{item.decision==='APPROVE'?'已批准':item.decision==='REJECT'?'已拒绝':'要求修订'}</h3><p>{item.reason}</p><small>审核人：{item.reviewer_user_id}</small></article>):<p className="muted">尚无审核决定。</p>}</section>
       <section className="panel"><h2>本次需求</h2>{confirmed&&<><p>{requirements?.start_date} → {requirements?.end_date} · {requirements?.duration_nights} 晚 / {requirements?.duration_days} 天 · {aud(requirements?.budget_cents)}</p><details><summary>本次采用的资料</summary><ProfileSummary profile={confirmed.profile_snapshot}/></details></>}
         <details className="source-details"><summary>记录编号与输入指纹</summary><p className="identifier">{run?.run_id??'未登记'}</p><p className="identifier">{version?.version_context.input_fingerprint??'尚未保存版本指纹'}</p></details>

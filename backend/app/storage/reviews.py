@@ -12,6 +12,7 @@ from ..contracts.errors import ContractFailure
 from .plan_queries import PlanQueries
 from .port import SqlitePersistencePort
 from .repository import Repository, encode, fingerprint, now
+from ..application.logistics_audit import load_audits
 
 
 class ReviewInput(ContractModel):
@@ -51,6 +52,8 @@ class ReviewService:
             result = []
             for row in rows:
                 item = dict(row)
+                scope = RunScope.model_validate_json(connection.execute('SELECT scope FROM runs WHERE id=?', (item['run_id'],)).fetchone()['scope'])
+                load_audits(connection, scope, Repository.stored_version(connection, scope))
                 confirmed = json.loads(item.pop('confirmed_context'))
                 content = json.loads(item.pop('content'))
                 # Project only this active run's bound version. Older evidence

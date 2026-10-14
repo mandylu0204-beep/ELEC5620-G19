@@ -15,6 +15,7 @@ from ..contracts.enums import (
 from .database import Database
 from .repository import Repository, encode, fingerprint, now
 from ..application.model_audit import required as model_trace_required, trace_payload, validate_trace, trace_hash, load_model_trace
+from ..application.logistics_audit import required as logistics_audit_required, load_audits
 
 
 class SqlitePersistencePort:
@@ -131,15 +132,23 @@ class SqlitePersistencePort:
 
     async def save_assessment(self, context: VersionContext, kind: AssessmentKind, result, write_key: str):
         kind = AssessmentKind(kind)
+        if kind == AssessmentKind.LOGISTICS and logistics_audit_required(self.scope):
+            fail(ErrorCode.CONTRACT_INVALID, '模型物流必须同时保存结构化方案和独立审计。')
         result = (LogisticsResult if kind == AssessmentKind.LOGISTICS else SafetyResult).model_validate(result)
         self.validate_mode(result)
         if result.version_context != context:
             fail(ErrorCode.CONTRACT_INVALID, '评估上下文不一致。')
+        if kind == AssessmentKind.SAFETY and logistics_audit_required(self.scope):
+            with self.db.transaction(write=False) as connection:
+                self.active(connection, execution=True)
+                load_audits(connection, self.scope, Repository.stored_version(connection, self.scope), must_exist=True)
         def save(connection):
             self.context(connection, context)
             assessment_id, gear_id = uuid4().hex, uuid4().hex if kind == AssessmentKind.LOGISTICS else None
             dependency = None if kind == AssessmentKind.LOGISTICS else result.depends_on_assessment_id
             if dependency:
+                if logistics_audit_required(self.scope):
+                    load_audits(connection, self.scope, Repository.stored_version(connection, self.scope), must_exist=True)
                 row = connection.execute("SELECT 1 FROM assessments WHERE id=? AND run_id=? AND version_id=? AND kind='LOGISTICS'", (dependency, context.run_id, context.plan_version_id)).fetchone()
                 if not row:
                     fail(ErrorCode.STALE_CONTEXT, '安全评估依赖的物流评估无效。')
@@ -151,6 +160,7 @@ class SqlitePersistencePort:
         return self.write('logistics' if kind == AssessmentKind.LOGISTICS else 'safety', write_key, {'context': context.model_dump(mode='json'), 'kind': kind.value, 'result': result.model_dump(mode='json')}, StoredAssessment, save)
 
     def assessments(self, connection, context):
+        load_audits(connection, self.scope, Repository.stored_version(connection, self.scope))
         return [StoredAssessment.model_validate_json(row['payload']) for row in connection.execute('SELECT payload FROM assessments WHERE run_id=? AND version_id=? ORDER BY kind', (context.run_id, context.plan_version_id))]
 
     def review(self, connection, context, assessment_ids):
@@ -237,6 +247,10 @@ class SqlitePersistencePort:
         return route, eligibility
 
     async def route_assessed_version(self, context, proposed_route, reason, write_key):
+        # Audit validation precedes receipt replay as well as first routing.
+        with self.db.transaction(write=False) as connection:
+            self.active(connection, execution=True)
+            load_audits(connection, self.scope, Repository.stored_version(connection, self.scope), must_exist=logistics_audit_required(self.scope))
         proposed_route = PlanVersionStatus(proposed_route)
         if proposed_route not in {PlanVersionStatus.BLOCKED, PlanVersionStatus.REVISION_REQUIRED, PlanVersionStatus.ESCALATED, PlanVersionStatus.ELIGIBLE_FOR_FINALISATION}:
             fail(ErrorCode.INVALID_STATE, 'Agent 不允许设置此版本状态。')
@@ -260,6 +274,8 @@ class SqlitePersistencePort:
             return self.decision(connection, context)[1]
 
     def validate_completion(self, connection, stage):
+        if connection.execute('SELECT 1 FROM run_versions WHERE run_id=?', (self.scope.run_id,)).fetchone():
+            load_audits(connection, self.scope, Repository.stored_version(connection, self.scope), must_exist=logistics_audit_required(self.scope))
         if model_trace_required(self.scope) and connection.execute('SELECT 1 FROM run_versions WHERE run_id=?', (self.scope.run_id,)).fetchone():
             load_model_trace(connection, self.scope, Repository.stored_version(connection, self.scope))
         recommendation = connection.execute('SELECT payload FROM recommendations WHERE run_id=?', (self.scope.run_id,)).fetchone()
