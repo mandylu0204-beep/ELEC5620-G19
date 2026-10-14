@@ -72,6 +72,19 @@ def test_no_match_is_saved_business_outcome_not_fake_failure(view_client):
     assert result['run']['status']=='SUCCEEDED' and result['run']['error'] is None
     assert result['recommendations']['result']['search_outcome']=='NO_MATCH'
     assert result['version'] is None and result['assessments']==[] and result['eligibility'] is None
+    row=next(item for item in client.get('/api/v1/plans').json()['plans'] if item['plan_id']==scope.plan_id)
+    assert row['search_outcome']=='NO_MATCH' and row['version_number'] is None
+    assert (row['start_date'],row['end_date'])==('2026-10-20','2026-10-22')
+
+
+def test_list_new_pending_run_does_not_show_previous_versions_result(view_client):
+    client,app,user=view_client
+    original,version=create(app.state.repository,user,'previous-blocked','closed')
+    app.state.repository.begin_run(user,original.request_id,original.demo_context,original.dataset_context,
+        plan_id=original.plan_id,operation='REVISE',expected_current_version_id=version.version_context.plan_version_id)
+    row=next(item for item in client.get('/api/v1/plans').json()['plans'] if item['plan_id']==original.plan_id)
+    assert row['run_status']=='PENDING' and row['version_status'] is None
+    assert row['version_number'] is None and row['search_outcome'] is None
 
 
 def test_technical_failure_preserves_recommendations(view_client):

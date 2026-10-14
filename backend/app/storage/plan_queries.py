@@ -26,7 +26,8 @@ class PlanQueries:
                 p.final_version_id,p.active_run_id,p.created_at,r.status AS run_status,r.stage,
                 r.scope,v.status AS version_status,v.version_number,r.confirmed_context
                 FROM plans p LEFT JOIN runs r ON r.id=p.active_run_id
-                LEFT JOIN versions v ON v.id=p.current_version_id
+                LEFT JOIN run_versions rv ON rv.run_id=r.id
+                LEFT JOIN versions v ON v.id=rv.version_id
                 WHERE p.owner_id=? ORDER BY p.created_at DESC,p.id''', (user.id,))
             result = []
             for row in rows:
@@ -35,6 +36,10 @@ class PlanQueries:
                 item.pop('scope'); item.pop('confirmed_context')
                 item['execution_mode'] = scope['demo_context']['mode'] if scope else None
                 item['destination'] = confirmed['requirements']['destination'] if confirmed else None
+                recommendation = connection.execute('SELECT payload FROM recommendations WHERE run_id=?', (row['active_run_id'],)).fetchone()
+                item['search_outcome'] = StoredRecommendations.model_validate_json(recommendation['payload']).result.search_outcome if recommendation else None
+                item['start_date'] = confirmed['requirements']['start_date'] if confirmed else None
+                item['end_date'] = confirmed['requirements']['end_date'] if confirmed else None
                 final = connection.execute('SELECT * FROM final_records WHERE plan_id=? ORDER BY rowid DESC LIMIT 1', (row['plan_id'],)).fetchone()
                 item['last_final'] = final_index(final, row) if final else None
                 result.append(item)

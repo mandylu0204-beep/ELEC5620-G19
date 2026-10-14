@@ -1,60 +1,51 @@
 import { Link } from 'react-router-dom';
 import type { PlanDetail } from './plans';
 
-// These are navigation hints. Only the server's saved eligibility and action
-// flags decide whether review, revision or finalisation is allowed.
-export function NextSteps({ data }: { data: PlanDetail }) {
-  const run = data.run;
-  if (!run?.is_active || ['PENDING', 'RUNNING'].includes(run.status)) return null;
-  const reasons = new Set(data.eligibility?.blocking_reasons.map(item => item.code));
-  const review = data.reviews.at(-1);
-  const safety = data.assessments.find(item => item.kind === 'SAFETY')?.result;
-  const quality = safety && 'data_quality' in safety ? Object.values(safety.data_quality) : [];
-  let title = '先处理当前方案的问题';
-  let description = '查看下面的具体原因。修改行程会生成新版本；修改日期、人数、预算或偏好需重新确认需求。';
-  if (data.current_inputs_error) {
-    title = '当前输入已变化';
-    description = '当前数据或运行配置与这次评估不同。先核对配置和需求，再按当前输入重新确认或评估。旧结果不能直接放行。';
-  } else if (run.status === 'FAILED') {
-    if (run.error?.code === 'REQUEST_NOT_CONFIRMED') {
-      title = '需要重新确认需求';
-      description = '本次修改涉及已确认的预算、日期或约束。原需求没有被改写；请新建需求，核对新摘要并明确确认后再规划。';
-    } else if (run.error?.code === 'INPUT_INVALID') {
-      title = '本次要求未能执行';
-      description = '当前模式不支持本次输入或修改意见。请查看执行原因，调整需求并重新确认；重复重试不会改变不支持的要求。';
-    } else {
-      title = '规划执行中断';
-      description = data.retry_available
-        ? '已保存的产物仍然保留。可使用下方“重试规划”从中断阶段继续；重试不会解除业务阻止条件。'
-        : data.retry_unavailable_reason ?? '请核对服务与当前输入，再刷新记录。尚未完成的执行不能保存为最终方案。';
+// Navigation guidance only; all operations remain controlled by server flags.
+export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}) {
+  const run=data.run;
+  if(!run?.is_active||['PENDING','RUNNING'].includes(run.status))return null;
+  const reasons=new Set(data.eligibility?.blocking_reasons.map(item=>item.code));
+  const review=data.reviews.at(-1);
+  const safety=data.assessments.find(item=>item.kind==='SAFETY')?.result;
+  const quality=safety&&'data_quality' in safety?Object.values(safety.data_quality):[];
+  let title='调整方案后再确认';
+  let description='按列出的问题调整安排。修改日期、人数、预算、偏好或露营资料时，需要重新确认需求。';
+  if(data.current_inputs_error){
+    title='此前的检查结果需要更新';
+    description=/变化|不同|不一致|漂移/.test(data.current_inputs_error)
+      ? '用于检查方案的资料或服务设置已更新，此前的费用和安全结果仅供参考。可以保留行程重新检查；如修改日期、人数或预算，请重新确认需求。'
+      : '当前暂时无法核对这份方案此前的检查结果，请先恢复检查服务。原行程仍然保留。';
+  }else if(run.status==='FAILED'){
+    if(run.error?.code==='REQUEST_NOT_CONFIRMED'){
+      title='请重新确认需求';description='修改涉及预算、日期或必须条件，请核对新需求并确认后再规划。';
+    }else if(run.error?.code==='INPUT_INVALID'){
+      title='请调整本次要求';description='本次输入或修改意见暂不支持，请查看原因并调整需求后重新确认。';
+    }else{
+      title='规划暂未完成';description=data.retry_available?'原方案和已完成的检查已保留，可从中断位置继续规划。':'当前暂时无法继续规划，请联系项目负责人检查服务。';
     }
-  } else if (data.recommendations?.result.search_outcome === 'NO_MATCH') {
-    title = '没有满足需求的营地';
-    description = '下方会比较最接近的营地，逐项说明未满足条件和待核实信息。参考差异调整预算、日期或必须条件，再重新确认需求。';
-  } else if (data.version?.status === 'FINALISED') {
-    return null;
-  } else if (data.finalisation_available && data.eligibility?.eligible) {
-    title = review?.decision === 'APPROVE' ? '本次审核已批准，可以最终保存' : '当前方案可以最终保存';
-    description = '阅读行程、费用、装备与安全依据，在页面下方勾选确认并保存。只有最终保存成功后，方案才会标为已最终化。';
-  } else if (quality.some(value => ['MISSING', 'STALE', 'CONFLICTING'].includes(value))) {
-    title = quality.includes('CONFLICTING') ? '先解决证据冲突' : quality.includes('STALE') ? '先更新过期证据' : '先补齐安全证据';
-    description = '查看“安全与证据”中的具体类别、来源和适用日期。Founder 批准不能补齐或替代这些证据；证据更新后需开启新的评估。';
-  } else if (reasons.has('ROAD_CLOSED') || reasons.has('ROAD_UNAVAILABLE') || reasons.has('FIRE_PROHIBITED') || reasons.has('CAMPSITE_CLOSED')) {
-    title = '先解决强制阻止条件';
-    description = '道路关闭、营地关闭或禁止营火不能由人工批准解除。更换可用营地，或调整需求并重新确认，再生成和评估新方案。';
-  } else if (review?.decision === 'REQUEST_REVISION' || review?.decision === 'REJECT') {
-    title = review.decision === 'REJECT' ? '审核未通过，请调整方案' : 'Founder 要求修订';
-    description = '按审核理由调整。若只更换营地，可使用方案修订；若改变日期、预算、人数或偏好，请新建并确认需求。';
-  } else if (reasons.size === 1 && reasons.has('REVIEW_REQUIRED')) {
-    title = '等待 Founder 审核';
-    description = '当前方案需要负责人审核，审核完成后可继续。';
-  } else if (reasons.has('REVISION_REQUIRED')) {
-    title = '需要修订后再检查';
-    description = '按费用差额、装备缺口和审核理由处理。补充露营资料不会改写本次快照；资料变化后需新建并确认需求。';
+  }else if(data.recommendations?.result.search_outcome==='NO_MATCH'){
+    title='可以参考最接近的营地';description='下方会列出最接近的营地及未满足的条件。参考差异调整预算、日期或必须条件，再重新确认需求。';
+  }else if(data.version?.status==='FINALISED')return null;
+  else if(data.finalisation_available&&data.eligibility?.eligible){
+    title=review?.decision==='APPROVE'?'审核已通过，待你确认保存':'方案已生成，待你确认保存';
+    description='核对行程、费用、装备和安全信息，在页面下方勾选确认后保存最终方案。';
+  }else if(reasons.has('ROAD_CLOSED')||reasons.has('CAMPSITE_CLOSED')||reasons.has('FIRE_PROHIBITED')){
+    title=reasons.has('ROAD_CLOSED')?'请更换可通行的营地':reasons.has('CAMPSITE_CLOSED')?'请更换开放的营地':'请调整营火安排';
+    description='按列出的出行限制调整安排，再检查新方案。审核员不能解除道路、营地关闭或禁火规定。';
+  }else if(quality.some(value=>['MISSING','STALE','CONFLICTING'].includes(value))){
+    title='先确认此次行程的安全信息';description='查看安全页的具体问题和适用日期。可调整日期或营地；若资料本身需要补充或更新，请由项目负责人维护后再检查。重新检查不会自动补齐资料。';
+  }else if(review?.decision==='REQUEST_REVISION'||review?.decision==='REJECT'){
+    title=review.decision==='REJECT'?'审核未通过，请调整方案':'审核员要求调整方案';
+    description='按审核理由调整安排。更换营地可修改方案；更改日期、预算、人数或偏好时，请重新确认需求。';
+  }else if(reasons.size===1&&reasons.has('REVIEW_REQUIRED')){
+    title='等待审核员处理';description='这份方案需要人工核对风险，审核完成后可继续。';
   }
   return <section className="panel next-steps" aria-label="接下来怎么做"><h2>{title}</h2><p>{description}</p>
-    {review && <div className="clarifications"><strong>本次审核理由</strong><p>{review.reason}</p></div>}
-    <div className="plan-actions"><Link className="text-link" to={'/request?copy_from=' + encodeURIComponent(data.plan.request_id)}>调整需求并重新确认 ↗</Link>
-      <Link className="text-link" to="/profile">修改露营资料 ↗</Link></div>
+    {data.current_inputs_error&&<><p className="muted">重新检查会更新装备、费用和安全结果，保留当前行程；资料仍不适用时，方案仍需调整。</p>
+      {data.reassessment_available&&onRecheck?<button className="secondary-button" onClick={onRecheck}>前往重新检查 ↓</button>:<p className="muted">当前暂不能重新检查，请联系项目负责人更新资料或恢复服务。</p>}
+      <details className="source-details"><summary>查看系统详情</summary><p>{data.current_inputs_error}</p></details></>}
+    {review&&<div className="clarifications"><strong>审核理由</strong><p>{review.reason}</p></div>}
+    <div className="plan-actions"><Link className="text-link" to={'/request?copy_from='+encodeURIComponent(data.plan.request_id)}>调整需求并重新确认 ↗</Link><Link className="text-link" to="/profile">修改露营资料 ↗</Link></div>
   </section>;
 }

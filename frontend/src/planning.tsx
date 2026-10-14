@@ -38,14 +38,14 @@ export function ChangePlanning({ data, refresh }: { data: PlanDetail; refresh: (
     } finally { setBusy(false); }
   }
   return <section className="panel planning-change"><h2>调整方案与重新检查</h2>
-    <p>修改方案生成新版本；重新评估保留行程，更新装备、费用与安全检查。</p>
+    <p>修改方案生成新版本；重新检查保留当前行程，更新装备、费用与安全结果；资料仍不适用时，需要调整方案。</p>
     <p className="muted">人数、日期、预算或露营资料有变化？请重新确认需求。</p>
     <label htmlFor="revision-choice">修改目标</label><select id="revision-choice" value={choice} disabled={busy} onChange={event => setChoice(event.target.value)}>
       <option value="change campsite">更换营地</option><option value="cheaper campsite">寻找费用更低的营地</option><option value="custom">填写其他修改意见</option>
     </select>
     {choice === 'custom' && <><label htmlFor="revision-feedback">修改意见</label><textarea id="revision-feedback" value={feedback} maxLength={4000} disabled={busy} onChange={event => setFeedback(event.target.value)} /></>}
     <div className="plan-actions"><button className="primary-button" disabled={busy || !data.revision_available} onClick={() => void submit('revise')}>{busy ? '正在提交…' : '修改方案'}</button>
-      <button className="secondary-button" disabled={busy || !data.reassessment_available} onClick={() => void submit('reassess')}>重新评估</button></div>
+      <button className="secondary-button" disabled={busy || !data.reassessment_available} onClick={() => void submit('reassess')}>保留行程，重新检查</button></div>
     {error && <p className="error-box" role="alert">{error}</p>}
   </section>;
 }
