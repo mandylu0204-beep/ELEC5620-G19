@@ -1,9 +1,10 @@
 """Read-only fact/quote and Decimal budget tools; never confirm procurement."""
 from decimal import Decimal
+from typing import Annotated
 
-from pydantic import Field, StrictInt
+from pydantic import Field, StrictBool, StrictInt, StrictStr, model_validator
 
-from ..contracts.base import ContractModel
+from ..contracts.base import ContractModel, MoneyCents, Quantity
 from ..contracts.dto import CostLine, GearItem, LogisticsResult, SourceRef
 from ..contracts.enums import AssessmentOutcome, ErrorCode
 from .client import model_failure
@@ -26,34 +27,44 @@ REFERENCE_ITEMS = {
 class SupplyPlan(ContractModel):
     fact: GearItem
     method: SupplyMethod
-    procurement_quantity: Decimal | None
-    procurement_unit: str
-    estimated_cost_cents: StrictInt | None
-    cost_line_id: str | None
+    procurement_quantity: Quantity | None
+    procurement_unit: Annotated[StrictStr, Field(min_length=1, max_length=200)]
+    estimated_cost_cents: MoneyCents | None
+    cost_line_id: Annotated[StrictStr, Field(min_length=1, max_length=200)] | None
     price_source: SourceRef | None
-    confirmation_required: bool
-    reason_unverified: str
+    confirmation_required: StrictBool
+    reason_unverified: Annotated[StrictStr, Field(min_length=1, max_length=240)]
 
 
 class BudgetAllocation(ContractModel):
-    line_id: str
-    required_cents: StrictInt | None
-    allocated_cents: StrictInt | None
-    unfunded_cents: StrictInt | None
+    line_id: Annotated[StrictStr, Field(min_length=1, max_length=200)]
+    required_cents: MoneyCents | None
+    allocated_cents: MoneyCents | None
+    unfunded_cents: MoneyCents | None
 
 
 class ValidatedLogisticsPlan(ContractModel):
-    gear_actions: list[SupplyPlan]
-    budget_allocations: list[BudgetAllocation]
-    projected_cost_breakdown: list[CostLine]
-    projected_total_cents: StrictInt | None
+    gear_actions: list[SupplyPlan] = Field(min_length=1, max_length=64)
+    budget_allocations: list[BudgetAllocation] = Field(min_length=1, max_length=128)
+    projected_cost_breakdown: list[CostLine] = Field(min_length=1, max_length=128)
+    projected_total_cents: MoneyCents | None
     known_subtotal_cents: StrictInt = Field(ge=0)
     budget_difference_cents: StrictInt | None
-    budget_feasible: bool | None
+    budget_feasible: StrictBool | None
     unallocated_known_budget_cents: StrictInt = Field(ge=0)
-    requires_user_confirmation: bool
-    decision_summary_unverified: str
+    requires_user_confirmation: StrictBool
+    decision_summary_unverified: Annotated[StrictStr, Field(min_length=1, max_length=1200)]
     source_refs: list[SourceRef]
+
+    @model_validator(mode='after')
+    def complete_unique_choices(self):
+        keys = [item.fact.item_key for item in self.gear_actions]
+        lines = [item.line_id for item in self.budget_allocations]
+        if (len(set(keys)) != len(keys) or len(set(lines)) != len(lines)
+                or not self.decision_summary_unverified.strip()
+                or any(not item.reason_unverified.strip() for item in self.gear_actions)):
+            raise ValueError('Duplicate choices or blank model explanations')
+        return self
 
 
 class LogisticsToolset:

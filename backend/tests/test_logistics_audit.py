@@ -256,9 +256,11 @@ def test_dispatcher_preserves_nonrecoverable_integrity_error(saved):
 
 
 def test_current_factory_fails_explicit_model_mode_without_hybrid_wiring(tmp_path,monkeypatch):
+    from app.agents.hybrid_planning_agent import HybridPlanningAgent
     from campus_http_fixtures import mock_campus
     from test_v2_http_demo import CASES,ROOT
     calls,_=mock_campus(monkeypatch)
+    monkeypatch.setattr(HybridPlanningAgent, 'logistics_audit_contract', None)
     values=CASES['normal']['settings']|{'execution_mode':'agent','logistics_execution':'model'}
     values['dataset_path']=ROOT/values['dataset_path']
     app=create_app(Settings(_env_file=None,database_path=tmp_path/'not-ready.sqlite3',**values))
@@ -319,21 +321,11 @@ def test_upgrade_from_six_keeps_old_user_without_backfilling_audits(tmp_path):
 
 
 def test_factory_seed_has_no_self_reference_and_matches_final_configuration(tmp_path,monkeypatch):
-    from app.agents import hybrid_planning_agent as hybrid
     from app.application.agent_runtime import build_v2_hybrid_binding
     from app.application.datasets import inspect_dataset
     from app.application.logistics_audit import digest,decode
     from campus_http_fixtures import mock_campus
     from test_v2_http_demo import CASES,ROOT
-    original=hybrid.HybridPlanningAgent
-    class RegisteredTestHybrid(original):
-        logistics_audit_contract='1.0'
-        def __init__(self,*args,logistics_agent,**kwargs):
-            super().__init__(*args,**kwargs)
-            self.logistics_agent=logistics_agent
-        async def assess_logistics_with_trace(self,input):
-            return await self.logistics_agent.assess_with_trace(input)
-    monkeypatch.setattr(hybrid,'HybridPlanningAgent',RegisteredTestHybrid)
     calls,_=mock_campus(monkeypatch)
     values=CASES['normal']['settings']|{'execution_mode':'agent','logistics_execution':'model'}
     values['dataset_path']=ROOT/values['dataset_path']

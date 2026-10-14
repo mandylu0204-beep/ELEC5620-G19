@@ -1,4 +1,4 @@
-"""AgentPort: real campus planning, explicit deterministic business kernels.
+"""AgentPort: real campus planning and opt-in logistics with guarded kernels.
 
 No application registration, private trace cache, audit sink or new database.
 """
@@ -13,12 +13,15 @@ from ..contracts.dto import (
 )
 from ..contracts.enums import ErrorCode, ExecutionMode
 from ..contracts.ports import PersistencePort
-from ..llm.coordinator import PlanningCoordinator, PlanningOutcome
+from ..llm.coordinator import PlanningCoordinator, PlanningOutcome, canonical, digest
+from ..llm.client import strict_json
+from ..llm.logistics_agent import LogisticsOutcome
+from ..llm.logistics_validation import validate_logistics_payload
 from ..workflow.configuration import WorkflowConfiguration, failure
 from .rules import interpretation, logistics, planning, safety
 from .rules.common import RULES_VERSION, ensure_execution_mode, input_failure
 
-HYBRID_VERSION = 'b05-hybrid-planning-2'
+HYBRID_VERSION = 'b05-hybrid-planning-3'
 
 
 def _identity(coordinator):
@@ -50,20 +53,22 @@ def build_hybrid_configuration(dataset, coordinator, *, safety_case_ids=(), scen
 
 
 class HybridPlanningAgent:
-    """Complete AgentPort: model PLAN/REVISE and same-version rule REASSESS.
+    """Complete AgentPort: model planning and opt-in registered model logistics.
 
     agent denotes the mixed runtime, not a claim that every step uses an LLM.
     Only PLAN/REVISE generate a model itinerary; REASSESS does not call it.
     """
     supported_operations = frozenset({'PLAN', 'REVISE', 'REASSESS'})
     rules_version = HYBRID_VERSION
+    logistics_audit_contract = '1.0'
 
     def __init__(self, dataset, coordinator: PlanningCoordinator, *, workflow_configuration=None,
-                 heartbeat_interval=20):
+                 heartbeat_interval=20, logistics_agent=None):
         if coordinator.dataset is not dataset:
             raise failure(ErrorCode.STALE_CONTEXT, 'Coordinator must consume the same loaded dataset object.')
         self.dataset, self.coordinator = dataset, coordinator
         self.workflow_configuration = workflow_configuration or build_hybrid_configuration(dataset, coordinator)
+        self.logistics_agent = logistics_agent
         self.heartbeat_interval = heartbeat_interval
         self._check_configuration()
 
@@ -74,6 +79,26 @@ class HybridPlanningAgent:
                 or any(context.file_digests.get(key) != value for key, value in self.dataset.context.file_digests.items())
                 or any(context.selection_config.get(key) != value for key, value in _identity(self.coordinator).items())):
             raise failure(ErrorCode.STALE_CONTEXT, 'Hybrid dataset/model/kernel configuration changed; start a new run.')
+        choices = context.selection_config
+        if choices.get('a_logistics_mode') == 'model':
+            try:
+                role = self.logistics_agent
+                seed = strict_json(choices['a_logistics_identity_seed'])
+                identity = role.identity
+                if (choices.get('a_logistics_audit_required') != '1'
+                        or choices.get('a_logistics_audit_contract') != self.logistics_audit_contract
+                        or role.dataset is not self.dataset or role.configuration.context != context
+                        or role.client.settings.max_turns < 3
+                        or identity['workflow_context'] != context.model_dump(mode='json')
+                        or identity['configuration_fingerprint'] != digest(canonical({
+                            **seed, 'workflow_context': context.model_dump(mode='json')}))
+                        or seed != {key: value for key, value in identity.items()
+                                    if key not in {'workflow_context', 'configuration_fingerprint'}}):
+                    raise ValueError('Logistics identity differs')
+            except (ValueError, TypeError, KeyError, AttributeError) as exc:
+                raise failure(ErrorCode.STALE_CONTEXT, 'Hybrid logistics component is missing or differs from registered identity.') from exc
+        elif self.logistics_agent is not None or any(key.startswith('a_logistics_') for key in choices):
+            raise failure(ErrorCode.STALE_CONTEXT, 'Unregistered logistics component or conflicting model markers.')
 
     def _input(self, model, value):
         self._check_configuration()
@@ -116,10 +141,32 @@ class HybridPlanningAgent:
         return (await self.plan_with_trace(input)).itinerary
 
     async def assess_gear_and_logistics(self, input: LogisticsInput) -> LogisticsResult:
+        if self.logistics_agent is not None:
+            return (await self.assess_logistics_with_trace(input)).assessment
         validated = self._input(LogisticsInput, input)
         ids = json.loads(self.workflow_configuration.context.selection_config['safety_case_ids'])
         return self._rule_result(logistics.assess(self.dataset, validated,
             expected_mode=ExecutionMode.AGENT, safety_case_ids=ids), 'gear and costs')
+
+    async def assess_logistics_with_trace(self, input: LogisticsInput) -> LogisticsOutcome:
+        validated = self._input(LogisticsInput, input)
+        if self.logistics_agent is None:
+            raise failure(ErrorCode.CONTRACT_INVALID, 'Model logistics was not registered; no rules fallback.')
+        outcome = await self.logistics_agent.assess_with_trace(validated)
+        self._check_configuration()
+        self.validate_logistics_artifacts(validated, outcome.assessment,
+            outcome.plan.model_dump(mode='json'), outcome.trace.model_dump(mode='json'))
+        return outcome
+
+    def validate_logistics_artifacts(self, input, result, plan, trace):
+        """Pure replay check; never requests a model or persists an audit."""
+        validated = self._input(LogisticsInput, input)
+        if self.logistics_agent is None:
+            raise failure(ErrorCode.CONTRACT_INVALID, 'Model logistics was not registered.')
+        ids = json.loads(self.workflow_configuration.context.selection_config['safety_case_ids'])
+        baseline = logistics.assess(self.dataset, validated, expected_mode=ExecutionMode.AGENT, safety_case_ids=ids)
+        return validate_logistics_payload(validated, baseline, result, plan, trace,
+            identity=self.logistics_agent.identity)
 
     async def assess_safety(self, input: SafetyInput) -> SafetyResult:
         return self._rule_result(safety.assess(self.dataset, self._input(SafetyInput, input),

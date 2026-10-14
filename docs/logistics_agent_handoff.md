@@ -1,8 +1,8 @@
-# B → A：LogisticsAgent 组件交付（尚未应用接线）
+# B → A：LogisticsAgent 组件与 A24 接线交付
 
-日期：2026-10-14（Australia/Sydney）。分支 `feature/llm-logistics-agent`，基线 `3a1206f`，包含 A19 `0b57197` 的完整集成/真实验收和 A20 页面整理。
+日期：2026-10-14（Australia/Sydney）。分支 `feature/llm-logistics-agent`。组件提交为 `e0b25eb`，本次接线基线已更新为 A24 main `319f541`，包含 A19～A24 的完整应用能力。
 
-本轮只实现用户指定的两项：模型真正参与装备规划，以及确定性数量/容量/费用校验。不修改 A 的审计/持久化接口、数据库、Hybrid 默认步骤、HTTP、页面、私人配置或封存数据。不能据本组件宣称应用已启用第二个模型角色。
+独立组件实现模型参与装备规划及确定性数量/容量/费用校验。A24 已提供正式审计/存储/读取和工厂；本次 B 接入 Hybrid、Orchestrator，并保留不可恢复错误语义。默认物流仍为 rules，显式 model 配置才使用第二模型角色。不修改私人配置、封存数据或共享 schema，也不另建数据库。最新接线与验收范围见 [运行时接线交付](logistics_runtime_integration.md)；离线接线通过不等于真实校园已验收。
 
 ## 1. 已实现的调用链
 
@@ -52,7 +52,7 @@ outcome = await agent.assess_with_trace(saved_logistics_input)
 assessment = await agent.assess_gear_and_logistics(saved_logistics_input)
 ```
 
-输入必须使用 A 保存、授权并绑定版本的 LogisticsInput。组件检查 DTO、模式、固定日期/最多30晚、数据版本和原规则约束，但不会自行查询数据库证明授权或声明自己创建了保存版本。A 的 owner/scope/lease/输入 fingerprint 守卫仍需在正式接线时执行。
+输入必须使用 A 保存、授权并绑定版本的 LogisticsInput。组件检查 DTO、模式、固定日期/最多30晚、数据版本和原规则约束，但不会自行查询数据库证明授权或声明自己创建了保存版本。正式接线复用 A24 的 owner/scope/lease/输入 fingerprint 守卫和权威事实重算。
 
 至少3轮：读取事实、计算方案、返回已计算方案；CampusModelSettings 默认4轮可用，配置小于3轮时明确拒绝。本接口不进行连接探测，缺密钥/模型失败/非法回复没有规则回退。
 
@@ -70,35 +70,34 @@ assessment = await agent.assess_gear_and_logistics(saved_logistics_input)
 - 工具结果再次进入 LogisticsResult 前会从原事实重新计算并逐项比较；即使有人篡改已类型化的 plan 数量、容量、价格、分配或来源，也不能绕过校验。
 - 决策摘要和逐项理由标记为未经事实验证的模型意见，不能当审核、预订、购买或安全确认。
 
-## 4. 本轮 trace 与 A 的后续协商
+## 4. A24 已冻结接口与正式接线
 
-正式接口提案已补齐：[模型物流评估保存与审计接口提案](logistics_assessment_trace_proposal.md)（版本 1.0，DRAFT，待 A 复核/冻结）。请将该提案与本交付说明一并交给 A；接口尚未实现，不能据此调用建议方法或宣布应用已接线。
+初版 [接口提案](logistics_assessment_trace_proposal.md) 已由 A 按 [冻结回复](a24_logistics_contract_reply.md) 确认。当前实际可调用能力以 [A24 交接](a24_logistics_audit_handoff.md) 为准，不再等待初版接口复核。
 
 LogisticsOutcome 中的 trace 是调用方持有的本次结果，记录角色 LOGISTICS、模型身份、配置/输入/规则事实/方案 hash、Prompt/tool 身份、回合/HTTP尝试、耗时、回复 hash、usage 和验证结果。配置身份包含完整已登记 workflow context、规则/数据身份和模型公开配置，不包含 API key。
 
-没有写入模型规划 trace 表或调用 append_model_plan，不能将评估角色的调用伪装为原行程生成记录。组件也不保存数据、不发送租借/购买请求、不改变原版本或当前方案指针。失败时只返回脱敏错误，不伪造成功 trace 或 usage。
+物流组件没有写入模型规划 trace 表或调用 append_model_plan，不能将评估角色的调用伪装为原行程生成记录。独立组件本身不保存数据、不发送租借/购买请求、不改变原版本或当前方案指针；正式编排交给 A 保存物流 audit。失败时只返回脱敏错误，不伪造成功 trace 或 usage。
 
-正式提案已明确以下方案，应用接线前仍需 A/B 确认：
+本次 B 已按冻结约定接入：
 
-1. LogisticsResult、结构化 plan 和物流 trace 如何通过 A 的评估保存入口一起关联 run/version/assessment/attempt。
-2. 幂等 key 继续使用 A 登记的 logistics key；保存回执丢失后如何从 checkpoint 复用已保存物流产物及 trace，不重跑模型补记录。
-3. PLAN/REVISE/REASSESS 哪些评估步骤启用该角色；重评仍不调用规划模型，但若启用本组件，会产生新的物流模型调用，不能继续标为“完全没有模型调用”。
-4. 配置指纹、meta 的物流阶段、页面的拟采购/未知费用/确认需求显示方式，以及缺凭据时的就绪行为。
+1. Hybrid 保留 A 传入的 logistics_agent，声明完整审计能力 1.0，提供 assess_logistics_with_trace；检查同数据对象、最终 context、seed 和配置摘要，模型等待后再检身份。
+2. Orchestrator 将 LogisticsResult、完整 plan/trace 交给 A 的 save_model_logistics_assessment，使用原 logistics key，安全步骤依赖返回的正式 StoredAssessment。
+3. checkpoint 检查独立 LOGISTICS envelope 的版本/评估/gear/fingerprint/载荷摘要及业务产物；已保存步骤整体复用，不重跑模型补 trace。
+4. PLAN/REVISE/REASSESS 都支持显式模型物流；REASSESS 不调用规划模型，但本次物流生成新的审计。NO_MATCH 跳过两角色模型和物流保存。
+5. 默认规则路径和共享接口保持；B 提供可复用严格纯校验 helper，并移除不可恢复 PERSISTENCE_FAILURE 的统一 RETRY 提升。
 
-提案包含具体 `save_model_logistics_assessment()` 签名、完整 plan/trace 字段、A 权威事实重算、assessment/checklist/audit/receipt 同事务、checkpoint 增量、回执丢失恢复、默认规则开关和逐项冻结清单。另明确用不含完整 context/fingerprint 的 identity seed 避免摘要自引用，以及 A/B 都须保留不可恢复审计完整性错误的语义。
-
-这些仍不是 A 已实现/确认的新接口。文档补齐不提前改 Hybrid、Orchestrator、注册表、数据库或共享 schema，也不另建数据库。
+沿用 A24 已实现的原子事务、幂等/读取/最终化守卫、迁移7、工厂和页面，本次未另写一套存储。A 的正式保存入口独立验证事实，B 的纯 helper 不替代数据库授权或回执/归档审计检查。
 
 ## 5. 验证与剩余工作
 
 本轮所有模型传输为 MockTransport/独立假密钥，没有读取 .env.llm.local、没有实际校园请求或浏览器验收。
 
-本机检查：新增组件58项通过；装备组件/原费用规则/校园客户端组合133项通过；全量后端771 passed、0 skipped、0 failed（81.78秒），保留1条既有 Starlette TestClient 弃用警告。共享 schema 1.0、前端 TypeScript/Vite（54模块）、pip check、空白检查通过；数据静态校验68 passed、0 failed（不执行其中58条应用验收规格）。测试使用原锁定 Python3.12.14/Pydantic2.13.5/httpx0.28.1 环境，未新增依赖或更改锁文件。
+组件提交 `e0b25eb` 的历史检查：新增组件58项通过；装备组件/原费用规则/校园客户端组合133项通过；旧基线全量771 passed、0 skipped、0 failed（81.78秒）。这些数字不是 A24 接线后的全量结果。最新全量859项通过及其他结果单列在 [运行时接线交付](logistics_runtime_integration.md)。测试继续使用锁定 Python3.12.14/Pydantic2.13.5/httpx0.28.1 环境，未新增依赖或更改锁文件。
 
 组件覆盖：完整3轮工具闭环、实际租借/借用策略差异、数量/容量/Decimal 四舍五入、预算优先级、未知库存/价格、不可遗漏清单、禁止伪造确认/预算/来源/审批、延期可选但不能跳过必要装备、二次防篡改、错误/取消/超限/并发隔离、调用中配置/价格/证据选择漂移、加载后不读文件/oracle，以及现有 Hybrid 物流仍是规则的防误接线验证。
 
-正式模型物流角色的 HTTP/页面、checkpoint/保存回执恢复和真实校园验收尚未完成；不能把 A19 规划/修订的实测证据计作新角色验收。Safety 模型角色、A15 高风险/过期/禁火完整场景及最终 Canvas 部署也仍待完成。
+模型物流的离线 HTTP、checkpoint/保存回执恢复由本次接线验证；页面沿用 A24 的已交付能力，真实双模型校园 HTTP/browser 联合验收尚未执行。不能把 A19 实测或 A24 独立 MockTransport 页面报告计作本次真实验收。Safety 模型角色及最终 Canvas 部署仍待完成。
 
 工具边界设计参考 OpenAI Docs 的 [函数调用指南](https://developers.openai.com/api/docs/guides/function-calling)：应用执行受控工具，已知事实/参数由代码提供，而不是让模型重填。该文档不证明学校代理支持全部 OpenAI 特性；当前仅使用已验证的内容 JSON 协议。
 
-本轮未 commit/push，也未向 A 发消息。正式提案现已可随组件提交并交 A 复核；下一步按提案 L-01～L-09 冻结物流评估保存与 trace 契约，A 实现正式能力后再接 Hybrid/HTTP/页面并进行联合验收。
+组件与初版提案已于 `e0b25eb` 提交并推送、纳入 A24。当前接线改动尚未 commit/push，也未向 A 发消息。下一步提交接线变更供 A 集成复核，并按运行时交付中的清单联合验收真实校园流程。

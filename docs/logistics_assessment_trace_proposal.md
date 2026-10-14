@@ -1,6 +1,8 @@
 # B → A：模型物流评估保存与审计接口正式提案
 
-日期：2026-10-14（Australia/Sydney）。提案版本：1.0。状态：**DRAFT，待 A 复核并冻结，不是已实现接口**。
+日期：2026-10-14（Australia/Sydney）。提案版本：1.0。初版状态：**DRAFT，待 A 复核并冻结，不是已实现接口**（当前冻结/实施状态见下方更新）。
+
+**后续状态更新：** 本文保留初版提案记录。L-01～L-09 已按 [A24 冻结回复](a24_logistics_contract_reply.md) 确认；A24 `319f541` 已交付正式端口及审计能力。当前调用/恢复以 [A24 交接](a24_logistics_audit_handoff.md) 为准，B 最新接线见 [运行时接线交付](logistics_runtime_integration.md)。下文“待确认/尚未实现”是提案当时的状态，不表示当前仍未冻结。
 
 开发分支：`feature/llm-logistics-agent`；共同基线：`3a1206f`，已包含 A19 `0b57197` 及 A20。组件交付说明见 [logistics_agent_handoff.md](logistics_agent_handoff.md)。本提案以该基线的 `contracts/ports.py`、`storage/port.py`、`storage/workflows.py`、`application/model_audit.py`、`application/agent_runtime.py`、`workflow/orchestration.py` 和现有 B 物流组件为依据。
 
