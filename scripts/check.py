@@ -15,6 +15,7 @@ def main():
     steps = [
         ([sys.executable, '-m', 'pytest', '--basetemp', str(ROOT / 'var/pytest-temp')], ROOT / 'backend'),
         ([sys.executable, '-m', 'app.export_contracts', '--check'], ROOT / 'backend'),
+        ([npm, 'test'], ROOT / 'frontend'),
         ([npm, 'run', 'build'], ROOT / 'frontend'),
     ]
     for command, folder in steps:

@@ -82,7 +82,7 @@ def web(tmp_path):
     for name in BUSINESS_FILES:
         shutil.copyfile(source / 'data' / name, dataset / 'data' / name)
     config = Settings(_env_file=None, database_path=tmp_path/'planning.sqlite3', dataset_path=dataset,
-                      execution_mode='deterministic_demo', planning_enabled=True)
+                      execution_mode='deterministic_demo', planning_enabled=True, clock_mode='fixed')
     app = create_app(config)
     app.state.agent = TestOnlyAgent()
     with TestClient(app) as client:

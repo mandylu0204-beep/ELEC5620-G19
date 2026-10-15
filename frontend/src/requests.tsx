@@ -4,6 +4,7 @@ import { ApiFailure, type PreviewResult, type Requirements } from './api';
 import { integer, lines, ProfileSummary, type Profile } from './profile';
 import { privateApi, useSession } from './session';
 import { TripFlow, FieldHint } from './trip_flow';
+import { canonicalTerms, termLabel } from './user_terms';
 
 type RequestContext = { supported_destinations: string[]; execution_mode: string; demo_today: string; planning_available: boolean };
 type Record = { request_id: string; raw_text: string; explicit_fields: Partial<Requirements>; status: string; revision: number; created_at: string; summary: PreviewResult | null; profile_snapshot: Profile | null; profile_revision: number | null; error: { message:string } | null; confirmed_context: { requirements: Requirements; profile_snapshot: Profile; confirmed_at: string; demo_context: { mode:string } } | null; planning_available:boolean; planning_plan_id?:string|null };
@@ -13,7 +14,7 @@ const STATUS: {[key:string]:string} = {DRAFT:'草稿',ANALYSING:'正在生成摘
 
 function fromRecord(record: Record): Draft {
   const value = record.explicit_fields;
-  return { raw:record.raw_text, destination:value.destination ?? '', start:value.start_date ?? '', nights:String(value.duration_nights ?? ''), days:String(value.duration_days ?? ''), end:value.end_date ?? '', budget:value.budget_cents === null || value.budget_cents === undefined ? '' : (value.budget_cents / 100).toFixed(2), preferences:(value.preferences ?? []).join('\n'), constraints:(value.mandatory_constraints ?? []).join('\n') };
+  return { raw:record.raw_text, destination:value.destination ?? '', start:value.start_date ?? '', nights:String(value.duration_nights ?? ''), days:String(record.explicit_fields.duration_days ?? ''), end:record.explicit_fields.end_date ?? '', budget:value.budget_cents === null || value.budget_cents === undefined ? '' : (value.budget_cents / 100).toFixed(2), preferences:(value.preferences ?? []).map(item=>termLabel(item,'preference')).join('\n'), constraints:(value.mandatory_constraints ?? []).map(item=>termLabel(item,'constraint')).join('\n') };
 }
 
 function payload(draft: Draft) {
@@ -24,7 +25,7 @@ function payload(draft: Draft) {
     budget_cents = Number(whole) * 100 + Number(fraction.padEnd(2,'0'));
     if (!Number.isSafeInteger(budget_cents)) throw new Error('预算金额过大，请修改。');
   }
-  return { raw_text:draft.raw, explicit_fields:{destination:draft.destination.trim() || null, start_date:draft.start || null, duration_nights:integer(draft.nights), duration_days:integer(draft.days), end_date:draft.end || null, budget_cents, preferences:lines(draft.preferences), mandatory_constraints:lines(draft.constraints)} };
+  return { raw_text:draft.raw, explicit_fields:{destination:draft.destination.trim() || null, start_date:draft.start || null, duration_nights:integer(draft.nights), duration_days:integer(draft.days), end_date:draft.end || null, budget_cents, preferences:canonicalTerms(lines(draft.preferences),'preference'), mandatory_constraints:canonicalTerms(lines(draft.constraints),'constraint')} };
 }
 
 function RequestFields({draft,set,regions,disabled}:{draft:Draft;set:(patch:Partial<Draft>)=>void;regions:string[];disabled:boolean}) {
@@ -37,13 +38,19 @@ function RequestFields({draft,set,regions,disabled}:{draft:Draft;set:(patch:Part
       <div><label htmlFor="request-nights">露营晚数</label><input id="request-nights" type="number" min="1" step="1" value={draft.nights} aria-describedby="nights-hint" onChange={event=>set({nights:event.target.value})}/><FieldHint id="nights-hint">{draft.nights&&Number.isSafeInteger(nights)&&nights>0&&nights<Number.MAX_SAFE_INTEGER?`${nights} 晚对应 ${nights+1} 天。`:'例如：两晚对应三天。'}</FieldHint></div>
       <div><label htmlFor="request-budget">整个小组预算 AUD</label><input id="request-budget" inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?" placeholder="例如 320.00" value={draft.budget} aria-describedby="budget-hint" onChange={event=>set({budget:event.target.value})}/><FieldHint id="budget-hint">填写整个行程的总预算。</FieldHint></div>
     </div><details className="optional-fields"><summary>已明确天数或结束日期？补充在这里</summary><div className="form-grid"><div><label htmlFor="request-days">已明确的天数</label><input id="request-days" type="number" min="1" step="1" value={draft.days} onChange={event=>set({days:event.target.value})}/></div><div><label htmlFor="request-end">已明确的结束日期</label><input id="request-end" type="date" value={draft.end} onChange={event=>set({end:event.target.value})}/></div></div><p className="field-hint">与晚数冲突时，请按摘要提示核对。</p></details></section>
-    <section className="request-form-section"><div className="form-section-heading"><span>03</span><h3>偏好与必须条件</h3></div><div className="form-grid"><div><label htmlFor="request-preferences">偏好（每行一项）</label><textarea id="request-preferences" value={draft.preferences} placeholder="例如：安静的环境" onChange={event=>set({preferences:event.target.value})}/></div><div><label htmlFor="request-constraints">必须满足的条件（每行一项）</label><textarea id="request-constraints" value={draft.constraints} placeholder="例如：需要无台阶通道" onChange={event=>set({constraints:event.target.value})}/></div></div></section>
+    <section className="request-form-section"><div className="form-section-heading"><span>03</span><h3>偏好与必须条件</h3></div><div className="form-grid"><div><label htmlFor="request-preferences">偏好（每行一项）</label><textarea id="request-preferences" value={draft.preferences} placeholder="例如：安静的环境" onChange={event=>set({preferences:event.target.value})}/></div><div><label htmlFor="request-constraints">必须满足的条件（每行一项）</label><textarea id="request-constraints" value={draft.constraints} placeholder="例如：需要淋浴" onChange={event=>set({constraints:event.target.value})}/></div></div></section>
   </fieldset>;
 }
 
 const FIELD_IDS: {[field:string]:string} = {destination:'request-destination',start_date:'request-start',duration_nights:'request-nights',duration_days:'request-days',end_date:'request-end',budget_cents:'request-budget',preferences:'request-preferences',mandatory_constraints:'request-constraints'};
 const FIELD_TITLES: {[field:string]:string} = {destination:'目的地',start_date:'开始日期',duration_nights:'露营晚数',duration_days:'行程天数',end_date:'结束日期',budget_cents:'小组预算',preferences:'偏好',mandatory_constraints:'必须条件','profile.group_size':'小组人数'};
 function clarificationText(field:string,message:string,requirements:Requirements|undefined) {
+  const pastDate=message.match(/^Start date must be on or after the checking date \((\d{4}-\d{2}-\d{2}), Australia\/Sydney\)\.$/);
+  if(pastDate)return `开始日期不能早于本次检查日期（${pastDate[1]}，悉尼时间），请调整后重新生成摘要。`;
+  if(message==='Start date precedes the fixed demonstration date.')return '开始日期早于此前检查采用的日期，请重新生成摘要以核对当前日期。';
+  if(['What start date?','Which synthetic region?','How many nights?','What total AUD group budget?','Required request information is missing.'].includes(message))
+    return `请补充${FIELD_TITLES[field]??'此项信息'}。`;
+  if(message==='Only registered synthetic regions are supported.')return '当前资料暂不包含该地区，请核对目的地。';
   if(field==='duration_days'&&(message===`Please clarify ${field}.`||message==='Days must equal nights plus one.')&&requirements?.duration_nights!=null&&requirements.duration_days!=null&&requirements.duration_days!==requirements.duration_nights+1)
     return `${requirements.duration_nights} 晚对应 ${requirements.duration_nights+1} 天，当前填写了 ${requirements.duration_days} 天，请核对。`;
   return message===`Please clarify ${field}.`?`请核对${FIELD_TITLES[field]??'此项信息'}。`:message;
@@ -159,7 +166,7 @@ export function RequestDetail() {
         {dirty?<div className="summary-placeholder"><span aria-hidden="true">↻</span><h3>摘要需要更新</h3><p>请先保存修改并生成摘要。</p></div>:requirements?<>
           {!confirmed&&clarificationMap.size>0&&<section className="clarification-list" aria-label="需要补充的信息"><h3>需要补充的信息</h3>{[...clarificationMap].map(([field,messages])=><div key={field}><strong>{FIELD_TITLES[field]??'需要核对'}</strong>{messages.map(message=><p key={message}>{message}</p>)}{FIELD_IDS[field]?<button className="text-link focus-field" onClick={()=>focusRequestField(field)}>去补充 ↗</button>:field.startsWith('profile')?<Link className="text-link" to="/profile">修改露营资料 ↗</Link>:null}</div>)}</section>}
           <dl className="request-summary-facts">{[['目的地',requirements.destination],['开始日期',requirements.start_date],['行程长度',`${requirements.duration_nights??'未知'} 晚 / ${requirements.duration_days??'未知'} 天`],['结束日期',requirements.end_date],['小组预算',requirements.budget_cents==null?'未知':`AUD ${(requirements.budget_cents/100).toFixed(2)}`]].map(([title,value])=><div key={title}><dt>{title}</dt><dd>{value??'未提供'}</dd></div>)}</dl>
-          {requirements.preferences?.length>0&&<div className="summary-preferences"><h3>偏好</h3><ul>{requirements.preferences.map((item,index)=><li key={index}>{item}</li>)}</ul></div>}{requirements.mandatory_constraints?.length>0&&<div className="summary-preferences"><h3>必须满足</h3><ul>{requirements.mandatory_constraints.map((item,index)=><li key={index}>{item}</li>)}</ul></div>}
+          {requirements.preferences?.length>0&&<div className="summary-preferences"><h3>偏好</h3><ul>{requirements.preferences.map((item,index)=><li key={index}>{termLabel(item,'preference')}</li>)}</ul></div>}{requirements.mandatory_constraints?.length>0&&<div className="summary-preferences"><h3>必须满足</h3><ul>{requirements.mandatory_constraints.map((item,index)=><li key={index}>{termLabel(item,'constraint')}</li>)}</ul></div>}
           <div className="request-profile-overview"><h3>本次采用的露营资料</h3><div><span>小组人数<strong>{profile?.group_size??'未知'} 人</strong></span><span>登记装备<strong>{profile?profile.equipment.length:'未知'} 项</strong></span></div><details><summary>查看同行、交通与装备明细</summary><ProfileSummary profile={profile}/></details></div>
           {record.summary?.uncertainties.filter(item=>item!=='This output is not a confirmation event.').map((item,index)=><p className="muted" key={index}>{item}</p>)}
         </>:<div className="summary-placeholder"><span aria-hidden="true">⌁</span><h3>先生成需求摘要</h3><p>摘要会展示日期、预算、同行资料和需要补充的信息。</p></div>}

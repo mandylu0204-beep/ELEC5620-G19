@@ -67,7 +67,10 @@ Linux/macOS 可分别创建 venv、按 `backend/requirements.lock` 安装依赖�
 | --- | --- | --- |
 | CAMPMATE_EXECUTION_MODE | stub | deterministic_demo 已注册 v1/v2 规则；agent 已注册 v2/2.1 Hybrid，支持 PLAN/REVISE/REASSESS，不自动回退 |
 | CAMPMATE_PLANNING_ENABLED | false | 明确开启后才能启动/修订/重新评估；演示脚本按场景开启 |
-| CAMPMATE_DEMO_TODAY | 2026-10-08 | 固定演示时钟，与系统时间分开 |
+| CAMPMATE_CLOCK_MODE | current | 正常运行读取悉尼当天日期；fixed 用于固定日期测试和指定演示 |
+| CAMPMATE_DEMO_TODAY | 2026-10-08 | 仅在 fixed 模式下作为检查日期；旧配置中单独存在此项不会冻结正常日期 |
+| CAMPMATE_SYNTHETIC_EVIDENCE_MODE | auto | current + v2.1 使用每日模拟快照；其他组合使用 sealed 原包；不查询真实天气 |
+| CAMPMATE_SNAPSHOT_CACHE_PATH | var/daily-snapshots | 独立、可校验的每日模拟快照；不覆盖 data 下的封存数据包 |
 | CAMPMATE_DATASET_PATH | data/synthetic_demo | 原始包的完整副本；业务源文件在其 data 子目录 |
 | CAMPMATE_DATASET_SCENARIO_FILES | [] | 已选数据包 data/scenarios 下的独立运行输入 JSON；摘要纳入确认/run 上下文 |
 | CAMPMATE_DATASET_SELECTION | {} | 服务器场景选用项；JSON 对象，纳入上下文，不能作为测试预期 |
@@ -75,6 +78,9 @@ Linux/macOS 可分别创建 venv、按 `backend/requirements.lock` 安装依赖�
 | CAMPMATE_SEED_DEMO_ACCOUNTS | true | seed 三个演示账号；false 只关闭新增 seed，不删除已有账号 |
 | CAMPMATE_SESSION_HOURS | 8 | 服务器会话有效小时，系统时间计算 |
 | CAMPMATE_SECURE_COOKIES | false | 本地 HTTP；HTTPS 部署时设为 true |
+
+正常日期、每日模拟资料、跨天恢复与重新检查的行为见
+[日期与资料快照说明](docs/current_date_and_daily_snapshots.md)。
 
 ## 本地演示登录
 

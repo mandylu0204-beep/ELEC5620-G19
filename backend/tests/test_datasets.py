@@ -59,6 +59,7 @@ def test_legacy_identity_and_context_remain_compatible(package):
 
 def test_v2_identity_metadata_and_demo_snapshot_follow_selected_package(package):
     settings = to_v2(package, sealed=True)
+    settings.clock_mode = 'fixed'  # This test explicitly compares a fixed date.
     with TestClient(create_app(settings)) as client:
         meta = client.get('/api/v1/meta').json()
         assert meta['dataset_version'] == '2.0.0'

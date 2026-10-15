@@ -44,7 +44,7 @@ def dataset(tmp_path):
 
 def settings(dataset, tmp_path, **changes):
     return Settings(_env_file=None, dataset_path=dataset, database_path=tmp_path / 'integration.sqlite3',
-        execution_mode='deterministic_demo', planning_enabled=True,
+        execution_mode='deterministic_demo', planning_enabled=True, clock_mode='fixed',
         dataset_scenario_files=changes.pop('dataset_scenario_files', ['data/scenarios/rule-integration.json']), **changes)
 
 

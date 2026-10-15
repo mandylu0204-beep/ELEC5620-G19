@@ -1,4 +1,5 @@
 """Authorized, read-only coverage guidance from the exact registered snapshot."""
+from datetime import timedelta
 from ..agents.rules.planning import violations
 from ..contracts.dto import ConfirmedContext, ConfirmedRequirements
 
@@ -34,6 +35,12 @@ def guidance(data, snapshot, scope):
         'selection_digest': selection.selection_digest,
         'issues': [item.model_dump(mode='json') for item in selection.coverage_issues],
         'alternative_campsites': [], 'alternative_dates': []}
+    if scope.dataset_context.selection_config.get('a_daily_snapshot'):
+        today=scope.demo_context.demo_today
+        result['weather_forecast_window']={'start':today.isoformat(),'end':(today+timedelta(days=6)).isoformat()}
+        result['next_weather_check_on']=(req.end_date-timedelta(days=6)).isoformat() if (
+            req.duration_nights<=6 and req.end_date>today+timedelta(days=6)) else None
+        result['weather_requires_staged_checks']=req.duration_nights>6
     if not selection.coverage_issues:
         return result
     # Suggestions never enter the saved request, Agent candidates or eligibility.

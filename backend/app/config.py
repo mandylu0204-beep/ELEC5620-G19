@@ -1,4 +1,5 @@
-from datetime import date
+from datetime import date, datetime
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Literal
 
@@ -20,6 +21,9 @@ class Settings(BaseSettings):
     planning_enabled: bool = False
     logistics_execution: Literal['rules', 'model'] = 'rules'
     demo_today: date = date(2026, 10, 8)
+    clock_mode: Literal['current', 'fixed'] = 'current'
+    synthetic_evidence_mode: Literal['auto', 'sealed', 'rolling'] = 'auto'
+    snapshot_cache_path: Path = APP_ROOT / 'var' / 'daily-snapshots'
     dataset_path: Path = APP_ROOT / "data" / "synthetic_demo"
     dataset_scenario_files: list[str] = Field(default_factory=list)
     dataset_selection: dict[str, str] = Field(default_factory=dict)
@@ -29,8 +33,22 @@ class Settings(BaseSettings):
     session_hours: int = Field(default=8, ge=1, le=168)
     secure_cookies: bool = False
 
-    @field_validator("dataset_path", "database_path", mode="before")
+    def __init__(self, **values):
+        # Explicit Python test/CLI dates remain reproducible. A legacy .env date
+        # alone does not override the normal, live Sydney clock.
+        if 'demo_today' in values and 'clock_mode' not in values:
+            values['clock_mode'] = 'fixed'
+        super().__init__(**values)
+
+    def checking_date(self):
+        return self.demo_today if self.clock_mode == 'fixed' else sydney_today()
+
+    @field_validator("dataset_path", "database_path", "snapshot_cache_path", mode="before")
     @classmethod
     def resolve_project_path(cls, value):
         path = Path(value).expanduser()
         return (APP_ROOT / path).resolve() if not path.is_absolute() else path.resolve()
+
+
+def sydney_today():
+    return datetime.now(ZoneInfo('Australia/Sydney')).date()

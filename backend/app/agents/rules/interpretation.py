@@ -145,7 +145,7 @@ def interpret(dataset, input) -> InterpretRequestResult:
             values.pop('duration_nights', None)
             error('duration_nights', FieldErrorCode.INVALID, 'Trip duration exceeds the supported date range.')
     if values.get('start_date') and values['start_date'] < input.demo_context.demo_today:
-        error('start_date', FieldErrorCode.INVALID, 'Start date precedes the fixed demonstration date.')
+        error('start_date', FieldErrorCode.INVALID, f'Start date must be on or after the checking date ({input.demo_context.demo_today.isoformat()}, Australia/Sydney).')
     if values.get('destination') and values['destination'] not in dataset.regions:
         error('destination', FieldErrorCode.UNSUPPORTED, 'Only registered synthetic regions are supported.')
 

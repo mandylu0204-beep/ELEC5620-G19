@@ -24,6 +24,8 @@ def main():
     if database == (ROOT / 'var/campmate.sqlite3').resolve():
         parser.error('Use an isolated demo database, not the personal application database.')
     env = os.environ.copy()
+    env['CAMPMATE_CLOCK_MODE'] = 'fixed'
+    env['CAMPMATE_SYNTHETIC_EVIDENCE_MODE'] = 'sealed'
     for key, value in cases[args.case]['settings'].items():
         env['CAMPMATE_' + key.upper()] = json.dumps(value, ensure_ascii=False) if isinstance(value, (dict, list, bool)) else str(value)
     env['CAMPMATE_DATABASE_PATH'] = str(database)

@@ -34,7 +34,9 @@ export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}
     title=reasons.has('ROAD_CLOSED')?'请更换可通行的营地':reasons.has('CAMPSITE_CLOSED')?'请更换开放的营地':'请调整营火安排';
     description='按列出的出行限制调整安排，再检查新方案。审核员不能解除道路、营地关闭或禁火规定。';
   }else if(quality.some(value=>['MISSING','STALE','CONFLICTING'].includes(value))){
-    title='当前资料还不能支持完整的安全判断';description='在安全页查看缺少的资料、日期范围或冲突。你可以调整日期或营地，也可以保留草稿，待资料更新后再检查。重复检查不会自动补齐资料。';
+    const upcomingWeather=data.trip_evidence_coverage?.next_weather_check_on;
+    title=upcomingWeather?'行程已生成，天气待临近出发时检查':'当前资料还不能支持完整的安全判断';
+    description=upcomingWeather?`你可以先核对行程、装备和费用，方案会继续保留。建议在 ${upcomingWeather} 或之后重新检查；天气及其他安全条件仍以届时结果为准。`:'在安全页查看缺少的资料、日期范围或冲突。你可以调整日期或营地，也可以保留草稿，待资料更新后再检查。同一天重复检查不会延长天气预报范围。';
   }else if(review?.decision==='REQUEST_REVISION'||review?.decision==='REJECT'){
     title=review.decision==='REJECT'?'审核未通过，请调整方案':'审核员要求调整方案';
     description='按审核理由调整安排。更换营地可修改方案；更改日期、预算、人数或偏好时，请重新确认需求。';

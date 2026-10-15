@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type FormEvent, type ReactNode } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ApiFailure, type ApiError } from './api';
+import { loginReturnPath } from './login_return';
 
 type User = { user_id: string; username: string; display_name: string; role: 'CAMPER' | 'FOUNDER' };
 export type Session = { user: User; csrf_token: string };
@@ -60,20 +61,22 @@ export function AccountControl() {
 
 export function Protected({ role, children }: { role: User['role']; children: ReactNode }) {
   const { session, loading, error, reload } = useSession();
+  const location = useLocation();
   if (loading) return <section className="panel">正在检查登录状态…</section>;
   if (error) return <section className="panel"><p role="alert">{error}</p><button onClick={reload}>重新连接</button></section>;
-  if (!session) return <section className="panel"><h2>先登录你的账户</h2><p>登录后可访问自己的记录。</p><Link className="primary-button" to="/login">去登录 ↗</Link></section>;
+  if (!session) return <section className="panel"><h2>先登录你的账户</h2><p>登录后可继续当前操作。</p><Link className="primary-button" to="/login" state={{returnTo:location.pathname+location.search}}>去登录 ↗</Link></section>;
   if (session.user.role !== role) return <section className="panel"><h2>当前账户没有此页面权限</h2><p>Camper 查看自己的资料与方案；Founder 处理人工审核。</p></section>;
   return <div key={session.user.user_id}>{children}</div>;
 }
 
 export function LoginPage() {
   const { session, login } = useSession();
+  const location = useLocation();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  if (session) return <Navigate to={session.user.role === 'FOUNDER' ? '/review' : '/plans'} replace />;
+  if (session) return <Navigate to={loginReturnPath(location.state?.returnTo,session.user.role)} replace />;
   async function submit(event: FormEvent) {
     event.preventDefault(); setBusy(true); setError('');
     try { await login(username.trim(), password); setPassword(''); }

@@ -1,0 +1,49 @@
+{
+  "kind": "OFFLINE_FULL_BACKEND_REGRESSION_AND_RULE_BROWSER_ACCEPTANCE",
+  "date": "2026-10-16",
+  "backend": {
+    "tests": 925,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 44,
+    "passed": 881
+  },
+  "groups": [
+    {
+      "group": 1,
+      "tests": 232,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 42
+    },
+    {
+      "group": 2,
+      "tests": 326,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "group": 3,
+      "tests": 367,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 2
+    }
+  ],
+  "skip_reasons": {
+    "Windows symlink creation requires unavailable privileges (WinError 1314)": 44
+  },
+  "frontend": {
+    "tests_passed": 7,
+    "typecheck_and_build": "PASSED"
+  },
+  "shared_schema_check": "PASSED",
+  "sealed_v2_1_byte_comparison": "PASSED",
+  "static_release_checks_passed": 24,
+  "static_weather_queries": 600,
+  "campus_model_calls": 0,
+  "real_weather_api_calls": 0,
+  "canvas_packaging_test": "DEFERRED_BY_USER",
+  "browser_evidence": "a28-browser-results.json"
+}

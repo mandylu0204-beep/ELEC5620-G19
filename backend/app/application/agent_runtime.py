@@ -178,14 +178,18 @@ class AgentRuntime:
             except ContractFailure as exc:
                 self.error = exc.error
 
-    def resolve(self, *, feedback=None):
+    def resolve(self, *, feedback=None, snapshot_day=None):
         # HTTP reads run in worker threads while the supervisor runs on asyncio.
         # Keep the managed Agent marker and state.agent replacement consistent.
         with self._lock:
-            return self._resolve(feedback=feedback)
+            return self._resolve(feedback=feedback, snapshot_day=snapshot_day)
 
     def for_scope(self, scope):
-        return self.resolve(feedback=scope.dataset_context.selection_config.get('a_revision_feedback') or None)
+        choices=scope.dataset_context.selection_config
+        # Recovery consumes its registered date/snapshot even after midnight.
+        # Eligibility/finalisation uses validate_scope's CURRENT resolution.
+        pinned=scope.demo_context.demo_today if choices.get('a_daily_snapshot')=='synthetic-daily-v1' else None
+        return self.resolve(feedback=choices.get('a_revision_feedback') or None, snapshot_day=pinned)
 
     def validate_scope(self, scope):
         # Internal legacy fixtures predate runtime bindings. All HTTP-created
@@ -193,16 +197,24 @@ class AgentRuntime:
         choices = scope.dataset_context.selection_config
         if choices.get('a_runtime_bound') != '1' and '/a-runtime-bindings-v1/' not in scope.dataset_context.rules_version:
             return
-        snapshot = self.for_scope(scope)
+        snapshot = self.resolve(feedback=choices.get('a_revision_feedback') or None)
         if snapshot.demo != scope.demo_context or snapshot.dataset != scope.dataset_context:
             raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='本次运行的数据、配置或时钟已变化，请重新评估。'))
         return snapshot
 
-    def _resolve(self, *, feedback=None):
+    def _resolve(self, *, feedback=None, snapshot_day=None):
         settings = self.state.settings
+        today=settings.checking_date()
+        if snapshot_day is not None:
+            today=snapshot_day
+        from .daily_snapshot import effective_settings
+        descriptor=inspect_dataset(settings)
+        effective=effective_settings(settings,today,base=descriptor)
+        if effective is not settings:
+            descriptor=inspect_dataset(effective)
+        settings=effective
         if settings.logistics_execution == 'model' and settings.execution_mode != ExecutionMode.AGENT:
             raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='物流模型只能用于已接线的 agent 模式。'))
-        descriptor = inspect_dataset(settings)
         agent, context = self.state.agent, descriptor.context
         managed = (self.configured_agent is not None and agent is self.configured_agent) or (
             self.configured_agent is None and agent is None and self.managed_mode is not None)
@@ -238,5 +250,5 @@ class AgentRuntime:
                 or not callable(getattr(agent, 'assess_logistics_with_trace', None))):
             raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='当前运行未登记完整物流模型能力。'))
         self.error = None
-        return RuntimeSnapshot(agent, DemoContext(mode=settings.execution_mode, demo_today=settings.demo_today,
+        return RuntimeSnapshot(agent, DemoContext(mode=settings.execution_mode, demo_today=today,
             dataset_version=context.dataset_version), context, descriptor)

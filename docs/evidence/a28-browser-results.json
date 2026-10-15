@@ -1,0 +1,120 @@
+{
+  "kind": "BROWSER_RULE_RUNTIME_SQLITE_EVIDENCE",
+  "execution_mode": "deterministic_demo",
+  "checking_date": "2026-10-16",
+  "campus_model_calls": 0,
+  "database": "isolated acceptance database",
+  "runs": [
+    {
+      "run_id": "95874fd8492a4437ae981937e1d063b8",
+      "plan_id": "eaa3071bb0394bc38c7f45a69b0014d4",
+      "version_id": "2631493353e8446988936c61f8329f48",
+      "status": "SUCCEEDED",
+      "operation": "PLAN",
+      "checking_date": "2026-10-16",
+      "start_date": "2026-10-22",
+      "end_date": "2026-10-26",
+      "preferences": [
+        "quiet",
+        "ready-to-eat meals"
+      ],
+      "snapshot_identity": "e4a6723bf6fe1a07bf7b5c8f040b543cda4402361b469e8d0406cc778cecdf35",
+      "assessments": {
+        "LOGISTICS": {
+          "assessment_id": "6bfcc57256754c9da1a3cae7d450fed0",
+          "outcome": "REVISION",
+          "total_cents": 40700
+        },
+        "SAFETY": {
+          "assessment_id": "6c12cff0bd8349b593dc95b8d759a37b",
+          "outcome": "REVIEW",
+          "data_quality": {
+            "FIRE": "AVAILABLE",
+            "RESTRICTION": "AVAILABLE",
+            "ROAD": "AVAILABLE",
+            "WEATHER": "MISSING"
+          }
+        }
+      }
+    },
+    {
+      "run_id": "18236e32134d428a9432a992e0d07a38",
+      "plan_id": "128235aee77a4d0d97964e39c262b679",
+      "version_id": "1fb0dcc92a6440f7ab32e4ec0e2309f2",
+      "status": "SUCCEEDED",
+      "operation": "PLAN",
+      "checking_date": "2026-10-16",
+      "start_date": "2026-10-18",
+      "end_date": "2026-10-20",
+      "preferences": [
+        "quiet",
+        "ready-to-eat meals"
+      ],
+      "snapshot_identity": "e4a6723bf6fe1a07bf7b5c8f040b543cda4402361b469e8d0406cc778cecdf35",
+      "assessments": {
+        "SAFETY": {
+          "assessment_id": "052e260cc748416b82d30b9b9345f8b1",
+          "outcome": "PASSED",
+          "data_quality": {
+            "FIRE": "AVAILABLE",
+            "RESTRICTION": "AVAILABLE",
+            "ROAD": "AVAILABLE",
+            "WEATHER": "AVAILABLE"
+          }
+        },
+        "LOGISTICS": {
+          "assessment_id": "7b292187eef34760bcf0f4cabf535a40",
+          "outcome": "PASSED",
+          "total_cents": 25100
+        }
+      }
+    },
+    {
+      "run_id": "27c1c9f8ab5f415880229b121b9f9e03",
+      "plan_id": "eaa3071bb0394bc38c7f45a69b0014d4",
+      "version_id": "2631493353e8446988936c61f8329f48",
+      "status": "SUCCEEDED",
+      "operation": "REASSESS",
+      "checking_date": "2026-10-16",
+      "start_date": "2026-10-22",
+      "end_date": "2026-10-26",
+      "preferences": [
+        "quiet",
+        "ready-to-eat meals"
+      ],
+      "snapshot_identity": "e4a6723bf6fe1a07bf7b5c8f040b543cda4402361b469e8d0406cc778cecdf35",
+      "assessments": {
+        "LOGISTICS": {
+          "assessment_id": "3489a1ef45cd4fa7a65772620838faf4",
+          "outcome": "REVISION",
+          "total_cents": 40700
+        },
+        "SAFETY": {
+          "assessment_id": "f000f03360a04060be236bd743a5228e",
+          "outcome": "REVIEW",
+          "data_quality": {
+            "FIRE": "AVAILABLE",
+            "RESTRICTION": "AVAILABLE",
+            "ROAD": "AVAILABLE",
+            "WEATHER": "MISSING"
+          }
+        }
+      }
+    }
+  ],
+  "final_count": 1,
+  "request_statuses": [
+    {
+      "id": "35ec6e326709469f95659db6f53cecf5",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "26c16ccab97b4dbf8e2832c9938549ce",
+      "status": "CONFIRMED"
+    },
+    {
+      "id": "1108283a2aaf47f2b6f24ab07471603f",
+      "status": "NEEDS_CLARIFICATION"
+    }
+  ]
+}

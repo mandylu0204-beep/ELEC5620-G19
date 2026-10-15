@@ -146,8 +146,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @application.get('/api/v1/meta')
     def metadata():
+        runtime = None
         try:
-            descriptor = inspect_dataset(config)
+            runtime = application.state.runtime.resolve()
+            descriptor = runtime.descriptor
         except ContractFailure:
             descriptor = None
         planning = application.state.dispatcher.available
@@ -158,7 +160,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             'planning_stages': {'interpretation':'rules', 'recommendation':'rules',
                 'itinerary':'model' if config.execution_mode == ExecutionMode.AGENT else 'rules',
                 'logistics':'model' if planning and config.logistics_execution == 'model' else 'rules', 'safety':'rules'} if config.execution_mode != ExecutionMode.STUB else {},
-            'execution_mode': config.execution_mode.value, 'demo_today': config.demo_today.isoformat(),
+            'execution_mode': config.execution_mode.value, 'demo_today': (runtime.demo.demo_today if runtime else config.checking_date()).isoformat(),
+            'clock_mode': config.clock_mode, 'timezone': 'Australia/Sydney',
+            'evidence_mode': 'rolling_synthetic' if runtime and runtime.dataset.selection_config.get('a_daily_snapshot') else 'sealed',
             'disclaimer': DEMO_DISCLAIMER,
             'provenance': descriptor.provenance.model_dump(mode='json') if descriptor else None,
             'dataset_version': descriptor.context.dataset_version if descriptor else None,
@@ -175,7 +179,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             input = InterpretRequestInput(
                 raw_text=body.raw_text, explicit_fields=body.explicit_fields,
                 profile_snapshot=body.profile_snapshot,
-                demo_context=DemoContext(mode=config.execution_mode, demo_today=config.demo_today, dataset_version=descriptor.context.dataset_version),
+                demo_context=DemoContext(mode=config.execution_mode, demo_today=config.checking_date(), dataset_version=descriptor.context.dataset_version),
             )
         except ValidationError as exc:
             raise ContractFailure(ContractError(code=ErrorCode.INPUT_INVALID, message='请求内容无效。', field_errors=[FieldError(field='.'.join(map(str, item['loc'])), code=FieldErrorCode.INVALID, message=item['msg']) for item in exc.errors()], allowed_actions=[AllowedAction.EDIT_INPUT])) from exc

@@ -53,7 +53,9 @@ def request_context(request: Request, user: User = Depends(current_user)):
     from .auth import require_role
     require_role(user, 'CAMPER')
     snapshot = request.app.state.runtime.resolve()
-    return {'supported_destinations': snapshot.descriptor.regions, 'execution_mode': snapshot.demo.mode.value, 'demo_today': snapshot.demo.demo_today.isoformat(), 'planning_available': request.app.state.dispatcher.available}
+    return {'supported_destinations': snapshot.descriptor.regions, 'execution_mode': snapshot.demo.mode.value,
+        'demo_today': snapshot.demo.demo_today.isoformat(), 'clock_mode': request.app.state.settings.clock_mode,
+        'planning_available': request.app.state.dispatcher.available}
 
 
 @router.get('/requests')

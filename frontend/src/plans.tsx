@@ -9,6 +9,7 @@ import { ModelTracePanel, type ModelTrace } from './model_trace';
 import { LogisticsPlanPanel, LogisticsTracePanel, type LogisticsAudit } from './logistics_plan';
 import { blockerText, checkNames, checkState, planRowState } from './plan_language';
 import { SafetyInformation } from './safety_information';
+import { itineraryText } from './user_terms';
 import type { TripCoverage } from './trip_coverage';
 import { ApiFailure, type ApiError, type Requirements } from './api';
 import { ProfileSummary, equipmentLabel, type Profile } from './profile';
@@ -179,7 +180,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
           {run?.operation==='REASSESS'&&<p className="muted">行程保持不变。{!snapshot&&!review&&'本轮检查进度和结果见上方。'}{logisticsAudit&&'装备与预算建议可在对应页面查看。'}</p>}
           {version.content.itinerary_entries.length?<ol className="plan-timeline">{version.content.itinerary_entries.map((entry,index)=><li key={index}>
             <div className="timeline-time"><span>{label(entry.entry_kind)}</span><time>{time(entry.start_at)}</time></div>
-            <div className="timeline-content"><h3>{entry.campsite_id?campName(entry.campsite_id):label(entry.entry_kind)}</h3><p>{entry.description}</p><small>至 {time(entry.end_at)}</small></div>
+            <div className="timeline-content"><h3>{entry.campsite_id?campName(entry.campsite_id):label(entry.entry_kind)}</h3><p>{itineraryText(entry.description)}</p><small>至 {time(entry.end_at)}</small></div>
           </li>)}</ol>:<p className="muted">没有提供行程条目。</p>}
           <details className="source-details"><summary>查看本次规划说明</summary><p>{version.content.revision_reason}</p></details><Notes artifact={version.content}/>
         </>:<div className="plan-empty"><span aria-hidden="true">⌁</span><h3>行程正在准备中</h3><p>{run?.status==='FAILED'?'先处理上方的执行问题，再继续规划。':'规划完成后，可在这里查看露营安排。'}</p></div>}
