@@ -2,6 +2,8 @@
 
 ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
 
+当前 A26 已集成独立 `synthetic_demo_v2_1`（2.1.0）：根据行程和实际营地自动匹配资料，显示覆盖缺口与查证过的调整建议，重新检查具有持久化反馈。校园模型正常规划、换营地修订、同版本重评、浏览器最终保存与资料不足守卫已验证，见 [真实验收](docs/a26_trip_live_acceptance.md)。**启动新数据和模型模式请先按 [VS Code 当前运行步骤](docs/vscode_current_run.md)**；默认 stub、个人环境文件及旧包不自动改写。以下 A16～A19 与四个 v2 场景保留历史适用范围，不能当作最新运行能力限制。
+
 A18提供无匹配时的“最接近的营地”对照：直接展示3个营地、未满足/未核实条件、预算差额与调整建议，修改后仍需用户确认。使用方法及接口边界见 [营地比较](docs/near_match_guidance.md)，已完整保留到 A19 集成中。
 
 A19 整合 B 的模型修订和同版本重评：修订生成新版本及 trace，重评复用原行程和原生成 trace、只生成新评估；同时保留 A18 营地比较。顶部说明按后端能力显示。真实校园模型修订、浏览器最终保存、零模型调用重评、重启历史回读、用户隔离、缺失证据守卫和受控保存恢复已通过，见 [A19 验收](docs/model_revision_reassessment_live_acceptance.md)。全量669项通过，44项因Windows symlink特权跳过。接口见 [B 交接](docs/model_revision_reassessment_handoff.md)。下方 A16 PLAN-only 内容为历史验收范围。
@@ -63,7 +65,7 @@ Linux/macOS 可分别创建 venv、按 `backend/requirements.lock` 安装依赖�
 
 | 配置 | 默认值 | 作用 |
 | --- | --- | --- |
-| CAMPMATE_EXECUTION_MODE | stub | deterministic_demo 已注册 v1/v2规则；agent 已注册v2 Hybrid，仅PLAN，不自动回退 |
+| CAMPMATE_EXECUTION_MODE | stub | deterministic_demo 已注册 v1/v2 规则；agent 已注册 v2/2.1 Hybrid，支持 PLAN/REVISE/REASSESS，不自动回退 |
 | CAMPMATE_PLANNING_ENABLED | false | 明确开启后才能启动/修订/重新评估；演示脚本按场景开启 |
 | CAMPMATE_DEMO_TODAY | 2026-10-08 | 固定演示时钟，与系统时间分开 |
 | CAMPMATE_DATASET_PATH | data/synthetic_demo | 原始包的完整副本；业务源文件在其 data 子目录 |
@@ -119,6 +121,7 @@ backend/app/storage/        SQLite 迁移、Repository 与持久化端口
 frontend/src/              页面、路由、样式与 HTTP 调用
 data/synthetic_demo/        原始 10 个数据文件的完整副本
 data/synthetic_demo_v2/     当前定稿 2.0.0 / 2026-10-12 修订版
+data/synthetic_demo_v2_1/   独立 2.1.0；按行程、实际营地与检查日期匹配资料
 docs/demo/                 四套显式输入与浏览器复现步骤
 scripts/                   安装、启动、检查脚本
 docs/                      冻结设计、导出 schema 与实施证据
