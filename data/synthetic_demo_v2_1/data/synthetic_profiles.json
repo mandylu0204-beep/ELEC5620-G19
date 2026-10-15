@@ -1,0 +1,305 @@
+[
+  {
+    "profile_id": "profile-a",
+    "camper_name": "Demo Camper A",
+    "group_size": 2,
+    "experience_level": "BEGINNER",
+    "has_children": false,
+    "available_equipment": [
+      "two-person tent",
+      "two sleeping bags",
+      "first aid kit",
+      "torch",
+      "car"
+    ],
+    "transport_type": "CAR",
+    "accessibility_requirements": [],
+    "notes": "Two beginners with car and mostly complete gear.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "revision_date": "2026-10-09",
+    "owner_user_id": "camper-a",
+    "children_count": 0,
+    "vehicle_count": null,
+    "adult_count": 2,
+    "normalized_equipment": [
+      {
+        "item_key": "tent",
+        "quantity": 1,
+        "unit": "item",
+        "capacity_persons": 2,
+        "confirmed": false,
+        "original_text": "two-person tent",
+        "provenance": "V1_TEXT_EXPLICIT"
+      },
+      {
+        "item_key": "sleeping_bag",
+        "quantity": 2,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": false,
+        "original_text": "two sleeping bags",
+        "provenance": "V1_TEXT_EXPLICIT"
+      },
+      {
+        "item_key": "first_aid_kit",
+        "quantity": 1,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": false,
+        "original_text": "first aid kit",
+        "provenance": "V1_TEXT_EXPLICIT"
+      },
+      {
+        "item_key": "torch",
+        "quantity": null,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": false,
+        "original_text": "torch",
+        "provenance": "NEEDS_CLARIFICATION"
+      },
+      {
+        "item_key": "vehicle",
+        "quantity": null,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": false,
+        "original_text": "car",
+        "provenance": "NEEDS_CLARIFICATION"
+      }
+    ],
+    "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+  },
+  {
+    "profile_id": "profile-b",
+    "camper_name": "Demo Camper B",
+    "group_size": 4,
+    "experience_level": "BEGINNER",
+    "has_children": false,
+    "available_equipment": [
+      "two sleeping bags",
+      "first aid kit",
+      "torch"
+    ],
+    "transport_type": "CAR",
+    "accessibility_requirements": [],
+    "notes": "Four beginners; tent is missing.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "revision_date": "2026-10-09",
+    "owner_user_id": "camper-b",
+    "children_count": 0,
+    "vehicle_count": null,
+    "adult_count": 4,
+    "normalized_equipment": [
+      {
+        "item_key": "sleeping_bag",
+        "quantity": 2,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": false,
+        "original_text": "two sleeping bags",
+        "provenance": "V1_TEXT_EXPLICIT"
+      },
+      {
+        "item_key": "first_aid_kit",
+        "quantity": 1,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": false,
+        "original_text": "first aid kit",
+        "provenance": "V1_TEXT_EXPLICIT"
+      },
+      {
+        "item_key": "torch",
+        "quantity": null,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": false,
+        "original_text": "torch",
+        "provenance": "NEEDS_CLARIFICATION"
+      }
+    ],
+    "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+  },
+  {
+    "profile_id": "profile-c",
+    "camper_name": "Demo Camper C",
+    "group_size": 2,
+    "experience_level": "INTERMEDIATE",
+    "has_children": false,
+    "available_equipment": [
+      "two-person tent",
+      "two sleeping bags",
+      "first aid kit"
+    ],
+    "transport_type": "PUBLIC_TRANSPORT",
+    "accessibility_requirements": [],
+    "notes": "Two campers without a vehicle.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "revision_date": "2026-10-09",
+    "owner_user_id": "camper-c",
+    "children_count": 0,
+    "vehicle_count": 0,
+    "adult_count": 2,
+    "normalized_equipment": [
+      {
+        "item_key": "tent",
+        "quantity": 1,
+        "unit": "item",
+        "capacity_persons": 2,
+        "confirmed": false,
+        "original_text": "two-person tent",
+        "provenance": "V1_TEXT_EXPLICIT"
+      },
+      {
+        "item_key": "sleeping_bag",
+        "quantity": 2,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": false,
+        "original_text": "two sleeping bags",
+        "provenance": "V1_TEXT_EXPLICIT"
+      },
+      {
+        "item_key": "first_aid_kit",
+        "quantity": 1,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": false,
+        "original_text": "first aid kit",
+        "provenance": "V1_TEXT_EXPLICIT"
+      }
+    ],
+    "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+  },
+  {
+    "profile_id": "profile-d",
+    "camper_name": "Demo Camper D",
+    "group_size": 3,
+    "experience_level": "BEGINNER",
+    "has_children": true,
+    "available_equipment": [
+      "family tent",
+      "three sleeping bags",
+      "first aid kit",
+      "camping stove"
+    ],
+    "transport_type": "CAR",
+    "accessibility_requirements": [],
+    "notes": "Family group including one child.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "revision_date": "2026-10-09",
+    "owner_user_id": "camper-d",
+    "children_count": 1,
+    "vehicle_count": null,
+    "adult_count": 2,
+    "normalized_equipment": [
+      {
+        "item_key": "tent",
+        "quantity": 1,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": false,
+        "original_text": "family tent",
+        "provenance": "V1_TEXT_EXPLICIT"
+      },
+      {
+        "item_key": "sleeping_bag",
+        "quantity": 3,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": false,
+        "original_text": "three sleeping bags",
+        "provenance": "V1_TEXT_EXPLICIT"
+      },
+      {
+        "item_key": "first_aid_kit",
+        "quantity": 1,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": false,
+        "original_text": "first aid kit",
+        "provenance": "V1_TEXT_EXPLICIT"
+      },
+      {
+        "item_key": "camping_stove",
+        "quantity": 1,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": false,
+        "original_text": "camping stove",
+        "provenance": "V1_TEXT_EXPLICIT"
+      }
+    ],
+    "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+  },
+  {
+    "profile_id": "profile-e",
+    "camper_name": "Demo Camper E",
+    "group_size": 2,
+    "experience_level": "BEGINNER",
+    "has_children": false,
+    "available_equipment": [
+      "two-person tent",
+      "two sleeping bags",
+      "first aid kit"
+    ],
+    "transport_type": "PUBLIC_TRANSPORT",
+    "accessibility_requirements": [
+      "wheelchair-accessible toilet",
+      "step-free path"
+    ],
+    "notes": "Requires accessible facilities.",
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true,
+    "revision_date": "2026-10-09",
+    "owner_user_id": "camper-e",
+    "children_count": 0,
+    "vehicle_count": 0,
+    "adult_count": 2,
+    "normalized_equipment": [
+      {
+        "item_key": "tent",
+        "quantity": 1,
+        "unit": "item",
+        "capacity_persons": 2,
+        "confirmed": false,
+        "original_text": "two-person tent",
+        "provenance": "V1_TEXT_EXPLICIT"
+      },
+      {
+        "item_key": "sleeping_bag",
+        "quantity": 2,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": false,
+        "original_text": "two sleeping bags",
+        "provenance": "V1_TEXT_EXPLICIT"
+      },
+      {
+        "item_key": "first_aid_kit",
+        "quantity": 1,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": false,
+        "original_text": "first aid kit",
+        "provenance": "V1_TEXT_EXPLICIT"
+      }
+    ],
+    "normalization_notes": "Candidate inventory only. Camper must confirm quantities/capacity. Child count comes from v1 notes; vehicle count and travel distance are not inferred."
+  }
+]

@@ -188,7 +188,8 @@ class SyntheticDatasetV2Adapter:
                 for row in rows:
                     _source(row, '', required_text(row.get('request_id') or row.get('safety_case_id') or row.get('profile_id') or row.get('campsite_id') or row.get('gear_rule_id') or row.get('cost_id')))
             manifest_value = _json(manifest)
-            if manifest_value.get('dataset_version') != '2.0.0' or any(manifest_value.get('files_sha256', {}).get('data/' + name) != value for name, value in actual.items() if name != 'manifest.json'):
+            version = manifest_value.get('dataset_version')
+            if version not in {'2.0.0', '2.1.0'} or any(manifest_value.get('files_sha256', {}).get('data/' + name) != value for name, value in actual.items() if name != 'manifest.json'):
                 raise ValueError('v2 package seal does not match consumed bytes')
             if len({row.get('source_name') for name, rows in parsed.items() for row in rows}) != 1 or next(iter({row.get('source_name') for name, rows in parsed.items() for row in rows})) != SOURCE_NAME:
                 raise ValueError('Mixed source names')
@@ -220,7 +221,7 @@ class SyntheticDatasetV2Adapter:
                 if candidate.snapshot != profiles[row['profile_id']].snapshot:
                     raise ValueError('Runtime profile snapshot disagrees with canonical profile mapping')
                 runtime_profiles[request_id] = candidate.snapshot
-            context = DatasetContext(dataset_version='2.0.0', file_digests=actual,
+            context = DatasetContext(dataset_version=version, file_digests=actual,
                 rules_version='a-request-normalization-v1')
             if expected_context is not None and any(expected_context.file_digests.get(name) != value for name, value in actual.items()):
                 raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='v2 Adapter 输入身份已变化。'))
@@ -230,6 +231,12 @@ class SyntheticDatasetV2Adapter:
                 runtime_profiles=runtime_profiles)
             dataset.adapter_version = ADAPTER_VERSION_V2
             dataset.rules_version = V2_RULES_VERSION
+            if version == '2.1.0':
+                from ..agents.rules.trip_evidence import POLICY_VERSION, TripEvidenceSelector
+                if manifest_value.get('evidence_selection_policy') != POLICY_VERSION:
+                    raise ValueError('Unregistered trip evidence policy')
+                dataset.trip_evidence_selector = TripEvidenceSelector(dataset, safety_rows)
+                dataset.rules_version += '/' + POLICY_VERSION
             return dataset
         except ContractFailure:
             raise

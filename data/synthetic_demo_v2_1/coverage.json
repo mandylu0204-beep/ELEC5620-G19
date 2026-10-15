@@ -1,0 +1,80 @@
+{
+  "campsites": [
+    "demo-cloud-gully",
+    "demo-fern-walk",
+    "demo-granite-ledge",
+    "demo-lake-meadow",
+    "demo-moonlit-field",
+    "demo-pine-camp",
+    "demo-ridge-lookout",
+    "demo-river-flat",
+    "demo-sandstone-grove",
+    "demo-wattle-rest"
+  ],
+  "coverage_limit": "Single-record full-trip coverage; partial intervals are reported, not spliced. Weather must already be published/observed at demo_today.",
+  "dataset_version": "2.1.0",
+  "kinds": [
+    "WEATHER",
+    "FIRE",
+    "ROAD",
+    "RESTRICTION"
+  ],
+  "nonweather_max_age_days": 45,
+  "periods": [
+    [
+      "2026-10-20",
+      "2026-11-30"
+    ],
+    [
+      "2027-04-09",
+      "2027-04-30"
+    ]
+  ],
+  "provenance_note": "v2 is the source family/original synthetic creation date; this is an independent 2.1.0 release, not a modified 2.0.0 seal.",
+  "record_count": 706,
+  "retained_restrictions": [
+    {
+      "campsite_id": "demo-ridge-lookout",
+      "end": "2026-10-27",
+      "kind": "FIRE",
+      "observed_at": "2026-10-23T09:00:00+11:00",
+      "origin_id": "safety-05",
+      "start": "2026-10-24"
+    },
+    {
+      "campsite_id": "demo-cloud-gully",
+      "end": "2027-04-13",
+      "kind": "ROAD",
+      "observed_at": "2027-04-09T09:00:00+10:00",
+      "origin_id": "safety-06",
+      "start": "2027-04-10"
+    },
+    {
+      "campsite_id": "demo-granite-ledge",
+      "end": "2026-10-29",
+      "kind": "RESTRICTION",
+      "observed_at": "2026-10-25T00:00:00+11:00",
+      "origin_id": "safety-07",
+      "start": "2026-10-26"
+    },
+    {
+      "campsite_id": "demo-ridge-lookout",
+      "end": "2026-11-06",
+      "kind": "FIRE",
+      "observed_at": "2026-11-03T09:00:00+11:00",
+      "origin_id": "safety-12",
+      "start": "2026-11-04"
+    },
+    {
+      "campsite_id": "demo-moonlit-field",
+      "end": "2027-04-12",
+      "kind": "ROAD",
+      "observed_at": "2027-04-09T09:00:00+10:00",
+      "origin_id": "safety-18",
+      "start": "2027-04-10"
+    }
+  ],
+  "selection_policy": "trip-evidence-selection-1",
+  "weather_horizon_days": 7,
+  "weather_max_age_days": 7
+}

@@ -36,6 +36,8 @@ class WorkflowConfiguration:
             raise failure(ErrorCode.INPUT_INVALID, 'Safety case IDs must be unique, explicit strings.')
         if feedback is not None and (not isinstance(feedback, str) or not feedback.strip()):
             raise failure(ErrorCode.INPUT_INVALID, 'Revision feedback must be nonblank text or null.')
+        if getattr(dataset, 'trip_evidence_selector', None) is not None and ids:
+            raise failure(ErrorCode.INPUT_INVALID, 'Automatic trip evidence requires safety_case_ids=[]; startup test scenarios cannot override the registered index.')
         selected = [dataset.get_safety(key).scenario_context for key in ids]
         supplements = [ScenarioContext.model_validate(value).model_copy(deep=True) for value in scenarios]
         selected.extend(supplements)
@@ -68,6 +70,17 @@ class WorkflowConfiguration:
         )
         self._scenarios = tuple(selected)
         self._feedback = feedback
+        self._selector = getattr(dataset, 'trip_evidence_selector', None)
+        if self._selector is not None:
+            from ..agents.rules.trip_evidence import POLICY_VERSION
+            if ids or supplements:
+                raise failure(ErrorCode.INPUT_INVALID, 'Automatic trip evidence cannot mix explicit scenario/test worlds; use the registered production index.')
+            markers = {'b_evidence_policy': POLICY_VERSION, 'b_evidence_index_sha256': self._selector.index_digest,
+                       'b_evidence_clock_policy': 'demo_today:Australia/Sydney:day'}
+            if any(key in base.selection_config and base.selection_config[key] != value for key,value in markers.items()):
+                raise failure(ErrorCode.STALE_CONTEXT, 'Registered evidence selection identity differs from the consumed snapshot.')
+            self._context = self._context.model_copy(update={
+                'selection_config': {**self._context.selection_config, **markers}})
 
     @property
     def context(self):
@@ -77,7 +90,18 @@ class WorkflowConfiguration:
     def feedback(self):
         return self._feedback
 
-    def scenario_for(self, campsite_ids):
+    def resolve_trip_evidence(self, confirmed_requirements, campsite_ids, demo_context):
+        if self._selector is None:
+            raise failure(ErrorCode.INPUT_INVALID, 'This historical dataset uses explicit evidence scenarios.')
+        if self._context.selection_config['b_evidence_index_sha256'] != self._selector.index_digest:
+            raise failure(ErrorCode.STALE_CONTEXT, 'Evidence index changed after run registration.')
+        return self._selector.resolve_trip_evidence(confirmed_requirements, campsite_ids, demo_context)
+
+    def scenario_for(self, campsite_ids, *, confirmed_requirements=None, demo_context=None):
+        if self._selector is not None:
+            if confirmed_requirements is None or demo_context is None:
+                raise failure(ErrorCode.INPUT_INVALID, 'Automatic evidence requires confirmed dates and the registered check clock.')
+            return self.resolve_trip_evidence(confirmed_requirements, campsite_ids, demo_context).scenario_context
         selected = set(campsite_ids)
         relevant = [value for value in self._scenarios if selected.intersection(value.campsite_ids)]
         # Each Evidence retains its own interval. The enclosing interval is the

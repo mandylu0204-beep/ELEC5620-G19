@@ -162,6 +162,24 @@ def test_revision_and_reassessment_have_new_logistics_not_new_origin_trace(tmp_p
         assert db_counts(client.app)['model_logistics_audits'] == 3
 
 
+def test_saved_audit_and_final_readback_survive_new_logistics_prompt(tmp_path, monkeypatch):
+    from app.llm import logistics_agent
+    requests, _ = mock_roles(monkeypatch)
+    with TestClient(application(tmp_path)) as client:
+        headers = sign_in(client)
+        detail = launch(client, headers, 'normal')
+        path, snapshot = finalise(client, headers, detail)
+        old_audit = assert_audit(detail)
+    monkeypatch.setattr(logistics_agent, 'LOGISTICS_SYSTEM_PROMPT', logistics_agent.LOGISTICS_SYSTEM_PROMPT + '\nNew prompt identity.')
+    with TestClient(application(tmp_path)) as client:
+        sign_in(client)
+        saved = client.get('/api/v1/runs/'+detail['run']['run_id'])
+        assert saved.status_code == 200
+        assert saved.json()['model_assessment_audits']['LOGISTICS'] == old_audit
+        assert client.get(path).json()['final_record'] == snapshot
+    assert role_counts(requests) == {'PLANNING': 2, 'LOGISTICS': 3}
+
+
 def wrap_port(monkeypatch, transform):
     original = DATASET_AGENT_FACTORIES[KEY]
     class Wrapped:

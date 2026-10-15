@@ -1,0 +1,319 @@
+{
+  "scope": "bounded real HTTP follow-up; no mocked model replies",
+  "post_final_restart_exact_readback": true,
+  "reassess": {
+    "same_version_and_content": true,
+    "same_origin_planning_trace": true,
+    "new_logistics_audit_and_assessment": true,
+    "old_final_snapshot_unchanged": true,
+    "additional_planning_completions": 0,
+    "additional_logistics_completions": 3,
+    "run_id": "1ffd90c543784ae280ef0d133f402f82",
+    "audit_id": "b2bd2d80bfb34f3891419949a07f87f5",
+    "summary": {
+      "operation": "reassess",
+      "case": "normal",
+      "run_id": "1ffd90c543784ae280ef0d133f402f82",
+      "status": "SUCCEEDED",
+      "stage": "COMPLETED",
+      "error": null,
+      "selected_campsites": [
+        "demo-wattle-rest"
+      ],
+      "assessments": [
+        {
+          "kind": "LOGISTICS",
+          "outcome": "PASSED",
+          "total_cents": 25100
+        },
+        {
+          "kind": "SAFETY",
+          "outcome": "PASSED",
+          "total_cents": null
+        }
+      ],
+      "eligible": true,
+      "audit_checks": {
+        "assessment_association": true,
+        "run_association": true,
+        "version_association": true,
+        "gear_association": true,
+        "fingerprint_association": true,
+        "safety_dependency": true
+      },
+      "database_counts": {
+        "requests": 1,
+        "plans": 1,
+        "runs": 2,
+        "versions": 1,
+        "assessments": 4,
+        "gear_checklists": 2,
+        "model_planning_traces": 1,
+        "model_logistics_audits": 2,
+        "final_records": 1
+      },
+      "database_checks": {
+        "integrity_check": "ok",
+        "foreign_key_errors": 0
+      },
+      "snapshot_sha256": "8fd8ca1c6d941affa50d96501e42e1fd1798e19f6c7950443ccb08ab190d51ef",
+      "model_completed": {
+        "PLANNING": 2,
+        "LOGISTICS": 6
+      },
+      "planning_trace": {
+        "id": "d6fe9eab254f4177bbe318cda2d3f4e7",
+        "plan_id": "87c1793d68884438a4d2870dda6ff54e",
+        "run_id": "673760c6e5c3441aaa84a666170c57c5",
+        "version_id": "3467be3e1cf34e3a8b79f866b20f3c88",
+        "input_fingerprint": "510b61cb1a94989ce5177f892a85cb76b5083db754210b942bca2fb3a76502ce",
+        "attempt_id": "84290de159614b79ac0b3cae3fbcc8a1",
+        "created_at": "2026-10-15T00:20:35.655835+00:00",
+        "trace": {
+          "requested_model": "campus-qwen",
+          "served_models": [
+            "Qwen/Qwen3.8-27B-FP8"
+          ],
+          "configuration_fingerprint": "2ee08e1380a89a97635aa494abb83a6f7ca2cb86009bc0191822ccb226aa0d74",
+          "prompt_sha256": "6e1bd3c0ad065de13602dbdfe86decc4b123d0cb1594eb66a5a90d36832d14b1",
+          "tool_version": "b04-campsite-tool-1",
+          "turns": 2,
+          "http_attempts": 2,
+          "elapsed_ms": 9318,
+          "tool_calls": [
+            "search_campsites"
+          ],
+          "selected_campsite_id": "demo-wattle-rest",
+          "response_sha256": [
+            "9880ca8f6a3eea0c9e73c65df1e0e29e037aebc350db7dfa081f44f602a42755",
+            "5bb3ee8fb79f2242d488be6f99edda425b57120b3fd5f1f5c6325197e58ede27"
+          ],
+          "usage": {
+            "completion_tokens": 816,
+            "prompt_tokens": 4797,
+            "total_tokens": 5613
+          },
+          "validation_passed": true
+        }
+      },
+      "logistics_trace": {
+        "role": "LOGISTICS",
+        "requested_model": "campus-qwen",
+        "served_models": [
+          "Qwen/Qwen3.8-27B-FP8"
+        ],
+        "configuration_fingerprint": "93d42dc07aef50ea6b23b80ebe913c0aca9495abd76bbe5f6364446ccc067ad9",
+        "input_sha256": "4b5a57800ee48e76506d47016fdabddd4356e7b596054a6f1dd2453ea9159857",
+        "rule_facts_sha256": "64c7c77f8793b4c3e940232147a95f28300d023e5dc6eb55aac18f58526e71fc",
+        "proposal_sha256": "ccbdf4530eb14f71b89d1d671cdd51b1dabf497048b2ffa76d5de74c8dbe8c46",
+        "prompt_sha256": "90fec842994cb1ed231f806b5a46856481e90fbed0ed70bb89835771307b74f9",
+        "tool_version": "logistics-read-only-tools-1",
+        "turns": 3,
+        "http_attempts": 3,
+        "elapsed_ms": 18605,
+        "tool_calls": [
+          "read_logistics_facts",
+          "evaluate_logistics_plan"
+        ],
+        "response_sha256": [
+          "20833699b1fc3f1186d618f926ddda27ecfd40fdf616d3b7f0b1af6cbdbf229c",
+          "ef6cc3ad1e6cdb4a6dcfe2d54a2635da6c766c85eda9d81a0cab43f913b3dfb4",
+          "423e135b42327ee796a04d01c2a185dad1bb45c27da5b41875a851f05de3e22e"
+        ],
+        "usage": {
+          "completion_tokens": 1635,
+          "prompt_tokens": 15185,
+          "total_tokens": 16820
+        },
+        "validation_passed": true
+      }
+    }
+  },
+  "road_closure": {
+    "summary": {
+      "operation": "launch",
+      "case": "road_closure",
+      "run_id": "93f58236d09544d0becbe51fcb095838",
+      "status": "SUCCEEDED",
+      "stage": "COMPLETED",
+      "error": null,
+      "selected_campsites": [
+        "demo-moonlit-field"
+      ],
+      "assessments": [
+        {
+          "kind": "LOGISTICS",
+          "outcome": "PASSED",
+          "total_cents": 23100
+        },
+        {
+          "kind": "SAFETY",
+          "outcome": "BLOCKED",
+          "total_cents": null
+        }
+      ],
+      "eligible": false,
+      "audit_checks": {
+        "assessment_association": true,
+        "run_association": true,
+        "version_association": true,
+        "gear_association": true,
+        "fingerprint_association": true,
+        "safety_dependency": true
+      },
+      "database_counts": {
+        "requests": 1,
+        "plans": 1,
+        "runs": 1,
+        "versions": 1,
+        "assessments": 2,
+        "gear_checklists": 1,
+        "model_planning_traces": 1,
+        "model_logistics_audits": 1,
+        "final_records": 0
+      },
+      "database_checks": {
+        "integrity_check": "ok",
+        "foreign_key_errors": 0
+      },
+      "snapshot_sha256": "ccb11f22f04e8541f124539c96b4ef1b594904b88b5b479166a5e0edaec02b02",
+      "model_completed": {
+        "PLANNING": 2,
+        "LOGISTICS": 3
+      },
+      "planning_trace": {
+        "id": "99a96b518bba4d55a5cc9cf607592d46",
+        "plan_id": "d2d70a0bebfd43e89eb4c192bf246364",
+        "run_id": "93f58236d09544d0becbe51fcb095838",
+        "version_id": "028595fb02cd42309a71893f6a1b7c76",
+        "input_fingerprint": "7c074c913e8a81d650a0a87ad6b0fab9eb5cd0996bf09791f8f9f1ff9c1e1c8e",
+        "attempt_id": "20747d93ecbb485d99618033104faf82",
+        "created_at": "2026-10-15T05:07:21.055739+00:00",
+        "trace": {
+          "requested_model": "campus-qwen",
+          "served_models": [
+            "Qwen/Qwen3.8-27B-FP8"
+          ],
+          "configuration_fingerprint": "2ee08e1380a89a97635aa494abb83a6f7ca2cb86009bc0191822ccb226aa0d74",
+          "prompt_sha256": "6e1bd3c0ad065de13602dbdfe86decc4b123d0cb1594eb66a5a90d36832d14b1",
+          "tool_version": "b04-campsite-tool-1",
+          "turns": 2,
+          "http_attempts": 2,
+          "elapsed_ms": 10561,
+          "tool_calls": [
+            "search_campsites"
+          ],
+          "selected_campsite_id": "demo-moonlit-field",
+          "response_sha256": [
+            "9880ca8f6a3eea0c9e73c65df1e0e29e037aebc350db7dfa081f44f602a42755",
+            "3fc34751f74cd4e8c1f217c1663cd7bb77e4a42e81030ca3c217c4a8a12cc030"
+          ],
+          "usage": {
+            "completion_tokens": 923,
+            "prompt_tokens": 4784,
+            "total_tokens": 5707
+          },
+          "validation_passed": true
+        }
+      },
+      "logistics_trace": {
+        "role": "LOGISTICS",
+        "requested_model": "campus-qwen",
+        "served_models": [
+          "Qwen/Qwen3.8-27B-FP8"
+        ],
+        "configuration_fingerprint": "16bed9fa0b8be3b3e2c7a1d24148954fe69b610076cde12b91d3fde1bf02d60c",
+        "input_sha256": "e2cb7528cc480a381a4b987003767531702383fa82d45ddaa63b052393f7f501",
+        "rule_facts_sha256": "65265ef9543fb88f7b2ac4098d3221290501f22cc82d7f9111e5fbcf9c48ce8d",
+        "proposal_sha256": "3c8adeb8f1150cbf0d4b59adcd2b58e1ac5778bce1bbfbc9afa122804133fb80",
+        "prompt_sha256": "90fec842994cb1ed231f806b5a46856481e90fbed0ed70bb89835771307b74f9",
+        "tool_version": "logistics-read-only-tools-1",
+        "turns": 3,
+        "http_attempts": 3,
+        "elapsed_ms": 20805,
+        "tool_calls": [
+          "read_logistics_facts",
+          "evaluate_logistics_plan"
+        ],
+        "response_sha256": [
+          "20833699b1fc3f1186d618f926ddda27ecfd40fdf616d3b7f0b1af6cbdbf229c",
+          "39014603cfbf462a3329e2a7aa936494df2a88ea1e2c8c7bb6c7152be8883e6d",
+          "30d57508050fc328b69e6f16b59592f2a028b4776035c2b8f9127ca31e0fa742"
+        ],
+        "usage": {
+          "completion_tokens": 1861,
+          "prompt_tokens": 14299,
+          "total_tokens": 16160
+        },
+        "validation_passed": true
+      }
+    },
+    "road_closed_blocker": true,
+    "finalise_http": 409,
+    "approve_http": 409,
+    "rejected_approval_left_review_unchanged": true
+  },
+  "model_http_requests": [
+    {
+      "sequence": 1,
+      "started_at_epoch": 1792040797.065737,
+      "http_status": 200,
+      "elapsed_ms": 938,
+      "failed": false
+    },
+    {
+      "sequence": 2,
+      "started_at_epoch": 1792040798.009839,
+      "http_status": 200,
+      "elapsed_ms": 12861,
+      "failed": false
+    },
+    {
+      "sequence": 3,
+      "started_at_epoch": 1792040810.8844311,
+      "http_status": 200,
+      "elapsed_ms": 4776,
+      "failed": false
+    },
+    {
+      "sequence": 4,
+      "started_at_epoch": 1792040830.4055092,
+      "http_status": 200,
+      "elapsed_ms": 2028,
+      "failed": false
+    },
+    {
+      "sequence": 5,
+      "started_at_epoch": 1792040832.439414,
+      "http_status": 200,
+      "elapsed_ms": 8523,
+      "failed": false
+    },
+    {
+      "sequence": 6,
+      "started_at_epoch": 1792040841.093911,
+      "http_status": 200,
+      "elapsed_ms": 867,
+      "failed": false
+    },
+    {
+      "sequence": 7,
+      "started_at_epoch": 1792040841.964991,
+      "http_status": 200,
+      "elapsed_ms": 15495,
+      "failed": false
+    },
+    {
+      "sequence": 8,
+      "started_at_epoch": 1792040857.468809,
+      "http_status": 200,
+      "elapsed_ms": 4425,
+      "failed": false
+    }
+  ],
+  "successful_response_usage_only_not_bill": {
+    "prompt_tokens": 34268,
+    "completion_tokens": 4419,
+    "total_tokens": 38687
+  }
+}

@@ -47,6 +47,28 @@ def test_missing_or_unsafe_key_never_sends_request(key):
     assert key not in str(error.value) if key else True
 
 
+def test_optional_low_effort_is_sent_and_registered_without_secret_or_template_options():
+    requests = []
+    def handler(request):
+        body = json.loads(request.content)
+        requests.append(body)
+        assert body['reasoning_effort'] == 'low'
+        assert 'chat_template_kwargs' not in body
+        return httpx.Response(200, json=completion('answer'))
+    original = model_settings()
+    settings = model_settings(reasoning_effort='low')
+    assert 'reasoning_effort' not in original.public_identity()
+    assert settings.public_identity() == original.public_identity() | {'reasoning_effort': 'low'}
+    call(CampusModelClient(settings, transport=httpx.MockTransport(handler)))
+    assert len(requests) == 1 and 'unit-only-school-secret' not in str(requests)
+
+
+@pytest.mark.parametrize('value', ['high', 'auto', '', True, {'enable_thinking': False}])
+def test_reasoning_override_is_explicit_and_bounded(value):
+    with pytest.raises(ValidationError):
+        model_settings(reasoning_effort=value)
+
+
 @pytest.mark.parametrize('status', [301, 302, 307, 400, 401, 403, 404])
 def test_rejected_or_redirected_response_is_not_followed_retried_or_echoed(status):
     requests = []

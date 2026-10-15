@@ -72,6 +72,8 @@ class CampusModelClient:
             raise model_failure('模型上下文包含密钥；请求已阻止。', code=ErrorCode.CONTRACT_INVALID)
         payload = {'model': self.settings.model, 'messages': messages,
             'max_completion_tokens': self.settings.max_completion_tokens, 'stream': False}
+        if self.settings.reasoning_effort is not None:
+            payload['reasoning_effort'] = self.settings.reasoning_effort
         try:
             size = len(json.dumps(payload, ensure_ascii=False).encode('utf-8'))
         except (ValueError, UnicodeError):

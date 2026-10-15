@@ -228,7 +228,9 @@ class Orchestrator:
                     await self.advance(RunStage.ASSESSING_SAFETY)
                     result = await self.call(lambda: self.agent.assess_safety(SafetyInput(
                         version_context=context, saved_itinerary=version.content, confirmed_requirements=confirmed.requirements,
-                        saved_logistics_assessment=logistics, scenario_context=self.config.scenario_for(version.content.selected_campsite_ids), demo_context=scope.demo_context,
+                        saved_logistics_assessment=logistics, scenario_context=self.config.scenario_for(
+                            version.content.selected_campsite_ids, confirmed_requirements=confirmed.requirements,
+                            demo_context=scope.demo_context), demo_context=scope.demo_context,
                     )))
                     safety = await self.call(lambda: self.port.save_assessment(context, AssessmentKind.SAFETY, result, scope.write_keys['safety']))
                     self.refs['safety'] = safety.assessment_id

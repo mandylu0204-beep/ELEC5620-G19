@@ -2,6 +2,8 @@
 
 日期：2026-10-14（Australia/Sydney）。分支：`feature/llm-logistics-agent`。基线：main `319f541`（A24），保留组件提交 `e0b25eb` 和 A21～A24 全部进度。
 
+**2026-10-15 真实验收更新：** 已对 `bc5c74f + 9b54143` 执行真实校园及浏览器验收。结果部分通过：原2048配置物流失败，临时8192配置正常/重评/恢复通过，超预算及修订物流遇到502；PR暂不合并。详见 [本轮真实验收报告](pr5_logistics_live_acceptance.md)。下文“真实验收尚未执行”保留为本交付初版记录，不能当作当前状态。
+
 已按 [A24 交接](a24_logistics_audit_handoff.md) 与 [冻结回复](a24_logistics_contract_reply.md) 接入 Hybrid 和 Orchestrator。默认仍为规则物流；只有显式 `CAMPMATE_LOGISTICS_EXECUTION=model` 且当前 agent/v2 工厂通过就绪检查时才启用物流模型。本文的离线测试不等于真实校园/浏览器联合验收。
 
 ## 1. 本次代码
