@@ -30,6 +30,11 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO) ->
     ensure_execution_mode(dataset, input.demo_context, expected_mode)
     requirements, scenario = input.confirmed_requirements, input.scenario_context
     selected = set(validate_itinerary(dataset, input.saved_itinerary, requirements, expected_mode=expected_mode))
+    selector = getattr(dataset, 'trip_evidence_selector', None)
+    if selector is not None:
+        resolved = selector.resolve_trip_evidence(requirements, sorted(selected), input.demo_context)
+        if scenario != resolved.scenario_context:
+            raise input_failure('Safety and gear must use the same registered trip evidence selection.', 'scenario_context')
     if not selected.issubset(scenario.campsite_ids):
         raise input_failure('Scenario does not apply to every selected campsite.', 'scenario_context.campsite_ids')
     if input.saved_logistics_assessment.result.execution_mode != input.demo_context.mode:
@@ -168,7 +173,8 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO) ->
         recommended_actions=actions, outcome=outcome, requires_human_review=requires_review,
         unresolved_conflicts=list(dict.fromkeys(conflicts)),
         **artifact(input.demo_context, sources,
-                   assumptions=['Qualitative v1 synthetic summary rules; no temperature, wind-speed or probability is fabricated.'],
+                   assumptions=['Qualitative v1 synthetic summary rules; no temperature, wind-speed or probability is fabricated.',
+                       *(['Trip evidence selection digest: ' + resolved.selection_digest + '.'] if selector is not None else [])],
                    uncertainties=list(dict.fromkeys(uncertainties))),
     )
 

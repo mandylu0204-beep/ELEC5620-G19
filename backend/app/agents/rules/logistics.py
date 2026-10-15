@@ -215,6 +215,27 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
         def known_fact(name):
             values = [fact.get(name) for fact in facts]
             return values[0] if values and all(value == values[0] for value in values) else None
+        selector = getattr(dataset, 'trip_evidence_selector', None)
+        evidence_selection = None
+        if selector is not None:
+            if selected_ids:
+                raise input_failure('Automatic evidence cannot be overridden by startup scenario IDs.', 'safety_case_ids')
+            evidence_selection = selector.resolve_trip_evidence(requirements,
+                sorted({camp.campsite_id for camp in campsites}), input.demo_context)
+            fire=[item for item in evidence_selection.scenario_context.evidence if item.kind=='FIRE']
+            if not fire_prohibited:
+                if any(item.status.value=='AVAILABLE' and item.summary=='Synthetic comprehensive no-fire restriction.' for item in fire):
+                    fire_prohibited=True
+                elif not fire or any(item.status.value!='AVAILABLE' for item in fire):
+                    fire_prohibited=None
+            facts = [value.model_dump() for value in evidence_selection.weather_facts_by_campsite.values()]
+            def known_fact(name):
+                values = [fact.get(name) for fact in facts]
+                if not values or any(value is None for value in values):
+                    return None
+                # No inferred per-night mapping: every campsite must cover the
+                # full trip. Use conservative extrema, not equality/default 0.
+                return min(values) if name == 'temperature_min_c' else max(values)
         policy_values = {
             'duration_nights': requirements.duration_nights, 'duration_days': requirements.duration_days,
             'group_size': profile.group_size, 'tent_count': tent_count, 'tent_capacity_persons': tent_capacity,
@@ -233,6 +254,8 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
         }
     context = (group, profile, campsites, requirements, mode, dataset, policy_values)
     clarifications, blockers, sources = [], [], [campsite.source_ref for campsite in campsites]
+    if dataset.v2_policy is not None and evidence_selection is not None:
+        sources.extend(ref for evidence in evidence_selection.scenario_context.evidence for ref in evidence.source_refs)
     assumptions = [
         'Gear quantities are conservative synthetic planning rules, not real safety advice.',
         ('Conditional v2 weather gear uses only selected, current, trip-covering synthetic observations; unknown triggers are conservatively included.'
@@ -240,6 +263,8 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
         'Food/water use synthetic provision-value allowances, not a claim of actual purchases.',
         'Priced equipment gaps are estimates; they do not confirm a hire or purchase.',
     ]
+    if dataset.v2_policy is not None and evidence_selection is not None:
+        assumptions.append('Trip evidence selection digest: ' + evidence_selection.selection_digest + '.')
 
     def clarify(field, question, reason):
         if not any(item.field == field for item in clarifications):
@@ -307,7 +332,11 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
             blockers.append(Blocker(code='ESSENTIAL_GEAR_MISSING', message=f'{key} has an unresolved gap of {missing} {details["unit"]}.', source_refs=details['sources']))
     if dataset.v2_policy is not None:
         for name in sorted(policy_values['_missing_inputs']):
-            clarify(f'gear_rule_input.{name}', f'Confirm the v2 rule input {name}.', 'The registered v2 expression references an unknown input; no default or zero was substituted.')
+            if evidence_selection is not None and name in {'temperature_min_c','temperature_max_c','forecast_rain_mm','wind_kph'}:
+                clarify(f'evidence.weather.{name}', f'Registered trip evidence does not supply {name}; source maintenance is required.',
+                    'This is a data coverage issue, not an omitted user weather field. Unknown weather was not replaced by zero.')
+            else:
+                clarify(f'gear_rule_input.{name}', f'Confirm the v2 rule input {name}.', 'The registered v2 expression references an unknown input; no default or zero was substituted.')
 
     transport = profile.transport
     transport_feasible = None

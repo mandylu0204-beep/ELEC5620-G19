@@ -1,0 +1,1038 @@
+[
+  {
+    "campsite_id": "demo-pine-camp",
+    "campsite_restrictions": [],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": false,
+      "forecast_rain_mm": 0,
+      "temperature_max_c": 20,
+      "temperature_min_c": 5,
+      "wind_kph": 10
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-19T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "No synthetic fire restriction.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-20",
+      "valid_until": "2026-10-23"
+    },
+    "mandatory_blockers": [],
+    "risk_tags": [
+      "cold"
+    ],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-19T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "OPEN",
+      "summary": "open in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-20",
+      "valid_until": "2026-10-23"
+    },
+    "safety_case_id": "safety-01",
+    "scenario_date": "2026-10-20",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": null,
+    "valid_from": "2026-10-20",
+    "valid_until": "2026-10-23",
+    "weather": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-19T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Mild synthetic conditions.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-20",
+      "valid_until": "2026-10-23"
+    }
+  },
+  {
+    "campsite_id": "demo-river-flat",
+    "campsite_restrictions": [],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": false,
+      "forecast_rain_mm": null,
+      "temperature_max_c": null,
+      "temperature_min_c": null,
+      "wind_kph": null
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-20T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "No synthetic fire restriction.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-21",
+      "valid_until": "2026-10-24"
+    },
+    "mandatory_blockers": [],
+    "risk_tags": [
+      "heavy_rain"
+    ],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-20T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "OPEN",
+      "summary": "open in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-21",
+      "valid_until": "2026-10-24"
+    },
+    "safety_case_id": "safety-02",
+    "scenario_date": "2026-10-21",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": null,
+    "valid_from": "2026-10-21",
+    "valid_until": "2026-10-24",
+    "weather": {
+      "data_status": "MISSING",
+      "observed_at": null,
+      "source_date": "unknown",
+      "status": "MISSING",
+      "summary": "Synthetic weather data unavailable.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": null,
+      "valid_until": null
+    }
+  },
+  {
+    "campsite_id": "demo-sandstone-grove",
+    "campsite_restrictions": [],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": false,
+      "forecast_rain_mm": null,
+      "temperature_max_c": null,
+      "temperature_min_c": null,
+      "wind_kph": null
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-21T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "No synthetic fire restriction.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-22",
+      "valid_until": "2026-10-25"
+    },
+    "mandatory_blockers": [],
+    "risk_tags": [
+      "heat"
+    ],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-21T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "OPEN",
+      "summary": "open in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-22",
+      "valid_until": "2026-10-25"
+    },
+    "safety_case_id": "safety-03",
+    "scenario_date": "2026-10-22",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": null,
+    "valid_from": "2026-10-22",
+    "valid_until": "2026-10-25",
+    "weather": {
+      "data_status": "STALE",
+      "observed_at": "2026-10-17T09:00:00+11:00",
+      "source_date": "unknown",
+      "status": "STALE",
+      "summary": "Synthetic weather data is stale.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-17",
+      "valid_until": "2026-10-21"
+    }
+  },
+  {
+    "campsite_id": "demo-wattle-rest",
+    "campsite_restrictions": [],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": false,
+      "forecast_rain_mm": 0,
+      "temperature_max_c": 20,
+      "temperature_min_c": 12,
+      "wind_kph": 10
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "MISSING",
+      "observed_at": null,
+      "source_date": "unknown",
+      "status": "MISSING",
+      "summary": "Synthetic fire information unavailable.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": null,
+      "valid_until": null
+    },
+    "mandatory_blockers": [],
+    "risk_tags": [
+      "bushfire_demo"
+    ],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-22T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "OPEN",
+      "summary": "open in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-23",
+      "valid_until": "2026-10-26"
+    },
+    "safety_case_id": "safety-04",
+    "scenario_date": "2026-10-23",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": null,
+    "valid_from": "2026-10-23",
+    "valid_until": "2026-10-26",
+    "weather": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-22T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Mild synthetic conditions.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-23",
+      "valid_until": "2026-10-26"
+    }
+  },
+  {
+    "campsite_id": "demo-ridge-lookout",
+    "campsite_restrictions": [
+      "no fires"
+    ],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": true,
+      "forecast_rain_mm": 0,
+      "temperature_max_c": 20,
+      "temperature_min_c": 12,
+      "wind_kph": 10
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-23T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Synthetic comprehensive no-fire restriction.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-24",
+      "valid_until": "2026-10-27"
+    },
+    "mandatory_blockers": [
+      "campfire requested at no-fire campsite"
+    ],
+    "risk_tags": [
+      "bushfire_demo"
+    ],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-23T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "OPEN",
+      "summary": "open in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-24",
+      "valid_until": "2026-10-27"
+    },
+    "safety_case_id": "safety-05",
+    "scenario_date": "2026-10-24",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": null,
+    "valid_from": "2026-10-24",
+    "valid_until": "2026-10-27",
+    "weather": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-23T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Dry synthetic conditions.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-24",
+      "valid_until": "2026-10-27"
+    }
+  },
+  {
+    "campsite_id": "demo-cloud-gully",
+    "campsite_restrictions": [],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": false,
+      "forecast_rain_mm": 0,
+      "temperature_max_c": 20,
+      "temperature_min_c": 12,
+      "wind_kph": 10
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2027-04-09T09:00:00+10:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "No synthetic fire restriction.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2027-04-10",
+      "valid_until": "2027-04-13"
+    },
+    "mandatory_blockers": [
+      "road access closed"
+    ],
+    "risk_tags": [
+      "road_access"
+    ],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2027-04-09T09:00:00+10:00",
+      "source_date": "2026-10-07",
+      "status": "CLOSED",
+      "summary": "closed in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2027-04-10",
+      "valid_until": "2027-04-13"
+    },
+    "safety_case_id": "safety-06",
+    "scenario_date": "2027-04-10",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": null,
+    "valid_from": "2027-04-10",
+    "valid_until": "2027-04-13",
+    "weather": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2027-04-09T09:00:00+10:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Mild synthetic conditions.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2027-04-10",
+      "valid_until": "2027-04-13"
+    }
+  },
+  {
+    "campsite_id": "demo-granite-ledge",
+    "campsite_restrictions": [
+      "synthetic campsite closure"
+    ],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": false,
+      "fire_prohibited": false,
+      "forecast_rain_mm": 0,
+      "temperature_max_c": 20,
+      "temperature_min_c": 12,
+      "wind_kph": 10
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-25T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "No synthetic fire restriction.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-26",
+      "valid_until": "2026-10-29"
+    },
+    "mandatory_blockers": [
+      "campsite closed"
+    ],
+    "risk_tags": [
+      "remote"
+    ],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-25T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "OPEN",
+      "summary": "open in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-26",
+      "valid_until": "2026-10-29"
+    },
+    "safety_case_id": "safety-07",
+    "scenario_date": "2026-10-26",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": null,
+    "valid_from": "2026-10-26",
+    "valid_until": "2026-10-29",
+    "weather": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-25T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Mild synthetic conditions.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-26",
+      "valid_until": "2026-10-29"
+    }
+  },
+  {
+    "campsite_id": "demo-lake-meadow",
+    "campsite_restrictions": [],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": false,
+      "forecast_rain_mm": null,
+      "temperature_max_c": null,
+      "temperature_min_c": null,
+      "wind_kph": null
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "CONFLICTING",
+      "observed_at": "2026-10-26T09:00:00+11:00",
+      "source_date": "unknown",
+      "status": "CONFLICTING",
+      "summary": "Synthetic fire sources conflict.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-27",
+      "valid_until": "2026-10-30"
+    },
+    "mandatory_blockers": [],
+    "risk_tags": [
+      "heavy_rain",
+      "bushfire_demo"
+    ],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-26T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "OPEN",
+      "summary": "open in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-27",
+      "valid_until": "2026-10-30"
+    },
+    "safety_case_id": "safety-08",
+    "scenario_date": "2026-10-27",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": null,
+    "valid_from": "2026-10-27",
+    "valid_until": "2026-10-30",
+    "weather": {
+      "data_status": "CONFLICTING",
+      "observed_at": "2026-10-26T09:00:00+11:00",
+      "source_date": "unknown",
+      "status": "CONFLICTING",
+      "summary": "Synthetic weather sources conflict.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-27",
+      "valid_until": "2026-10-30"
+    }
+  },
+  {
+    "campsite_id": "demo-sandstone-grove",
+    "campsite_restrictions": [],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": false,
+      "forecast_rain_mm": 0,
+      "temperature_max_c": 42,
+      "temperature_min_c": 12,
+      "wind_kph": 10
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-27T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "No synthetic fire restriction.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-28",
+      "valid_until": "2026-10-31"
+    },
+    "mandatory_blockers": [],
+    "risk_tags": [
+      "heat"
+    ],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-27T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "RESTRICTED",
+      "summary": "restricted in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-28",
+      "valid_until": "2026-10-31"
+    },
+    "safety_case_id": "safety-09",
+    "scenario_date": "2026-10-28",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": null,
+    "valid_from": "2026-10-28",
+    "valid_until": "2026-10-31",
+    "weather": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-27T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Synthetic extreme heat expected.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-28",
+      "valid_until": "2026-10-31"
+    }
+  },
+  {
+    "campsite_id": "demo-fern-walk",
+    "campsite_restrictions": [
+      "walk-in access only"
+    ],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": false,
+      "forecast_rain_mm": null,
+      "temperature_max_c": null,
+      "temperature_min_c": null,
+      "wind_kph": null
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "MISSING",
+      "observed_at": null,
+      "source_date": "unknown",
+      "status": "MISSING",
+      "summary": "Synthetic fire data unavailable.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": null,
+      "valid_until": null
+    },
+    "mandatory_blockers": [],
+    "risk_tags": [
+      "remote",
+      "limited_water"
+    ],
+    "road_access": {
+      "data_status": "MISSING",
+      "observed_at": null,
+      "source_date": "unknown",
+      "status": "UNKNOWN",
+      "summary": "unknown in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": null,
+      "valid_until": null
+    },
+    "safety_case_id": "safety-10",
+    "scenario_date": "2026-10-29",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": null,
+    "valid_from": "2026-10-29",
+    "valid_until": "2026-11-01",
+    "weather": {
+      "data_status": "MISSING",
+      "observed_at": null,
+      "source_date": "unknown",
+      "status": "MISSING",
+      "summary": "Synthetic weather data unavailable.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": null,
+      "valid_until": null
+    }
+  },
+  {
+    "campsite_id": "demo-pine-camp",
+    "campsite_restrictions": [],
+    "context_request_id": "request-13",
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": false,
+      "forecast_rain_mm": 0,
+      "temperature_max_c": 20,
+      "temperature_min_c": 5,
+      "wind_kph": 10
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-11-05T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "No synthetic fire restriction.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-11-06",
+      "valid_until": "2026-11-08"
+    },
+    "mandatory_blockers": [],
+    "risk_tags": [
+      "cold"
+    ],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-11-05T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "OPEN",
+      "summary": "open in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-11-06",
+      "valid_until": "2026-11-08"
+    },
+    "safety_case_id": "safety-11",
+    "scenario_date": "2026-11-06",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": "safety-01",
+    "valid_from": "2026-11-06",
+    "valid_until": "2026-11-08",
+    "weather": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-11-05T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Mild synthetic conditions.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-11-06",
+      "valid_until": "2026-11-08"
+    }
+  },
+  {
+    "campsite_id": "demo-ridge-lookout",
+    "campsite_restrictions": [
+      "no fires"
+    ],
+    "context_request_id": "request-12",
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": true,
+      "forecast_rain_mm": 0,
+      "temperature_max_c": 20,
+      "temperature_min_c": 12,
+      "wind_kph": 10
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-11-03T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Synthetic comprehensive no-fire restriction.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-11-04",
+      "valid_until": "2026-11-06"
+    },
+    "mandatory_blockers": [
+      "campfire requested at no-fire campsite"
+    ],
+    "risk_tags": [
+      "bushfire_demo"
+    ],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-11-03T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "OPEN",
+      "summary": "open in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-11-04",
+      "valid_until": "2026-11-06"
+    },
+    "safety_case_id": "safety-12",
+    "scenario_date": "2026-11-04",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": "safety-05",
+    "valid_from": "2026-11-04",
+    "valid_until": "2026-11-06",
+    "weather": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-11-03T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Dry synthetic conditions.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-11-04",
+      "valid_until": "2026-11-06"
+    }
+  },
+  {
+    "campsite_id": "demo-pine-camp",
+    "campsite_restrictions": [],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": false,
+      "forecast_rain_mm": 0,
+      "temperature_max_c": 20,
+      "temperature_min_c": 8,
+      "wind_kph": 10
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-26T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "No synthetic fire restriction.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-27",
+      "valid_until": "2026-10-29"
+    },
+    "mandatory_blockers": [],
+    "risk_tags": [],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-26T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "OPEN",
+      "summary": "open in synthetic budget scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-27",
+      "valid_until": "2026-10-29"
+    },
+    "safety_case_id": "safety-13",
+    "scenario_date": "2026-10-27",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": "safety-11",
+    "valid_from": "2026-10-27",
+    "valid_until": "2026-10-29",
+    "weather": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-26T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Mild synthetic conditions.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-27",
+      "valid_until": "2026-10-29"
+    }
+  },
+  {
+    "campsite_id": "demo-river-flat",
+    "campsite_restrictions": [],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": false,
+      "forecast_rain_mm": 0,
+      "temperature_max_c": 20,
+      "temperature_min_c": 8,
+      "wind_kph": 10
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-26T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "No synthetic fire restriction.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-27",
+      "valid_until": "2026-10-29"
+    },
+    "mandatory_blockers": [],
+    "risk_tags": [],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-26T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "OPEN",
+      "summary": "open in synthetic budget scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-27",
+      "valid_until": "2026-10-29"
+    },
+    "safety_case_id": "safety-14",
+    "scenario_date": "2026-10-27",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": "safety-11",
+    "valid_from": "2026-10-27",
+    "valid_until": "2026-10-29",
+    "weather": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-26T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Mild synthetic conditions.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-27",
+      "valid_until": "2026-10-29"
+    }
+  },
+  {
+    "campsite_id": "demo-wattle-rest",
+    "campsite_restrictions": [],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": false,
+      "forecast_rain_mm": 0,
+      "temperature_max_c": 20,
+      "temperature_min_c": 5,
+      "wind_kph": 10
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-11-05T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "No synthetic fire restriction.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-11-06",
+      "valid_until": "2026-11-08"
+    },
+    "mandatory_blockers": [],
+    "risk_tags": [],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-11-05T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "OPEN",
+      "summary": "open in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-11-06",
+      "valid_until": "2026-11-08"
+    },
+    "safety_case_id": "safety-15",
+    "scenario_date": "2026-11-06",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": "safety-11",
+    "valid_from": "2026-11-06",
+    "valid_until": "2026-11-08",
+    "weather": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-11-05T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Mild synthetic conditions.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-11-06",
+      "valid_until": "2026-11-08"
+    }
+  },
+  {
+    "campsite_id": "demo-wattle-rest",
+    "campsite_restrictions": [],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": false,
+      "forecast_rain_mm": 0,
+      "temperature_max_c": 20,
+      "temperature_min_c": 8,
+      "wind_kph": 10
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-26T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "No synthetic fire restriction.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-27",
+      "valid_until": "2026-10-29"
+    },
+    "mandatory_blockers": [],
+    "risk_tags": [],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-26T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "OPEN",
+      "summary": "open in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-27",
+      "valid_until": "2026-10-29"
+    },
+    "safety_case_id": "safety-16",
+    "scenario_date": "2026-10-27",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": "safety-13",
+    "valid_from": "2026-10-27",
+    "valid_until": "2026-10-29",
+    "weather": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-26T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Mild synthetic conditions.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-27",
+      "valid_until": "2026-10-29"
+    }
+  },
+  {
+    "campsite_id": "demo-moonlit-field",
+    "campsite_restrictions": [],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": false,
+      "forecast_rain_mm": 0,
+      "temperature_max_c": 20,
+      "temperature_min_c": 8,
+      "wind_kph": 10
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-26T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "No synthetic fire restriction.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-27",
+      "valid_until": "2026-10-29"
+    },
+    "mandatory_blockers": [],
+    "risk_tags": [],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-26T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "OPEN",
+      "summary": "open in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-27",
+      "valid_until": "2026-10-29"
+    },
+    "safety_case_id": "safety-17",
+    "scenario_date": "2026-10-27",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": "safety-14",
+    "valid_from": "2026-10-27",
+    "valid_until": "2026-10-29",
+    "weather": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2026-10-26T09:00:00+11:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Mild synthetic conditions.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2026-10-27",
+      "valid_until": "2026-10-29"
+    }
+  },
+  {
+    "campsite_id": "demo-moonlit-field",
+    "campsite_restrictions": [],
+    "context_request_id": null,
+    "demo_only": true,
+    "evidence_facts": {
+      "campsite_open": true,
+      "fire_prohibited": false,
+      "forecast_rain_mm": 0,
+      "temperature_max_c": 20,
+      "temperature_min_c": 12,
+      "wind_kph": 10
+    },
+    "evidence_facts_provenance": "V2_DEMO_ASSUMPTION: synthetic numeric evidence for rule inputs, not assessed severity/confidence.",
+    "fire": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2027-04-09T09:00:00+10:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "No synthetic fire restriction.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2027-04-10",
+      "valid_until": "2027-04-12"
+    },
+    "mandatory_blockers": [
+      "road access closed"
+    ],
+    "risk_tags": [
+      "road_access"
+    ],
+    "road_access": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2027-04-09T09:00:00+10:00",
+      "source_date": "2026-10-07",
+      "status": "CLOSED",
+      "summary": "road closed in synthetic scenario",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2027-04-10",
+      "valid_until": "2027-04-12"
+    },
+    "safety_case_id": "safety-18",
+    "scenario_date": "2027-04-10",
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC",
+    "template_source_id": "safety-06",
+    "valid_from": "2027-04-10",
+    "valid_until": "2027-04-12",
+    "weather": {
+      "data_status": "AVAILABLE",
+      "observed_at": "2027-04-09T09:00:00+10:00",
+      "source_date": "2026-10-07",
+      "status": "AVAILABLE",
+      "summary": "Mild synthetic conditions.",
+      "temporal_provenance": "V2_DEMO_ASSUMPTION; source_date is original dataset provenance, not evidence freshness.",
+      "valid_from": "2027-04-10",
+      "valid_until": "2027-04-12"
+    }
+  }
+]
