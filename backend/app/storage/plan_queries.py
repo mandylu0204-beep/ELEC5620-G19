@@ -9,6 +9,7 @@ from .repository import Repository
 from .finalisation import final_index
 from ..application.model_audit import load_model_trace
 from ..application.logistics_audit import load_audits
+from .check_feedback import reassessment_feedback
 
 
 def unpack(row, column):
@@ -69,7 +70,8 @@ class PlanQueries:
                       'final_history': [], 'planning_available': False, 'retry_available': False,
                       'retry_unavailable_reason': None, 'finalisation_available': False,
                       'current_version_revision': None, 'revision_available': False,
-                      'reassessment_available': False, 'current_inputs_error': None}
+                      'reassessment_available': False, 'current_inputs_error': None,
+                      'current_inputs_state': None, 'check_feedback': None}
             current_version = connection.execute('SELECT revision FROM versions WHERE id=? AND plan_id=?',
                 (plan['current_version_id'], plan_id)).fetchone()
             result['current_version_revision'] = current_version['revision'] if current_version else None
@@ -114,6 +116,8 @@ class PlanQueries:
                 if active and plan['current_version_id'] == binding['version_id'] and version.status != 'FINALISED':
                     result['eligibility'] = SqlitePersistencePort(self.db, plan['owner_id'], scope).decision(connection, version.version_context)[1].model_dump(mode='json')
                     result['finalisation_available'] = not review and version.status == 'ELIGIBLE_FOR_FINALISATION' and result['eligibility']['eligible'] and bool(result['route']) and run['status'] == 'SUCCEEDED' and run['stage'] == 'COMPLETED'
+            result['check_feedback'] = reassessment_feedback(connection, plan_id, run, scope,
+                binding['version_id'] if binding else None)
             if review:
                 result['run_history'] = []
             return result

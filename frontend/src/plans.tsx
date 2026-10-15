@@ -3,6 +3,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { FinalisePanel } from './finalise';
 import { RetryPlanning, ChangePlanning } from './planning';
 import { NextSteps } from './next_steps';
+import { CheckFeedback } from './check_feedback';
 import { NearMatches, type RecommendationGuidance } from './near_matches';
 import { ModelTracePanel, type ModelTrace } from './model_trace';
 import { LogisticsPlanPanel, LogisticsTracePanel, type LogisticsAudit } from './logistics_plan';
@@ -23,7 +24,7 @@ export type Safety = Artifact & {outcome:string;risk_level:string;confidence:str
 type Assessment = {assessment_id:string;kind:string;version_context:Version['version_context'];result:Logistics|Safety};
 type Eligibility = {eligible:boolean;blocking_reasons:Blocker[];review_required:boolean;valid_review_id:string|null};
 export type FinalIndex = {final_id:string;plan_version_id:string;run_id:string;version_number:number;finalised_at:string;is_current:boolean};
-export type PlanDetail = {model_assessment_audits?:Record<string,LogisticsAudit>;recommendation_guidance?:RecommendationGuidance|null;model_planning_trace?:ModelTrace|null;revision_available?:boolean;reassessment_available?:boolean;current_version_revision?:number|null;current_inputs_error?:string|null;planning_available?:boolean;retry_available?:boolean;retry_unavailable_reason?:string|null;finalisation_available:boolean;last_final:FinalIndex|null;selected_final:FinalIndex|null;final_history:FinalIndex[];reviews:{review_id:string;decision:string;reason:string;reviewer_user_id:string}[];review_available?:boolean;plan:{plan_id:string;request_id:string;active_run_id:string|null;current_version_id:string|null;final_version_id:string|null;created_at:string};run:Run|null;run_history:{run_id:string;status:string;stage:string;created_at:string;plan_version_id:string|null;version_number:number|null}[];confirmed_context:{request_id:string;requirements:Requirements;profile_snapshot:Profile;demo_context:{demo_today:string;mode:string};dataset_context:{dataset_version:string;rules_version:string}}|null;events:{id:number;stage:string;status:string;error:ErrorInfo|null;created_at:string}[];version:Version|null;assessments:Assessment[];recommendations:{recommendation_id:string;result:Artifact & {search_outcome:string;candidates:{campsite_id:string;rank:number;reasons:string[];material_uncertainties:string[]}[];excluded_candidates:{campsite_id:string;reasons:string[]}[]}}|null;route:{status:string;eligibility:Eligibility}|null;eligibility:Eligibility|null};
+export type PlanDetail = {current_inputs_state?:'CHANGED'|'UNAVAILABLE'|null;check_feedback?:{status:'IN_PROGRESS'|'COMPLETED'|'FAILED'|'INCOMPLETE';started_at:string;completed_at:string|null;comparison:'NOT_COMPARABLE'|'UNCHANGED'|'CHANGED';compared_run_id:string|null;changed_sections:string[]}|null;model_assessment_audits?:Record<string,LogisticsAudit>;recommendation_guidance?:RecommendationGuidance|null;model_planning_trace?:ModelTrace|null;revision_available?:boolean;reassessment_available?:boolean;current_version_revision?:number|null;current_inputs_error?:string|null;planning_available?:boolean;retry_available?:boolean;retry_unavailable_reason?:string|null;finalisation_available:boolean;last_final:FinalIndex|null;selected_final:FinalIndex|null;final_history:FinalIndex[];reviews:{review_id:string;decision:string;reason:string;reviewer_user_id:string}[];review_available?:boolean;plan:{plan_id:string;request_id:string;active_run_id:string|null;current_version_id:string|null;final_version_id:string|null;created_at:string};run:Run|null;run_history:{run_id:string;status:string;stage:string;created_at:string;plan_version_id:string|null;version_number:number|null}[];confirmed_context:{request_id:string;requirements:Requirements;profile_snapshot:Profile;demo_context:{demo_today:string;mode:string};dataset_context:{dataset_version:string;rules_version:string}}|null;events:{id:number;stage:string;status:string;error:ErrorInfo|null;created_at:string}[];version:Version|null;assessments:Assessment[];recommendations:{recommendation_id:string;result:Artifact & {search_outcome:string;candidates:{campsite_id:string;rank:number;reasons:string[];material_uncertainties:string[]}[];excluded_candidates:{campsite_id:string;reasons:string[]}[]}}|null;route:{status:string;eligibility:Eligibility}|null;eligibility:Eligibility|null};
 type PlanRow = {search_outcome?:string|null;start_date?:string|null;end_date?:string|null;last_final:FinalIndex|null;plan_id:string;request_id:string;destination:string|null;created_at:string;execution_mode:string|null;run_status:string|null;stage:string|null;version_status:string|null;version_number:number|null};
 const LABEL:{[key:string]:string} = {PENDING:'等待执行',RUNNING:'执行中',SUCCEEDED:'检查已完成',FAILED:'执行失败',CANCELLED:'已取消',SUPERSEDED:'已被新运行取代',RECOMMENDING:'推荐营地',GENERATING:'生成行程',SAVING_VERSION:'保存版本',ASSESSING_LOGISTICS:'装备与物流',ASSESSING_SAFETY:'安全评估',ROUTING:'判断下一步',COMPLETED:'完成检查',DRAFT:'草稿',ASSESSING:'正在评估',REVISION_REQUIRED:'需要修订',ESCALATED:'等待审核员处理',BLOCKED:'方案有待完善',ELIGIBLE_FOR_FINALISATION:'可以保存方案',REJECTED:'审核未通过',FINALISED:'已保存',PASSED:'评估通过',REVISION:'需要修订',REVIEW:'需要审核',WEATHER:'天气',FIRE:'营火限制',ROAD:'道路',RESTRICTION:'营地限制',AVAILABLE:'可用',MISSING:'缺失',STALE:'过期',CONFLICTING:'冲突',LOW:'低',MEDIUM:'中',HIGH:'高',UNKNOWN:'未知',OPEN:'开放',CLOSED:'关闭',OWNED:'已自备',CONFIRMED_RENTAL:'已确认租借',UNCONFIRMED:'未确认',CAMPSITE:'营地',TRANSPORT:'交通',FOOD:'食物',WATER:'饮用水',ADDITIONAL_GEAR:'新增装备',PLAN:'初次规划',REASSESS:'重新评估',REVISE:'方案修订',TRAVEL:'交通',CAMP:'露营',ACTIVITY:'活动'};
 const STAGES=['RECOMMENDING','GENERATING','SAVING_VERSION','ASSESSING_LOGISTICS','ASSESSING_SAFETY','ROUTING','COMPLETED'];
@@ -100,18 +101,21 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
   const qualityIssues = safety ? Object.entries(safety.data_quality).filter(([,value])=>value!=='AVAILABLE') : [];
   const qualityGroups = new Map<string,string[]>();
   qualityIssues.forEach(([kind,status])=>{const text=checkState(kind,status,safety?.evidence??[],requirements).detail;qualityGroups.set(text,[...(qualityGroups.get(text)??[]),checkNames[kind]??'安全信息']);});
-  const safetyText = !safety ? '尚未检查' : qualityIssues.length ? '安全信息待核实' : safety.outcome==='BLOCKED'?'安全条件未满足':validApproval&&safety.outcome==='REVIEW' ? '审核已批准' : safety.requires_human_review ? '需要人工审核' : label(safety.outcome);
+  const safetyText = !safety ? '尚未检查' : qualityIssues.length ? qualityIssues.some(([,status])=>status==='CONFLICTING')?'安全资料存在冲突':qualityIssues.some(([,status])=>status==='STALE')?'安全资料需要更新':'缺少适用的安全资料' : safety.outcome==='BLOCKED'?'安全条件未满足':validApproval&&safety.outcome==='REVIEW' ? '审核已批准' : safety.requires_human_review ? '需要人工审核' : label(safety.outcome);
   const rawWarnings = data.eligibility?.blocking_reasons??[];
   const hiddenCodes = new Set(['VERSION_STATE','ASSESSMENT_BLOCKED','RUN_NOT_SUCCEEDED','REVISION_REQUIRED','REVIEW_REQUIRED',
     ...(qualityIssues.length?['EVIDENCE_COVERAGE','EVIDENCE_UNAVAILABLE','ROAD_UNAVAILABLE']:[]),
     ...(rawWarnings.some(item=>item.code==='ROAD_CLOSED')?['ROAD_UNAVAILABLE']:[])]);
   const warnings = [...new Set(rawWarnings.filter(item=>!hiddenCodes.has(item.code)).map(item=>blockerText(item.code)))];
+  const weatherFields:Record<string,string>={'gear_rule_input.forecast_rain_mm':'降雨','gear_rule_input.temperature_max_c':'最高气温',
+    'gear_rule_input.temperature_min_c':'最低气温','gear_rule_input.wind_kph':'风速'};
+  const missingWeather=[...new Set((logistics?.clarifications??[]).flatMap(item=>weatherFields[item.field]?[weatherFields[item.field]]:[]))];
   const overBudget = logistics?.budget_difference_cents != null && logistics.budget_difference_cents > 0;
   const hasSafetyIssue = !!safety && (qualityIssues.length>0 || (!validApproval&&(safety.outcome!=='PASSED' || safety.requires_human_review)));
   const tone = data.current_inputs_error ? 'warning' : run?.status==='FAILED' || ['BLOCKED','REJECTED'].includes(version?.status??'') ? 'danger'
     : ['REVISION_REQUIRED','ESCALATED'].includes(version?.status??'') || noMatch ? 'warning'
     : ['FINALISED','ELIGIBLE_FOR_FINALISATION'].includes(version?.status??'') ? 'success' : 'neutral';
-  const stateText = data.current_inputs_error ? '检查结果待更新' : run&&['PENDING','RUNNING'].includes(run.status) ? label(run.status)
+  const stateText = data.current_inputs_error ? data.current_inputs_state==='UNAVAILABLE'?'检查服务暂不可用':'检查结果待更新' : run&&['PENDING','RUNNING'].includes(run.status) ? run.operation==='REASSESS'?'正在重新检查':label(run.status)
     : run?.status==='FAILED' ? '执行未完成' : noMatch ? '需要调整需求' : version ? label(version.status) : label(run?.status);
   useEffect(()=>{setSection(review?'safety':'itinerary');setAdjustOpen(false);},[run?.run_id,version?.version_context.plan_version_id,review]);
   function keyboardTabs(event:KeyboardEvent<HTMLButtonElement>,index:number) {
@@ -141,9 +145,10 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       </dl>
     </header>
     {error&&<p className="error-box" role="alert">读取更新失败：{error}</p>}
+    {!review&&!snapshot&&<CheckFeedback data={data}/>}
     {!snapshot&&run&&!run.is_active&&<div className="mode-notice"><span>正在查看历史方案，评估属于当时的证据。</span>{current&&<button className="secondary-button" onClick={current}>查看当前方案</button>}</div>}
     {run?.error&&<div className="error-box" role="alert"><strong>本次执行未完成</strong><p>{run.error.message}</p>{!review&&!snapshot&&<RetryPlanning data={data} refresh={refresh}/>}</div>}
-    {(warnings.length>0 || overBudget || hasSafetyIssue)&&<section className="plan-attention" role="alert" aria-label="需要处理的问题">
+    {!['PENDING','RUNNING'].includes(run?.status??'')&&(warnings.length>0 || overBudget || hasSafetyIssue)&&<section className="plan-attention" role="alert" aria-label="需要处理的问题">
       <div><span className="attention-mark" aria-hidden="true">!</span><div><h2>{data.current_inputs_error?'此前检查发现的问题':'确认方案前需要处理'}</h2><ul>
         {overBudget&&<li>行程估算超出预算 {aud(logistics?.budget_difference_cents)}。</li>}
         {[...qualityGroups.entries()].map(([text,names])=><li key={text}>{names.join('、')}：{text}</li>)}
@@ -158,7 +163,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
     {!review&&!snapshot&&(data.revision_available||data.reassessment_available)&&<details className="plan-adjust" id={prefix+'-adjust'} key={run?.run_id} open={adjustOpen} onToggle={event=>setAdjustOpen(event.currentTarget.open)}>
       <summary>修改行程或更新检查 <span aria-hidden="true">↗</span></summary><ChangePlanning data={data} refresh={refresh}/>
     </details>}
-    {run&&['PENDING','RUNNING'].includes(run.status)&&<div className="plan-live-progress" role="status"><span className="progress-pulse" aria-hidden="true"/><span>正在{label(run.stage)}，完成后会自动更新。</span></div>}
+    {run&&run.operation!=='REASSESS'&&['PENDING','RUNNING'].includes(run.status)&&<div className="plan-live-progress" role="status"><span className="progress-pulse" aria-hidden="true"/><span>正在{label(run.stage)}，完成后会自动更新。</span></div>}
     <div className="plan-tabs" role="tablist" aria-label="方案内容">
       {PLAN_SECTIONS.map((tab,index)=><button key={tab.id} ref={node=>{tabRefs.current[index]=node;}} id={prefix+'-tab-'+tab.id} type="button" role="tab" aria-selected={section===tab.id} aria-controls={prefix+'-'+tab.id} tabIndex={section===tab.id?0:-1} onClick={()=>setSection(tab.id)} onKeyDown={event=>keyboardTabs(event,index)}>
         {noMatch&&tab.id==='itinerary'?'营地对照':tab.title}{((tab.id==='safety'&&hasSafetyIssue)||(tab.id==='cost'&&overBudget))&&<i className="tab-alert" aria-label="有待处理的问题"/>}
@@ -167,7 +172,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
     <div {...pane('itinerary')}>
       {noMatch?data.recommendation_guidance?<NearMatches value={data.recommendation_guidance} requestId={data.plan.request_id}/>:<section className="panel"><h2>没有满足需求的营地</h2><p>请在“记录”中查看被排除营地的理由，调整条件并重新确认需求。</p></section>:<section className="panel itinerary-panel"><div className="section-title"><span className="eyebrow">YOUR ITINERARY</span><h2>行程安排</h2></div>
         {version?<><div className="itinerary-camps">{version.content.selected_campsite_ids.map(id=><span key={id}>{campName(id)}</span>)}</div>
-          {run?.operation==='REASSESS'&&<p className="muted">行程保持不变，已重新检查装备、费用与安全。{logisticsAudit&&'本次装备与预算建议由模型重新评估。'}</p>}
+          {run?.operation==='REASSESS'&&<p className="muted">本轮保留原行程，检查进度和结果见上方。{logisticsAudit&&'装备与预算建议可在对应页面查看。'}</p>}
           {version.content.itinerary_entries.length?<ol className="plan-timeline">{version.content.itinerary_entries.map((entry,index)=><li key={index}>
             <div className="timeline-time"><span>{label(entry.entry_kind)}</span><time>{time(entry.start_at)}</time></div>
             <div className="timeline-content"><h3>{entry.campsite_id?campName(entry.campsite_id):label(entry.entry_kind)}</h3><p>{entry.description}</p><small>至 {time(entry.end_at)}</small></div>
@@ -184,7 +189,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
         <div className="table-scroll"><table><caption>装备数量与缺口</caption><thead><tr>{['装备','所需','已具备','缺口','单位','容量要求','安排','必要'].map(title=><th key={title}>{title}</th>)}</tr></thead><tbody>{logistics.gear_checklist.map((item,index)=><tr key={index} className={item.essential&&(item.missing_quantity==null||Number(item.missing_quantity)>0)?'gear-gap':''}>
           <td>{equipmentLabel(item.item_key)}</td><td>{item.required_quantity??'未知'}</td><td>{item.available_quantity??'未知'}</td><td>{item.missing_quantity??'未知'}</td><td>{unitName(item.unit)}</td><td>{item.capacity_requirement===null?'未知':`${item.capacity_requirement} 人`}</td><td>{label(item.arrangement_status)}</td><td>{item.essential?'是':'否'}</td>
         </tr>)}</tbody></table></div>{!logistics.gear_checklist.length&&<p className="muted">没有提供装备清单。</p>}
-        <Blockers items={logistics.mandatory_blockers}/>{logistics.clarifications.map((item,index)=><p className="clarifications" key={index}>{item.question} · {item.reason}</p>)}<Notes artifact={logistics}/>
+        <Blockers items={logistics.mandatory_blockers}/>{missingWeather.length>0&&<div className="clarifications"><p>缺少适用于此次行程的{missingWeather.join('、')}资料，暂时无法完整计算装备需求。</p><button className="secondary-button" onClick={()=>{setSection('safety');tabRefs.current[3]?.focus();}}>查看安全信息</button></div>}{logistics.clarifications.filter(item=>!weatherFields[item.field]).map((item,index)=><p className="clarifications" key={index}>{item.question} · {item.reason}</p>)}<Notes artifact={logistics}/>
       </>:<p className="plan-empty-text">尚未保存装备与物流评估。</p>}
     </section><LogisticsPlanPanel value={logisticsAudit} section="gear" money={aud} itemName={equipmentLabel} unitName={unitName}/></div>
     <div {...pane('cost')}><section className="panel"><div className="section-title"><span className="eyebrow">YOUR BUDGET</span><h2>费用与预算</h2></div>

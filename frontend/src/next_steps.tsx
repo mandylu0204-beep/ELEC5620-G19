@@ -12,10 +12,10 @@ export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}
   let title='调整方案后再确认';
   let description='按列出的问题调整安排。修改日期、人数、预算、偏好或露营资料时，需要重新确认需求。';
   if(data.current_inputs_error){
-    title='此前的检查结果需要更新';
-    description=/变化|不同|不一致|漂移/.test(data.current_inputs_error)
+    title=data.current_inputs_state==='CHANGED'?'此前的检查结果需要更新':'检查服务暂不可用';
+    description=data.current_inputs_state==='CHANGED'
       ? '用于检查方案的资料或服务设置已更新，此前的费用和安全结果仅供参考。可以保留行程重新检查；如修改日期、人数或预算，请重新确认需求。'
-      : '当前暂时无法核对这份方案此前的检查结果，请先恢复检查服务。原行程仍然保留。';
+      : '当前无法核对已有检查结果，暂不能确认保存。你的行程和已有结果仍然保留，请在服务恢复后再检查。';
   }else if(run.status==='FAILED'){
     if(run.error?.code==='REQUEST_NOT_CONFIRMED'){
       title='请重新确认需求';description='修改涉及预算、日期或必须条件，请核对新需求并确认后再规划。';
@@ -34,7 +34,7 @@ export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}
     title=reasons.has('ROAD_CLOSED')?'请更换可通行的营地':reasons.has('CAMPSITE_CLOSED')?'请更换开放的营地':'请调整营火安排';
     description='按列出的出行限制调整安排，再检查新方案。审核员不能解除道路、营地关闭或禁火规定。';
   }else if(quality.some(value=>['MISSING','STALE','CONFLICTING'].includes(value))){
-    title='先确认此次行程的安全信息';description='查看安全页的具体问题和适用日期。可调整日期或营地；若资料本身需要补充或更新，请由项目负责人维护后再检查。重新检查不会自动补齐资料。';
+    title='当前资料还不能支持完整的安全判断';description='在安全页查看缺少的资料、日期范围或冲突。你可以调整日期或营地，也可以保留草稿，待资料更新后再检查。重复检查不会自动补齐资料。';
   }else if(review?.decision==='REQUEST_REVISION'||review?.decision==='REJECT'){
     title=review.decision==='REJECT'?'审核未通过，请调整方案':'审核员要求调整方案';
     description='按审核理由调整安排。更换营地可修改方案；更改日期、预算、人数或偏好时，请重新确认需求。';
@@ -42,8 +42,8 @@ export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}
     title='等待审核员处理';description='这份方案需要人工核对风险，审核完成后可继续。';
   }
   return <section className="panel next-steps" aria-label="接下来怎么做"><h2>{title}</h2><p>{description}</p>
-    {data.current_inputs_error&&<><p className="muted">重新检查会更新装备、费用和安全结果，保留当前行程；资料仍不适用时，方案仍需调整。</p>
-      {data.reassessment_available&&onRecheck?<button className="secondary-button" onClick={onRecheck}>前往重新检查 ↓</button>:<p className="muted">当前暂不能重新检查，请联系项目负责人更新资料或恢复服务。</p>}
+    {data.current_inputs_error&&<>{data.current_inputs_state==='CHANGED'&&<p className="muted">重新检查保留当前行程；若资料仍缺失或不适用，问题仍会保留。</p>}
+      {data.reassessment_available&&onRecheck?<button className="secondary-button" onClick={onRecheck}>前往重新检查 ↓</button>:<p className="muted">当前暂不能启动检查，原行程已保留。</p>}
       <details className="source-details"><summary>查看系统详情</summary><p>{data.current_inputs_error}</p></details></>}
     {review&&<div className="clarifications"><strong>审核理由</strong><p>{review.reason}</p></div>}
     <div className="plan-actions"><Link className="text-link" to={'/request?copy_from='+encodeURIComponent(data.plan.request_id)}>调整需求并重新确认 ↗</Link><Link className="text-link" to="/profile">修改露营资料 ↗</Link></div>

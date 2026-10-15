@@ -13,7 +13,7 @@ export function SafetyInformation({value,requirements,summary,approved,review,ou
     {outdated&&<p className="mode-notice">以下是此前保存的资料和检查结果，更新检查后才能用于当前确认。</p>}
     <div className="safety-quality">{Object.entries(value.data_quality).map(([kind,status])=>{const state=checkState(kind,status,value.evidence,requirements);return <div className={status==='AVAILABLE'&&state.title==='资料适用'?'quality-available':'quality-issue'} key={kind}><span>{checkNames[kind]??'安全信息'}</span><strong>{state.title}</strong></div>;})}</div>
     {blockers}<h3>接下来可以怎么做</h3><ul>
-      {issues&&<li>核对下方资料的适用日期，可调整出行日期或营地。若资料需补充或更新，请由项目负责人维护后再检查方案。</li>}
+      {issues&&<li>核对下方资料的适用日期，可调整出行日期或营地，也可以保留草稿，待适用资料更新后再检查。</li>}
       {value.requires_human_review&&!issues&&!approved&&!value.mandatory_blockers.length&&<li>这份方案需要审核员核对风险，审核完成后再确认保存。</li>}
       {value.hazards.length>0&&<li>资料记录了天气、活动或通行风险，请查看下方的完整检查说明。</li>}
       {value.mandatory_blockers.length>0&&<li>先处理已列出的装备或安全条件；人工审核不能替代缺少的资料或解除关闭、禁火限制。</li>}

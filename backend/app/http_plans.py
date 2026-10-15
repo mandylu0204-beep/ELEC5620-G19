@@ -135,6 +135,7 @@ def retry_fields(request, user, data):
     data['revision_available'] = can_change and 'REVISE' in operations
     data['reassessment_available'] = can_change and 'REASSESS' in operations
     data['current_inputs_error'] = None
+    data['current_inputs_state'] = None
     if run and run['is_active']:
         with state.database.transaction(write=False) as connection:
             row = connection.execute('SELECT scope FROM runs WHERE id=?', (run['run_id'],)).fetchone()
@@ -142,7 +143,10 @@ def retry_fields(request, user, data):
             state.runtime.validate_scope(RunScope.model_validate_json(row['scope']))
         except ContractFailure as exc:
             data['current_inputs_error'] = exc.error.message
+            data['current_inputs_state'] = 'CHANGED' if exc.error.code == ErrorCode.STALE_CONTEXT else 'UNAVAILABLE'
             data['finalisation_available'] = False
+            if data['current_inputs_state'] == 'UNAVAILABLE':
+                data['revision_available'] = data['reassessment_available'] = False
     recommendation = (data.get('recommendations') or {}).get('result')
     data['recommendation_guidance'] = None
     if recommendation and recommendation['search_outcome'] == 'NO_MATCH':
