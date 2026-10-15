@@ -107,6 +107,48 @@ def test_model_reads_facts_evaluates_structured_plan_and_returns_shared_agent_re
         assert private not in outcome.trace.model_dump_json()
 
 
+def test_evaluation_feedback_keeps_computed_values_and_exact_proposal_without_repeated_facts():
+    dataset, input, config = input_fixture(missing=['sleeping_bag'])
+    agent, requests = agent_fixture(dataset, config)
+    outcome = call(agent.assess_with_trace(input))
+    messages = requests[2]['messages']
+    action = json.loads(messages[-2]['content'])
+    feedback = json.loads(messages[-1]['content'][12:])
+    assert feedback['evaluated_proposal'] == action['arguments']
+    assert feedback['confirmation_is_not_granted'] is True
+    wire = feedback['plan']
+    saved = outcome.plan.model_dump(mode='json')
+    for field in ('budget_allocations', 'projected_cost_breakdown', 'projected_total_cents',
+                  'known_subtotal_cents', 'budget_difference_cents', 'budget_feasible',
+                  'unallocated_known_budget_cents', 'requires_user_confirmation'):
+        assert wire[field] == saved[field]
+    assert 'source_refs' not in wire and saved['source_refs']
+    for thin, full in zip(wire['gear_actions'], saved['gear_actions']):
+        assert thin == {key: value for key, value in full.items() if key not in {'fact', 'price_source'}} | {
+            'item_key': full['fact']['item_key']}
+    original = {'tool': 'evaluate_logistics_plan', 'read_only': True, 'plan': saved,
+                'rule_outcome': feedback['rule_outcome'], 'confirmation_is_not_granted': True}
+    assert len(json.dumps(feedback).encode()) < len(json.dumps(original).encode())
+    # The earlier read is unchanged: each original source, blocker and quote is
+    # still available to the model; the persisted plan remains the full object.
+    facts = json.loads(messages[3]['content'][12:])
+    tools = LogisticsToolset(input, baseline(dataset, input, config))
+    assert facts == tools.read_logistics_facts()
+
+
+def test_prompt_changes_alter_registered_identity_without_changing_persistence_validation(monkeypatch):
+    from app.llm import logistics_agent
+    dataset, _, config = input_fixture()
+    agent, _ = agent_fixture(dataset, config)
+    before = agent.identity
+    monkeypatch.setattr(logistics_agent, 'LOGISTICS_SYSTEM_PROMPT', logistics_agent.LOGISTICS_SYSTEM_PROMPT + '\nShorter wire instructions.')
+    after = agent.identity
+    assert before['prompt_sha256'] != after['prompt_sha256']
+    assert before['configuration_fingerprint'] != after['configuration_fingerprint']
+    for key in ('agent_version', 'tool_version', 'validation_version', 'kernel_version'):
+        assert before[key] == after[key]
+
+
 def test_model_choices_change_supply_strategy_and_computed_costs_not_only_summary():
     dataset, input, config = input_fixture(missing=['sleeping_bag'])
     hire, _ = agent_fixture(dataset, config)
@@ -330,7 +372,7 @@ def test_invalid_input_is_rejected_before_model_call(problem):
     assert not requests
 
 
-@pytest.mark.parametrize('change', ['price', 'model-config', 'selected-safety'])
+@pytest.mark.parametrize('change', ['price', 'model-config', 'selected-safety', 'reasoning-effort'])
 def test_identity_and_fact_changes_during_model_wait_reject_outcome(change):
     dataset, input, config = input_fixture()
     agent_ref = []
@@ -340,6 +382,8 @@ def test_identity_and_fact_changes_during_model_wait_reject_outcome(change):
             dataset._costs['cost-02'] = old.model_copy(update={'typical_cents': 99})
         elif change == 'model-config':
             agent_ref[0].client.settings = model_settings(timeout_seconds=6)
+        elif change == 'reasoning-effort':
+            agent_ref[0].client.settings = model_settings(reasoning_effort='low')
         else:
             config._context.selection_config['safety_case_ids'] = '[]'
     agent, requests = agent_fixture(dataset, config, on_request=on_request)
@@ -347,6 +391,27 @@ def test_identity_and_fact_changes_during_model_wait_reject_outcome(change):
     with pytest.raises(ContractFailure) as error:
         call(agent.assess_with_trace(input))
     assert error.value.error.code == 'STALE_CONTEXT' and len(requests) == 1
+
+
+def test_second_round_proxy_failure_has_bounded_sanitized_operational_metadata():
+    dataset, input, config = input_fixture()
+    requests = []
+    def respond(request):
+        requests.append(json.loads(request.content))
+        if len(requests) == 1:
+            return httpx.Response(200, json=completion({
+                'action': 'tool', 'name': 'read_logistics_facts', 'arguments': {}}))
+        return httpx.Response(502, text='unit-only-school-secret private upstream response')
+    agent = LogisticsAgent(dataset, CampusModelClient(model_settings(), transport=httpx.MockTransport(respond)),
+                           workflow_configuration=config)
+    with pytest.raises(ContractFailure) as error:
+        call(agent.assess_with_trace(input))
+    metadata = error.value.error.context
+    assert len(requests) == 2 and error.value.error.recoverable
+    assert metadata['http_status'] == '502' and metadata['role'] == 'LOGISTICS'
+    assert metadata['logistics_turn'] == '2' and int(metadata['elapsed_ms']) >= 0
+    assert int(metadata['request_message_bytes']) == sum(len(m['content'].encode()) for m in requests[1]['messages'])
+    assert 'unit-only-school-secret' not in str(metadata) and 'private upstream response' not in str(metadata)
 
 
 def test_tools_are_detached_and_do_not_read_files_or_oracles_after_loading(monkeypatch):

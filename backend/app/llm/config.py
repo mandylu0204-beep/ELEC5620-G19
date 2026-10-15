@@ -24,6 +24,10 @@ class CampusModelSettings(BaseSettings):
         validation_alias='ELEC5620_MAX_COMPLETION_TOKENS')
     max_attempts: int = Field(default=2, ge=1, le=3, validation_alias='ELEC5620_MAX_ATTEMPTS')
     max_turns: int = Field(default=4, ge=2, le=6, validation_alias='ELEC5620_MAX_TURNS')
+    # Explicit opt-in only. The school proxy accepted low in live diagnostics;
+    # unsupported provider/template overrides are deliberately not forwarded.
+    reasoning_effort: Literal['low'] | None = Field(default=None,
+        validation_alias='ELEC5620_REASONING_EFFORT')
 
     @field_validator('base_url')
     @classmethod
@@ -46,4 +50,5 @@ class CampusModelSettings(BaseSettings):
 
     def public_identity(self):
         """Only non-secret configuration may participate in saved run identity."""
-        return self.model_dump(mode='json')
+        # Preserve pre-option identities when the option is not enabled.
+        return self.model_dump(mode='json', exclude_none=True)

@@ -11,6 +11,7 @@ from ..agents.rules.common import RULES_VERSION, ensure_execution_mode
 from ..contracts.base import ContractModel
 from ..contracts.dto import LogisticsInput, LogisticsResult
 from ..contracts.enums import ErrorCode, ExecutionMode
+from ..contracts.errors import ContractFailure
 from .client import model_failure
 from .coordinator import canonical, digest
 from .logistics_schema import (
@@ -39,7 +40,21 @@ DEFER_OPTIONAL is only offered for nonessential items; it retains the recorded
 gap and explicitly plans no procurement, not free stock or a waived essential.
 PROPOSE_BORROW cannot promise a lender, availability or zero cost. ASK_USER is
 required for unknown stock/needs; never assume missing information is zero.
-Prioritize essential needs and feasible arrangements, explain tradeoffs briefly.
+This is a bounded supply-choice task, not a new itinerary or safety review.
+Do not calculate quantities, prices, totals or allocations yourself: the tool
+does ALL arithmetic. Do not try to resolve missing weather or equipment data.
+Choose directly from each item's allowed_methods. A single allowed method needs
+no deliberation. Unknown required quantity/stock means ASK_USER, not a guessed
+quantity or rental. You may defer only items explicitly offering DEFER_OPTIONAL.
+Prioritize essential needs and feasible arrangements. Use short English reasons
+(at most 8 words each) and a summary of at most 30 words; no repeated fact lists.
+Use these exact envelopes (the sample placeholders are NOT item or cost keys):
+{"action":"tool","name":"evaluate_logistics_plan","arguments":{"gear_choices":[{"item_key":"<actual item_key>","method":"<allowed method>","reason":"<brief reason>"}],"cost_priority":["<actual line_id>"],"decision_summary":"<brief tradeoff>"}}
+After evaluation copy evaluated_proposal exactly into
+{"action":"final","proposal":<evaluated_proposal>}.
+Evaluation feedback contains every computed supply action, cost and allocation.
+Original gear/source facts remain in the earlier read result; their omission
+from the compact evaluation feedback does not waive any facts or blockers.
 Never delete required gear/costs or change confirmed budget, itinerary, transport,
 meal preference, profile or weather. Unknown costs stay unknown. Budget priority
 is not permission to omit unfunded costs or a claim that the trip is affordable.
@@ -156,7 +171,16 @@ class LogisticsAgent:
         attempts, read = 0, False
         started = time.monotonic()
         for turn in range(1, self.client.settings.max_turns + 1):
-            response = await self.client.complete(messages)
+            try:
+                response = await self.client.complete(messages)
+            except ContractFailure as exc:
+                # Operational metadata only, never prompts, profile values,
+                # response bodies, headers, credentials or private reasoning.
+                raise ContractFailure(exc.error.model_copy(update={'context': {
+                    **exc.error.context, 'role': 'LOGISTICS', 'logistics_turn': str(turn),
+                    'elapsed_ms': str(int((time.monotonic() - started) * 1000)),
+                    'request_message_bytes': str(sum(len(item['content'].encode('utf-8')) for item in messages)),
+                }})) from None
             self._check_configuration()
             if self.identity != identity or digest(self._facts(input).model_dump_json()) != facts_hash:
                 raise model_failure('装备事实、规则或模型身份在调用期间变化；未采纳结果。', code=ErrorCode.STALE_CONTEXT)
@@ -189,8 +213,19 @@ class LogisticsAgent:
                     raise model_failure('模型必须先读取实际装备与费用事实。', code=ErrorCode.CONTRACT_INVALID)
                 plan = tools.evaluate_logistics_plan(action.arguments)
                 evaluated[tools.proposal_hash(action.arguments)] = plan
+                # The original read result already contains all gear, quotes,
+                # sources and blockers. Do not resend those large fact objects.
+                # Keep every computed supply/expense/allocation plus the exact
+                # evaluated proposal; no model arithmetic or implicit approval.
+                feedback = plan.model_dump(mode='json', exclude={
+                    'source_refs': True,
+                    'gear_actions': {'__all__': {'fact', 'price_source'}},
+                })
+                for supplied, computed in zip(feedback['gear_actions'], plan.gear_actions):
+                    supplied['item_key'] = computed.fact.item_key
                 output = {'tool': 'evaluate_logistics_plan', 'read_only': True,
-                    'plan': plan.model_dump(mode='json'), 'rule_outcome': baseline.outcome.value,
+                    'evaluated_proposal': action.arguments.model_dump(mode='json'),
+                    'plan': feedback, 'rule_outcome': baseline.outcome.value,
                     'confirmation_is_not_granted': True}
             calls.append(action.name)
             messages.append({'role': 'assistant', 'content': canonical(action.model_dump(mode='json'))})

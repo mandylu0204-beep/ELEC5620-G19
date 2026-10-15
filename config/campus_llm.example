@@ -9,3 +9,7 @@ ELEC5620_TIMEOUT_SECONDS=45
 ELEC5620_MAX_COMPLETION_TOKENS=4096
 ELEC5620_MAX_ATTEMPTS=2
 ELEC5620_MAX_TURNS=4
+# Optional school-proxy parameter verified in live logistics diagnostics.
+# To reduce reasoning latency, explicitly enable it and start a newly confirmed
+# run. It changes public model identity; never change an existing run's identity.
+# ELEC5620_REASONING_EFFORT=low
