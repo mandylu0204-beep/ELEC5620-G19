@@ -71,7 +71,8 @@ class PlanQueries:
                       'retry_unavailable_reason': None, 'finalisation_available': False,
                       'current_version_revision': None, 'revision_available': False,
                       'reassessment_available': False, 'current_inputs_error': None,
-                      'current_inputs_state': None, 'check_feedback': None}
+                      'current_inputs_state': None, 'check_feedback': None,
+                      'trip_evidence_coverage': None}
             current_version = connection.execute('SELECT revision FROM versions WHERE id=? AND plan_id=?',
                 (plan['current_version_id'], plan_id)).fetchone()
             result['current_version_revision'] = current_version['revision'] if current_version else None
