@@ -136,11 +136,15 @@ def retry_fields(request, user, data):
     data['reassessment_available'] = can_change and 'REASSESS' in operations
     data['current_inputs_error'] = None
     data['current_inputs_state'] = None
+    data['trip_evidence_coverage'] = None
     if run and run['is_active']:
         with state.database.transaction(write=False) as connection:
             row = connection.execute('SELECT scope FROM runs WHERE id=?', (run['run_id'],)).fetchone()
         try:
-            state.runtime.validate_scope(RunScope.model_validate_json(row['scope']))
+            scope = RunScope.model_validate_json(row['scope'])
+            snapshot = state.runtime.validate_scope(scope)
+            from .application.trip_coverage import guidance as coverage_guidance
+            data['trip_evidence_coverage'] = coverage_guidance(data, snapshot, scope)
         except ContractFailure as exc:
             data['current_inputs_error'] = exc.error.message
             data['current_inputs_state'] = 'CHANGED' if exc.error.code == ErrorCode.STALE_CONTEXT else 'UNAVAILABLE'

@@ -196,6 +196,7 @@ class AgentRuntime:
         snapshot = self.for_scope(scope)
         if snapshot.demo != scope.demo_context or snapshot.dataset != scope.dataset_context:
             raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='本次运行的数据、配置或时钟已变化，请重新评估。'))
+        return snapshot
 
     def _resolve(self, *, feedback=None):
         settings = self.state.settings

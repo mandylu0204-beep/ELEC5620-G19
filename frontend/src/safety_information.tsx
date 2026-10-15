@@ -2,15 +2,18 @@ import type { ReactNode } from 'react';
 import type { Safety, Source } from './plans';
 import type { Requirements } from './api';
 import { checkNames,checkState,evidenceState,safetySummary } from './plan_language';
+import { TripCoveragePanel, type TripCoverage } from './trip_coverage';
 
-export function SafetyInformation({value,requirements,summary,approved,review,outdated,blockers,notes,rawWarnings,sources,label}:{
+export function SafetyInformation({value,requirements,summary,approved,review,outdated,blockers,notes,rawWarnings,sources,label,coverage,requestId}:{
   value:Safety|undefined;requirements:Requirements|undefined;summary:string;approved:boolean;review:boolean;outdated:boolean;
-  blockers:ReactNode;notes:ReactNode;rawWarnings:{code:string;message:string}[];sources:(refs:Source[])=>ReactNode;label:(value:string)=>string}){
+  blockers:ReactNode;notes:ReactNode;rawWarnings:{code:string;message:string}[];sources:(refs:Source[])=>ReactNode;label:(value:string)=>string;
+  coverage?:TripCoverage|null;requestId?:string}){
   if(!value)return <section className="panel"><h2>出行安全信息</h2><p>规划完成后，会在这里显示安全检查。</p></section>;
   const issues=Object.values(value.data_quality).some(status=>status!=='AVAILABLE');
   return <section className="panel"><div className="section-title"><span className="eyebrow">CHECK BEFORE YOU GO</span><h2>出行安全信息</h2></div>
     <div className="safety-summary"><strong>{summary}</strong><span>{value.risk_level==='UNKNOWN'?'目前信息不足，无法判断风险。':'风险：'+label(value.risk_level)}</span>{review&&<span>判断依据完整度：{label(value.confidence)}</span>}</div>
     {outdated&&<p className="mode-notice">以下是此前保存的资料和检查结果，更新检查后才能用于当前确认。</p>}
+    {!outdated&&requestId&&<TripCoveragePanel value={coverage} requestId={requestId}/>}
     <div className="safety-quality">{Object.entries(value.data_quality).map(([kind,status])=>{const state=checkState(kind,status,value.evidence,requirements);return <div className={status==='AVAILABLE'&&state.title==='资料适用'?'quality-available':'quality-issue'} key={kind}><span>{checkNames[kind]??'安全信息'}</span><strong>{state.title}</strong></div>;})}</div>
     {blockers}<h3>接下来可以怎么做</h3><ul>
       {issues&&<li>核对下方资料的适用日期，可调整出行日期或营地，也可以保留草稿，待适用资料更新后再检查。</li>}
