@@ -1,0 +1,3410 @@
+{
+  "v1": {
+    "fixture_kind": "OFFLINE_SYNTHETIC_ARCHIVE_NOT_LIVE_INFERENCE",
+    "source_commit": "ba7d9e5",
+    "source_common_kernel": "b02-v1-rules-2",
+    "input": {
+      "version_context": {
+        "plan_id": "independent-plan",
+        "plan_version_id": "independent-version",
+        "run_id": "independent-run",
+        "input_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "saved_itinerary": {
+        "schema_version": "1.0",
+        "execution_mode": "agent",
+        "source_refs": [
+          {
+            "dataset_file": "synthetic_campsites.csv",
+            "record_id": "demo-wattle-rest",
+            "provenance": {
+              "source_type": "SYNTHETIC",
+              "source_name": "CampMate Synthetic Demo Dataset v2",
+              "source_date": "2026-10-07",
+              "demo_only": true
+            },
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "assumptions": [
+          "This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.",
+          "Planning decision summary (model-generated, not a verified fact): Wattle Rest matches the confirmed quiet preference; other checks remain pending.",
+          "Sydney-local draft times are placeholders, not verified check-in or travel times."
+        ],
+        "uncertainties": [
+          "Model choice is not a booking or safety clearance; transport, supplies, costs and safety still require assessment."
+        ],
+        "itinerary_entries": [
+          {
+            "entry_kind": "CAMP",
+            "start_at": "2026-11-06T12:00:00+11:00",
+            "end_at": "2026-11-07T08:00:00+11:00",
+            "campsite_id": "demo-wattle-rest",
+            "description": "Synthetic overnight stay at Demo Wattle Rest; no booking implied."
+          },
+          {
+            "entry_kind": "ACTIVITY",
+            "start_at": "2026-11-07T08:00:00+11:00",
+            "end_at": "2026-11-07T17:00:00+11:00",
+            "campsite_id": "demo-wattle-rest",
+            "description": "Uncommitted rest period at campsite; no travel time or activity availability inferred."
+          },
+          {
+            "entry_kind": "CAMP",
+            "start_at": "2026-11-07T17:00:00+11:00",
+            "end_at": "2026-11-08T10:00:00+11:00",
+            "campsite_id": "demo-wattle-rest",
+            "description": "Synthetic overnight stay at Demo Wattle Rest; no booking implied."
+          }
+        ],
+        "selected_campsite_ids": [
+          "demo-wattle-rest"
+        ],
+        "revision_reason": "Initial campus-qwen planned proposal; assessments remain required.",
+        "requested_requirement_changes": null
+      },
+      "confirmed_requirements": {
+        "destination": "CampMate Demo Region",
+        "start_date": "2026-11-06",
+        "duration_nights": 2,
+        "end_date": "2026-11-08",
+        "duration_days": 3,
+        "budget_cents": 32000,
+        "currency": "AUD",
+        "preferences": [
+          "quiet",
+          "ready-to-eat meals"
+        ],
+        "mandatory_constraints": []
+      },
+      "saved_logistics_assessment": {
+        "assessment_id": "b02-unit-saved-logistics",
+        "version_context": {
+          "plan_id": "independent-plan",
+          "plan_version_id": "independent-version",
+          "run_id": "independent-run",
+          "input_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "kind": "LOGISTICS",
+        "result": {
+          "schema_version": "1.0",
+          "execution_mode": "agent",
+          "source_refs": [
+            {
+              "dataset_file": "synthetic_campsites.csv",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-11-02",
+              "valid_to": "2026-11-08"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-11-02",
+              "valid_to": "2026-11-08"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-01",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-02",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-03",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-04",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-05",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-15",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-16",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-19",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-21",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-22",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-25",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_cost_reference.csv",
+              "record_id": "cost-02",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_cost_reference.csv",
+              "record_id": "cost-15",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_cost_reference.csv",
+              "record_id": "cost-14",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_cost_reference.csv",
+              "record_id": "cost-05",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            }
+          ],
+          "assumptions": [
+            "This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.",
+            "Gear quantities are conservative synthetic planning rules, not real safety advice.",
+            "Conditional v2 weather gear uses only selected, current, trip-covering synthetic observations; unknown triggers are conservatively included.",
+            "Food/water use synthetic provision-value allowances, not a claim of actual purchases.",
+            "Priced equipment gaps are estimates; they do not confirm a hire or purchase.",
+            "Trip evidence selection digest: 5527e36937f3c68cf79aaa8484717904809a1e1a8bf687247394a0b91d31cf1c."
+          ],
+          "uncertainties": [
+            "Weather-specific equipment is a conservative superset, not a forecast assessment."
+          ],
+          "version_context": {
+            "plan_id": "independent-plan",
+            "plan_version_id": "independent-version",
+            "run_id": "independent-run",
+            "input_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "gear_checklist": [
+            {
+              "item_key": "tent",
+              "required_quantity": "2",
+              "available_quantity": "2",
+              "missing_quantity": "0",
+              "unit": "person_space",
+              "capacity_requirement": 2,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "groundsheet",
+              "required_quantity": "1",
+              "available_quantity": "1",
+              "missing_quantity": "0",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "tent_repair_kit",
+              "required_quantity": "1",
+              "available_quantity": "0",
+              "missing_quantity": "1",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "MISSING",
+              "essential": false
+            },
+            {
+              "item_key": "sleeping_bag",
+              "required_quantity": "2",
+              "available_quantity": "2",
+              "missing_quantity": "0",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "sleeping_mat",
+              "required_quantity": "2",
+              "available_quantity": "2",
+              "missing_quantity": "0",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "drinking_water",
+              "required_quantity": "12",
+              "available_quantity": "12",
+              "missing_quantity": "0",
+              "unit": "litre",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "meal_supplies",
+              "required_quantity": "18",
+              "available_quantity": "18",
+              "missing_quantity": "0",
+              "unit": "portion",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "charged_phone",
+              "required_quantity": "2",
+              "available_quantity": "2",
+              "missing_quantity": "0",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "first_aid_kit",
+              "required_quantity": "1",
+              "available_quantity": "1",
+              "missing_quantity": "0",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "torch",
+              "required_quantity": "2",
+              "available_quantity": "2",
+              "missing_quantity": "0",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "hand_sanitiser",
+              "required_quantity": "1",
+              "available_quantity": "0",
+              "missing_quantity": "1",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "MISSING",
+              "essential": false
+            }
+          ],
+          "transport_feasible": true,
+          "cost_breakdown": [
+            {
+              "category": "CAMPSITE",
+              "item_key": "demo-wattle-rest",
+              "quantity": "2",
+              "unit": "per_night",
+              "unit_price_cents": 3000,
+              "subtotal_cents": 6000,
+              "source_ref": {
+                "dataset_file": "synthetic_campsites.csv",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": null,
+                "valid_to": null
+              },
+              "assumption": "Nightly synthetic campsite rate is a group/site allowance, not a per-person rate."
+            },
+            {
+              "category": "TRANSPORT",
+              "item_key": "cost-02",
+              "quantity": "100",
+              "unit": "per_kilometre",
+              "unit_price_cents": 35,
+              "subtotal_cents": 3500,
+              "source_ref": {
+                "dataset_file": "synthetic_cost_reference.csv",
+                "record_id": "cost-02",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": null,
+                "valid_to": null
+              },
+              "assumption": "Total vehicle kilometres already includes all vehicles."
+            },
+            {
+              "category": "TRANSPORT",
+              "item_key": "cost-15",
+              "quantity": "1",
+              "unit": "per_vehicle",
+              "unit_price_cents": 1200,
+              "subtotal_cents": 1200,
+              "source_ref": {
+                "dataset_file": "synthetic_cost_reference.csv",
+                "record_id": "cost-15",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": null,
+                "valid_to": null
+              },
+              "assumption": "One parking allowance per confirmed vehicle."
+            },
+            {
+              "category": "FOOD",
+              "item_key": "cost-14",
+              "quantity": "6",
+              "unit": "per_person_per_day",
+              "unit_price_cents": 1800,
+              "subtotal_cents": 10800,
+              "source_ref": {
+                "dataset_file": "synthetic_cost_reference.csv",
+                "record_id": "cost-14",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": null,
+                "valid_to": null
+              },
+              "assumption": "Synthetic provision-value allowance; possession does not imply a free trip."
+            },
+            {
+              "category": "WATER",
+              "item_key": "cost-05",
+              "quantity": "6",
+              "unit": "per_person_per_day",
+              "unit_price_cents": 600,
+              "subtotal_cents": 3600,
+              "source_ref": {
+                "dataset_file": "synthetic_cost_reference.csv",
+                "record_id": "cost-05",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": null,
+                "valid_to": null
+              },
+              "assumption": "Packaged-water value allowance; add one emergency day when potable supply is absent/unknown. Rule litre quantities are not multiplied by a person-day price."
+            },
+            {
+              "category": "ADDITIONAL_GEAR",
+              "item_key": "no_priced_equipment_gaps",
+              "quantity": "1",
+              "unit": "one_time",
+              "unit_price_cents": 0,
+              "subtotal_cents": 0,
+              "source_ref": null,
+              "assumption": "No priced essential-equipment gaps; supply/plan confirmation is still checked separately."
+            }
+          ],
+          "total_cents": 25100,
+          "known_subtotal_cents": 25100,
+          "budget_difference_cents": -6900,
+          "outcome": "PASSED",
+          "mandatory_blockers": [],
+          "clarifications": []
+        },
+        "gear_checklist_id": "b02-unit-checklist",
+        "depends_on_assessment_id": null
+      },
+      "scenario_context": {
+        "scenario_id": "trip-evidence-selection-1",
+        "campsite_ids": [
+          "demo-wattle-rest"
+        ],
+        "valid_from": "2026-11-06",
+        "valid_to": "2026-11-08",
+        "evidence": [
+          {
+            "kind": "WEATHER",
+            "summary": "Mild synthetic conditions.",
+            "source_date": "2026-11-01",
+            "status": "AVAILABLE",
+            "valid_from": "2026-11-02",
+            "valid_to": "2026-11-08",
+            "road_state": null,
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-11-02",
+                "valid_to": "2026-11-08"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-11-02",
+                "valid_to": "2026-11-08"
+              }
+            ]
+          },
+          {
+            "kind": "FIRE",
+            "summary": "No synthetic fire restriction.",
+            "source_date": "2026-10-19",
+            "status": "AVAILABLE",
+            "valid_from": "2026-10-20",
+            "valid_to": "2026-11-30",
+            "road_state": null,
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              }
+            ]
+          },
+          {
+            "kind": "ROAD",
+            "summary": "open in synthetic scenario",
+            "source_date": "2026-10-19",
+            "status": "AVAILABLE",
+            "valid_from": "2026-10-20",
+            "valid_to": "2026-11-30",
+            "road_state": "OPEN",
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              }
+            ]
+          },
+          {
+            "kind": "RESTRICTION",
+            "summary": "No synthetic campsite restrictions reported.",
+            "source_date": "2026-10-19",
+            "status": "AVAILABLE",
+            "valid_from": "2026-10-20",
+            "valid_to": "2026-11-30",
+            "road_state": null,
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              }
+            ]
+          }
+        ],
+        "template_id": null
+      },
+      "demo_context": {
+        "schema_version": "1.0",
+        "mode": "agent",
+        "demo_today": "2026-11-05",
+        "dataset_version": "2.1.0"
+      }
+    },
+    "baseline": {
+      "schema_version": "1.0",
+      "execution_mode": "agent",
+      "source_refs": [
+        {
+          "dataset_file": "synthetic_campsites.csv",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": null,
+          "valid_to": null
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        }
+      ],
+      "assumptions": [
+        "This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.",
+        "Qualitative v1 synthetic summary rules; no temperature, wind-speed or probability is fabricated.",
+        "Trip evidence selection digest: 5527e36937f3c68cf79aaa8484717904809a1e1a8bf687247394a0b91d31cf1c."
+      ],
+      "uncertainties": [],
+      "version_context": {
+        "plan_id": "independent-plan",
+        "plan_version_id": "independent-version",
+        "run_id": "independent-run",
+        "input_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "depends_on_assessment_id": "b02-unit-saved-logistics",
+      "risk_level": "LOW",
+      "confidence": "HIGH",
+      "data_quality": {
+        "WEATHER": "AVAILABLE",
+        "FIRE": "AVAILABLE",
+        "ROAD": "AVAILABLE",
+        "RESTRICTION": "AVAILABLE"
+      },
+      "evidence": [
+        {
+          "kind": "WEATHER",
+          "summary": "Mild synthetic conditions.",
+          "source_date": "2026-11-01",
+          "status": "AVAILABLE",
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08",
+          "road_state": null,
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-11-02",
+              "valid_to": "2026-11-08"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-11-02",
+              "valid_to": "2026-11-08"
+            }
+          ]
+        },
+        {
+          "kind": "FIRE",
+          "summary": "No synthetic fire restriction.",
+          "source_date": "2026-10-19",
+          "status": "AVAILABLE",
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30",
+          "road_state": null,
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            }
+          ]
+        },
+        {
+          "kind": "ROAD",
+          "summary": "open in synthetic scenario",
+          "source_date": "2026-10-19",
+          "status": "AVAILABLE",
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30",
+          "road_state": "OPEN",
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            }
+          ]
+        },
+        {
+          "kind": "RESTRICTION",
+          "summary": "No synthetic campsite restrictions reported.",
+          "source_date": "2026-10-19",
+          "status": "AVAILABLE",
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30",
+          "road_state": null,
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            }
+          ]
+        }
+      ],
+      "hazards": [],
+      "mandatory_blockers": [],
+      "recommended_actions": [
+        "Recheck evidence and arrangements before any real-world use; this is only a synthetic demo."
+      ],
+      "outcome": "PASSED",
+      "requires_human_review": false,
+      "unresolved_conflicts": []
+    },
+    "result": {
+      "schema_version": "1.0",
+      "execution_mode": "agent",
+      "source_refs": [
+        {
+          "dataset_file": "synthetic_campsites.csv",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": null,
+          "valid_to": null
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        }
+      ],
+      "assumptions": [
+        "This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.",
+        "Qualitative v1 synthetic summary rules; no temperature, wind-speed or probability is fabricated.",
+        "Trip evidence selection digest: 5527e36937f3c68cf79aaa8484717904809a1e1a8bf687247394a0b91d31cf1c."
+      ],
+      "uncertainties": [],
+      "version_context": {
+        "plan_id": "independent-plan",
+        "plan_version_id": "independent-version",
+        "run_id": "independent-run",
+        "input_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "depends_on_assessment_id": "b02-unit-saved-logistics",
+      "risk_level": "LOW",
+      "confidence": "HIGH",
+      "data_quality": {
+        "WEATHER": "AVAILABLE",
+        "FIRE": "AVAILABLE",
+        "ROAD": "AVAILABLE",
+        "RESTRICTION": "AVAILABLE"
+      },
+      "evidence": [
+        {
+          "kind": "WEATHER",
+          "summary": "Mild synthetic conditions.",
+          "source_date": "2026-11-01",
+          "status": "AVAILABLE",
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08",
+          "road_state": null,
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-11-02",
+              "valid_to": "2026-11-08"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-11-02",
+              "valid_to": "2026-11-08"
+            }
+          ]
+        },
+        {
+          "kind": "FIRE",
+          "summary": "No synthetic fire restriction.",
+          "source_date": "2026-10-19",
+          "status": "AVAILABLE",
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30",
+          "road_state": null,
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            }
+          ]
+        },
+        {
+          "kind": "ROAD",
+          "summary": "open in synthetic scenario",
+          "source_date": "2026-10-19",
+          "status": "AVAILABLE",
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30",
+          "road_state": "OPEN",
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            }
+          ]
+        },
+        {
+          "kind": "RESTRICTION",
+          "summary": "No synthetic campsite restrictions reported.",
+          "source_date": "2026-10-19",
+          "status": "AVAILABLE",
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30",
+          "road_state": null,
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            }
+          ]
+        }
+      ],
+      "hazards": [],
+      "mandatory_blockers": [],
+      "recommended_actions": [
+        "Recheck evidence and arrangements before any real-world use; this is only a synthetic demo."
+      ],
+      "outcome": "PASSED",
+      "requires_human_review": false,
+      "unresolved_conflicts": []
+    },
+    "plan": {
+      "findings": [
+        {
+          "finding_key": "finding-c5675ca562dfab163324b0528bfabffe83bbe6842670c1c1bad409940ae0ee07",
+          "interpretation_unverified": "Review\u0085the registered evidence.",
+          "action_code": "ACKNOWLEDGE_INFORMATION",
+          "action_unverified": "Follow the permitted next step.",
+          "fact_refs": [
+            "/baseline/risk_level",
+            "/baseline/confidence",
+            "/baseline/outcome",
+            "/baseline/requires_human_review",
+            "/baseline/recommended_actions",
+            "/baseline/assumptions",
+            "/input/confirmed_requirements",
+            "/input/demo_context",
+            "/selection/selection_digest"
+          ]
+        },
+        {
+          "finding_key": "finding-f15a30e81bdb719e309182a5259d26cd795529e5c8d1c943147bac4bf606df8f",
+          "interpretation_unverified": "Consider the recorded trip implications.",
+          "action_code": "ACKNOWLEDGE_INFORMATION",
+          "action_unverified": "Follow the permitted next step.",
+          "fact_refs": [
+            "/baseline/data_quality/WEATHER",
+            "/baseline/evidence/0"
+          ]
+        },
+        {
+          "finding_key": "finding-76ceeadb11e83e790f4fd655a174c9f18fcc1a2cbfaf2a28e75dce5c21b3eee8",
+          "interpretation_unverified": "Consider the recorded trip implications.",
+          "action_code": "ACKNOWLEDGE_INFORMATION",
+          "action_unverified": "Follow the permitted next step.",
+          "fact_refs": [
+            "/baseline/data_quality/FIRE",
+            "/baseline/evidence/1"
+          ]
+        },
+        {
+          "finding_key": "finding-db7929f5c8eca328435bd409216a9c85c85b26320aff63d38b6e54646652abb4",
+          "interpretation_unverified": "Consider the recorded trip implications.",
+          "action_code": "ACKNOWLEDGE_INFORMATION",
+          "action_unverified": "Follow the permitted next step.",
+          "fact_refs": [
+            "/baseline/data_quality/ROAD",
+            "/baseline/evidence/2"
+          ]
+        },
+        {
+          "finding_key": "finding-0e1f258d1d73ce316b4f3dd49a8dd6f6cbc7061014e9f77387baf3eb84351f1a",
+          "interpretation_unverified": "Consider the recorded trip implications.",
+          "action_code": "ACKNOWLEDGE_INFORMATION",
+          "action_unverified": "Follow the permitted next step.",
+          "fact_refs": [
+            "/baseline/data_quality/RESTRICTION",
+            "/baseline/evidence/3"
+          ]
+        },
+        {
+          "finding_key": "finding-b0f402f71e6901252c5b659d12f6ac4032124293e22d3c936e4c61a871f779c2",
+          "interpretation_unverified": "Consider the recorded trip implications.",
+          "action_code": "ACKNOWLEDGE_INFORMATION",
+          "action_unverified": "Follow the permitted next step.",
+          "fact_refs": [
+            "/input/saved_logistics_assessment/result/outcome",
+            "/input/saved_logistics_assessment/result/mandatory_blockers",
+            "/input/saved_logistics_assessment/result/clarifications",
+            "/input/saved_logistics_assessment/result/transport_feasible",
+            "/input/saved_logistics_assessment/result/total_cents",
+            "/input/saved_logistics_assessment/result/uncertainties"
+          ]
+        }
+      ],
+      "action_priority": [
+        "finding-c5675ca562dfab163324b0528bfabffe83bbe6842670c1c1bad409940ae0ee07",
+        "finding-f15a30e81bdb719e309182a5259d26cd795529e5c8d1c943147bac4bf606df8f",
+        "finding-76ceeadb11e83e790f4fd655a174c9f18fcc1a2cbfaf2a28e75dce5c21b3eee8",
+        "finding-db7929f5c8eca328435bd409216a9c85c85b26320aff63d38b6e54646652abb4",
+        "finding-0e1f258d1d73ce316b4f3dd49a8dd6f6cbc7061014e9f77387baf3eb84351f1a",
+        "finding-b0f402f71e6901252c5b659d12f6ac4032124293e22d3c936e4c61a871f779c2"
+      ],
+      "decision_summary_unverified": "See www.example.com for guidance.",
+      "source_refs": [
+        {
+          "dataset_file": "synthetic_campsites.csv",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": null,
+          "valid_to": null
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        }
+      ]
+    },
+    "trace": {
+      "role": "SAFETY",
+      "requested_model": "campus-qwen",
+      "served_models": [],
+      "configuration_fingerprint": "e7ee66b4ab02292527890d77f83fecf839d229ab4563ccb4db3fba521f1adc5e",
+      "input_sha256": "219990663ca4f8d95e5ba55c008a0a905a3014a3a64afd94a6b697d05ed61ec6",
+      "rule_facts_sha256": "1efcea35b774c1360d71a6430188afcc09c74994763195bc0013f7b352448dcf",
+      "proposal_sha256": "20f63107770fdbaeaa63b968aa2f2bc56c8236566f064e26d14483c2a6fbabe4",
+      "prompt_sha256": "832fd2df7626df192b8e0dd28ca10bdd5318fbe46784c108ad6e4aa431f01c05",
+      "tool_version": "safety-read-only-tools-1",
+      "turns": 3,
+      "http_attempts": 3,
+      "elapsed_ms": 0,
+      "tool_calls": [
+        "read_safety_facts",
+        "evaluate_safety_plan"
+      ],
+      "response_sha256": [
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ],
+      "usage": {},
+      "validation_passed": true
+    },
+    "identity": {
+      "agent_version": "campus-safety-advisory-agent-1",
+      "tool_version": "safety-read-only-tools-1",
+      "validation_version": "safety-advisory-validation-1",
+      "kernel_version": "b02-v1-rules-2",
+      "dataset_rules_version": "b02-v2-rules-2/trip-evidence-selection-1",
+      "prompt_sha256": "832fd2df7626df192b8e0dd28ca10bdd5318fbe46784c108ad6e4aa431f01c05",
+      "model_client": {
+        "client_version": "b04-campus-client-1",
+        "base_url": "http://10.167.60.148:8000/v1",
+        "model": "campus-qwen",
+        "timeout_seconds": 5.0,
+        "max_completion_tokens": 2048,
+        "max_attempts": 1,
+        "max_turns": 4
+      },
+      "workflow_context": {
+        "dataset_version": "2.1.0",
+        "file_digests": {
+          "synthetic_campsites.csv": "c4fe2e94d6dde01034c8ed404423a7932943ef1eba2b3b8a3c40f01b23183b1b",
+          "synthetic_gear_rules.csv": "6e2de57f35b6ff1fb9fe7d8575ebfdf35d3424e02785753aa35e9a7a28d51f79",
+          "synthetic_cost_reference.csv": "f027927431e6edacab3a7c22603fa2f4b6e422a793bb4f0e82eec08806f0e535",
+          "synthetic_profiles.json": "8e422b9375b8c68922c3d1a47b0dbd4d556f160d284fe001276bfcce7a447e55",
+          "synthetic_requests.json": "4be90883e21b66af06341842ddae82d5f94f98a4a47141f30c66fc3a477a56e6",
+          "synthetic_safety_scenarios.json": "9f0a0aaf33682f65bde8e42dae31c8a388ded13447aad856bebc9bb603818748",
+          "runtime_requests.json": "2e8f42816313bea35e26517933c567fdbd772b75d6b6788b1ddd89569a4ceb0c",
+          "runtime_safety_evidence.json": "9f0a0aaf33682f65bde8e42dae31c8a388ded13447aad856bebc9bb603818748",
+          "manifest.json": "638d0b887defd50afc95c73295ec86c11a4336deb44c55df329f9c46e2fed731"
+        },
+        "fixture_digests": {},
+        "selection_config": {
+          "safety_case_ids": "[]",
+          "supplement_scenario_ids": "[]",
+          "revision_feedback": "",
+          "b_evidence_policy": "trip-evidence-selection-1",
+          "b_evidence_index_sha256": "9f0a0aaf33682f65bde8e42dae31c8a388ded13447aad856bebc9bb603818748",
+          "b_evidence_clock_policy": "demo_today:Australia/Sydney:day"
+        },
+        "rules_version": "a-request-normalization-v1/b01-v2-adapter-2/b02-v2-rules-2/trip-evidence-selection-1/b03-checkpoint-2"
+      },
+      "configuration_fingerprint": "e7ee66b4ab02292527890d77f83fecf839d229ab4563ccb4db3fba521f1adc5e"
+    },
+    "selection": {
+      "selected_case_ids": [
+        "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+        "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+        "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+        "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08"
+      ],
+      "scenario_context": {
+        "scenario_id": "trip-evidence-selection-1",
+        "campsite_ids": [
+          "demo-wattle-rest"
+        ],
+        "valid_from": "2026-11-06",
+        "valid_to": "2026-11-08",
+        "evidence": [
+          {
+            "kind": "WEATHER",
+            "summary": "Mild synthetic conditions.",
+            "source_date": "2026-11-01",
+            "status": "AVAILABLE",
+            "valid_from": "2026-11-02",
+            "valid_to": "2026-11-08",
+            "road_state": null,
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-11-02",
+                "valid_to": "2026-11-08"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-11-02",
+                "valid_to": "2026-11-08"
+              }
+            ]
+          },
+          {
+            "kind": "FIRE",
+            "summary": "No synthetic fire restriction.",
+            "source_date": "2026-10-19",
+            "status": "AVAILABLE",
+            "valid_from": "2026-10-20",
+            "valid_to": "2026-11-30",
+            "road_state": null,
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              }
+            ]
+          },
+          {
+            "kind": "ROAD",
+            "summary": "open in synthetic scenario",
+            "source_date": "2026-10-19",
+            "status": "AVAILABLE",
+            "valid_from": "2026-10-20",
+            "valid_to": "2026-11-30",
+            "road_state": "OPEN",
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              }
+            ]
+          },
+          {
+            "kind": "RESTRICTION",
+            "summary": "No synthetic campsite restrictions reported.",
+            "source_date": "2026-10-19",
+            "status": "AVAILABLE",
+            "valid_from": "2026-10-20",
+            "valid_to": "2026-11-30",
+            "road_state": null,
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              }
+            ]
+          }
+        ],
+        "template_id": null
+      },
+      "weather_facts_by_campsite": {
+        "demo-wattle-rest": {
+          "temperature_min_c": "12",
+          "temperature_max_c": "22",
+          "forecast_rain_mm": "0",
+          "wind_kph": "10"
+        }
+      },
+      "coverage_issues": [],
+      "selection_digest": "5527e36937f3c68cf79aaa8484717904809a1e1a8bf687247394a0b91d31cf1c"
+    }
+  },
+  "v2": {
+    "fixture_kind": "OFFLINE_SYNTHETIC_ARCHIVE_NOT_LIVE_INFERENCE",
+    "source_commit": "ba7d9e5",
+    "source_common_kernel": "b02-v1-rules-2",
+    "input": {
+      "version_context": {
+        "plan_id": "independent-plan",
+        "plan_version_id": "independent-version",
+        "run_id": "independent-run",
+        "input_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "saved_itinerary": {
+        "schema_version": "1.0",
+        "execution_mode": "agent",
+        "source_refs": [
+          {
+            "dataset_file": "synthetic_campsites.csv",
+            "record_id": "demo-wattle-rest",
+            "provenance": {
+              "source_type": "SYNTHETIC",
+              "source_name": "CampMate Synthetic Demo Dataset v2",
+              "source_date": "2026-10-07",
+              "demo_only": true
+            },
+            "valid_from": null,
+            "valid_to": null
+          }
+        ],
+        "assumptions": [
+          "This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.",
+          "Planning decision summary (model-generated, not a verified fact): Wattle Rest matches the confirmed quiet preference; other checks remain pending.",
+          "Sydney-local draft times are placeholders, not verified check-in or travel times."
+        ],
+        "uncertainties": [
+          "Model choice is not a booking or safety clearance; transport, supplies, costs and safety still require assessment."
+        ],
+        "itinerary_entries": [
+          {
+            "entry_kind": "CAMP",
+            "start_at": "2026-11-06T12:00:00+11:00",
+            "end_at": "2026-11-07T08:00:00+11:00",
+            "campsite_id": "demo-wattle-rest",
+            "description": "Synthetic overnight stay at Demo Wattle Rest; no booking implied."
+          },
+          {
+            "entry_kind": "ACTIVITY",
+            "start_at": "2026-11-07T08:00:00+11:00",
+            "end_at": "2026-11-07T17:00:00+11:00",
+            "campsite_id": "demo-wattle-rest",
+            "description": "Uncommitted rest period at campsite; no travel time or activity availability inferred."
+          },
+          {
+            "entry_kind": "CAMP",
+            "start_at": "2026-11-07T17:00:00+11:00",
+            "end_at": "2026-11-08T10:00:00+11:00",
+            "campsite_id": "demo-wattle-rest",
+            "description": "Synthetic overnight stay at Demo Wattle Rest; no booking implied."
+          }
+        ],
+        "selected_campsite_ids": [
+          "demo-wattle-rest"
+        ],
+        "revision_reason": "Initial campus-qwen planned proposal; assessments remain required.",
+        "requested_requirement_changes": null
+      },
+      "confirmed_requirements": {
+        "destination": "CampMate Demo Region",
+        "start_date": "2026-11-06",
+        "duration_nights": 2,
+        "end_date": "2026-11-08",
+        "duration_days": 3,
+        "budget_cents": 32000,
+        "currency": "AUD",
+        "preferences": [
+          "quiet",
+          "ready-to-eat meals"
+        ],
+        "mandatory_constraints": []
+      },
+      "saved_logistics_assessment": {
+        "assessment_id": "b02-unit-saved-logistics",
+        "version_context": {
+          "plan_id": "independent-plan",
+          "plan_version_id": "independent-version",
+          "run_id": "independent-run",
+          "input_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "kind": "LOGISTICS",
+        "result": {
+          "schema_version": "1.0",
+          "execution_mode": "agent",
+          "source_refs": [
+            {
+              "dataset_file": "synthetic_campsites.csv",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-11-02",
+              "valid_to": "2026-11-08"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-11-02",
+              "valid_to": "2026-11-08"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-01",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-02",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-03",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-04",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-05",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-15",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-16",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-19",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-21",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-22",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_gear_rules.csv",
+              "record_id": "gear-25",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_cost_reference.csv",
+              "record_id": "cost-02",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_cost_reference.csv",
+              "record_id": "cost-15",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_cost_reference.csv",
+              "record_id": "cost-14",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            },
+            {
+              "dataset_file": "synthetic_cost_reference.csv",
+              "record_id": "cost-05",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": null,
+              "valid_to": null
+            }
+          ],
+          "assumptions": [
+            "This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.",
+            "Gear quantities are conservative synthetic planning rules, not real safety advice.",
+            "Conditional v2 weather gear uses only selected, current, trip-covering synthetic observations; unknown triggers are conservatively included.",
+            "Food/water use synthetic provision-value allowances, not a claim of actual purchases.",
+            "Priced equipment gaps are estimates; they do not confirm a hire or purchase.",
+            "Trip evidence selection digest: 5527e36937f3c68cf79aaa8484717904809a1e1a8bf687247394a0b91d31cf1c."
+          ],
+          "uncertainties": [
+            "Weather-specific equipment is a conservative superset, not a forecast assessment."
+          ],
+          "version_context": {
+            "plan_id": "independent-plan",
+            "plan_version_id": "independent-version",
+            "run_id": "independent-run",
+            "input_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          },
+          "gear_checklist": [
+            {
+              "item_key": "tent",
+              "required_quantity": "2",
+              "available_quantity": "2",
+              "missing_quantity": "0",
+              "unit": "person_space",
+              "capacity_requirement": 2,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "groundsheet",
+              "required_quantity": "1",
+              "available_quantity": "1",
+              "missing_quantity": "0",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "tent_repair_kit",
+              "required_quantity": "1",
+              "available_quantity": "0",
+              "missing_quantity": "1",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "MISSING",
+              "essential": false
+            },
+            {
+              "item_key": "sleeping_bag",
+              "required_quantity": "2",
+              "available_quantity": "2",
+              "missing_quantity": "0",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "sleeping_mat",
+              "required_quantity": "2",
+              "available_quantity": "2",
+              "missing_quantity": "0",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "drinking_water",
+              "required_quantity": "12",
+              "available_quantity": "12",
+              "missing_quantity": "0",
+              "unit": "litre",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "meal_supplies",
+              "required_quantity": "18",
+              "available_quantity": "18",
+              "missing_quantity": "0",
+              "unit": "portion",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "charged_phone",
+              "required_quantity": "2",
+              "available_quantity": "2",
+              "missing_quantity": "0",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "first_aid_kit",
+              "required_quantity": "1",
+              "available_quantity": "1",
+              "missing_quantity": "0",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "torch",
+              "required_quantity": "2",
+              "available_quantity": "2",
+              "missing_quantity": "0",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "OWNED",
+              "essential": true
+            },
+            {
+              "item_key": "hand_sanitiser",
+              "required_quantity": "1",
+              "available_quantity": "0",
+              "missing_quantity": "1",
+              "unit": "item",
+              "capacity_requirement": null,
+              "arrangement_status": "MISSING",
+              "essential": false
+            }
+          ],
+          "transport_feasible": true,
+          "cost_breakdown": [
+            {
+              "category": "CAMPSITE",
+              "item_key": "demo-wattle-rest",
+              "quantity": "2",
+              "unit": "per_night",
+              "unit_price_cents": 3000,
+              "subtotal_cents": 6000,
+              "source_ref": {
+                "dataset_file": "synthetic_campsites.csv",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": null,
+                "valid_to": null
+              },
+              "assumption": "Nightly synthetic campsite rate is a group/site allowance, not a per-person rate."
+            },
+            {
+              "category": "TRANSPORT",
+              "item_key": "cost-02",
+              "quantity": "100",
+              "unit": "per_kilometre",
+              "unit_price_cents": 35,
+              "subtotal_cents": 3500,
+              "source_ref": {
+                "dataset_file": "synthetic_cost_reference.csv",
+                "record_id": "cost-02",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": null,
+                "valid_to": null
+              },
+              "assumption": "Total vehicle kilometres already includes all vehicles."
+            },
+            {
+              "category": "TRANSPORT",
+              "item_key": "cost-15",
+              "quantity": "1",
+              "unit": "per_vehicle",
+              "unit_price_cents": 1200,
+              "subtotal_cents": 1200,
+              "source_ref": {
+                "dataset_file": "synthetic_cost_reference.csv",
+                "record_id": "cost-15",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": null,
+                "valid_to": null
+              },
+              "assumption": "One parking allowance per confirmed vehicle."
+            },
+            {
+              "category": "FOOD",
+              "item_key": "cost-14",
+              "quantity": "6",
+              "unit": "per_person_per_day",
+              "unit_price_cents": 1800,
+              "subtotal_cents": 10800,
+              "source_ref": {
+                "dataset_file": "synthetic_cost_reference.csv",
+                "record_id": "cost-14",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": null,
+                "valid_to": null
+              },
+              "assumption": "Synthetic provision-value allowance; possession does not imply a free trip."
+            },
+            {
+              "category": "WATER",
+              "item_key": "cost-05",
+              "quantity": "6",
+              "unit": "per_person_per_day",
+              "unit_price_cents": 600,
+              "subtotal_cents": 3600,
+              "source_ref": {
+                "dataset_file": "synthetic_cost_reference.csv",
+                "record_id": "cost-05",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": null,
+                "valid_to": null
+              },
+              "assumption": "Packaged-water value allowance; add one emergency day when potable supply is absent/unknown. Rule litre quantities are not multiplied by a person-day price."
+            },
+            {
+              "category": "ADDITIONAL_GEAR",
+              "item_key": "no_priced_equipment_gaps",
+              "quantity": "1",
+              "unit": "one_time",
+              "unit_price_cents": 0,
+              "subtotal_cents": 0,
+              "source_ref": null,
+              "assumption": "No priced essential-equipment gaps; supply/plan confirmation is still checked separately."
+            }
+          ],
+          "total_cents": 25100,
+          "known_subtotal_cents": 25100,
+          "budget_difference_cents": -6900,
+          "outcome": "PASSED",
+          "mandatory_blockers": [],
+          "clarifications": []
+        },
+        "gear_checklist_id": "b02-unit-checklist",
+        "depends_on_assessment_id": null
+      },
+      "scenario_context": {
+        "scenario_id": "trip-evidence-selection-1",
+        "campsite_ids": [
+          "demo-wattle-rest"
+        ],
+        "valid_from": "2026-11-06",
+        "valid_to": "2026-11-08",
+        "evidence": [
+          {
+            "kind": "WEATHER",
+            "summary": "Mild synthetic conditions.",
+            "source_date": "2026-11-01",
+            "status": "AVAILABLE",
+            "valid_from": "2026-11-02",
+            "valid_to": "2026-11-08",
+            "road_state": null,
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-11-02",
+                "valid_to": "2026-11-08"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-11-02",
+                "valid_to": "2026-11-08"
+              }
+            ]
+          },
+          {
+            "kind": "FIRE",
+            "summary": "No synthetic fire restriction.",
+            "source_date": "2026-10-19",
+            "status": "AVAILABLE",
+            "valid_from": "2026-10-20",
+            "valid_to": "2026-11-30",
+            "road_state": null,
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              }
+            ]
+          },
+          {
+            "kind": "ROAD",
+            "summary": "open in synthetic scenario",
+            "source_date": "2026-10-19",
+            "status": "AVAILABLE",
+            "valid_from": "2026-10-20",
+            "valid_to": "2026-11-30",
+            "road_state": "OPEN",
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              }
+            ]
+          },
+          {
+            "kind": "RESTRICTION",
+            "summary": "No synthetic campsite restrictions reported.",
+            "source_date": "2026-10-19",
+            "status": "AVAILABLE",
+            "valid_from": "2026-10-20",
+            "valid_to": "2026-11-30",
+            "road_state": null,
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              }
+            ]
+          }
+        ],
+        "template_id": null
+      },
+      "demo_context": {
+        "schema_version": "1.0",
+        "mode": "agent",
+        "demo_today": "2026-11-05",
+        "dataset_version": "2.1.0"
+      }
+    },
+    "baseline": {
+      "schema_version": "1.0",
+      "execution_mode": "agent",
+      "source_refs": [
+        {
+          "dataset_file": "synthetic_campsites.csv",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": null,
+          "valid_to": null
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        }
+      ],
+      "assumptions": [
+        "This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.",
+        "Qualitative v1 synthetic summary rules; no temperature, wind-speed or probability is fabricated.",
+        "Trip evidence selection digest: 5527e36937f3c68cf79aaa8484717904809a1e1a8bf687247394a0b91d31cf1c."
+      ],
+      "uncertainties": [],
+      "version_context": {
+        "plan_id": "independent-plan",
+        "plan_version_id": "independent-version",
+        "run_id": "independent-run",
+        "input_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "depends_on_assessment_id": "b02-unit-saved-logistics",
+      "risk_level": "LOW",
+      "confidence": "HIGH",
+      "data_quality": {
+        "WEATHER": "AVAILABLE",
+        "FIRE": "AVAILABLE",
+        "ROAD": "AVAILABLE",
+        "RESTRICTION": "AVAILABLE"
+      },
+      "evidence": [
+        {
+          "kind": "WEATHER",
+          "summary": "Mild synthetic conditions.",
+          "source_date": "2026-11-01",
+          "status": "AVAILABLE",
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08",
+          "road_state": null,
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-11-02",
+              "valid_to": "2026-11-08"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-11-02",
+              "valid_to": "2026-11-08"
+            }
+          ]
+        },
+        {
+          "kind": "FIRE",
+          "summary": "No synthetic fire restriction.",
+          "source_date": "2026-10-19",
+          "status": "AVAILABLE",
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30",
+          "road_state": null,
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            }
+          ]
+        },
+        {
+          "kind": "ROAD",
+          "summary": "open in synthetic scenario",
+          "source_date": "2026-10-19",
+          "status": "AVAILABLE",
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30",
+          "road_state": "OPEN",
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            }
+          ]
+        },
+        {
+          "kind": "RESTRICTION",
+          "summary": "No synthetic campsite restrictions reported.",
+          "source_date": "2026-10-19",
+          "status": "AVAILABLE",
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30",
+          "road_state": null,
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            }
+          ]
+        }
+      ],
+      "hazards": [],
+      "mandatory_blockers": [],
+      "recommended_actions": [
+        "Recheck evidence and arrangements before any real-world use; this is only a synthetic demo."
+      ],
+      "outcome": "PASSED",
+      "requires_human_review": false,
+      "unresolved_conflicts": []
+    },
+    "result": {
+      "schema_version": "1.0",
+      "execution_mode": "agent",
+      "source_refs": [
+        {
+          "dataset_file": "synthetic_campsites.csv",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": null,
+          "valid_to": null
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        }
+      ],
+      "assumptions": [
+        "This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.",
+        "Qualitative v1 synthetic summary rules; no temperature, wind-speed or probability is fabricated.",
+        "Trip evidence selection digest: 5527e36937f3c68cf79aaa8484717904809a1e1a8bf687247394a0b91d31cf1c."
+      ],
+      "uncertainties": [],
+      "version_context": {
+        "plan_id": "independent-plan",
+        "plan_version_id": "independent-version",
+        "run_id": "independent-run",
+        "input_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "depends_on_assessment_id": "b02-unit-saved-logistics",
+      "risk_level": "LOW",
+      "confidence": "HIGH",
+      "data_quality": {
+        "WEATHER": "AVAILABLE",
+        "FIRE": "AVAILABLE",
+        "ROAD": "AVAILABLE",
+        "RESTRICTION": "AVAILABLE"
+      },
+      "evidence": [
+        {
+          "kind": "WEATHER",
+          "summary": "Mild synthetic conditions.",
+          "source_date": "2026-11-01",
+          "status": "AVAILABLE",
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08",
+          "road_state": null,
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-11-02",
+              "valid_to": "2026-11-08"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-11-02",
+              "valid_to": "2026-11-08"
+            }
+          ]
+        },
+        {
+          "kind": "FIRE",
+          "summary": "No synthetic fire restriction.",
+          "source_date": "2026-10-19",
+          "status": "AVAILABLE",
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30",
+          "road_state": null,
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            }
+          ]
+        },
+        {
+          "kind": "ROAD",
+          "summary": "open in synthetic scenario",
+          "source_date": "2026-10-19",
+          "status": "AVAILABLE",
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30",
+          "road_state": "OPEN",
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            }
+          ]
+        },
+        {
+          "kind": "RESTRICTION",
+          "summary": "No synthetic campsite restrictions reported.",
+          "source_date": "2026-10-19",
+          "status": "AVAILABLE",
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30",
+          "road_state": null,
+          "source_refs": [
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "demo-wattle-rest",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            },
+            {
+              "dataset_file": "runtime_safety_evidence.json",
+              "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+              "provenance": {
+                "source_type": "SYNTHETIC",
+                "source_name": "CampMate Synthetic Demo Dataset v2",
+                "source_date": "2026-10-07",
+                "demo_only": true
+              },
+              "valid_from": "2026-10-20",
+              "valid_to": "2026-11-30"
+            }
+          ]
+        }
+      ],
+      "hazards": [],
+      "mandatory_blockers": [],
+      "recommended_actions": [
+        "Recheck evidence and arrangements before any real-world use; this is only a synthetic demo."
+      ],
+      "outcome": "PASSED",
+      "requires_human_review": false,
+      "unresolved_conflicts": []
+    },
+    "plan": {
+      "findings": [
+        {
+          "finding_key": "finding-c5675ca562dfab163324b0528bfabffe83bbe6842670c1c1bad409940ae0ee07",
+          "interpretation_unverified": "Consider the recorded trip implications.",
+          "action_code": "ACKNOWLEDGE_INFORMATION",
+          "action_unverified": "Follow the permitted next step.",
+          "fact_refs": [
+            "/baseline/risk_level",
+            "/baseline/confidence",
+            "/baseline/outcome",
+            "/baseline/requires_human_review",
+            "/baseline/recommended_actions",
+            "/baseline/assumptions",
+            "/input/confirmed_requirements",
+            "/input/demo_context",
+            "/selection/selection_digest"
+          ]
+        },
+        {
+          "finding_key": "finding-f15a30e81bdb719e309182a5259d26cd795529e5c8d1c943147bac4bf606df8f",
+          "interpretation_unverified": "Consider the recorded trip implications.",
+          "action_code": "ACKNOWLEDGE_INFORMATION",
+          "action_unverified": "Follow the permitted next step.",
+          "fact_refs": [
+            "/baseline/data_quality/WEATHER",
+            "/baseline/evidence/0"
+          ]
+        },
+        {
+          "finding_key": "finding-76ceeadb11e83e790f4fd655a174c9f18fcc1a2cbfaf2a28e75dce5c21b3eee8",
+          "interpretation_unverified": "Consider the recorded trip implications.",
+          "action_code": "ACKNOWLEDGE_INFORMATION",
+          "action_unverified": "Follow the permitted next step.",
+          "fact_refs": [
+            "/baseline/data_quality/FIRE",
+            "/baseline/evidence/1"
+          ]
+        },
+        {
+          "finding_key": "finding-db7929f5c8eca328435bd409216a9c85c85b26320aff63d38b6e54646652abb4",
+          "interpretation_unverified": "Consider the recorded trip implications.",
+          "action_code": "ACKNOWLEDGE_INFORMATION",
+          "action_unverified": "Follow the permitted next step.",
+          "fact_refs": [
+            "/baseline/data_quality/ROAD",
+            "/baseline/evidence/2"
+          ]
+        },
+        {
+          "finding_key": "finding-0e1f258d1d73ce316b4f3dd49a8dd6f6cbc7061014e9f77387baf3eb84351f1a",
+          "interpretation_unverified": "Consider the recorded trip implications.",
+          "action_code": "ACKNOWLEDGE_INFORMATION",
+          "action_unverified": "Follow the permitted next step.",
+          "fact_refs": [
+            "/baseline/data_quality/RESTRICTION",
+            "/baseline/evidence/3"
+          ]
+        },
+        {
+          "finding_key": "finding-b0f402f71e6901252c5b659d12f6ac4032124293e22d3c936e4c61a871f779c2",
+          "interpretation_unverified": "Consider the recorded trip implications.",
+          "action_code": "ACKNOWLEDGE_INFORMATION",
+          "action_unverified": "Follow the permitted next step.",
+          "fact_refs": [
+            "/input/saved_logistics_assessment/result/outcome",
+            "/input/saved_logistics_assessment/result/mandatory_blockers",
+            "/input/saved_logistics_assessment/result/clarifications",
+            "/input/saved_logistics_assessment/result/transport_feasible",
+            "/input/saved_logistics_assessment/result/total_cents",
+            "/input/saved_logistics_assessment/result/uncertainties"
+          ]
+        }
+      ],
+      "action_priority": [
+        "finding-c5675ca562dfab163324b0528bfabffe83bbe6842670c1c1bad409940ae0ee07",
+        "finding-f15a30e81bdb719e309182a5259d26cd795529e5c8d1c943147bac4bf606df8f",
+        "finding-76ceeadb11e83e790f4fd655a174c9f18fcc1a2cbfaf2a28e75dce5c21b3eee8",
+        "finding-db7929f5c8eca328435bd409216a9c85c85b26320aff63d38b6e54646652abb4",
+        "finding-0e1f258d1d73ce316b4f3dd49a8dd6f6cbc7061014e9f77387baf3eb84351f1a",
+        "finding-b0f402f71e6901252c5b659d12f6ac4032124293e22d3c936e4c61a871f779c2"
+      ],
+      "decision_summary_unverified": "Resolve recorded issues before seeking finalisation.",
+      "source_refs": [
+        {
+          "dataset_file": "synthetic_campsites.csv",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": null,
+          "valid_to": null
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-11-02",
+          "valid_to": "2026-11-08"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "demo-wattle-rest",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        },
+        {
+          "dataset_file": "runtime_safety_evidence.json",
+          "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+          "provenance": {
+            "source_type": "SYNTHETIC",
+            "source_name": "CampMate Synthetic Demo Dataset v2",
+            "source_date": "2026-10-07",
+            "demo_only": true
+          },
+          "valid_from": "2026-10-20",
+          "valid_to": "2026-11-30"
+        }
+      ]
+    },
+    "trace": {
+      "role": "SAFETY",
+      "requested_model": "campus-qwen",
+      "served_models": [
+        "offline-safety-test"
+      ],
+      "configuration_fingerprint": "5de73c2db3cc37d266426402bcc6722a59f94c5f0fd8367f763a90c25912c07c",
+      "input_sha256": "219990663ca4f8d95e5ba55c008a0a905a3014a3a64afd94a6b697d05ed61ec6",
+      "rule_facts_sha256": "1efcea35b774c1360d71a6430188afcc09c74994763195bc0013f7b352448dcf",
+      "proposal_sha256": "06e7ef421688dbff9e696567c9565ee5c5f3ab6c40d49eba998ef5c8903fb66c",
+      "prompt_sha256": "348dcee55454f9d25f65e9e4d128858be182e512bc22dabf79f2d286c0865d31",
+      "tool_version": "safety-read-only-tools-2",
+      "turns": 3,
+      "http_attempts": 3,
+      "elapsed_ms": 7,
+      "tool_calls": [
+        "read_safety_facts",
+        "evaluate_safety_plan"
+      ],
+      "response_sha256": [
+        "eaf5dc166bf0618d873a205c159def6f4c596ea9b9d56d5a39ff208833180914",
+        "2648bbb8a4c420d13619ce3de28b9ed3aa15de29883556377fd805715140cd0c",
+        "2bdbb348a05c43faab65e03a9506f0aad54aeba5179f0af822cd4d9eba2232c4"
+      ],
+      "usage": {
+        "prompt_tokens": 300,
+        "completion_tokens": 180,
+        "total_tokens": 480
+      },
+      "validation_passed": true
+    },
+    "identity": {
+      "agent_version": "campus-safety-advisory-agent-2",
+      "tool_version": "safety-read-only-tools-2",
+      "validation_version": "safety-advisory-validation-2",
+      "kernel_version": "b02-v1-rules-2",
+      "dataset_rules_version": "b02-v2-rules-2/trip-evidence-selection-1",
+      "prompt_sha256": "348dcee55454f9d25f65e9e4d128858be182e512bc22dabf79f2d286c0865d31",
+      "model_client": {
+        "client_version": "b04-campus-client-1",
+        "base_url": "http://10.167.60.148:8000/v1",
+        "model": "campus-qwen",
+        "timeout_seconds": 5.0,
+        "max_completion_tokens": 2048,
+        "max_attempts": 1,
+        "max_turns": 4
+      },
+      "workflow_context": {
+        "dataset_version": "2.1.0",
+        "file_digests": {
+          "synthetic_campsites.csv": "c4fe2e94d6dde01034c8ed404423a7932943ef1eba2b3b8a3c40f01b23183b1b",
+          "synthetic_gear_rules.csv": "6e2de57f35b6ff1fb9fe7d8575ebfdf35d3424e02785753aa35e9a7a28d51f79",
+          "synthetic_cost_reference.csv": "f027927431e6edacab3a7c22603fa2f4b6e422a793bb4f0e82eec08806f0e535",
+          "synthetic_profiles.json": "8e422b9375b8c68922c3d1a47b0dbd4d556f160d284fe001276bfcce7a447e55",
+          "synthetic_requests.json": "4be90883e21b66af06341842ddae82d5f94f98a4a47141f30c66fc3a477a56e6",
+          "synthetic_safety_scenarios.json": "9f0a0aaf33682f65bde8e42dae31c8a388ded13447aad856bebc9bb603818748",
+          "runtime_requests.json": "2e8f42816313bea35e26517933c567fdbd772b75d6b6788b1ddd89569a4ceb0c",
+          "runtime_safety_evidence.json": "9f0a0aaf33682f65bde8e42dae31c8a388ded13447aad856bebc9bb603818748",
+          "manifest.json": "638d0b887defd50afc95c73295ec86c11a4336deb44c55df329f9c46e2fed731"
+        },
+        "fixture_digests": {},
+        "selection_config": {
+          "safety_case_ids": "[]",
+          "supplement_scenario_ids": "[]",
+          "revision_feedback": "",
+          "b_evidence_policy": "trip-evidence-selection-1",
+          "b_evidence_index_sha256": "9f0a0aaf33682f65bde8e42dae31c8a388ded13447aad856bebc9bb603818748",
+          "b_evidence_clock_policy": "demo_today:Australia/Sydney:day"
+        },
+        "rules_version": "a-request-normalization-v1/b01-v2-adapter-2/b02-v2-rules-2/trip-evidence-selection-1/b03-checkpoint-2"
+      },
+      "configuration_fingerprint": "5de73c2db3cc37d266426402bcc6722a59f94c5f0fd8367f763a90c25912c07c"
+    },
+    "selection": {
+      "selected_case_ids": [
+        "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+        "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+        "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+        "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08"
+      ],
+      "scenario_context": {
+        "scenario_id": "trip-evidence-selection-1",
+        "campsite_ids": [
+          "demo-wattle-rest"
+        ],
+        "valid_from": "2026-11-06",
+        "valid_to": "2026-11-08",
+        "evidence": [
+          {
+            "kind": "WEATHER",
+            "summary": "Mild synthetic conditions.",
+            "source_date": "2026-11-01",
+            "status": "AVAILABLE",
+            "valid_from": "2026-11-02",
+            "valid_to": "2026-11-08",
+            "road_state": null,
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-11-02",
+                "valid_to": "2026-11-08"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-weather-2026-11-02-2026-11-08",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-11-02",
+                "valid_to": "2026-11-08"
+              }
+            ]
+          },
+          {
+            "kind": "FIRE",
+            "summary": "No synthetic fire restriction.",
+            "source_date": "2026-10-19",
+            "status": "AVAILABLE",
+            "valid_from": "2026-10-20",
+            "valid_to": "2026-11-30",
+            "road_state": null,
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-fire-2026-10-20-2026-11-30",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              }
+            ]
+          },
+          {
+            "kind": "ROAD",
+            "summary": "open in synthetic scenario",
+            "source_date": "2026-10-19",
+            "status": "AVAILABLE",
+            "valid_from": "2026-10-20",
+            "valid_to": "2026-11-30",
+            "road_state": "OPEN",
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-road-2026-10-20-2026-11-30",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              }
+            ]
+          },
+          {
+            "kind": "RESTRICTION",
+            "summary": "No synthetic campsite restrictions reported.",
+            "source_date": "2026-10-19",
+            "status": "AVAILABLE",
+            "valid_from": "2026-10-20",
+            "valid_to": "2026-11-30",
+            "road_state": null,
+            "source_refs": [
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "demo-wattle-rest",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              },
+              {
+                "dataset_file": "runtime_safety_evidence.json",
+                "record_id": "trip-demo-wattle-rest-restriction-2026-10-20-2026-11-30",
+                "provenance": {
+                  "source_type": "SYNTHETIC",
+                  "source_name": "CampMate Synthetic Demo Dataset v2",
+                  "source_date": "2026-10-07",
+                  "demo_only": true
+                },
+                "valid_from": "2026-10-20",
+                "valid_to": "2026-11-30"
+              }
+            ]
+          }
+        ],
+        "template_id": null
+      },
+      "weather_facts_by_campsite": {
+        "demo-wattle-rest": {
+          "temperature_min_c": "12",
+          "temperature_max_c": "22",
+          "forecast_rain_mm": "0",
+          "wind_kph": "10"
+        }
+      },
+      "coverage_issues": [],
+      "selection_digest": "5527e36937f3c68cf79aaa8484717904809a1e1a8bf687247394a0b91d31cf1c"
+    }
+  }
+}
