@@ -98,3 +98,19 @@ def maximum_safety_fixture():
         'itinerary_entries':entries[:index]+pieces+entries[index+1:]})})
     baseline=safety.assess(dataset,input,expected_mode='agent')
     return dataset,input,config,baseline,selection
+
+
+def saved_safety_archive(version):
+    """Captured under ba7d9e5 BEFORE merging A35, not relabelled new output.
+
+    Explicit offline fixtures only; v1 contains a synthetic archival proposal,
+    v2 contains a MockTransport component outcome. Neither is live evidence.
+    """
+    from app.contracts.dto import SafetyResult
+    from app.agents.rules.trip_evidence import TripEvidenceSelection
+    path=ROOT/'backend/tests/fixtures/safety_archives_pre_a35.json'
+    raw=json.loads(path.read_text(encoding='utf-8'))[version]
+    assert raw['fixture_kind']=='OFFLINE_SYNTHETIC_ARCHIVE_NOT_LIVE_INFERENCE'
+    assert raw['source_commit']=='ba7d9e5' and raw['source_common_kernel']=='b02-v1-rules-2'
+    return (SafetyInput.model_validate(raw['input']),SafetyResult.model_validate(raw['baseline']),
+        raw['plan'],raw['trace'],raw['identity'],TripEvidenceSelection.model_validate(raw['selection']))

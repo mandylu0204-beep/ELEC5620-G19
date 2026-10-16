@@ -66,14 +66,34 @@ class PublicSafetyClient(ContractModel):
         return self
 
 
+SUPPORTED_KERNEL_RULE_PAIRS = (
+    ('b02-v1-rules-2', 'b02-v2-rules-2/trip-evidence-selection-1'),
+    ('b02-v1-rules-2/a-meal-clarification-v1',
+     'b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1'),
+)
+
+
 class SafetyIdentitySeed(ContractModel):
+    # Registration and archived-v2 verification share an explicit closed set.
+    # These clauses also make the cross-field pairing visible in JSON schema.
+    model_config = {'json_schema_extra': {'anyOf': [
+        {'properties': {'kernel_version': {'const': kernel}, 'dataset_rules_version': {'const': rules}}}
+        for kernel, rules in SUPPORTED_KERNEL_RULE_PAIRS
+    ]}}
     agent_version: Literal['campus-safety-advisory-agent-2']
     tool_version: Literal['safety-read-only-tools-2']
     validation_version: Literal['safety-advisory-validation-2']
-    kernel_version: Literal['b02-v1-rules-2']
-    dataset_rules_version: Annotated[StrictStr, Field(min_length=1, max_length=4096)]
+    kernel_version: Literal['b02-v1-rules-2', 'b02-v1-rules-2/a-meal-clarification-v1']
+    dataset_rules_version: Literal['b02-v2-rules-2/trip-evidence-selection-1',
+        'b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1']
     prompt_sha256: Hash
     model_client: PublicSafetyClient
+
+    @model_validator(mode='after')
+    def supported_kernel_rule_pair(self):
+        if (self.kernel_version, self.dataset_rules_version) not in SUPPORTED_KERNEL_RULE_PAIRS:
+            raise ValueError('Safety kernel and dataset rule identities are not a registered pair')
+        return self
 
 
 def safety_identity_seed(dataset, public_client):

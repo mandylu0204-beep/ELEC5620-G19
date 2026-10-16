@@ -1,5 +1,5 @@
 """Exportable current internal component contract; shared schema remains 1.0."""
-from .safety_identity import SafetyIdentitySeed, SAFETY_SYSTEM_PROMPT
+from .safety_identity import SafetyIdentitySeed, SAFETY_SYSTEM_PROMPT, SUPPORTED_KERNEL_RULE_PAIRS
 from .safety_schema import (SAFETY_ACTION, SAFETY_AGENT_VERSION, SAFETY_TOOL_VERSION, SAFETY_VALIDATION_VERSION,
     SafetyProposal, SafetyTrace, MAX_ACTION_BYTES, MAX_FACTS_BYTES, MAX_FINDINGS,
     MAX_INPUT_BYTES, MAX_PAYLOAD_BYTES, MAX_PROPOSAL_BYTES, canonical, ADVICE_TEXT_POLICY)
@@ -14,6 +14,8 @@ def safety_contract_document():
         'agent_version':SAFETY_AGENT_VERSION,'tool_version':SAFETY_TOOL_VERSION,
         'validation_version':SAFETY_VALIDATION_VERSION,
         'text_policy':ADVICE_TEXT_POLICY,
+        'supported_kernel_rule_pairs':[{'kernel_version':kernel,'dataset_rules_version':rules}
+            for kernel,rules in SUPPORTED_KERNEL_RULE_PAIRS],
         'prompt_sha256':digest(SAFETY_SYSTEM_PROMPT+canonical(SAFETY_ACTION.json_schema())),
         'encoded_utf8_limits':{'input':MAX_INPUT_BYTES,'read_facts':MAX_FACTS_BYTES,'proposal':MAX_PROPOSAL_BYTES,
             'action':MAX_ACTION_BYTES,'complete_audit_payload':MAX_PAYLOAD_BYTES,'client_request':131072,

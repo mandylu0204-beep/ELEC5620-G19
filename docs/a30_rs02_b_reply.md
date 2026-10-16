@@ -8,6 +8,12 @@ R-S01 is intentionally NOT fixed in this change. A must still supply the complet
 A31/A32 baseline and exact SHA before supported kernel registration is agreed.
 Neither the old nor the new identity schema accepts arbitrary new kernels.
 
+Subsequent status (not a rewrite of the original run): A independently reviewed
+`ba7d9e5`, reran 250 targeted tests and closed R-S02. The complete A35 baseline
+`4c0662c` is now available; B's separate R-S01 update is documented in
+[a30_rs01_b_reply.md](a30_rs01_b_reply.md). Results below retain their original
+base and scope.
+
 ## Changed policy, not silently cleaned text
 
 All three advisory fields use the same current validator:

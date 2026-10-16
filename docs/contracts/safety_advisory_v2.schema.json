@@ -33,6 +33,16 @@
     ],
     "limitations": "Detectable syntax only; not complete URL, obfuscation, English-language or semantic-truth recognition."
   },
+  "supported_kernel_rule_pairs": [
+    {
+      "kernel_version": "b02-v1-rules-2",
+      "dataset_rules_version": "b02-v2-rules-2/trip-evidence-selection-1"
+    },
+    {
+      "kernel_version": "b02-v1-rules-2/a-meal-clarification-v1",
+      "dataset_rules_version": "b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1"
+    }
+  ],
   "prompt_sha256": "348dcee55454f9d25f65e9e4d128858be182e512bc22dabf79f2d286c0865d31",
   "encoded_utf8_limits": {
     "input": 131072,
@@ -819,6 +829,28 @@
         }
       },
       "additionalProperties": false,
+      "anyOf": [
+        {
+          "properties": {
+            "kernel_version": {
+              "const": "b02-v1-rules-2"
+            },
+            "dataset_rules_version": {
+              "const": "b02-v2-rules-2/trip-evidence-selection-1"
+            }
+          }
+        },
+        {
+          "properties": {
+            "kernel_version": {
+              "const": "b02-v1-rules-2/a-meal-clarification-v1"
+            },
+            "dataset_rules_version": {
+              "const": "b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1"
+            }
+          }
+        }
+      ],
       "properties": {
         "agent_version": {
           "const": "campus-safety-advisory-agent-2",
@@ -836,13 +868,18 @@
           "type": "string"
         },
         "kernel_version": {
-          "const": "b02-v1-rules-2",
+          "enum": [
+            "b02-v1-rules-2",
+            "b02-v1-rules-2/a-meal-clarification-v1"
+          ],
           "title": "Kernel Version",
           "type": "string"
         },
         "dataset_rules_version": {
-          "maxLength": 4096,
-          "minLength": 1,
+          "enum": [
+            "b02-v2-rules-2/trip-evidence-selection-1",
+            "b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1"
+          ],
           "title": "Dataset Rules Version",
           "type": "string"
         },

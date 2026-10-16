@@ -1,6 +1,5 @@
 """R-S02 text-policy v2, unchanged original text and frozen v1 replay."""
 import asyncio
-from copy import deepcopy
 import json
 import sys
 import unicodedata
@@ -8,17 +7,11 @@ import unicodedata
 import pytest
 
 from app.contracts.errors import ContractFailure
-from app.llm.coordinator import digest
-from app.llm.client import CampusModelClient
 from app.llm.safety_schema import (SafetyProposal, parse_safety_action, check_advice,
     ADVICE_TEXT_POLICY, ADVICE_SCHEMA_POLICY, SAFETY_VALIDATION_VERSION)
 from app.llm.safety_tools import ValidatedSafetyPlan
 from app.llm.safety_validation import safety_validator_for, validate_safety_payload
-from app.llm.safety_v1 import safety_schema as v1_schema
-from app.llm.safety_v1.safety_identity import safety_identity_seed as v1_seed, compose_safety_identity as v1_identity
-from app.llm.safety_v1.safety_tools import SafetyToolset as V1Toolset
-from llm_fixtures import model_settings
-from safety_fixtures import safety_fixture, safety_agent_fixture, proposal_from_safety_facts
+from safety_fixtures import safety_fixture, safety_agent_fixture, saved_safety_archive
 
 FIELDS = ('interpretation_unverified','action_unverified','decision_summary_unverified')
 CONTROL_SAMPLES = ('\x00','\x1b','\x7f','\x80','\x85','\x9f','\u00ad','\u061c',
@@ -140,23 +133,8 @@ def test_validated_plan_cannot_bypass_new_text_policy(normal,field):
 
 
 def legacy_archive(normal):
-    dataset,input,config,baseline,selection=normal
-    # Explicit synthetic ARCHIVAL fixture, not a live model transcript. It
-    # intentionally contains text allowed by v1 but forbidden for new requests.
-    identity=v1_identity(v1_seed(dataset,CampusModelClient(model_settings()).identity),config.context)
-    tools=V1Toolset(input,baseline,selection=selection)
-    raw=proposal_from_safety_facts(tools.read_safety_facts())
-    raw['decision_summary_unverified']='See www.example.com for guidance.'
-    raw['findings'][0]['interpretation_unverified']='Review\u0085the registered evidence.'
-    proposal=v1_schema.SafetyProposal.model_validate(raw)
-    plan=tools.evaluate_safety_plan(proposal)
-    trace=v1_schema.SafetyTrace(role='SAFETY',requested_model='campus-qwen',served_models=[],
-        configuration_fingerprint=identity['configuration_fingerprint'],input_sha256=digest(input.model_dump_json()),
-        rule_facts_sha256=digest(baseline.model_dump_json()),proposal_sha256=tools.proposal_hash(proposal),
-        prompt_sha256=identity['prompt_sha256'],tool_version='safety-read-only-tools-1',turns=3,http_attempts=3,
-        elapsed_ms=0,tool_calls=['read_safety_facts','evaluate_safety_plan'],response_sha256=['a'*64]*3,
-        usage={},validation_passed=True)
-    return input,baseline,plan.model_dump(mode='json'),trace.model_dump(mode='json'),identity,selection
+    # Use original old-kernel bytes; the live kernel now belongs to A35.
+    return saved_safety_archive('v1')
 
 
 def test_frozen_v1_replays_original_allowed_text_without_cleaning(normal):

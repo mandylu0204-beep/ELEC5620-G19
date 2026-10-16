@@ -1,15 +1,21 @@
 # A30 safety advisory: B component and exact contract reply
 
 Date: 2026-10-16, Australia/Sydney. Branch: `feature/llm-safety-agent`.
-Base: main `8a40deb`, including A28/A29. Reply to A's user-supplied A30 draft.
+Initial base: main `8a40deb`, including A28/A29. Reply to A's A30 draft.
+Current shared base: complete main `4c0662c` (A31/A32, deletion and page cleanup),
+merged into this branch as `e948f59`; R-S02 component base `ba7d9e5` retained.
 
-**Status: current component v2 includes R-S02; final freeze still awaits R-S01 and a common A31/A32 baseline.**
-See [the R-S02 reply](a30_rs02_b_reply.md). New registrations use agent/tool/
+**Status: A independently accepted R-S02; B has addressed R-S01 on the complete A35 baseline. Final A30 freeze and production wiring still require A/B agreement.**
+See [the R-S02 reply](a30_rs02_b_reply.md) and [the R-S01 reply](a30_rs01_b_reply.md).
+New registrations use agent/tool/
 validator v2 and the v2 schema bundle. The original v1 bundle and pure replay
 implementation are retained for authorised historical validation only.
 This is not production safety-model integration or a live acceptance report.
-Shared schema 1.0, existing factories, settings, Hybrid, Orchestrator, database,
-personal configuration, sealed datasets and frontend are unchanged. No campus
+The R-S01/R-S02 B component delta does not change shared schema 1.0, factories,
+settings, Hybrid, Orchestrator, migrations or frontend. The complete main merge
+does include A's existing application changes and migrations 8/9. Safety storage
+must use migration 10 or later, assigned by A; no safety migration is added here.
+Personal configuration, actual user databases and sealed datasets are untouched. No campus
 inference calls, model probes or automatic messages were made for this component.
 Commit and remote publication status follow Git records. Safety in the running
 application still uses rules.
@@ -119,7 +125,7 @@ review in advice does not modify the official `requires_human_review` value.
 Safety may independently PASSED while logistics remains REVISION; the latter
 continues to prevent finalisation. Neither outcome is rewritten to conflate roles.
 
-**R-S02 candidate restrictions requiring A confirmation:** advice rejects
+**R-S02 restrictions independently accepted by A for `ba7d9e5`:** advice rejects
 Unicode control/format categories Cc/Cf, line/paragraph separators Zl/Zp,
 declared link-like forms, numeric literals, matched HTML tags and code fences.
 Link detection includes URI schemes, www prefixes, DNS-shaped bare domains/
@@ -152,7 +158,9 @@ plan, trace = validator(
 
 A must rebuild input from the saved authorized context/version/current-run
 logistics, reconstruct the pinned snapshot and selection, and recompute the
-baseline with `agents.rules.safety.assess(..., expected_mode=AGENT)`. Do NOT
+baseline with the compatible saved rule kernel and
+`agents.rules.safety.assess(..., expected_mode=AGENT)`. Historical validation must
+not replace saved logistics or baseline facts with a new run's calculation. Do NOT
 trust a caller-provided baseline or an arbitrary identity. The pure helper
 does not authenticate the owner or prove the dataset bytes were actually read.
 
@@ -244,6 +252,22 @@ seven proposed fields and strict schema. Seed has no context/fingerprint/key;
 secret rotation does not alter it. The complete fingerprint hashes the seed
 plus `workflow_context`. `reasoning_effort` is omitted when unset, not invented.
 
+Current v2 identity validation explicitly accepts only these complete pairs:
+
+| Common kernel | Adapter dataset rules |
+| --- | --- |
+| `b02-v1-rules-2` | `b02-v2-rules-2/trip-evidence-selection-1` |
+| `b02-v1-rules-2/a-meal-clarification-v1` | `b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1` |
+
+New runs read the actual imported common kernel and loaded adapter rules, so
+the complete `4c0662c` baseline emits the second pair. Unknown values and mixed
+pairs fail closed; no arbitrary-string or prefix acceptance is added. The
+current exported schema includes both enums and exact cross-field pairing.
+Frozen v1 replay/schema remain unchanged. Original old-kernel v1/v2 test
+archives were captured before merging A35, not generated under new rules and
+relabeled. R-S01 details, validation and remaining ownership are in
+[its reply](a30_rs01_b_reply.md).
+
 A should collect planning/logistics/safety identities from the common inspected
 base, add all trusted role markers, build one final WorkflowConfiguration, then
 instantiate/check both model roles against it. The four marker combinations are
@@ -325,6 +349,9 @@ clarification changes no executable code or prompt identity. No live-model
 token/latency result is inferred from these offline checks. R-S02 results are
 recorded separately in [its reply](a30_rs02_b_reply.md); the original report is
 retained as historical evidence, not relabelled as a new run.
+R-S01 verification against the complete main baseline is recorded separately in
+[its reply](a30_rs01_b_reply.md) and
+[`evidence/a30-rs01-check.json`](evidence/a30-rs01-check.json).
 
 Explicitly NOT delivered/accepted: production SafetyOutcome saving, migration,
 all-four-combination HTTP readiness, checkpoint/rollback/lost-receipt safety
