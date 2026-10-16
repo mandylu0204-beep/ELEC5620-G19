@@ -23,7 +23,7 @@ def interpret(agent, text, **kwargs):
 
 def test_interpret_git_request_uses_nights_not_v1_days_or_expected_status(agent):
     result = call(agent.interpret_request(agent.dataset.request_input('request-01', DEMO)))
-    assert not result.field_errors
+    assert [(item.field,item.code) for item in result.field_errors] == [('preferences',FieldErrorCode.MISSING)]
     assert result.extracted_requirements.duration_nights == 2
     assert result.extracted_requirements.duration_days == 3
     assert result.extracted_requirements.end_date == date(2026, 10, 22)
@@ -99,14 +99,14 @@ def test_no_campfire_and_meal_preferences_are_not_confused(agent):
 
 
 def test_known_mandatory_clause_is_preserved_as_hard_constraint(agent):
-    result = interpret(agent, 'CampMate Demo Region from 2026-10-20 for two nights, AUD 300. We must have toilets.')
+    result = interpret(agent, 'CampMate Demo Region from 2026-10-20 for two nights, AUD 300. We must have toilets. Ready-to-eat meals.')
     assert result.extracted_requirements.mandatory_constraints == ['toilets']
     assert not result.field_errors
 
 
 @pytest.mark.parametrize('clause', ['do not use a campfire', 'must not light a campfire', 'avoid campfire'])
 def test_negated_campfire_is_not_interpreted_as_a_requested_fire(agent, clause):
-    result = interpret(agent, f'CampMate Demo Region from 2026-10-20 for two nights, AUD 300. We {clause}.')
+    result = interpret(agent, f'CampMate Demo Region from 2026-10-20 for two nights, AUD 300. We {clause}. Ready-to-eat meals.')
     assert 'campfire' not in result.extracted_requirements.preferences
     assert result.extracted_requirements.mandatory_constraints == ['no_fires']
     assert not result.field_errors
@@ -119,7 +119,7 @@ def test_negated_meal_preference_does_not_select_the_rejected_mode(agent):
 
 @pytest.mark.parametrize('clause', ['must have wifi', 'must have toilets and wifi', 'must have toilets. We must have wifi'])
 def test_unsupported_mandatory_clause_cannot_be_hidden_by_a_known_one(agent, clause):
-    result = interpret(agent, f'CampMate Demo Region from 2026-10-20 for two nights, AUD 300. We {clause}.')
+    result = interpret(agent, f'CampMate Demo Region from 2026-10-20 for two nights, AUD 300. We {clause}. Ready-to-eat meals.')
     assert any(item.field == 'mandatory_constraints' and item.code == 'UNSUPPORTED' for item in result.field_errors)
 
 

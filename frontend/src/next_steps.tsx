@@ -1,3 +1,4 @@
+import { needsMealChoice } from './logistics_guidance';
 import { Link } from 'react-router-dom';
 import type { PlanDetail } from './plans';
 
@@ -9,6 +10,8 @@ export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}
   const review=data.reviews.at(-1);
   const safety=data.assessments.find(item=>item.kind==='SAFETY')?.result;
   const quality=safety&&'data_quality' in safety?Object.values(safety.data_quality):[];
+  const logistics=data.assessments.find(item=>item.kind==='LOGISTICS')?.result;
+  const mealUnknown=!!logistics&&'clarifications' in logistics&&needsMealChoice(logistics.clarifications);
   let title='调整方案后再确认';
   let description='按列出的问题调整安排。修改日期、人数、预算、偏好或露营资料时，需要重新确认需求。';
   if(data.current_inputs_error){
@@ -37,6 +40,10 @@ export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}
     const upcomingWeather=data.trip_evidence_coverage?.next_weather_check_on;
     title=upcomingWeather?'行程已生成，天气待临近出发时检查':'当前资料还不能支持完整的安全判断';
     description=upcomingWeather?`你可以先核对行程、装备和费用，方案会继续保留。建议在 ${upcomingWeather} 或之后重新检查；天气及其他安全条件仍以届时结果为准。`:'在安全页查看缺少的资料、日期范围或冲突。你可以调整日期或营地，也可以保留草稿，待资料更新后再检查。同一天重复检查不会延长天气预报范围。';
+  }else if((data.logistics_issues??[]).length){
+    title='按具体待办完成检查';description='上方已列出每项缺少的信息、当前记录和处理入口。系统资料问题需要补充来源，重复修改个人资料不会解决。补充个人资料后，请重新确认需求，再更新评估。';
+  }else if(mealUnknown){
+    title='先确认用餐方式';description='行程已保留。点击下方调整需求，选择即食餐食或自行烹饪，再重新确认。系统会据此计算餐食费用和所需装备；交通已确认时无需重复修改。';
   }else if(review?.decision==='REQUEST_REVISION'||review?.decision==='REJECT'){
     title=review.decision==='REJECT'?'审核未通过，请调整方案':'审核员要求调整方案';
     description='按审核理由调整安排。更换营地可修改方案；更改日期、预算、人数或偏好时，请重新确认需求。';

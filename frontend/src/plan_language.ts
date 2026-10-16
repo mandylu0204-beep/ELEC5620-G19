@@ -44,7 +44,7 @@ export function blockerText(code:string){
     CAMPSITE_CLOSED:'营地关闭，需要选择其他营地。',FIRE_PROHIBITED:'营火安排与营地规定冲突，需要取消营火或调整营地。',
     ESSENTIAL_GEAR_MISSING:'必要装备仍有缺口，请在装备页核对数量和安排。',TRANSPORT_UNAVAILABLE:'目前的交通方式或载客容量无法支持此次行程。',
     HARD_CONSTRAINT:'营地或行程未满足你设定的必须条件，请核对并调整。',COSTS_INCOMPLETE:'部分必要费用未知，暂时无法判断总费用。',
-    LOGISTICS_INCOMPLETE:'装备或交通信息尚未确认，请核对露营资料。',BUDGET_MISMATCH:'费用与预算信息需要重新核对。',
+    LOGISTICS_INCOMPLETE:'装备与交通检查尚未完成；若未显示具体缺项，请联系项目负责人核对原因。',BUDGET_MISMATCH:'费用与预算信息需要重新核对。',
     EVIDENCE_COVERAGE:'部分资料的适用日期无法覆盖整段行程，请在安全页核对范围。',
     EVIDENCE_UNAVAILABLE:'部分安全资料不足、已过期或有冲突，暂时无法确认方案。',
     EVIDENCE_DEPENDENCY:'装备、费用与安全检查的关联需要更新。',STUB_RESULT:'本次仅为预览，尚未完成正式规划。',

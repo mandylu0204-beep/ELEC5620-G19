@@ -228,7 +228,15 @@ class Database:
                 execute_migration(connection, MIGRATION_7)
                 connection.execute("INSERT INTO schema_migrations VALUES(7, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
                 versions.append(7)
-            if versions != [1, 2, 3, 4, 5, 6, 7]:
+            if versions == [1, 2, 3, 4, 5, 6, 7]:
+                connection.execute('ALTER TABLE plans ADD COLUMN deleted_at TEXT')
+                connection.execute("INSERT INTO schema_migrations VALUES(8, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
+                versions.append(8)
+            if versions == [1, 2, 3, 4, 5, 6, 7, 8]:
+                connection.execute('CREATE TABLE deleted_requests(request_id TEXT PRIMARY KEY REFERENCES requests(id), deleted_at TEXT NOT NULL)')
+                connection.execute("INSERT INTO schema_migrations VALUES(9, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
+                versions.append(9)
+            if versions != [1, 2, 3, 4, 5, 6, 7, 8, 9]:
                 raise RuntimeError('Unsupported database schema version')
 
     @contextmanager
@@ -264,6 +272,6 @@ class Database:
         try:
             with self.transaction(write=False) as connection:
                 versions = [row[0] for row in connection.execute('SELECT version FROM schema_migrations ORDER BY version')]
-            return versions == [1, 2, 3, 4, 5, 6, 7]
+            return versions == [1, 2, 3, 4, 5, 6, 7, 8, 9]
         except ContractFailure:
             return False

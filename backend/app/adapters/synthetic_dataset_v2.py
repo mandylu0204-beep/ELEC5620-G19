@@ -17,7 +17,7 @@ from .synthetic_dataset import SyntheticDataset, _index, _unique_object
 
 SOURCE_NAME = 'CampMate Synthetic Demo Dataset v2'
 ADAPTER_VERSION_V2 = 'b01-v2-adapter-2'
-V2_RULES_VERSION = 'b02-v2-rules-2'
+V2_RULES_VERSION = 'b02-v2-rules-2/a-meal-clarification-v1'
 BUSINESS_FILES = (
     'synthetic_campsites.csv', 'synthetic_gear_rules.csv', 'synthetic_cost_reference.csv',
     'synthetic_profiles.json', 'synthetic_requests.json', 'synthetic_safety_scenarios.json',

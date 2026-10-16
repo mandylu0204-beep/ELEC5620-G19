@@ -46,7 +46,7 @@ class ReviewService:
                 JOIN runs r ON r.id=p.active_run_id
                 JOIN run_versions rv ON rv.run_id=r.id AND rv.version_id=v.id
                 JOIN users u ON u.id=p.owner_id
-                WHERE v.status IN ('ESCALATED','BLOCKED','REVISION_REQUIRED') AND r.status='SUCCEEDED'
+                WHERE p.deleted_at IS NULL AND v.status IN ('ESCALATED','BLOCKED','REVISION_REQUIRED') AND r.status='SUCCEEDED'
                 AND NOT EXISTS (SELECT 1 FROM reviews h WHERE h.run_id=r.id AND h.version_id=v.id)
                 ORDER BY v.created_at,p.id''').fetchall()
             result = []
@@ -108,7 +108,7 @@ class ReviewService:
     def submit(self, user, plan_id, body: ReviewInput):
         require_role(user, 'FOUNDER')
         with self.db.transaction() as connection:
-            plan = connection.execute('SELECT * FROM plans WHERE id=?', (plan_id,)).fetchone()
+            plan = connection.execute('SELECT * FROM plans WHERE id=? AND deleted_at IS NULL', (plan_id,)).fetchone()
             if not plan:
                 fail(ErrorCode.NOT_FOUND, '方案不存在。')
             run = connection.execute('SELECT * FROM runs WHERE id=?', (plan['active_run_id'],)).fetchone()

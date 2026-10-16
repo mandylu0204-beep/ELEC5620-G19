@@ -1,5 +1,7 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import type { LogisticsIssue } from './logistics_issues';
+import { profileFocusId } from './profile_focus';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ApiFailure } from './api';
 import { privateApi, useSession } from './session';
 import demoInputs from '../../docs/demo/v2_inputs.json';
@@ -38,6 +40,12 @@ export function integer(value: string): number | null {
 
 export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAvailable?: boolean; datasetVersion?: string | null }) {
   const { session, reload } = useSession();
+  const [search]=useSearchParams(); const requestedFocus=search.get('focus')??''; const sourceRequest=search.get('request_id');
+  const [activeFocus,setActiveFocus]=useState(requestedFocus);
+  useEffect(()=>setActiveFocus(requestedFocus),[requestedFocus]);
+  const focusDone=useRef('');
+  const sourcePlan=search.get('plan_id'); const [relatedIssues,setRelatedIssues]=useState<LogisticsIssue[]>([]);
+  const returnRequest=sourceRequest&&/^[a-zA-Z0-9_-]{1,100}$/.test(sourceRequest)?'/request?copy_from='+encodeURIComponent(sourceRequest):null;
   const [loaded, setLoaded] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const [revision, setRevision] = useState(0);
@@ -55,6 +63,11 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
   const [dirty, setDirty] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  useEffect(()=>{
+    const controller=new AbortController();setRelatedIssues([]);
+    if(sourcePlan&&/^[a-zA-Z0-9_-]{1,100}$/.test(sourcePlan))privateApi<{logistics_issues?:LogisticsIssue[]}>('/plans/'+encodeURIComponent(sourcePlan),{signal:controller.signal}).then(data=>{if(!controller.signal.aborted)setRelatedIssues((data.logistics_issues??[]).filter(item=>item.target==='PROFILE'));}).catch(()=>{});
+    return()=>controller.abort();
+  },[sourcePlan]);
   useEffect(() => {
     const controller = new AbortController();
     setLoaded(false); setError(''); setMessage('');
@@ -119,10 +132,16 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
     checkNumber(`gear-capacity-${index}`,item.capacity,'每件人数容量',1);
   });
   const problemIds=Object.keys(issues);
+  useEffect(()=>{
+    if(!loaded||!activeFocus||focusDone.current===activeFocus)return;
+    const id=profileFocusId(activeFocus,equipment); const node=id?document.getElementById(id):null;
+    if(node){node.focus();node.scrollIntoView({block:'center'});focusDone.current=activeFocus;}
+  },[loaded,activeFocus,equipment]);
   const saveHint=busy?'正在保存资料…':!dirty?revision?'资料已保存，可以继续填写需求。':demoAvailable?'填写自己的资料，或展开下方演示样例。':'填写自己的资料，保存后继续。':problemIds.length?`${issues[problemIds[0]]}${problemIds.length>1?` 另有 ${problemIds.length-1} 项需要修改。`:''}`:'有未保存的修改，请保存后继续。';
   const units=[['item','件'],['litre','升'],['portion','份'],['vehicle','辆'],['plan','份计划'],['set','套']];
   return <div className="onboarding-page"><TripFlow step={1}/><div className="onboarding-heading"><div><span className="eyebrow">YOUR CAMPING PROFILE</span><h1>为同行的人做好准备。</h1><p>填写小组、交通与已有装备，让计划更贴合你们。</p></div>{loaded&&<span className="onboarding-status">{dirty?'有未保存修改':revision?'资料已保存':'开始填写'}</span>}</div>
     {error&&<p className="error-box" role="alert">{error}</p>}{message&&<p className="success-box" role="status">{message}</p>}
+    {requestedFocus&&profileFocusId(requestedFocus,equipment)&&<section className="panel" aria-label="补充本次方案资料"><h2>补充本次检查需要的资料</h2><p>已定位到对应字段。可以在此页一次补充全部相关资料，再保存并重新确认需求。补充资料不会自动改变原方案。</p>{relatedIssues.length>0&&<div className="plan-actions">{relatedIssues.map(item=><button type="button" className="secondary-button" key={item.issue_id} onClick={()=>{setActiveFocus(item.field);const id=profileFocusId(item.field,equipment);const node=id?document.getElementById(id):null;node?.focus();node?.scrollIntoView({block:'center'});}}>{item.item_key?equipmentLabel(item.item_key):item.code==='DISTANCE'?'预计总路程':item.code==='VEHICLE_COUNT'?'车辆数量':item.code==='CHILDREN'?'儿童情况':'相关资料'} ↓</button>)}</div>}{activeFocus.startsWith('equipment.')&&!equipment.some(item=>item.item_key===activeFocus.split('.')[1])&&<p>尚未登记此装备。请使用“添加装备”登记真实拥有的物品，不要把拟购买或借用直接记为已拥有。</p>}{returnRequest&&<>{dirty?<p>保存修改后，可继续核对原需求。</p>:<Link className="text-link" to={returnRequest}>返回本次需求，核对并重新确认 ↗</Link>}</>}</section>}
     {!loaded?<section className="panel"><p>正在读取资料…</p><button className="secondary-button" onClick={()=>setRefresh(value=>value+1)}>重新读取</button></section>:<form className="profile-form" onSubmit={save}><fieldset disabled={busy}>
       <div className="profile-intro"><span>填写自己的露营资料</span><p>不确定的数量、容量和路程可以留空，后续评估会提示需要补充的信息。</p></div>
       {demoAvailable&&<details className="demo-profile-option"><summary>想先体验？使用演示样例</summary><div><p>样例包含两位同行者、交通安排与装备。载入后请核对并保存。</p><button type="button" className="secondary-button" onClick={loadDemo}>载入演示资料</button></div></details>}
@@ -136,7 +155,7 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
         <div><label htmlFor="vehicle-count">车辆数量（如适用）</label><input id="vehicle-count" type="number" min="1" step="1" value={vehicles} aria-invalid={!!issues['vehicle-count']} aria-describedby="vehicles-hint" onChange={event=>{setVehicles(event.target.value);changed();}}/><FieldHint id="vehicles-hint" error={issues['vehicle-count']}>没有明确安排时留空。</FieldHint></div>
         <div><label htmlFor="estimated-km">预计总路程 km</label><input id="estimated-km" inputMode="decimal" pattern="[0-9]+([.][0-9]+)?" value={km} aria-invalid={!!issues['estimated-km']} aria-describedby="km-hint" onChange={event=>{setKm(event.target.value);changed();}}/><FieldHint id="km-hint" error={issues['estimated-km']}>填写总路程，未知可留空。</FieldHint></div>
       </div><label htmlFor="transport-assumptions">路程与交通说明（每行一项）</label><textarea id="transport-assumptions" value={assumptions} placeholder="例如：往返合计，使用自己的车辆" onChange={event=>{setAssumptions(event.target.value);changed();}}/></section></div>
-      <section className="panel equipment-panel"><div className="panel-title"><div><span className="eyebrow">PACK & PREPARE</span><h2>已有装备 <small>{equipment.length} 项</small></h2></div><button type="button" className="secondary-button" onClick={()=>{setEquipment(items=>[...items,{item_key:'tent',label:'帐篷',quantity:'',unit:'item',capacity:'',confirmed:false}]);changed();}}>添加装备</button></div><p className="field-hint">帐篷数量填件数，人数容量填每件可容纳的人数；水按升、餐食按份记录。勾选确认拥有的装备。</p>
+      <section className="panel equipment-panel"><div className="panel-title"><div><span className="eyebrow">PACK & PREPARE</span><h2>已有装备 <small>{equipment.length} 项</small></h2></div><button id="add-equipment" type="button" className="secondary-button" onClick={()=>{const key=activeFocus.split('.')[1];const type=EQUIPMENT_TYPES.find(([value])=>value===key)??EQUIPMENT_TYPES[0];focusDone.current='';setEquipment(items=>[...items,{item_key:type[0],label:type[1],quantity:'',unit:type[2],capacity:'',confirmed:false}]);changed();}}>添加装备</button></div><p className="field-hint">帐篷数量填件数，人数容量填每件可容纳的人数；水按升、餐食按份记录。勾选确认拥有的装备。</p>
         {equipment.length===0&&<div className="equipment-empty"><span aria-hidden="true">＋</span><p>还没有登记装备</p><small>添加已有物品；不确定的数量可以留空。</small></div>}
         {equipment.map((item,index)=><article className="equipment-card" key={index}><header><span className="equipment-number">{String(index+1).padStart(2,'0')}</span><h3>{item.label||'未命名装备'}</h3><button type="button" className="text-button" aria-label={`移除装备 ${index+1}`} onClick={()=>{setEquipment(items=>items.filter((_,i)=>i!==index));changed();}}>移除</button></header><div className="equipment-fields">
           <div><label htmlFor={`gear-type-${index}`}>类别</label><select id={`gear-type-${index}`} aria-label={`装备 ${index+1} 类别`} value={item.item_key} onChange={event=>updateEquipment(index,{item_key:event.target.value,label:equipmentLabel(event.target.value),unit:event.target.value==='warm_layers'&&datasetVersion==='v1'?'set':EQUIPMENT_TYPES.find(([key])=>key===event.target.value)?.[2]??item.unit})}>{EQUIPMENT_TYPES.map(([key,label])=><option key={key} value={key}>{label}</option>)}{!EQUIPMENT_TYPES.some(([key])=>key===item.item_key)&&<option value={item.item_key}>{item.label}</option>}</select></div>
@@ -144,9 +163,9 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
           <div><label htmlFor={`gear-quantity-${index}`}>数量</label><input id={`gear-quantity-${index}`} aria-label={`装备 ${index+1} 数量`} type="number" min="0" step="1" value={item.quantity} aria-invalid={!!issues[`gear-quantity-${index}`]} aria-describedby={`gear-quantity-hint-${index}`} placeholder="未知" onChange={event=>updateEquipment(index,{quantity:event.target.value})}/><FieldHint id={`gear-quantity-hint-${index}`} error={issues[`gear-quantity-${index}`]}/></div>
           <div><label htmlFor={`gear-unit-${index}`}>单位</label><select id={`gear-unit-${index}`} aria-label={`装备 ${index+1} 单位`} required value={item.unit} aria-invalid={!!issues[`gear-unit-${index}`]} aria-describedby={`gear-unit-hint-${index}`} onChange={event=>updateEquipment(index,{unit:event.target.value})}>{units.map(([key,title])=><option key={key} value={key}>{title}</option>)}{!units.some(([key])=>key===item.unit)&&<option value={item.unit}>{item.unit||'请选择单位'}</option>}</select><FieldHint id={`gear-unit-hint-${index}`} error={issues[`gear-unit-${index}`]}/></div>
           <div><label htmlFor={`gear-capacity-${index}`}>每件人数容量</label><input id={`gear-capacity-${index}`} aria-label={`装备 ${index+1} 每件人数容量`} type="number" min="1" step="1" value={item.capacity} aria-invalid={!!issues[`gear-capacity-${index}`]} aria-describedby={`gear-capacity-hint-${index}`} placeholder="未知 / 不适用" onChange={event=>updateEquipment(index,{capacity:event.target.value})}/><FieldHint id={`gear-capacity-hint-${index}`} error={issues[`gear-capacity-${index}`]}/></div>
-        </div><label className="checkbox-label equipment-confirmation"><input type="checkbox" checked={item.confirmed} aria-label={`装备 ${index+1} 已核实拥有`} onChange={event=>updateEquipment(index,{confirmed:event.target.checked})}/>已核实拥有</label></article>)}
+        </div><label className="checkbox-label equipment-confirmation"><input id={`gear-confirmed-${index}`} type="checkbox" checked={item.confirmed} aria-label={`装备 ${index+1} 已核实拥有`} onChange={event=>updateEquipment(index,{confirmed:event.target.checked})}/>已核实拥有</label></article>)}
       </section>
-      <div className="profile-save-bar"><div><strong>{dirty?'保存后，继续填写需求':'准备下一步'}</strong><p id="profile-save-hint" role="status">{saveHint}</p>{problemIds.length>0&&dirty&&<button type="button" className="text-link focus-field" onClick={()=>document.getElementById(problemIds[0])?.focus()}>前往需要修改的字段 ↗</button>}</div><div className="form-actions"><button className="primary-button" disabled={!dirty||problemIds.length>0} aria-describedby="profile-save-hint">{busy?'正在保存…':'保存露营资料'} <span>✓</span></button><button type="button" className="secondary-button" onClick={()=>setRefresh(value=>value+1)}>恢复已保存字段</button>{!dirty&&revision>0&&<Link className="text-link" to="/request">填写露营请求 ↗</Link>}</div></div>
+      <div className="profile-save-bar"><div><strong>{dirty?'保存后，继续填写需求':'准备下一步'}</strong><p id="profile-save-hint" role="status">{saveHint}</p>{problemIds.length>0&&dirty&&<button type="button" className="text-link focus-field" onClick={()=>document.getElementById(problemIds[0])?.focus()}>前往需要修改的字段 ↗</button>}</div><div className="form-actions"><button className="primary-button" disabled={!dirty||problemIds.length>0} aria-describedby="profile-save-hint">{busy?'正在保存…':'保存露营资料'} <span>✓</span></button><button type="button" className="secondary-button" onClick={()=>setRefresh(value=>value+1)}>恢复已保存字段</button>{!dirty&&revision>0&&<Link className="text-link" to={returnRequest??"/request"}>{returnRequest?"返回本次需求，核对并重新确认 ↗":"填写露营请求 ↗"}</Link>}</div></div>
     </fieldset></form>}
   </div>;
 }

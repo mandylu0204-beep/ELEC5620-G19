@@ -1,0 +1,15 @@
+{
+  "date": "2026-10-16",
+  "reviewed_commit": "7eab8e71e7610e0ab2e65bb6bc8d6d546cf5b44f",
+  "method": "Isolated git archive; explicit snapshot backend import path",
+  "component_tests": {"tests": 76, "failures": 0, "errors": 0, "skipped": 0},
+  "junit_artifact": "var/a30-safety-review/var/component-final.xml",
+  "campus_model_calls": 0,
+  "full_suite_rerun": false,
+  "production_wiring_changed": false,
+  "contract_status": "Freeze pending R-S01, R-S02 and shared integration baseline",
+  "findings": [
+    {"id": "R-S01", "description": "Safety identity literal rejects pending A31 rule kernel identity"},
+    {"id": "R-S02", "description": "Declared no-control/no-URL policy accepts Unicode C1, bidi formatting and bare www link"}
+  ]
+}
