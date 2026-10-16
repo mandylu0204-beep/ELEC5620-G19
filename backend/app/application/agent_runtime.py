@@ -101,12 +101,26 @@ def build_v2_hybrid_binding(settings, descriptor):
     from ..llm.config import CampusModelSettings
     from ..llm.client import CampusModelClient
     from ..llm.coordinator import PlanningCoordinator
-    if settings.logistics_execution == 'rules' and any(key.startswith('a_logistics_') for key in descriptor.context.selection_config):
-        raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='规则物流配置不能携带模型审计登记标记。'))
+    from ..workflow import WorkflowConfiguration
+    from .logistics_audit import identity_seed, canonical, digest
+    roles = {'logistics':settings.logistics_execution, 'safety':settings.safety_execution}
+    for role, mode in roles.items():
+        if mode == 'rules' and any(key.startswith(f'a_{role}_') for key in descriptor.context.selection_config):
+            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT,
+                message=f'Rule {role} configuration cannot carry model registration markers.'))
+    if settings.safety_execution == 'model':
+        from ..workflow.orchestration import Orchestrator
+        if (descriptor.context.dataset_version != '2.1.0'
+                or getattr(HybridPlanningAgent,'safety_audit_contract',None) != '1.0'
+                or not callable(getattr(HybridPlanningAgent,'assess_safety_with_trace',None))
+                or getattr(Orchestrator,'safety_audit_contract',None) != '1.0'):
+            raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE,
+                message='Model safety requires dataset 2.1 and complete Hybrid/Orchestrator audit integration.'))
     try:
         client = CampusModelClient(CampusModelSettings())
     except (ValidationError, ValueError):
-        raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='校园模型本地配置无效，请检查配置项。')) from None
+        raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE,
+            message='Campus model local configuration is invalid.')) from None
     client.validate_configuration()
     dataset = SyntheticDatasetV2Adapter(settings.dataset_path).load(expected_context=descriptor.context)
     coordinator = PlanningCoordinator(dataset, client)
@@ -117,43 +131,55 @@ def build_v2_hybrid_binding(settings, descriptor):
         'a_model_requested_model':client.settings.model}
     base = descriptor.context.model_copy(update={'selection_config':choices,
         'rules_version':descriptor.context.rules_version + '/a-runtime-bindings-v2/a-model-audit-v2'})
-    logistics_agent = None
-    if settings.logistics_execution == 'model':
-        from ..llm.logistics_agent import LogisticsAgent
-        from ..workflow import WorkflowConfiguration
-        from .logistics_audit import identity_seed, canonical, digest
-        if (client.settings.max_turns < 3 or not callable(getattr(HybridPlanningAgent, 'assess_logistics_with_trace', None))
-                or getattr(HybridPlanningAgent, 'logistics_audit_contract', None) != '1.0'):
+    scenarios = configured_scenarios(settings, descriptor)
+    feedback = base.selection_config.get('a_revision_feedback') or None
+    seeds, constructors = {}, {}
+    if any(mode == 'model' for mode in roles.values()):
+        if client.settings.max_turns < 3:
             raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE,
-                message='物流模型接线能力尚未齐备，不能启用；请完成 Hybrid/编排接入。'))
-        temporary = WorkflowConfiguration(dataset, safety_case_ids=settings.workflow_safety_case_ids,
-            scenarios=configured_scenarios(settings, descriptor), registered_context=base,
-            feedback=base.selection_config.get('a_revision_feedback') or None)
-        seed = identity_seed(LogisticsAgent(dataset, client, workflow_configuration=temporary))
-        markers = {'a_logistics_mode':'model','a_logistics_audit_required':'1',
-            'a_logistics_audit_contract':'1.0','a_logistics_identity_seed':canonical(seed)}
+                message='Model assessment roles require at least three supported turns.'))
+        temporary = WorkflowConfiguration(dataset,safety_case_ids=settings.workflow_safety_case_ids,
+            scenarios=scenarios,registered_context=base,feedback=feedback)
+        if settings.logistics_execution == 'model':
+            from ..llm.logistics_agent import LogisticsAgent
+            if (not callable(getattr(HybridPlanningAgent,'assess_logistics_with_trace',None))
+                    or getattr(HybridPlanningAgent,'logistics_audit_contract',None) != '1.0'):
+                raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE,
+                    message='Model logistics audit integration is incomplete.'))
+            constructors['logistics'] = LogisticsAgent
+            seeds['logistics'] = identity_seed(LogisticsAgent(dataset,client,workflow_configuration=temporary))
+        if settings.safety_execution == 'model':
+            from ..llm.safety_agent import SafetyAgent
+            constructors['safety'] = SafetyAgent
+            seeds['safety'] = SafetyAgent(dataset,client,workflow_configuration=temporary).identity_seed
+    # Collect every seed before binding any component to the final context.
+    for role, seed in seeds.items():
+        markers = {f'a_{role}_mode':'model',f'a_{role}_audit_required':'1',
+            f'a_{role}_audit_contract':'1.0',f'a_{role}_identity_seed':canonical(seed)}
         if any(key in base.selection_config and base.selection_config[key] != value for key,value in markers.items()):
-            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='物流模型登记身份冲突。'))
+            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT,
+                message=f'Conflicting {role} model registration.'))
         base = base.model_copy(update={'selection_config':{**base.selection_config,**markers},
-            'rules_version':base.rules_version+'/a-model-logistics-audit-v1'})
-    configuration = build_hybrid_configuration(dataset, coordinator,
-        safety_case_ids=settings.workflow_safety_case_ids, scenarios=configured_scenarios(settings, descriptor), registered_context=base,
-        feedback=base.selection_config.get('a_revision_feedback') or None)
-    if settings.logistics_execution == 'model':
-        logistics_agent = LogisticsAgent(dataset, client, workflow_configuration=configuration)
-        expected = digest(canonical({**seed,'workflow_context':configuration.context.model_dump(mode='json')}))
-        if logistics_agent.identity['configuration_fingerprint'] != expected:
-            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='物流组件身份与登记配置不一致。'))
-        try:
-            agent = HybridPlanningAgent(dataset, coordinator, workflow_configuration=configuration,
-                logistics_agent=logistics_agent)
-        except TypeError:
+            'rules_version':base.rules_version+f'/a-model-{role}-audit-v1'})
+    configuration = build_hybrid_configuration(dataset,coordinator,
+        safety_case_ids=settings.workflow_safety_case_ids,scenarios=scenarios,registered_context=base,feedback=feedback)
+    components = {}
+    for role, constructor in constructors.items():
+        component = constructor(dataset,client,workflow_configuration=configuration)
+        expected = digest(canonical({**seeds[role],'workflow_context':configuration.context.model_dump(mode='json')}))
+        if component.identity['configuration_fingerprint'] != expected:
+            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT,
+                message=f'{role} component identity differs from the final workflow context.'))
+        components[f'{role}_agent'] = component
+    try:
+        agent = HybridPlanningAgent(dataset,coordinator,workflow_configuration=configuration,**components)
+    except TypeError:
+        raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE,
+            message='Hybrid does not accept the registered model assessment components.')) from None
+    for name, component in components.items():
+        if getattr(agent,name,None) is not component:
             raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE,
-                message='Hybrid 尚未接收已登记的物流组件，不能启用。')) from None
-        if getattr(agent, 'logistics_agent', None) is not logistics_agent:
-            raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='Hybrid 未绑定登记的物流组件。'))
-    else:
-        agent = HybridPlanningAgent(dataset, coordinator, workflow_configuration=configuration)
+                message='Hybrid did not bind the registered assessment component.'))
     return AgentBinding(agent, configuration.context)
 
 
@@ -213,8 +239,8 @@ class AgentRuntime:
         if effective is not settings:
             descriptor=inspect_dataset(effective)
         settings=effective
-        if settings.logistics_execution == 'model' and settings.execution_mode != ExecutionMode.AGENT:
-            raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='物流模型只能用于已接线的 agent 模式。'))
+        if (settings.logistics_execution == 'model' or settings.safety_execution == 'model') and settings.execution_mode != ExecutionMode.AGENT:
+            raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='Model assessment roles require registered agent mode.'))
         agent, context = self.state.agent, descriptor.context
         managed = (self.configured_agent is not None and agent is self.configured_agent) or (
             self.configured_agent is None and agent is None and self.managed_mode is not None)
@@ -249,6 +275,16 @@ class AgentRuntime:
                 or getattr(agent, 'logistics_audit_contract', None) != '1.0'
                 or not callable(getattr(agent, 'assess_logistics_with_trace', None))):
             raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='当前运行未登记完整物流模型能力。'))
+        if settings.safety_execution == 'model':
+            from ..workflow.orchestration import Orchestrator
+            if (context.dataset_version != '2.1.0' or context.selection_config.get('a_safety_audit_required') != '1'
+                    or context.selection_config.get('a_safety_audit_contract') != '1.0'
+                    or context.selection_config.get('a_safety_mode') != 'model'
+                    or getattr(agent,'safety_audit_contract',None) != '1.0'
+                    or not callable(getattr(agent,'assess_safety_with_trace',None))
+                    or getattr(Orchestrator,'safety_audit_contract',None) != '1.0'):
+                raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE,
+                    message='The current runtime does not provide registered model safety capability.'))
         self.error = None
         return RuntimeSnapshot(agent, DemoContext(mode=settings.execution_mode, demo_today=today,
             dataset_version=context.dataset_version), context, descriptor)

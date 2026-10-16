@@ -159,14 +159,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             'supported_operations': operations,
             'planning_stages': {'interpretation':'rules', 'recommendation':'rules',
                 'itinerary':'model' if config.execution_mode == ExecutionMode.AGENT else 'rules',
-                'logistics':'model' if planning and config.logistics_execution == 'model' else 'rules', 'safety':'rules'} if config.execution_mode != ExecutionMode.STUB else {},
+                'logistics':'model' if planning and config.logistics_execution == 'model' else 'rules',
+                'safety':'model' if planning and config.safety_execution == 'model' else 'rules'} if config.execution_mode != ExecutionMode.STUB else {},
             'execution_mode': config.execution_mode.value, 'demo_today': (runtime.demo.demo_today if runtime else config.checking_date()).isoformat(),
             'clock_mode': config.clock_mode, 'timezone': 'Australia/Sydney',
             'evidence_mode': 'rolling_synthetic' if runtime and runtime.dataset.selection_config.get('a_daily_snapshot') else 'sealed',
             'disclaimer': DEMO_DISCLAIMER,
             'provenance': descriptor.provenance.model_dump(mode='json') if descriptor else None,
             'dataset_version': descriptor.context.dataset_version if descriptor else None,
-            'features': {'request_preview': config.execution_mode == ExecutionMode.STUB and application.state.agent is not None, 'authentication': True, 'persistence': True, 'profiles': True, 'request_confirmation': True, 'plan_reading': True, 'planning': planning, 'model_planning': planning and config.execution_mode == ExecutionMode.AGENT, 'human_review': True, 'finalisation': True},
+            'features': {'request_preview': config.execution_mode == ExecutionMode.STUB and application.state.agent is not None, 'authentication': True, 'persistence': True, 'profiles': True, 'request_confirmation': True, 'plan_reading': True, 'planning': planning, 'model_planning': planning and config.execution_mode == ExecutionMode.AGENT, 'model_safety': planning and config.safety_execution == 'model', 'human_review': True, 'finalisation': True},
             'agent_configuration_error': application.state.runtime.error.model_dump(mode='json') if application.state.runtime.error else None,
         }
 

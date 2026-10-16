@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     execution_mode: ExecutionMode = ExecutionMode.STUB
     planning_enabled: bool = False
     logistics_execution: Literal['rules', 'model'] = 'rules'
+    safety_execution: Literal['rules', 'model'] = 'rules'
     demo_today: date = date(2026, 10, 8)
     clock_mode: Literal['current', 'fixed'] = 'current'
     synthetic_evidence_mode: Literal['auto', 'sealed', 'rolling'] = 'auto'

@@ -21,6 +21,7 @@ class PlanningDispatcher:
         self.closing = False
         state.workflows.context_provider = self.context
         state.workflows.logistics_facts_provider = self.logistics_facts
+        state.workflows.safety_facts_provider = self.safety_facts
 
     def logistics_facts(self, scope, input):
         from ..agents.rules import logistics
@@ -31,11 +32,27 @@ class PlanningDispatcher:
         return logistics.assess(snapshot.agent.dataset, input, expected_mode=ExecutionMode.AGENT,
             safety_case_ids=json.loads(scope.dataset_context.selection_config['safety_case_ids']))
 
+    def safety_facts(self, scope, confirmed, version, logistics):
+        from ..agents.rules import safety
+        from ..contracts.dto import SafetyInput
+        snapshot = self.state.runtime.for_scope(scope)
+        if (snapshot.demo != scope.demo_context or snapshot.dataset != scope.dataset_context
+                or not hasattr(snapshot.agent, 'workflow_configuration')):
+            fail(ErrorCode.STALE_CONTEXT, 'Safety verification context changed; start a new run.')
+        configuration = snapshot.agent.workflow_configuration
+        selection = configuration.resolve_trip_evidence(confirmed.requirements,
+            version.content.selected_campsite_ids,scope.demo_context)
+        input = SafetyInput(version_context=version.version_context,saved_itinerary=version.content,
+            confirmed_requirements=confirmed.requirements,saved_logistics_assessment=logistics,
+            scenario_context=selection.scenario_context,demo_context=scope.demo_context)
+        baseline = safety.assess(snapshot.agent.dataset,input,expected_mode=ExecutionMode.AGENT)
+        return input, baseline, selection
+
     @property
     def available(self):
         if self.closing or not self.state.settings.planning_enabled or self.state.settings.execution_mode == ExecutionMode.STUB:
             return False
-        if self.state.settings.logistics_execution == 'model' and not self.state.database.ready():
+        if (self.state.settings.logistics_execution == 'model' or self.state.settings.safety_execution == 'model') and not self.state.database.ready():
             return False
         try:
             return self.state.runtime.resolve().agent is not None
