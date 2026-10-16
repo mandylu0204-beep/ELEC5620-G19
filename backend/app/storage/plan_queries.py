@@ -29,7 +29,7 @@ class PlanQueries:
                 FROM plans p LEFT JOIN runs r ON r.id=p.active_run_id
                 LEFT JOIN run_versions rv ON rv.run_id=r.id
                 LEFT JOIN versions v ON v.id=rv.version_id
-                WHERE p.owner_id=? ORDER BY p.created_at DESC,p.id''', (user.id,))
+                WHERE p.owner_id=? AND p.deleted_at IS NULL ORDER BY p.created_at DESC,p.id''', (user.id,))
             result = []
             for row in rows:
                 item = dict(row)
@@ -50,7 +50,7 @@ class PlanQueries:
         with self.db.transaction(write=False) as connection:
             if review:
                 require_role(user, 'FOUNDER')
-                plan = connection.execute('SELECT * FROM plans WHERE id=?', (plan_id,)).fetchone()
+                plan = connection.execute('SELECT * FROM plans WHERE id=? AND deleted_at IS NULL', (plan_id,)).fetchone()
                 if not plan:
                     fail(ErrorCode.NOT_FOUND, '方案不存在。')
             else:
@@ -72,7 +72,7 @@ class PlanQueries:
                       'current_version_revision': None, 'revision_available': False,
                       'reassessment_available': False, 'current_inputs_error': None,
                       'current_inputs_state': None, 'check_feedback': None,
-                      'trip_evidence_coverage': None}
+                      'trip_evidence_coverage': None, 'logistics_issues': []}
             current_version = connection.execute('SELECT revision FROM versions WHERE id=? AND plan_id=?',
                 (plan['current_version_id'], plan_id)).fetchone()
             result['current_version_revision'] = current_version['revision'] if current_version else None
@@ -119,6 +119,8 @@ class PlanQueries:
                     result['finalisation_available'] = not review and version.status == 'ELIGIBLE_FOR_FINALISATION' and result['eligibility']['eligible'] and bool(result['route']) and run['status'] == 'SUCCEEDED' and run['stage'] == 'COMPLETED'
             result['check_feedback'] = reassessment_feedback(connection, plan_id, run, scope,
                 binding['version_id'] if binding else None)
+            from ..application.logistics_issues import project as logistics_issues
+            result['logistics_issues'] = logistics_issues(result)
             if review:
                 result['run_history'] = []
             return result

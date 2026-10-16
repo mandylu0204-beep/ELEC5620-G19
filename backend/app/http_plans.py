@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from pydantic import Field, StrictInt, field_validator
 
 from .auth import User
@@ -11,6 +11,12 @@ from .storage.finalisation import FinaliseInput
 from .storage.repository import Repository
 
 router = APIRouter(prefix='/api/v1')
+
+
+@router.delete('/plans/{plan_id}', status_code=204)
+def delete_plan(plan_id: str, request: Request, user: User = Depends(writing_user)):
+    request.app.state.repository.delete_plan(user, plan_id)
+    return Response(status_code=204)
 
 
 class CommandInput(ContractModel):

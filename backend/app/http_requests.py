@@ -1,6 +1,6 @@
 import asyncio
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from pydantic import Field, StrictBool, StrictInt, ValidationError, field_validator
 from starlette.concurrency import run_in_threadpool
 
@@ -66,6 +66,12 @@ def list_requests(request: Request, user: User = Depends(current_user)):
 @router.post('/requests', status_code=201)
 def create_request(body: RequestInput, request: Request, user: User = Depends(writing_user)):
     return request.app.state.requests.create(user, body.raw_text, body.explicit_fields)
+
+
+@router.delete('/requests/{request_id}', status_code=204)
+def delete_request(request_id: str, request: Request, user: User = Depends(writing_user)):
+    request.app.state.requests.delete(user, request_id)
+    return Response(status_code=204)
 
 
 @router.get('/requests/{request_id}')

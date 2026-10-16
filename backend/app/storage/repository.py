@@ -55,15 +55,24 @@ class Repository:
     @staticmethod
     def own_plan(connection, user: User, plan_id: str):
         require_role(user, 'CAMPER')
-        row = connection.execute('SELECT * FROM plans WHERE id=? AND owner_id=?', (plan_id, user.id)).fetchone()
+        row = connection.execute('SELECT * FROM plans WHERE id=? AND owner_id=? AND deleted_at IS NULL', (plan_id, user.id)).fetchone()
         if not row:
             fail(ErrorCode.NOT_FOUND, '方案不存在。')
         return row
 
+    def delete_plan(self, user: User, plan_id: str):
+        # Keep immutable audit/final records; deletion removes owner access.
+        with self.db.transaction() as connection:
+            self.own_plan(connection, user, plan_id)
+            active = connection.execute("SELECT 1 FROM runs WHERE plan_id=? AND status IN ('PENDING','RUNNING')", (plan_id,)).fetchone()
+            if active:
+                fail(ErrorCode.INVALID_STATE, '方案仍在生成或检查中，请完成后再删除。')
+            connection.execute('UPDATE plans SET deleted_at=? WHERE id=?', (now(), plan_id))
+
     def list_plans(self, user: User):
         require_role(user, 'CAMPER')
         with self.db.transaction(write=False) as connection:
-            return [dict(row) for row in connection.execute('SELECT id AS plan_id,current_version_id,final_version_id,active_run_id,created_at FROM plans WHERE owner_id=? ORDER BY created_at DESC', (user.id,))]
+            return [dict(row) for row in connection.execute('SELECT id AS plan_id,current_version_id,final_version_id,active_run_id,created_at FROM plans WHERE owner_id=? AND deleted_at IS NULL ORDER BY created_at DESC', (user.id,))]
 
     def history(self, user: User, plan_id: str):
         with self.db.transaction(write=False) as connection:
@@ -77,7 +86,7 @@ class Repository:
         require_role(user, 'FOUNDER')
         with self.db.transaction(write=False) as connection:
             # Only current escalated versions; profiles and unrelated plans are not exposed.
-            return [dict(row) for row in connection.execute("SELECT p.id AS plan_id,v.id AS plan_version_id,p.active_run_id AS run_id,v.status FROM plans p JOIN versions v ON p.current_version_id=v.id WHERE v.status='ESCALATED' ORDER BY v.created_at")]
+            return [dict(row) for row in connection.execute("SELECT p.id AS plan_id,v.id AS plan_version_id,p.active_run_id AS run_id,v.status FROM plans p JOIN versions v ON p.current_version_id=v.id WHERE p.deleted_at IS NULL AND v.status='ESCALATED' ORDER BY v.created_at")]
 
     def record_confirmed_request(self, user: User, raw_text: str, context: ConfirmedContext):
         """Internal A service only. A-05 must perform revision/confirmation checks first.
@@ -111,6 +120,8 @@ class Repository:
             request = connection.execute('SELECT * FROM requests WHERE id=? AND owner_id=?', (request_id, user.id)).fetchone()
             if not request:
                 fail(ErrorCode.NOT_FOUND, '请求不存在。')
+            if operation == 'PLAN' and connection.execute('SELECT 1 FROM deleted_requests WHERE request_id=?', (request_id,)).fetchone():
+                fail(ErrorCode.NOT_FOUND, '请求不存在。')
             if request['status'] != 'CONFIRMED':
                 fail(ErrorCode.REQUEST_NOT_CONFIRMED, '请先确认请求。')
             if expected_request_revision is not None and request['revision'] != expected_request_revision:
@@ -123,7 +134,7 @@ class Repository:
                 if operation != 'PLAN' or expected_current_version_id is not None:
                     fail(ErrorCode.INVALID_STATE, '新方案只能发起 PLAN。')
                 plan_id = uuid4().hex
-                connection.execute('INSERT INTO plans VALUES(?,?,?,?,?,?,?)', (plan_id, user.id, request_id, None, None, None, now()))
+                connection.execute('INSERT INTO plans(id,owner_id,request_id,current_version_id,active_run_id,final_version_id,created_at) VALUES(?,?,?,?,?,?,?)', (plan_id, user.id, request_id, None, None, None, now()))
             else:
                 plan = self.own_plan(connection, user, plan_id)
                 if command_key is not None and plan['active_run_id'] != expected_active_run_id:

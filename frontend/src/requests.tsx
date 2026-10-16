@@ -25,11 +25,19 @@ function payload(draft: Draft) {
     budget_cents = Number(whole) * 100 + Number(fraction.padEnd(2,'0'));
     if (!Number.isSafeInteger(budget_cents)) throw new Error('预算金额过大，请修改。');
   }
-  return { raw_text:draft.raw, explicit_fields:{destination:draft.destination.trim() || null, start_date:draft.start || null, duration_nights:integer(draft.nights), duration_days:integer(draft.days), end_date:draft.end || null, budget_cents, preferences:canonicalTerms(lines(draft.preferences),'preference'), mandatory_constraints:canonicalTerms(lines(draft.constraints),'constraint')} };
+  return { raw_text:draft.raw, explicit_fields:{destination:draft.destination.trim() || null, start_date:draft.start || null, duration_nights:integer(draft.nights), duration_days:integer(draft.days), end_date:draft.end || null, budget_cents, ...(draft.preferences.trim()?{preferences:canonicalTerms(lines(draft.preferences),'preference')} : {}), mandatory_constraints:canonicalTerms(lines(draft.constraints),'constraint')} };
 }
 
 function RequestFields({draft,set,regions,disabled}:{draft:Draft;set:(patch:Partial<Draft>)=>void;regions:string[];disabled:boolean}) {
   const nights=Number(draft.nights);
+  const preferences=canonicalTerms(lines(draft.preferences),'preference');
+  const ready=preferences.some(value=>['ready-to-eat meals','ready_to_eat'].includes(value));
+  const cooked=preferences.some(value=>['self-catered meals','self_catered'].includes(value));
+  const meal=ready!==cooked?(ready?'ready-to-eat meals':'self-catered meals'):'';
+  function selectMeal(value:string) {
+    const remaining=preferences.filter(item=>!['ready-to-eat meals','ready_to_eat','self-catered meals','self_catered'].includes(item));
+    set({preferences:[...remaining,...(value?[value]:[])].map(item=>termLabel(item,'preference')).join('\n')});
+  }
   return <fieldset disabled={disabled}>
     <section className="request-form-section"><div className="form-section-heading"><span>01</span><h3>想怎样露营？</h3></div><label htmlFor="request-idea">你的露营想法 <span className="required-mark">必填</span></label><textarea id="request-idea" required maxLength={8000} value={draft.raw} placeholder="和谁同行，想去哪里，希望怎样度过这次露营？" onChange={event=>set({raw:event.target.value})}/></section>
     <section className="request-form-section"><div className="form-section-heading"><span>02</span><h3>目的地与行程</h3></div><div className="form-grid">
@@ -38,18 +46,19 @@ function RequestFields({draft,set,regions,disabled}:{draft:Draft;set:(patch:Part
       <div><label htmlFor="request-nights">露营晚数</label><input id="request-nights" type="number" min="1" step="1" value={draft.nights} aria-describedby="nights-hint" onChange={event=>set({nights:event.target.value})}/><FieldHint id="nights-hint">{draft.nights&&Number.isSafeInteger(nights)&&nights>0&&nights<Number.MAX_SAFE_INTEGER?`${nights} 晚对应 ${nights+1} 天。`:'例如：两晚对应三天。'}</FieldHint></div>
       <div><label htmlFor="request-budget">整个小组预算 AUD</label><input id="request-budget" inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?" placeholder="例如 320.00" value={draft.budget} aria-describedby="budget-hint" onChange={event=>set({budget:event.target.value})}/><FieldHint id="budget-hint">填写整个行程的总预算。</FieldHint></div>
     </div><details className="optional-fields"><summary>已明确天数或结束日期？补充在这里</summary><div className="form-grid"><div><label htmlFor="request-days">已明确的天数</label><input id="request-days" type="number" min="1" step="1" value={draft.days} onChange={event=>set({days:event.target.value})}/></div><div><label htmlFor="request-end">已明确的结束日期</label><input id="request-end" type="date" value={draft.end} onChange={event=>set({end:event.target.value})}/></div></div><p className="field-hint">与晚数冲突时，请按摘要提示核对。</p></details></section>
-    <section className="request-form-section"><div className="form-section-heading"><span>03</span><h3>偏好与必须条件</h3></div><div className="form-grid"><div><label htmlFor="request-preferences">偏好（每行一项）</label><textarea id="request-preferences" value={draft.preferences} placeholder="例如：安静的环境" onChange={event=>set({preferences:event.target.value})}/></div><div><label htmlFor="request-constraints">必须满足的条件（每行一项）</label><textarea id="request-constraints" value={draft.constraints} placeholder="例如：需要淋浴" onChange={event=>set({constraints:event.target.value})}/></div></div></section>
+    <section className="request-form-section"><div className="form-section-heading"><span>03</span><h3>偏好与必须条件</h3></div><label htmlFor="request-meal">用餐方式</label><select id="request-meal" value={meal} onChange={event=>selectMeal(event.target.value)} aria-describedby="meal-hint"><option value="">请选择用餐方式</option><option value="ready-to-eat meals">即食餐食（无需烹饪）</option><option value="self-catered meals">自行烹饪（需要核对炉具和燃料）</option></select><FieldHint id="meal-hint">用于计算餐食费用和烹饪装备；确认需求前需要明确选择。</FieldHint><div className="form-grid"><div><label htmlFor="request-preferences">偏好（每行一项）</label><textarea id="request-preferences" value={draft.preferences} placeholder="例如：安静的环境" onChange={event=>set({preferences:event.target.value})}/></div><div><label htmlFor="request-constraints">必须满足的条件（每行一项）</label><textarea id="request-constraints" value={draft.constraints} placeholder="例如：需要淋浴" onChange={event=>set({constraints:event.target.value})}/></div></div></section>
   </fieldset>;
 }
 
-const FIELD_IDS: {[field:string]:string} = {destination:'request-destination',start_date:'request-start',duration_nights:'request-nights',duration_days:'request-days',end_date:'request-end',budget_cents:'request-budget',preferences:'request-preferences',mandatory_constraints:'request-constraints'};
-const FIELD_TITLES: {[field:string]:string} = {destination:'目的地',start_date:'开始日期',duration_nights:'露营晚数',duration_days:'行程天数',end_date:'结束日期',budget_cents:'小组预算',preferences:'偏好',mandatory_constraints:'必须条件','profile.group_size':'小组人数'};
+const FIELD_IDS: {[field:string]:string} = {destination:'request-destination',start_date:'request-start',duration_nights:'request-nights',duration_days:'request-days',end_date:'request-end',budget_cents:'request-budget',preferences:'request-meal',mandatory_constraints:'request-constraints'};
+const FIELD_TITLES: {[field:string]:string} = {destination:'目的地',start_date:'开始日期',duration_nights:'露营晚数',duration_days:'行程天数',end_date:'结束日期',budget_cents:'小组预算',preferences:'偏好与用餐方式',mandatory_constraints:'必须条件','profile.group_size':'小组人数'};
 function clarificationText(field:string,message:string,requirements:Requirements|undefined) {
   const pastDate=message.match(/^Start date must be on or after the checking date \((\d{4}-\d{2}-\d{2}), Australia\/Sydney\)\.$/);
   if(pastDate)return `开始日期不能早于本次检查日期（${pastDate[1]}，悉尼时间），请调整后重新生成摘要。`;
   if(message==='Start date precedes the fixed demonstration date.')return '开始日期早于此前检查采用的日期，请重新生成摘要以核对当前日期。';
   if(['What start date?','Which synthetic region?','How many nights?','What total AUD group budget?','Required request information is missing.'].includes(message))
     return `请补充${FIELD_TITLES[field]??'此项信息'}。`;
+  if(message==='Choose ready-to-eat meals or self-catered meals before confirming the request.'||message==='Choose one confirmed meal mode.')return '请选择一种用餐方式：即食餐食或自行烹饪，再重新生成摘要。';
   if(message==='Only registered synthetic regions are supported.')return '当前资料暂不包含该地区，请核对目的地。';
   if(field==='duration_days'&&(message===`Please clarify ${field}.`||message==='Days must equal nights plus one.')&&requirements?.duration_nights!=null&&requirements.duration_days!=null&&requirements.duration_days!==requirements.duration_nights+1)
     return `${requirements.duration_nights} 晚对应 ${requirements.duration_nights+1} 天，当前填写了 ${requirements.duration_days} 天，请核对。`;
@@ -74,6 +83,19 @@ function useRequestContext() {
 export function RequestsPage() {
   const {session,reload}=useSession(); const navigate=useNavigate(); const {context,error:contextError}=useRequestContext();
   const [search,setSearch]=useSearchParams(); const copyFrom=search.get('copy_from');
+  const [confirmDelete,setConfirmDelete]=useState<string|null>(null);
+  const [deleting,setDeleting]=useState<string|null>(null);
+  const [deleteError,setDeleteError]=useState('');
+  async function deleteRequest(requestId:string){
+    if(!session||deleting)return;
+    setDeleting(requestId);setDeleteError('');
+    try{
+      await privateApi<void>('/requests/'+encodeURIComponent(requestId),{method:'DELETE',headers:{'X-CampMate-Client':'1','X-CSRF-Token':session.csrf_token}});
+      setRows(value=>value?.filter(row=>row.request_id!==requestId)??null);setConfirmDelete(null);
+    }catch(reason){setDeleteError(requestFailure(reason,'删除失败，请重试。'));if(reason instanceof ApiFailure&&reason.envelope.error.code==='UNAUTHENTICATED')reload();}
+    finally{setDeleting(null);}
+  }
+
   const [copyLoading,setCopyLoading]=useState(!!copyFrom); const [copyFailed,setCopyFailed]=useState(false); const [copyNotice,setCopyNotice]=useState('');
   const [draft,setDraft]=useState<Draft>(EMPTY); const [rows,setRows]=useState<Record[]|null>(null); const [error,setError]=useState(''); const [busy,setBusy]=useState(false);
   useEffect(()=>{
@@ -89,6 +111,9 @@ export function RequestsPage() {
     return()=>controller.abort();
   },[copyFrom,reload]);
   useEffect(()=>{const controller=new AbortController(); privateApi<{requests:Record[]}>('/requests',{signal:controller.signal}).then(value=>{if(!controller.signal.aborted)setRows(value.requests);}).catch(reason=>{if(!controller.signal.aborted)setError(reason instanceof ApiFailure?reason.message:'无法读取已保存请求。');}); return()=>controller.abort();},[]);
+  useEffect(()=>{
+    if(!copyLoading&&!copyFailed&&['request-meal','request-budget'].includes(search.get('focus')??''))focusRequestField(search.get('focus')==='request-meal'?'preferences':'budget_cents');
+  },[copyLoading,copyFailed,search]);
   async function create(event:FormEvent) {
     event.preventDefault(); if(!session||busy||copyLoading||copyFailed||!draft.raw.trim())return; setBusy(true);setError('');
     try {const record=await privateApi<Record>('/requests',{method:'POST',headers:{'Content-Type':'application/json','X-CampMate-Client':'1','X-CSRF-Token':session.csrf_token},body:JSON.stringify(payload(draft))});navigate('/request/'+record.request_id);}
@@ -98,7 +123,7 @@ export function RequestsPage() {
   return <div className="onboarding-page"><TripFlow step={2}/><div className="onboarding-heading"><div><span className="eyebrow">YOUR CAMPING REQUEST</span><h1>先把需求说清楚。</h1><p>写下想法，核对安排，再开始规划。</p></div><Link className="text-link" to="/profile">查看露营资料 ↗</Link></div>
     {(error||contextError)&&<p className="error-box" role="alert">{error||contextError}</p>}{copyNotice&&<p className="success-box" role="status">{copyNotice}</p>}{copyLoading&&<p role="status">正在载入原需求…</p>}{copyFrom&&<button className="secondary-button" disabled={busy} onClick={()=>setSearch({})}>开始空白请求</button>}
     <div className="request-layout"><section className="panel request-editor"><div className="section-title"><span className="eyebrow">PLAN YOUR NEXT ESCAPE</span><h2>新建露营请求</h2></div><form onSubmit={create}><RequestFields draft={draft} set={patch=>setDraft(value=>({...value,...patch}))} regions={context?.supported_destinations??[]} disabled={busy||copyLoading||copyFailed}/><div className="request-action"><p id="create-hint" className="action-hint" role="status">{createHint}</p><button className="primary-button" disabled={busy||copyLoading||copyFailed||!draft.raw.trim()} aria-describedby="create-hint">{busy?'正在保存…':'保存草稿，下一步'} <span>↗</span></button></div></form></section>
-    <aside className="request-sidebar"><section className="panel request-guide"><span className="eyebrow">BEFORE YOU START</span><h2>一份清楚的计划</h2><ul><li>同行人数和装备来自已保存的露营资料。</li><li>不确定的信息先留空，摘要会提示需要补充的内容。</li><li>确认摘要后，再生成行程与评估。</li></ul><Link className="text-link" to="/profile">完善露营资料 ↗</Link></section><section className="panel request-history"><h2>已保存的请求</h2>{rows===null?<p className="muted">正在读取…</p>:rows.length===0?<p className="muted">还没有请求，保存草稿后会在这里保留记录。</p>:<ul className="request-list">{rows.map(row=><li key={row.request_id}><Link to={'/request/'+row.request_id}><strong>{row.raw_text.slice(0,85)}</strong><span className="tag">{STATUS[row.status]??row.status}</span></Link></li>)}</ul>}</section></aside></div>
+    <aside className="request-sidebar"><section className="panel request-guide"><span className="eyebrow">BEFORE YOU START</span><h2>一份清楚的计划</h2><ul><li>同行人数和装备来自已保存的露营资料。</li><li>不确定的信息先留空，摘要会提示需要补充的内容。</li><li>确认摘要后，再生成行程与评估。</li></ul><Link className="text-link" to="/profile">完善露营资料 ↗</Link></section><section className="panel request-history"><h2>已保存的请求</h2>{deleteError&&<p className="error-box" role="alert">{deleteError}</p>}{rows===null?<p className="muted">正在读取…</p>:rows.length===0?<p className="muted">还没有请求，保存草稿后会在这里保留记录。</p>:<ul className="request-list">{rows.map(row=><li key={row.request_id}><Link to={'/request/'+row.request_id}><strong>{row.raw_text.slice(0,85)}</strong><span className="tag">{STATUS[row.status]??row.status}</span></Link>{confirmDelete===row.request_id?<div className="plan-delete-confirm" role="group" aria-label="确认删除请求"><p>删除这条请求？已有露营方案会保留，此请求将无法从页面恢复。</p><div><button type="button" className="secondary-button delete-plan-button" disabled={deleting!==null} onClick={()=>void deleteRequest(row.request_id)}>{deleting===row.request_id?'正在删除…':'确认删除'}</button><button type="button" className="secondary-button" disabled={deleting!==null} onClick={()=>{setConfirmDelete(null);setDeleteError('');}}>取消</button></div></div>:<button type="button" className="text-button delete-plan-button" disabled={deleting!==null||row.status==='ANALYSING'} onClick={()=>{setConfirmDelete(row.request_id);setDeleteError('');}}>删除请求</button>}</li>)}</ul>}</section></aside></div>
   </div>;
 }
 

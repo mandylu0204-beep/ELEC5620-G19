@@ -14,7 +14,7 @@ class RequestRepository:
     @staticmethod
     def own(connection, user, request_id):
         require_role(user, 'CAMPER')
-        row = connection.execute('SELECT * FROM requests WHERE id=? AND owner_id=?', (request_id, user.id)).fetchone()
+        row = connection.execute('SELECT * FROM requests WHERE id=? AND owner_id=? AND NOT EXISTS (SELECT 1 FROM deleted_requests d WHERE d.request_id=requests.id)', (request_id, user.id)).fetchone()
         if not row:
             fail(ErrorCode.NOT_FOUND, '请求不存在。')
         return row
@@ -51,7 +51,15 @@ class RequestRepository:
     def list(self, user):
         require_role(user, 'CAMPER')
         with self.db.transaction(write=False) as connection:
-            return [dict(row) for row in connection.execute('SELECT id AS request_id,status,revision,raw_text,created_at FROM requests WHERE owner_id=? ORDER BY created_at DESC', (user.id,))]
+            return [dict(row) for row in connection.execute('SELECT id AS request_id,status,revision,raw_text,created_at FROM requests WHERE owner_id=? AND NOT EXISTS (SELECT 1 FROM deleted_requests d WHERE d.request_id=requests.id) ORDER BY created_at DESC', (user.id,))]
+
+    def delete(self, user, request_id):
+        with self.db.transaction() as connection:
+            row = self.own(connection, user, request_id)
+            if row['status'] == 'ANALYSING':
+                fail(ErrorCode.INVALID_STATE, '请求正在生成摘要，请完成后再删除。')
+            # Existing plans keep their immutable confirmed snapshots and history.
+            connection.execute('INSERT INTO deleted_requests VALUES(?,?)', (request_id, now()))
 
     def edit(self, user, request_id, expected_revision, raw_text, explicit):
         with self.db.transaction() as connection:

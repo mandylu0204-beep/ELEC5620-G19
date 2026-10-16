@@ -264,7 +264,8 @@ def test_upgrade_from_review_schema_keeps_existing_data(tmp_path):
     with source.transaction(write=False) as fixture, db.transaction() as connection:
         connection.execute('PRAGMA defer_foreign_keys=ON')
         for table in ('users','requests','plans','runs','versions','run_versions','recommendations','assessments','gear_checklists','run_events','write_receipts'):
-            rows=[tuple(row) for row in fixture.execute('SELECT * FROM '+table)]
+            columns = [row['name'] for row in connection.execute('PRAGMA table_info('+table+')')]
+            rows=[tuple(row) for row in fixture.execute('SELECT '+','.join(columns)+' FROM '+table)]
             if rows:
                 connection.executemany('INSERT INTO '+table+' VALUES('+','.join('?' for _ in rows[0])+')',rows)
     with db.transaction(write=False) as connection:
@@ -274,7 +275,7 @@ def test_upgrade_from_review_schema_keeps_existing_data(tmp_path):
     with db.transaction(write=False) as connection:
         assert [tuple(row) for row in connection.execute('SELECT * FROM assessments')]==before
         assert connection.execute('SELECT status FROM versions').fetchone()[0]=='ESCALATED'
-        assert connection.execute('SELECT COUNT(*) FROM schema_migrations').fetchone()[0]==7
+        assert connection.execute('SELECT COUNT(*) FROM schema_migrations').fetchone()[0]==9
 
 
 def test_fingerprint_is_recalculated_from_registered_input(final_client):

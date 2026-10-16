@@ -1,0 +1,17 @@
+{
+  "date": "2026-10-16",
+  "base": "8a40deb",
+  "scope": "Combined A31/A32, plan/request deletion and user-facing page cleanup",
+  "backend": {"collected": 948, "passed": 904, "skipped": 44, "failures": 0, "errors": 0, "seconds": 1305.041, "report": "var/baseline-final.xml", "skip_reason": "Windows link privilege unavailable"},
+  "frontend": {"tests_passed": 12, "typecheck_build": "passed"},
+  "shared_schema": "1.0 export check passed, unchanged",
+  "pip_check": "passed",
+  "diff_check": "passed",
+  "new_campus_calls": 0,
+  "personal_configuration_changed": false,
+  "existing_user_database_changed": false,
+  "sealed_dataset_changed": false,
+  "database_latest_migration": 9,
+  "safety_model_enabled": false,
+  "github_ci": "Must be checked separately against the exact pushed commit"
+}

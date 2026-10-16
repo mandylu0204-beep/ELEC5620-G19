@@ -5,7 +5,7 @@ from ...adapters.dataset_mapping import aud_to_cents
 from ...contracts.dto import Clarification, InterpretRequestResult, TripRequirements
 from ...contracts.enums import FieldErrorCode
 from ...contracts.errors import FieldError
-from .common import artifact
+from .common import artifact, meal_mode
 
 NUMBERS = {'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10}
 NUMBER = r'(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|[+-]?(?:\d+(?:\.\d+)?|\.\d+))'
@@ -124,8 +124,11 @@ def interpret(dataset, input) -> InterpretRequestResult:
         if any(not any(re.fullmatch(pattern, clause) for pattern in (*hard_phrases.values(), NO_FIRE_PATTERN)) for clause in clauses):
             error('mandatory_constraints', FieldErrorCode.UNSUPPORTED, 'An unrecognised/compound mandatory clause needs explicit structured constraints.')
     values.update(explicit)
-    if {'ready-to-eat meals', 'self-catered meals'}.issubset(values['preferences']):
+    if ({'ready-to-eat meals', 'ready_to_eat'} & set(values['preferences'])
+            and {'self-catered meals', 'self_catered'} & set(values['preferences'])):
         error('preferences', FieldErrorCode.CONFLICTING, 'Choose one confirmed meal mode.')
+    elif meal_mode(TripRequirements.model_validate(values)) is None:
+        error('preferences', FieldErrorCode.MISSING, 'Choose ready-to-eat meals or self-catered meals before confirming the request.')
     if 'no_fires' in values['mandatory_constraints'] and 'campfire' in values['mandatory_constraints']:
         error('mandatory_constraints', FieldErrorCode.CONFLICTING, 'Mandatory campfire and no-fire clauses conflict.')
 
