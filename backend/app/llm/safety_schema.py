@@ -1,6 +1,8 @@
-"""Internal A30 v1 protocol. Does not extend the shared contracts/schema."""
+"""Internal A30 v2 text protocol. Shared contracts/schema remain unchanged."""
+import hashlib
 import json
 import re
+import unicodedata
 from typing import Annotated, Literal
 
 from pydantic import Field, StrictBool, StrictInt, StrictStr, TypeAdapter, field_validator, model_validator
@@ -9,9 +11,9 @@ from ..contracts.base import ContractModel
 from ..contracts.enums import ErrorCode
 from .client import model_failure, strict_json
 
-SAFETY_AGENT_VERSION = 'campus-safety-advisory-agent-1'
-SAFETY_TOOL_VERSION = 'safety-read-only-tools-1'
-SAFETY_VALIDATION_VERSION = 'safety-advisory-validation-1'
+SAFETY_AGENT_VERSION = 'campus-safety-advisory-agent-2'
+SAFETY_TOOL_VERSION = 'safety-read-only-tools-2'
+SAFETY_VALIDATION_VERSION = 'safety-advisory-validation-2'
 MAX_FINDINGS = 64
 MAX_PROPOSAL_BYTES = 24576
 MAX_ACTION_BYTES = 32768
@@ -35,10 +37,41 @@ def encoded_size(value):
     return len(canonical(value).encode('utf-8'))
 
 
+EXCLUDED_TEXT_CATEGORIES = frozenset({'Cc', 'Cf', 'Zl', 'Zp'})
+# Explicit, detectable link-like syntax, not an attempt to recognise every URL
+# or obfuscated instruction. Unicode IDN dot variants are detected as written;
+# received text is NEVER normalised, stripped or repaired to pass validation.
+LINK_LIKE_PATTERNS = (
+    r'\b[a-z][a-z0-9+.-]*://',
+    r'\b(?:https?|ftps?|sftp|file|mailto|tel|sms|data|javascript):',
+    r'\bwww[.\u3002\uff0e\uff61]',
+    r'(?<![\w-])(?:[^\W_](?:[^\W_]|-){0,62}[.\u3002\uff0e\uff61])+'
+    r'[^\W\d_](?:[^\W\d_]|-){1,62}(?![\w-])',
+    r'\[[^\]\r\n]*\]\(\s*[^)]*\)',
+)
+LINK_LIKE_RE = tuple(re.compile(pattern, re.IGNORECASE | re.UNICODE) for pattern in LINK_LIKE_PATTERNS)
+ADVICE_TEXT_POLICY = {
+    'version': 'safety-advice-text-2',
+    'unicode_data_version': unicodedata.unidata_version,
+    'excluded_unicode_categories': sorted(EXCLUDED_TEXT_CATEGORIES),
+    'link_like_patterns': list(LINK_LIKE_PATTERNS),
+    'regex_flags': ['IGNORECASE', 'UNICODE'],
+    'normalisation': 'none; reject received text without rewriting',
+    'other_existing_exclusions': ['numeric literals', 'matched HTML tags', 'code fences',
+        'selected detectable false-clearance/instruction-injection phrases'],
+    'limitations': 'Detectable syntax only; not complete URL, obfuscation, English-language or semantic-truth recognition.',
+}
+ADVICE_SCHEMA_POLICY = {
+    'x-safety-text-policy': ADVICE_TEXT_POLICY['version'],
+    'x-safety-text-policy-sha256': hashlib.sha256(canonical(ADVICE_TEXT_POLICY).encode('utf-8')).hexdigest(),
+}
+
+
 def check_advice(text):
     # Conservative detectable-claim guard, NOT a semantic truth verifier.
-    if (not text.strip() or any(ord(char) < 32 or ord(char) == 127 for char in text)
-            or re.search(r'\d|https?://|<[^>]*>|```', text)
+    if (not text.strip() or any(unicodedata.category(char) in EXCLUDED_TEXT_CATEGORIES for char in text)
+            or any(pattern.search(text) for pattern in LINK_LIKE_RE)
+            or re.search(r'\d|<[^>]*>|```', text)
             or re.search(r'(?i)\b(safe to proceed|approval granted|fully safe|guaranteed safe|'
                          r'no review required|all risks resolved|ignore (?:all |previous |system )*instructions|'
                          r'system prompt|override (?:the |any )?(?:block|closure|review|rule)|'
@@ -50,9 +83,9 @@ def check_advice(text):
 
 class FindingChoice(ContractModel):
     finding_key: FindingKey
-    interpretation_unverified: Annotated[StrictStr, Field(min_length=1, max_length=600)]
+    interpretation_unverified: Annotated[StrictStr, Field(min_length=1, max_length=600, json_schema_extra=ADVICE_SCHEMA_POLICY)]
     action_code: ActionCode
-    action_unverified: Annotated[StrictStr, Field(min_length=1, max_length=600)]
+    action_unverified: Annotated[StrictStr, Field(min_length=1, max_length=600, json_schema_extra=ADVICE_SCHEMA_POLICY)]
 
     @field_validator('interpretation_unverified', 'action_unverified')
     @classmethod
@@ -63,7 +96,7 @@ class FindingChoice(ContractModel):
 class SafetyProposal(ContractModel):
     findings: list[FindingChoice] = Field(min_length=1, max_length=MAX_FINDINGS)
     action_priority: list[FindingKey] = Field(min_length=1, max_length=MAX_FINDINGS)
-    decision_summary_unverified: Annotated[StrictStr, Field(min_length=1, max_length=1200)]
+    decision_summary_unverified: Annotated[StrictStr, Field(min_length=1, max_length=1200, json_schema_extra=ADVICE_SCHEMA_POLICY)]
 
     @field_validator('decision_summary_unverified')
     @classmethod

@@ -1,8 +1,8 @@
-"""Exportable internal v1 component contract, independent of shared schema 1.0."""
+"""Exportable current internal component contract; shared schema remains 1.0."""
 from .safety_identity import SafetyIdentitySeed, SAFETY_SYSTEM_PROMPT
 from .safety_schema import (SAFETY_ACTION, SAFETY_AGENT_VERSION, SAFETY_TOOL_VERSION, SAFETY_VALIDATION_VERSION,
     SafetyProposal, SafetyTrace, MAX_ACTION_BYTES, MAX_FACTS_BYTES, MAX_FINDINGS,
-    MAX_INPUT_BYTES, MAX_PAYLOAD_BYTES, MAX_PROPOSAL_BYTES, canonical)
+    MAX_INPUT_BYTES, MAX_PAYLOAD_BYTES, MAX_PROPOSAL_BYTES, canonical, ADVICE_TEXT_POLICY)
 from .safety_tools import FindingDefinition, ValidatedSafetyPlan
 from .coordinator import digest
 
@@ -13,6 +13,7 @@ def safety_contract_document():
         'shared_schema_version':'1.0',
         'agent_version':SAFETY_AGENT_VERSION,'tool_version':SAFETY_TOOL_VERSION,
         'validation_version':SAFETY_VALIDATION_VERSION,
+        'text_policy':ADVICE_TEXT_POLICY,
         'prompt_sha256':digest(SAFETY_SYSTEM_PROMPT+canonical(SAFETY_ACTION.json_schema())),
         'encoded_utf8_limits':{'input':MAX_INPUT_BYTES,'read_facts':MAX_FACTS_BYTES,'proposal':MAX_PROPOSAL_BYTES,
             'action':MAX_ACTION_BYTES,'complete_audit_payload':MAX_PAYLOAD_BYTES,'client_request':131072,
@@ -22,7 +23,7 @@ def safety_contract_document():
         'notes':[
             'Schemas and versioned pure validators are both required; JSON schema alone is insufficient.',
             'All encoded limits apply together; individual field maxima are not an unlimited cross product.',
-            'Advice rejects numeric literals, control characters, markup/URLs and selected detectable false-clearance/injection phrases.',
+            'Advice rejects Unicode Cc/Cf and Zl/Zp, supported link-like syntax, numeric literals, markup and selected detectable false-clearance/injection phrases; no cleaning/normalisation.',
             'English instructions and human review remain necessary; schema cannot prove natural-language truth.',
             'Proposal findings order is preserved; priority is a separate complete permutation.',
             'Source/fact references are added by tools, never accepted in model proposals.',

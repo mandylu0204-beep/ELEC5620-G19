@@ -13,7 +13,8 @@ from ..agents.rules.trip_evidence import TripEvidenceSelection, KINDS
 from .client import model_failure
 from .coordinator import digest
 from .safety_schema import (ActionCode, FactRef, FindingChoice, FindingKey, MAX_FACTS_BYTES,
-    MAX_FINDINGS, MAX_INPUT_BYTES, MAX_PAYLOAD_BYTES, MAX_PROPOSAL_BYTES, SafetyProposal, canonical, encoded_size)
+    MAX_FINDINGS, MAX_INPUT_BYTES, MAX_PAYLOAD_BYTES, MAX_PROPOSAL_BYTES, SafetyProposal, canonical, encoded_size,
+    ADVICE_SCHEMA_POLICY)
 
 
 class SafetyFinding(FindingChoice):
@@ -30,7 +31,7 @@ class SafetyFinding(FindingChoice):
 class ValidatedSafetyPlan(ContractModel):
     findings: list[SafetyFinding] = Field(min_length=1, max_length=MAX_FINDINGS)
     action_priority: list[FindingKey] = Field(min_length=1, max_length=MAX_FINDINGS)
-    decision_summary_unverified: Annotated[StrictStr, Field(min_length=1, max_length=1200)]
+    decision_summary_unverified: Annotated[StrictStr, Field(min_length=1, max_length=1200, json_schema_extra=ADVICE_SCHEMA_POLICY)]
     source_refs: list[SourceRef] = Field(max_length=128)
 
     @model_validator(mode='after')

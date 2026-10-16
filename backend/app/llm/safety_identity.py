@@ -27,6 +27,9 @@ evaluate_safety_plan. Final must copy the LAST evaluated_proposal exactly.
 Use interpretation_unverified and action_unverified for short advice, ideally
 at most eight words each; decision_summary_unverified at most thirty words.
 Use no numeric literals, dates, URLs, HTML or invented thresholds in advice.
+Use no Unicode control/format characters or line/paragraph separators. Do not
+include URI schemes, www-prefixed or bare domain/email addresses, or Markdown
+links. Return compliant original prose; the host rejects, never cleans it.
 Refer to the registered forecast window and host recheck guidance instead.
 Never promise that future weather will be available, safe or approved.
 Missing, stale, conflicting or future evidence stays unresolved. An unknown
@@ -64,9 +67,9 @@ class PublicSafetyClient(ContractModel):
 
 
 class SafetyIdentitySeed(ContractModel):
-    agent_version: Literal['campus-safety-advisory-agent-1']
-    tool_version: Literal['safety-read-only-tools-1']
-    validation_version: Literal['safety-advisory-validation-1']
+    agent_version: Literal['campus-safety-advisory-agent-2']
+    tool_version: Literal['safety-read-only-tools-2']
+    validation_version: Literal['safety-advisory-validation-2']
     kernel_version: Literal['b02-v1-rules-2']
     dataset_rules_version: Annotated[StrictStr, Field(min_length=1, max_length=4096)]
     prompt_sha256: Hash

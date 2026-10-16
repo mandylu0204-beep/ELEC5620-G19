@@ -3,7 +3,10 @@
 Date: 2026-10-16, Australia/Sydney. Branch: `feature/llm-safety-agent`.
 Base: main `8a40deb`, including A28/A29. Reply to A's user-supplied A30 draft.
 
-**Status: component implemented; proposed v1 wire contract awaiting A agreement.**
+**Status: current component v2 includes R-S02; final freeze still awaits R-S01 and a common A31/A32 baseline.**
+See [the R-S02 reply](a30_rs02_b_reply.md). New registrations use agent/tool/
+validator v2 and the v2 schema bundle. The original v1 bundle and pure replay
+implementation are retained for authorised historical validation only.
 This is not production safety-model integration or a live acceptance report.
 Shared schema 1.0, existing factories, settings, Hybrid, Orchestrator, database,
 personal configuration, sealed datasets and frontend are unchanged. No campus
@@ -39,7 +42,7 @@ change in this delivery.
 ## S-02: Exact keys, facts, schemas and actions
 
 The committed machine-readable bundle is
-[`contracts/safety_advisory_v1.schema.json`](contracts/safety_advisory_v1.schema.json).
+[`contracts/safety_advisory_v2.schema.json`](contracts/safety_advisory_v2.schema.json).
 Its `schemas` contains `action`, `proposal`, `validated_plan`, `trace`,
 `finding_definition` and `identity_seed`. It matches
 `app.llm.safety_contract.safety_contract_document()` exactly; a test detects
@@ -116,8 +119,15 @@ review in advice does not modify the official `requires_human_review` value.
 Safety may independently PASSED while logistics remains REVISION; the latter
 continues to prevent finalisation. Neither outcome is rewritten to conflate roles.
 
-**Additional candidate restrictions requiring A confirmation:** advice uses no
-numeric literals, control characters, URLs, HTML or code fences. This avoids
+**R-S02 candidate restrictions requiring A confirmation:** advice rejects
+Unicode control/format categories Cc/Cf, line/paragraph separators Zl/Zp,
+declared link-like forms, numeric literals, matched HTML tags and code fences.
+Link detection includes URI schemes, www prefixes, DNS-shaped bare domains/
+email addresses (including Unicode word-character labels/dot variants), and
+inline Markdown links. Full patterns, flags and the Unicode database version
+are recorded in the machine bundle's `text_policy`; its digest is embedded in
+the action schema, so it also changes the prompt identity. No received text is
+normalised, stripped or silently repaired to pass validation. These rules avoid
 model-authored dates, quantities and thresholds; exact dates stay in structured
 host facts/guidance. Selected false-clearance/instruction-injection phrases are
 also rejected. These guards are intentionally conservative and are NOT proof
@@ -170,7 +180,7 @@ PERSISTENCE_FAILURE, nonrecoverable, CONTACT_OPERATOR.
 
 ## S-04: Bounds and complete-payload analysis
 
-| Bound | Candidate v1 limit |
+| Bound | Candidate v2 limit (unchanged from v1) |
 | --- | --- |
 | Findings / priority | 1–64, exact unique coverage |
 | Catalog entries | 512 |
@@ -307,12 +317,14 @@ secret-free seeds, limits, maximum facts, sanitized errors and pure replay.
 Recorded results and fixture byte sizes are in
 [`evidence/a30-safety-component-check.json`](evidence/a30-safety-component-check.json).
 
-Final local verification: **1001 backend passed, 0 failed, 0 skipped** (312.12s),
+Initial v1 component verification: **1001 backend passed, 0 failed, 0 skipped** (312.12s),
 including all 76 new tests; one existing Starlette TestClient/httpx warning.
 Frontend 7 tests, TypeScript/Vite build, shared schema 1.0 check, exact internal
 schema export and pip dependency check passed. A final agent module docstring
 clarification changes no executable code or prompt identity. No live-model
-token/latency result is inferred from these offline checks.
+token/latency result is inferred from these offline checks. R-S02 results are
+recorded separately in [its reply](a30_rs02_b_reply.md); the original report is
+retained as historical evidence, not relabelled as a new run.
 
 Explicitly NOT delivered/accepted: production SafetyOutcome saving, migration,
 all-four-combination HTTP readiness, checkpoint/rollback/lost-receipt safety

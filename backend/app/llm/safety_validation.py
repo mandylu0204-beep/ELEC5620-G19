@@ -56,7 +56,13 @@ def validate_safety_payload(input, baseline, result, raw_plan, raw_trace, *, ide
         raise model_failure('Safety artifacts differ from the registered strict advisory protocol.', code=ErrorCode.CONTRACT_INVALID) from None
 
 
-SAFETY_VALIDATORS = MappingProxyType({SAFETY_VALIDATION_VERSION:validate_safety_payload})
+from .safety_v1.safety_validation import validate_safety_payload as validate_safety_payload_v1
+
+
+SAFETY_VALIDATORS = MappingProxyType({
+    'safety-advisory-validation-1': validate_safety_payload_v1,
+    SAFETY_VALIDATION_VERSION: validate_safety_payload,
+})
 
 
 def safety_validator_for(version):
