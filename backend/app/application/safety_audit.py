@@ -43,7 +43,8 @@ def registered_identity(scope, *, new_write=False):
     expected = versions.get(seed['validation_version'])
     if (expected is None or (seed['agent_version'],seed['tool_version']) != expected
             or seed['kernel_version'] not in {RULES_VERSION, LEGACY_RULES_VERSION}
-            or (new_write and seed['validation_version'] != 'safety-advisory-validation-2')):
+            or (new_write and (seed['validation_version'] != 'safety-advisory-validation-2'
+                               or seed['kernel_version'] != RULES_VERSION))):
         raise ValueError('Unsupported or downgraded safety registration')
     context = scope.dataset_context.model_dump(mode='json')
     identity = {**seed, 'workflow_context':context}

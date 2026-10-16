@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-16",
+  "reviewed_b_commit": "35105501389099772fdc5e34b738cc2bb41006a9",
+  "application_base": "4c0662c",
+  "storage_base": "dfc3df4",
+  "local_component_merge": "b7f8ed9",
+  "rs01": "accepted",
+  "rs02": "accepted previously; unchanged",
+  "component_contract": "frozen at reviewed B commit",
+  "isolated_b_review": {"tests": 290, "failures": 0, "errors": 0, "skipped": 0},
+  "actual_component_storage_cases": {"tests": 6, "logistics_modes": ["rules", "model"], "transport": "httpx.MockTransport"},
+  "combined_safety_regression": {"tests": 324, "failures": 0, "errors": 0, "skipped": 0, "seconds": 48.347, "junit": "var/rs01-combined-final.xml"},
+  "schema_export": "passed",
+  "diff_check": "passed",
+  "b_full_1238_test_suite_rerun_by_a": false,
+  "full_combined_backend_ci": "not run",
+  "campus_calls": 0,
+  "safety_model_enabled": false,
+  "main_changed": false,
+  "personal_configuration_or_user_database_changed": false,
+  "v2_contract_sha256": "632296a547ae3729c6e48410da021d8a5bf8c569c793da096161944469a7c6ed"
+}

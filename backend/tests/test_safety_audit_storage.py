@@ -164,7 +164,7 @@ def test_plain_safety_port_cannot_bypass_audit(stored):
     assert counts(f)==[1,1,0]
 
 
-def test_missing_provider_and_validator_fail_closed(stored,monkeypatch):
+def test_missing_provider_or_incompatible_component_fail_closed(stored,monkeypatch):
     f=stored;provider=f.wf.safety_facts_provider
     f.wf.safety_facts_provider=None
     with pytest.raises(ContractFailure):save(f)
@@ -232,6 +232,17 @@ def test_new_registration_rejects_legacy_or_unknown_validator(stored,version):
     with pytest.raises(ValueError):safety_audit.registered_identity(changed,new_write=True)
     if version=='safety-advisory-validation-1':
         assert safety_audit.registered_identity(changed)['validation_version']==version
+
+
+def test_old_kernel_is_read_only_not_a_new_write_registration(stored):
+    scope=stored.scope
+    choices=dict(scope.dataset_context.selection_config)
+    seed=safety_audit.decode(choices['a_safety_identity_seed'])
+    seed.update(kernel_version='b02-v1-rules-2',dataset_rules_version='b02-v2-rules-2/trip-evidence-selection-1')
+    choices['a_safety_identity_seed']=canonical(seed)
+    historical=scope.model_copy(update={'dataset_context':scope.dataset_context.model_copy(update={'selection_config':choices})})
+    assert safety_audit.registered_identity(historical)['kernel_version']=='b02-v1-rules-2'
+    with pytest.raises(ValueError):safety_audit.registered_identity(historical,new_write=True)
 
 
 def test_migration_from_nine_keeps_existing_user(tmp_path):
