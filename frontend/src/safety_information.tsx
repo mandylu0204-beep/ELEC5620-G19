@@ -4,10 +4,10 @@ import type { Requirements } from './api';
 import { checkNames,checkState,evidenceState,safetySummary } from './plan_language';
 import { TripCoveragePanel, type TripCoverage } from './trip_coverage';
 
-export function SafetyInformation({value,requirements,summary,approved,review,outdated,blockers,notes,rawWarnings,sources,label,coverage,requestId}:{
+export function SafetyInformation({value,requirements,summary,approved,review,outdated,blockers,notes,rawWarnings,sources,label,coverage,requestId,advisory}:{
   value:Safety|undefined;requirements:Requirements|undefined;summary:string;approved:boolean;review:boolean;outdated:boolean;
   blockers:ReactNode;notes:ReactNode;rawWarnings:{code:string;message:string}[];sources:(refs:Source[])=>ReactNode;label:(value:string)=>string;
-  coverage?:TripCoverage|null;requestId?:string}){
+  coverage?:TripCoverage|null;requestId?:string;advisory?:ReactNode}){
   if(!value)return <section className="panel"><h2>出行安全信息</h2><p>规划完成后，会在这里显示安全检查。</p></section>;
   const issues=Object.values(value.data_quality).some(status=>status!=='AVAILABLE');
   return <section className="panel"><div className="section-title"><span className="eyebrow">CHECK BEFORE YOU GO</span><h2>出行安全信息</h2></div>
@@ -22,6 +22,7 @@ export function SafetyInformation({value,requirements,summary,approved,review,ou
       {value.mandatory_blockers.length>0&&<li>先处理已列出的装备或安全条件；人工审核不能替代缺少的资料或解除关闭、禁火限制。</li>}
       {!issues&&!value.requires_human_review&&!value.mandatory_blockers.length&&<li>阅读行程与适用规定，按页面提示确认方案。</li>}
     </ul>
+    {advisory}
     {value.evidence.map((item,index)=>{const info=evidenceState(item,requirements);const text=safetySummary(item.summary);return <article className="evidence-item" key={index}><h3>{checkNames[item.kind]??'安全信息'} · {info.title}</h3><p>{info.detail}</p>{text&&<p>{text}</p>}<p className="muted">资料日期：{item.source_date??'未提供'} · 适用日期：{item.valid_from??'未提供'} 至 {item.valid_to??'未提供'}</p>{item.road_state&&<p>资料记录的道路状态：{label(item.road_state)}</p>}<details className="source-details"><summary>查看资料来源与原文</summary>{item.summary&&<p>{item.summary}</p>}{sources(item.source_refs)}</details></article>;})}
     {!value.evidence.length&&<p className="muted">目前没有可供核对的安全资料。</p>}
     <details className="artifact-notes"><summary>完整检查说明</summary><p>保存的评估结果：{label(value.outcome)} · 判断依据完整度：{label(value.confidence)}</p>

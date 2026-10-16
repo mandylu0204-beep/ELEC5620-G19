@@ -1,0 +1,23 @@
+import { safetyAdvice, type SafetyAudit, type SafetyAdviceBinding } from './safety_advisory';
+
+export function SafetyAdvisoryPanel({value,binding,outdated=false,historical=false}:{
+  value:SafetyAudit|null|undefined;binding:SafetyAdviceBinding|null;outdated?:boolean;historical?:boolean}){
+  const advice=safetyAdvice(value,binding);
+  if(!advice)return null;
+  const actions=advice.items.filter(item=>!item.informational);
+  const information=advice.items.filter(item=>item.informational);
+  const card=(item:typeof advice.items[number])=><li key={item.key}>
+    <h4>{item.title}</h4><p>{item.action}</p>
+    {item.explanation!==item.action&&<details><summary>为什么需要注意</summary><p>{item.explanation}</p></details>}
+  </li>;
+  return <section className="safety-advisory" aria-label="AI 安全准备建议">
+    <div className="section-title"><span className="eyebrow">PREPARE WITH CARE</span><h3>{outdated||historical?'此前保存的 AI 安全建议':'AI 安全准备建议'}</h3></div>
+    <p className="muted">以下为 AI 提供的参考建议，未经人工核实；请以上方安全检查结果及适用规定为准。</p>
+    {outdated&&<p className="mode-notice">这些建议来自此前检查，请更新检查后再参考。</p>}
+    {!outdated&&historical&&<p className="muted">这些建议对应当时保存的行程与检查资料。</p>}
+    <p>{advice.summary}</p>
+    {actions.length>0&&<><h4>建议处理的事项</h4><ol className="safety-advice-list">{actions.slice(0,3).map(card)}</ol>
+      {actions.length>3&&<details><summary>其余建议（{actions.length-3}）</summary><ol className="safety-advice-list" start={4}>{actions.slice(3).map(card)}</ol></details>}</>}
+    {information.length>0&&<details><summary>出行注意事项（{information.length}）</summary><ul className="safety-advice-list">{information.map(card)}</ul></details>}
+  </section>;
+}
