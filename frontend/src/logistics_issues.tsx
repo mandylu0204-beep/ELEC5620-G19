@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { equipmentLabel } from './profile';
+import { logisticsDestinations } from './logistics_navigation';
 
 export type LogisticsIssue = {issue_id:string;code:string;category:string;field:string;item_key:string|null;current:unknown;required:unknown;target:string;action_url:string|null;alternate_action_url?:string;affects?:string[]};
 const COPY:Record<string,[string,string]>={
@@ -38,8 +39,10 @@ function factText(value:unknown):string {
 
 export function LogisticsIssues({items,onSafety,disabled=false}:{items:LogisticsIssue[];onSafety:()=>void;disabled?:boolean}) {
   if(!items.length)return null;
-  return <section className="panel logistics-todos" aria-label="具体待办事项"><h2>逐项处理这些问题</h2>
-    <p>以下取自本次检查采用的资料。需要你补充的事项可直接前往对应字段；系统资料问题无需反复修改个人信息。</p>
+  const destinations=logisticsDestinations(items);
+  return <section className="panel logistics-todos" aria-label="具体待办事项"><div className="logistics-todos-heading"><h2>逐项处理这些问题</h2>
+    {!disabled&&<div className="logistics-todos-actions">{destinations.profile&&<Link className="secondary-button" to={destinations.profile}>前往对应资料 ↗</Link>}{destinations.request&&<Link className="secondary-button" to={destinations.request}>调整露营需求 ↗</Link>}{destinations.safety&&<button className="secondary-button" onClick={onSafety}>查看安全信息</button>}</div>}</div>
+    <p>前往资料页后，需要补充的位置会标红。系统资料问题无需反复修改个人信息。</p>
     {disabled&&<p className="muted">当前为历史记录或检查尚未结束，这里只展示当时的缺项。</p>}
     {items.map(item=>{const [title,body]=COPY[item.code]??COPY.UNCLASSIFIED;return <article className="logistics-todo" key={item.issue_id}>
       <span className="tag">{item.category==='USER_INPUT'?'需要补充信息':item.category==='EQUIPMENT_GAP'?'需要调整安排':'系统资料问题'}</span>
@@ -47,9 +50,6 @@ export function LogisticsIssues({items,onSafety,disabled=false}:{items:Logistics
       {(item.current!=null||['DISTANCE','VEHICLE_COUNT','TRANSPORT_MODE'].includes(item.code))&&<p className="muted">本次采用：{item.code==='OVER_BUDGET'?`AUD ${(Number(item.current)/100).toFixed(2)}`:factText(item.current)}</p>}
       {item.required!=null&&<p className="muted">此行程需要：{item.code==='OVER_BUDGET'?`预算 AUD ${(Number(item.required)/100).toFixed(2)}`:factText(item.required)}</p>}
       {!!item.affects?.length&&<p className="muted">这个缺项同时影响：{item.affects.map(field=>field.startsWith('equipment.')?equipmentLabel(field.split('.')[1])+'的需求及费用':'相关费用').join('、')}。先补充此项后再检查。</p>}
-      {!disabled&&item.action_url&&<Link className="text-link" to={item.action_url}>{item.target==='REQUEST'?'补充需求并重新确认':'前往对应资料'} ↗</Link>}
-      {!disabled&&item.alternate_action_url&&<p><Link className="text-link" to={item.alternate_action_url}>补充可用炉具资料 ↗</Link></p>}
-      {item.target==='SAFETY'&&<button className="secondary-button" onClick={onSafety}>查看安全信息</button>}
     </article>;})}
   </section>;
 }
