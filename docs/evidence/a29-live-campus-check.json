@@ -1,0 +1,291 @@
+{
+  "base_commit": "fb8c8ce",
+  "checking_date": "2026-10-16",
+  "clock_mode": "current",
+  "evidence_mode": "daily synthetic snapshots",
+  "model_config": {
+    "max_completion_tokens": 4096,
+    "reasoning_effort": "low"
+  },
+  "operations": [
+    {
+      "operation": "plan",
+      "run_id": "157ce7b210c04347b793c42294c54cbf",
+      "status": "SUCCEEDED",
+      "version": 1,
+      "campsites": [
+        "demo-wattle-rest"
+      ],
+      "assessment_ids": [
+        "7532d2fbcb4c4a9ab44acd3d42087215",
+        "79eac6d101ad4e0a9de3a0f5262997e3"
+      ],
+      "planning_trace_id": "a16953b9adea4b2f9a7610c2eb0c09c1",
+      "logistics_audit_id": "c1b2a86797f841e8b7369f65fa114f79",
+      "finalisation_available": true,
+      "coverage": {
+        "dataset_version": "2.1.0",
+        "checked_on": "2026-10-16",
+        "selection_digest": "76a0f0fa03bbdd4699c2c832d46654460fafadf7b24991f5fb1ce3e9a14f768b",
+        "issues": [],
+        "alternative_campsites": [],
+        "alternative_dates": [],
+        "weather_forecast_window": {
+          "start": "2026-10-16",
+          "end": "2026-10-22"
+        },
+        "next_weather_check_on": null,
+        "weather_requires_staged_checks": false
+      }
+    },
+    {
+      "operation": "revise",
+      "run_id": "28612965d43d4af780095e820f43e01c",
+      "status": "SUCCEEDED",
+      "version": 2,
+      "campsites": [
+        "demo-moonlit-field"
+      ],
+      "assessment_ids": [
+        "238ec1af92d44f3b935dd39173116a66",
+        "8bb37ddc946a42bf9dff76a9deef2c6b"
+      ],
+      "planning_trace_id": "61da75510f3d4c9eb1748c14d789ed2f",
+      "logistics_audit_id": "77ea5fa9b7984df3bf17fc680abcc565",
+      "finalisation_available": true,
+      "coverage": {
+        "dataset_version": "2.1.0",
+        "checked_on": "2026-10-16",
+        "selection_digest": "1bb47b13611dc16954b8c4207f8ec259ff2476a4abab0ce4bd1c4b4e9bcccd7b",
+        "issues": [],
+        "alternative_campsites": [],
+        "alternative_dates": [],
+        "weather_forecast_window": {
+          "start": "2026-10-16",
+          "end": "2026-10-22"
+        },
+        "next_weather_check_on": null,
+        "weather_requires_staged_checks": false
+      }
+    },
+    {
+      "operation": "reassess",
+      "run_id": "b7598896abcc4e9cbf96feea717e488d",
+      "status": "SUCCEEDED",
+      "version": 2,
+      "campsites": [
+        "demo-moonlit-field"
+      ],
+      "assessment_ids": [
+        "17c845cdfec747618dfff21b7f83c99b",
+        "660f00f13d764a9681b68dd1e00a3b3f"
+      ],
+      "planning_trace_id": "61da75510f3d4c9eb1748c14d789ed2f",
+      "logistics_audit_id": "cfe9f74046444b35afc4882101f57b52",
+      "finalisation_available": true,
+      "coverage": {
+        "dataset_version": "2.1.0",
+        "checked_on": "2026-10-16",
+        "selection_digest": "1bb47b13611dc16954b8c4207f8ec259ff2476a4abab0ce4bd1c4b4e9bcccd7b",
+        "issues": [],
+        "alternative_campsites": [],
+        "alternative_dates": [],
+        "weather_forecast_window": {
+          "start": "2026-10-16",
+          "end": "2026-10-22"
+        },
+        "next_weather_check_on": null,
+        "weather_requires_staged_checks": false
+      }
+    },
+    {
+      "operation": "future",
+      "run_id": "01d68d339d114414a5b2c12fbfd0ad49",
+      "status": "SUCCEEDED",
+      "version": 1,
+      "campsites": [
+        "demo-wattle-rest"
+      ],
+      "assessment_ids": [
+        "27800fa908e44777a994c7dcb272862e",
+        "22deadf24c64434db34f784e53fd3254"
+      ],
+      "planning_trace_id": "703e774e581b4f5a8fa84c7ba36fced2",
+      "logistics_audit_id": "c0bddb5e0fe24469b483f124ad528c21",
+      "finalisation_available": false,
+      "coverage": {
+        "dataset_version": "2.1.0",
+        "checked_on": "2026-10-16",
+        "selection_digest": "e425553771d4b0a4e7482aaddc933d695be886a84cc91663947f2edc251711e1",
+        "issues": [
+          {
+            "campsite_id": "demo-wattle-rest",
+            "kind": "WEATHER",
+            "code": "OUTSIDE_VALIDITY",
+            "requested_range": {
+              "start": "2026-10-24",
+              "end": "2026-10-26"
+            },
+            "available_ranges": [
+              {
+                "start": "2026-10-16",
+                "end": "2026-10-22"
+              }
+            ],
+            "uncovered_ranges": [
+              {
+                "start": "2026-10-24",
+                "end": "2026-10-26"
+              }
+            ],
+            "reason": "Single-record full-trip coverage is required; partial intervals are not spliced."
+          }
+        ],
+        "alternative_campsites": [],
+        "alternative_dates": [
+          {
+            "start_date": "2026-10-20",
+            "end_date": "2026-10-22"
+          },
+          {
+            "start_date": "2026-10-16",
+            "end_date": "2026-10-18"
+          }
+        ],
+        "weather_forecast_window": {
+          "start": "2026-10-16",
+          "end": "2026-10-22"
+        },
+        "next_weather_check_on": "2026-10-20",
+        "weather_requires_staged_checks": false
+      }
+    }
+  ],
+  "http_requests": [
+    {
+      "number": 1,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 1109
+    },
+    {
+      "number": 2,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 6984
+    },
+    {
+      "number": 3,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 735
+    },
+    {
+      "number": 4,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 10406
+    },
+    {
+      "number": 5,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 4531
+    },
+    {
+      "number": 6,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 1265
+    },
+    {
+      "number": 7,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 7954
+    },
+    {
+      "number": 8,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 969
+    },
+    {
+      "number": 9,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 14500
+    },
+    {
+      "number": 10,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 4125
+    },
+    {
+      "number": 11,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 1234
+    },
+    {
+      "number": 12,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 10578
+    },
+    {
+      "number": 13,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 4578
+    },
+    {
+      "number": 14,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 1922
+    },
+    {
+      "number": 15,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 8375
+    },
+    {
+      "number": 16,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 750
+    },
+    {
+      "number": 17,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 14562
+    },
+    {
+      "number": 18,
+      "state": "ok",
+      "http_status": 200,
+      "elapsed_ms": 6078
+    }
+  ],
+  "counts": {
+    "runs": 4,
+    "versions": 3,
+    "assessments": 8,
+    "gear_checklists": 4,
+    "model_planning_traces": 3,
+    "model_logistics_audits": 4,
+    "final_records": 1
+  },
+  "integrity": "ok",
+  "foreign_key_errors": [],
+  "browser_console_errors": [],
+  "restart_exact_readback": true,
+  "notes": [
+    "HTTP-triggered workflow; browser login, result verification and explicit normal final save.",
+    "Old sealed-data harness expected NOT_YET_OBSERVED; actual daily coverage uses OUTSIDE_VALIDITY. Assertion corrected and saved output validated without repeating model calls."
+  ]
+}
