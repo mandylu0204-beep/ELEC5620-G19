@@ -7,6 +7,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { FinalisePanel } from './finalise';
 import { RetryPlanning, ChangePlanning } from './planning';
 import { NextSteps } from './next_steps';
+import { ReplanFromProfile } from './replan';
 import { CheckFeedback } from './check_feedback';
 import { NearMatches, type RecommendationGuidance } from './near_matches';
 import { ModelTracePanel, type ModelTrace } from './model_trace';
@@ -188,6 +189,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       </dl>
     </header>
     {error&&<p className="error-box" role="alert">读取更新失败：{error}</p>}
+    {!review&&!snapshot&&run?.is_active&&!['PENDING','RUNNING'].includes(run.status)&&requirements&&<ReplanFromProfile key={data.plan.plan_id} requestId={data.plan.request_id} requirements={requirements}/>}
     {!review&&!snapshot&&<CheckFeedback data={data}/>}
     {!snapshot&&run&&!run.is_active&&<div className="mode-notice"><span>正在查看历史方案，评估属于当时的证据。</span>{current&&<button className="secondary-button" onClick={current}>查看当前方案</button>}</div>}
     {run?.error&&<div className="error-box" role="alert"><strong>本次执行未完成</strong><p>{run.error.message}</p>{!review&&!snapshot&&<RetryPlanning data={data} refresh={refresh}/>}</div>}

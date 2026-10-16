@@ -51,7 +51,9 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
   const [relatedLoaded,setRelatedLoaded]=useState(false);const [relatedError,setRelatedError]=useState('');
   const [issueRetry,setIssueRetry]=useState(0);
   const preparedContext=useRef('');
-  const returnRequest=sourceRequest&&/^[a-zA-Z0-9_-]{1,100}$/.test(sourceRequest)?'/request?copy_from='+encodeURIComponent(sourceRequest):null;
+  const returnPlan=sourcePlan&&/^[a-zA-Z0-9_-]{1,100}$/.test(sourcePlan)?'/plans/'+encodeURIComponent(sourcePlan):null;
+  const returnLabel=returnPlan?'返回方案，使用最新资料重新规划 ↗':'返回本次需求，核对并重新确认 ↗';
+  const returnRequest=returnPlan??(sourceRequest&&/^[a-zA-Z0-9_-]{1,100}$/.test(sourceRequest)?'/request?copy_from='+encodeURIComponent(sourceRequest):null);
   const [loaded, setLoaded] = useState(false);
   const [refresh, setRefresh] = useState(0);
   const [revision, setRevision] = useState(0);
@@ -134,7 +136,7 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
         equipment: equipment.map(item => ({ item_key: item.item_key, label: item.label.trim(), quantity: integer(item.quantity), unit: item.unit.trim(), capacity_persons: integer(item.capacity), confirmed: item.confirmed })),
         transport: { transport_type: canonical(transport, MODES) || null, vehicle_count: integer(vehicles), estimated_km: km.trim() || null, assumptions: lines(assumptions) }, accessibility_requirements: canonicalTerms(lines(accessibility),'accessibility') };
       const saved = await privateApi<ProfileResponse>('/profile', { method:'PUT', headers:{ 'Content-Type':'application/json', 'X-CampMate-Client':'1', 'X-CSRF-Token':session.csrf_token }, body:JSON.stringify({ profile, expected_revision:revision }) });
-      setRevision(saved.revision); setDirty(false); setMessage('露营资料已保存，可以继续填写需求。');
+      setRevision(saved.revision); setDirty(false); setMessage(returnPlan?'露营资料已保存，可以返回方案重新规划。':'露营资料已保存，可以继续填写需求。');
     } catch (reason) {
       setError(reason instanceof ApiFailure ? [reason.message, ...reason.envelope.error.field_errors.map(item => item.message)].join(' ') : reason instanceof Error ? reason.message : '保存失败。');
       if (reason instanceof ApiFailure && reason.envelope.error.code === 'UNAUTHENTICATED') reload();
@@ -164,15 +166,15 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
     const id=profileFocusId(activeFocus,equipment); if(id==='add-equipment')return;const node=id?document.getElementById(id):null;
     if(node){node.focus();node.scrollIntoView({block:'center'});focusDone.current=activeFocus;}
   },[loaded,relatedLoaded,activeFocus,equipment]);
-  const saveHint=busy?'正在保存资料…':!dirty?revision?'资料已保存，可以继续填写需求。':demoAvailable?'填写自己的资料，或展开下方演示样例。':'填写自己的资料，保存后继续。':problemIds.length?`${issues[problemIds[0]]}${problemIds.length>1?` 另有 ${problemIds.length-1} 项需要修改。`:''}`:'有未保存的修改，请保存后继续。';
+  const saveHint=busy?'正在保存资料…':!dirty?revision?(returnPlan?'资料已保存，可以返回方案重新规划。':'资料已保存，可以继续填写需求。'):demoAvailable?'填写自己的资料，或展开下方演示样例。':'填写自己的资料，保存后继续。':problemIds.length?`${issues[problemIds[0]]}${problemIds.length>1?` 另有 ${problemIds.length-1} 项需要修改。`:''}`:'有未保存的修改，请保存后继续。';
   const units=[['item','件'],['litre','升'],['portion','份'],['vehicle','辆'],['plan','份计划'],['set','套']];
   return <div className="onboarding-page"><TripFlow step={1}/><div className="onboarding-heading"><div><span className="eyebrow">YOUR CAMPING PROFILE</span><h1>为同行的人做好准备。</h1><p>填写小组、交通与已有装备，让计划更贴合你们。</p></div>{loaded&&<span className="onboarding-status">{dirty?'有未保存修改':revision?'资料已保存':'开始填写'}</span>}</div>
     {error&&<p className="error-box" role="alert">{error}</p>}{message&&<p className="success-box" role="status">{message}</p>}
     {(requestedFocus||relatedIssues.length>0)&&<section className="panel profile-correction-summary" aria-label="补充本次方案资料"><h2>补充本次检查需要的资料</h2>
-      <p>{!loaded||!relatedLoaded?'正在载入本次需要补充的位置…':relatedError?'待补充事项未能完整载入，请重试。':guidanceIds.length?`下方 ${guidanceIds.length} 处需要补充或核对，已在对应位置标红。缺少的装备已准备为空白行，请按实际安排填写。`:dirty?'标红项已填写。请保存资料，再返回需求核对并重新确认；最终结果以重新检查为准。':'资料已保存。请返回需求核对并重新确认，再检查更新后的安排。'}</p>
+      <p>{!loaded||!relatedLoaded?'正在载入本次需要补充的位置…':relatedError?'待补充事项未能完整载入，请重试。':guidanceIds.length?`下方 ${guidanceIds.length} 处需要补充或核对，已在对应位置标红。缺少的装备已准备为空白行，请按实际安排填写。`:dirty?'请先保存资料，再核对本次安排。':returnPlan?'资料已保存。可返回方案，使用最新资料重新规划。':'资料已保存。请返回需求核对并重新确认。'}</p>
       <p className="muted">{dirty?'新准备的装备行需要填写并保存。':''}没有的物品可填 0；尚未落实的安排请保持未确认。</p>
       {guidanceIds.length>0&&<button type="button" className="secondary-button" onClick={()=>{const node=document.getElementById(guidanceIds[0]);node?.focus();node?.scrollIntoView({block:'center'});}}>前往首个待补充位置 ↓</button>}
-      {returnRequest&&!dirty&&<Link className="text-link" to={returnRequest}>返回本次需求，核对并重新确认 ↗</Link>}
+      {returnRequest&&!dirty&&<Link className="text-link" to={returnRequest}>{returnLabel}</Link>}
     </section>}
     {relatedError&&<div className="error-box" role="alert"><p>{relatedError}</p><button type="button" className="secondary-button" onClick={()=>setIssueRetry(value=>value+1)}>重新载入</button></div>}
     {!loaded?<section className="panel"><p>正在读取资料…</p><button className="secondary-button" onClick={()=>setRefresh(value=>value+1)}>重新读取</button></section>:<form className="profile-form" onSubmit={save}><fieldset disabled={busy}>
@@ -198,7 +200,7 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
           <div><label htmlFor={`gear-capacity-${index}`}>{item.item_key==='vehicle'?'每辆载客人数（含驾驶员）':item.item_key==='tent'?'每顶帐篷可住人数':'每件人数容量'}</label><input id={`gear-capacity-${index}`} aria-label={`装备 ${index+1} 每件人数容量`} type="number" min="1" step="1" value={item.capacity} aria-invalid={!!(issues[`gear-capacity-${index}`]||guidance[`gear-capacity-${index}`])} aria-describedby={`gear-capacity-hint-${index}`} placeholder="未知 / 不适用" onChange={event=>updateEquipment(index,{capacity:event.target.value})}/><FieldHint id={`gear-capacity-hint-${index}`} error={issues[`gear-capacity-${index}`]??guidance[`gear-capacity-${index}`]}>{item.item_key==='vehicle'?'包含驾驶员；例如 5 座车填 5。多辆车容量不同时请分行登记。':undefined}</FieldHint></div>
         </div><label className="checkbox-label equipment-confirmation"><input id={`gear-confirmed-${index}`} type="checkbox" aria-invalid={!!guidance[`gear-confirmed-${index}`]} aria-describedby={`gear-confirmed-hint-${index}`} checked={item.confirmed} aria-label={`装备 ${index+1} 已核实拥有`} onChange={event=>updateEquipment(index,{confirmed:event.target.checked})}/>已核实拥有</label><FieldHint id={`gear-confirmed-hint-${index}`} error={guidance[`gear-confirmed-${index}`]}/></article>)}
       </section>
-      <div className="profile-save-bar"><div><strong>{dirty?'保存后，继续填写需求':'准备下一步'}</strong><p id="profile-save-hint" role="status">{saveHint}</p>{problemIds.length>0&&dirty&&<button type="button" className="text-link focus-field" onClick={()=>document.getElementById(problemIds[0])?.focus()}>前往需要修改的字段 ↗</button>}</div><div className="form-actions"><button className="primary-button" disabled={!dirty||problemIds.length>0} aria-describedby="profile-save-hint">{busy?'正在保存…':'保存露营资料'} <span>✓</span></button><button type="button" className="secondary-button" onClick={()=>setRefresh(value=>value+1)}>恢复已保存字段</button>{!dirty&&revision>0&&<Link className="text-link" to={returnRequest??"/request"}>{returnRequest?"返回本次需求，核对并重新确认 ↗":"填写露营请求 ↗"}</Link>}</div></div>
+      <div className="profile-save-bar"><div><strong>{dirty?(returnPlan?'保存后，返回方案重新规划':'保存后，继续填写需求'):'准备下一步'}</strong><p id="profile-save-hint" role="status">{saveHint}</p>{problemIds.length>0&&dirty&&<button type="button" className="text-link focus-field" onClick={()=>document.getElementById(problemIds[0])?.focus()}>前往需要修改的字段 ↗</button>}</div><div className="form-actions"><button className="primary-button" disabled={!dirty||problemIds.length>0} aria-describedby="profile-save-hint">{busy?'正在保存…':'保存露营资料'} <span>✓</span></button><button type="button" className="secondary-button" onClick={()=>setRefresh(value=>value+1)}>恢复已保存字段</button>{!dirty&&revision>0&&<Link className="text-link" to={returnRequest??"/request"}>{returnRequest?returnLabel:"填写露营请求 ↗"}</Link>}</div></div>
     </fieldset></form>}
   </div>;
 }
