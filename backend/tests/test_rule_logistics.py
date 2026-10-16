@@ -176,12 +176,20 @@ def test_unknown_price_is_null_and_optional_recommendations_are_not_charged(agen
 def test_children_count_is_not_read_from_notes_or_defaulted(agent):
     profile = full_profile(group=3).model_copy(update={'has_children': True})
     result = assess(agent, profile)
-    assert gear(result, 'charged_phone').required_quantity is None
+    assert 'charged_phone' not in {item.item_key for item in result.gear_checklist}
     assert any(item.field == 'profile.children_count' for item in result.clarifications)
     assert result.outcome == 'REVISION'
     fixed = assess(agent, profile.model_copy(update={'children_count': 1}))
-    assert gear(fixed, 'charged_phone').required_quantity == 2
+    assert 'charged_phone' not in {item.item_key for item in fixed.gear_checklist}
     assert gear(fixed, 'child_snacks').required_quantity == 6
+
+
+def test_phone_charge_is_not_inventory_or_a_planning_requirement(agent):
+    result = assess(agent, replace_stock(full_profile(), 'charged_phone'))
+    assert result.outcome == 'PASSED'
+    assert 'charged_phone' not in {item.item_key for item in result.gear_checklist}
+    assert not any('charged_phone' in item.field for item in result.clarifications)
+    assert result.total_cents == assess(agent).total_cents
 
 
 def test_known_over_budget_is_revision_even_when_other_costs_are_unknown(agent):

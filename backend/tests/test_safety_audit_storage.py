@@ -40,7 +40,7 @@ class Artifact:
 def stored(tmp_path, monkeypatch):
     dataset, original, _ = input_fixture()
     seed = dict(agent_version='campus-safety-advisory-agent-2',tool_version='safety-read-only-tools-2',
-        validation_version='safety-advisory-validation-2',kernel_version='b02-v1-rules-2/a-meal-clarification-v1',
+        validation_version='safety-advisory-validation-2',kernel_version='b02-v1-rules-2/a-meal-clarification-v1/a-profile-essentials-v1',
         dataset_rules_version=dataset.rules_version,prompt_sha256='a'*64,
         model_client={'model':'offline-test-double'})
     markers = {'a_safety_mode':'model','a_safety_audit_required':'1','a_safety_audit_contract':'1.0',

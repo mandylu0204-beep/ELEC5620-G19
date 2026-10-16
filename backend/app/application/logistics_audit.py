@@ -14,7 +14,7 @@ from ..contracts.errors import ContractError, ContractFailure
 from ..llm.logistics_agent import LOGISTICS_AGENT_VERSION
 from ..llm.logistics_schema import LOGISTICS_VALIDATION_VERSION, LogisticsProposal
 from ..llm.logistics_tools import LOGISTICS_TOOL_VERSION, BudgetAllocation, LogisticsToolset, SupplyPlan, ValidatedLogisticsPlan
-from ..agents.rules.common import RULES_VERSION, LEGACY_RULES_VERSION
+from ..agents.rules.common import SUPPORTED_RULES_VERSIONS
 from .model_audit import Hash, Name, Count
 
 LIMIT = 512 * 1024
@@ -138,7 +138,7 @@ def registered_seed(scope):
     # Versioned verifier: v1 remains available when future roles are introduced.
     if (seed['agent_version'] != LOGISTICS_AGENT_VERSION or seed['tool_version'] != LOGISTICS_TOOL_VERSION
             or seed['validation_version'] != LOGISTICS_VALIDATION_VERSION
-            or seed['kernel_version'] not in {RULES_VERSION, LEGACY_RULES_VERSION}):
+            or seed['kernel_version'] not in SUPPORTED_RULES_VERSIONS):
         raise ValueError('Unsupported historical logistics verifier')
     return seed
 

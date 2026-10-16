@@ -292,6 +292,10 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
     V2_UNITS = {'person_capacity': 'person_space', 'meal_portion': 'portion', 'snack_portion': 'portion',
         'item': 'item', 'litre': 'litre', 'plan': 'plan'}
     for rule in dataset.gear_rules:
+        # Phone charge is a departure-time preparation task, not owned stock.
+        # It must not require a profile inventory entry or prevent planning.
+        if rule.item_name == 'Charged phone':
+            continue
         if rule.item_name not in ITEMS:
             raise rule_failure(f'Unsupported gear item: {rule.item_name}.', 'gear_rules')
         if not _active(rule, context):

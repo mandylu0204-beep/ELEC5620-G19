@@ -8,7 +8,9 @@ from ...contracts.enums import AllowedAction, ErrorCode, ExecutionMode
 from ...contracts.errors import ContractError, ContractFailure
 
 LEGACY_RULES_VERSION = 'b02-v1-rules-2'
-RULES_VERSION = LEGACY_RULES_VERSION + '/a-meal-clarification-v1'
+MEAL_RULES_VERSION = LEGACY_RULES_VERSION + '/a-meal-clarification-v1'
+RULES_VERSION = MEAL_RULES_VERSION + '/a-profile-essentials-v1'
+SUPPORTED_RULES_VERSIONS = {LEGACY_RULES_VERSION, MEAL_RULES_VERSION, RULES_VERSION}
 TRIP_ZONE = ZoneInfo('Australia/Sydney')
 REST_DESCRIPTION = 'Uncommitted rest period at campsite; no travel time or activity availability inferred.'
 

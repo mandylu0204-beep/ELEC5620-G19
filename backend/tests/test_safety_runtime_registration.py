@@ -54,8 +54,8 @@ def test_factory_collects_all_seeds_before_one_final_context(tmp_path,monkeypatc
             component=getattr(binding.agent,f'{role}_agent')
             assert component.identity['workflow_context']==context
             assert component.identity['configuration_fingerprint']==digest(canonical({**seed,'workflow_context':context}))
-            assert seed['kernel_version']=='b02-v1-rules-2/a-meal-clarification-v1'
-            assert seed['dataset_rules_version']=='b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1'
+            assert seed['kernel_version']=='b02-v1-rules-2/a-meal-clarification-v1/a-profile-essentials-v1'
+            assert seed['dataset_rules_version']=='b02-v2-rules-2/a-meal-clarification-v1/a-profile-essentials-v1/trip-evidence-selection-1'
             assert not {'workflow_context','configuration_fingerprint','api_key'} & seed.keys()
     assert calls==[]
 

@@ -24,9 +24,11 @@ from app.llm.safety_validation import safety_validator_for
 from safety_fixtures import safety_fixture, safety_agent_fixture, saved_safety_archive
 
 OLD_KERNEL = 'b02-v1-rules-2'
-NEW_KERNEL = 'b02-v1-rules-2/a-meal-clarification-v1'
+MEAL_KERNEL = 'b02-v1-rules-2/a-meal-clarification-v1'
+NEW_KERNEL = MEAL_KERNEL + '/a-profile-essentials-v1'
 OLD_RULES = 'b02-v2-rules-2/trip-evidence-selection-1'
-NEW_RULES = 'b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1'
+MEAL_RULES = 'b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1'
+NEW_RULES = 'b02-v2-rules-2/a-meal-clarification-v1/a-profile-essentials-v1/trip-evidence-selection-1'
 PROMPT_V2 = '348dcee55454f9d25f65e9e4d128858be182e512bc22dabf79f2d286c0865d31'
 
 
@@ -38,7 +40,7 @@ def normal():
 def test_actual_shared_baseline_registers_current_values_without_relabelling(normal):
     dataset,input,config,baseline,_ = normal
     assert RULES_VERSION == NEW_KERNEL and LEGACY_RULES_VERSION == OLD_KERNEL
-    assert V2_RULES_VERSION == 'b02-v2-rules-2/a-meal-clarification-v1'
+    assert V2_RULES_VERSION == 'b02-v2-rules-2/a-meal-clarification-v1/a-profile-essentials-v1'
     assert dataset.rules_version == NEW_RULES
     agent,requests = safety_agent_fixture(dataset,config)
     seed = agent.identity_seed
@@ -52,7 +54,7 @@ def test_actual_shared_baseline_registers_current_values_without_relabelling(nor
         outcome.trace.model_dump(mode='json'))
 
 
-@pytest.mark.parametrize('kernel,rules',[(OLD_KERNEL,OLD_RULES),(NEW_KERNEL,NEW_RULES)])
+@pytest.mark.parametrize('kernel,rules',[(OLD_KERNEL,OLD_RULES),(MEAL_KERNEL,MEAL_RULES),(NEW_KERNEL,NEW_RULES)])
 def test_exact_supported_pairs_validate_and_roundtrip_without_coercion(normal,kernel,rules):
     agent,_ = safety_agent_fixture(normal[0],normal[2])
     seed = {**agent.identity_seed,'kernel_version':kernel,'dataset_rules_version':rules}
@@ -81,13 +83,13 @@ def test_unknown_values_and_cross_paired_identities_fail_closed(normal,field,val
 
 def test_identity_schema_records_the_same_closed_pairs_and_extra_key_guard(normal):
     schema = SafetyIdentitySeed.model_json_schema()
-    expected = [(OLD_KERNEL,OLD_RULES),(NEW_KERNEL,NEW_RULES)]
+    expected = [(OLD_KERNEL,OLD_RULES),(MEAL_KERNEL,MEAL_RULES),(NEW_KERNEL,NEW_RULES)]
     assert list(SUPPORTED_KERNEL_RULE_PAIRS) == expected
     assert schema['additionalProperties'] is False
     assert schema['anyOf'] == [{'properties':{'kernel_version':{'const':kernel},
         'dataset_rules_version':{'const':rules}}} for kernel,rules in expected]
-    assert schema['properties']['kernel_version']['enum'] == [OLD_KERNEL,NEW_KERNEL]
-    assert schema['properties']['dataset_rules_version']['enum'] == [OLD_RULES,NEW_RULES]
+    assert schema['properties']['kernel_version']['enum'] == [OLD_KERNEL,MEAL_KERNEL,NEW_KERNEL]
+    assert schema['properties']['dataset_rules_version']['enum'] == [OLD_RULES,MEAL_RULES,NEW_RULES]
     assert safety_contract_document()['supported_kernel_rule_pairs'] == [
         {'kernel_version':kernel,'dataset_rules_version':rules} for kernel,rules in expected]
     agent,_ = safety_agent_fixture(normal[0],normal[2])

@@ -36,7 +36,7 @@ def test_v2_adapter_consumes_sealed_runtime_bytes_and_preserves_a13_context():
     assert binding.context.selection_config['a_revision_feedback'] == 'cheaper campsite'
     assert binding.context.selection_config['revision_feedback'] == 'cheaper campsite'
     assert binding.context.rules_version.startswith('a-request-normalization-v1/a-runtime-bindings-v2/')
-    assert '/b01-v2-adapter-2/b02-v2-rules-2/' in binding.context.rules_version
+    assert '/b01-v2-adapter-2/b02-v2-rules-2/a-meal-clarification-v1/a-profile-essentials-v1/' in binding.context.rules_version
     input = dataset.request_input('request-13', DemoContext(mode='deterministic_demo', demo_today='2026-11-05', dataset_version='2.0.0'))
     assert '100 total vehicle kilometres' in input.raw_text
 

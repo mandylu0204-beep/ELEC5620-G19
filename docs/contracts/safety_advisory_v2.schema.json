@@ -41,6 +41,10 @@
     {
       "kernel_version": "b02-v1-rules-2/a-meal-clarification-v1",
       "dataset_rules_version": "b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1"
+    },
+    {
+      "kernel_version": "b02-v1-rules-2/a-meal-clarification-v1/a-profile-essentials-v1",
+      "dataset_rules_version": "b02-v2-rules-2/a-meal-clarification-v1/a-profile-essentials-v1/trip-evidence-selection-1"
     }
   ],
   "prompt_sha256": "348dcee55454f9d25f65e9e4d128858be182e512bc22dabf79f2d286c0865d31",
@@ -849,6 +853,16 @@
               "const": "b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1"
             }
           }
+        },
+        {
+          "properties": {
+            "kernel_version": {
+              "const": "b02-v1-rules-2/a-meal-clarification-v1/a-profile-essentials-v1"
+            },
+            "dataset_rules_version": {
+              "const": "b02-v2-rules-2/a-meal-clarification-v1/a-profile-essentials-v1/trip-evidence-selection-1"
+            }
+          }
         }
       ],
       "properties": {
@@ -870,7 +884,8 @@
         "kernel_version": {
           "enum": [
             "b02-v1-rules-2",
-            "b02-v1-rules-2/a-meal-clarification-v1"
+            "b02-v1-rules-2/a-meal-clarification-v1",
+            "b02-v1-rules-2/a-meal-clarification-v1/a-profile-essentials-v1"
           ],
           "title": "Kernel Version",
           "type": "string"
@@ -878,7 +893,8 @@
         "dataset_rules_version": {
           "enum": [
             "b02-v2-rules-2/trip-evidence-selection-1",
-            "b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1"
+            "b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1",
+            "b02-v2-rules-2/a-meal-clarification-v1/a-profile-essentials-v1/trip-evidence-selection-1"
           ],
           "title": "Dataset Rules Version",
           "type": "string"

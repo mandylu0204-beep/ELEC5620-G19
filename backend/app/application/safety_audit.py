@@ -9,7 +9,7 @@ from ..contracts.dto import ConfirmedContext, SafetyInput, SafetyResult, StoredA
 from ..contracts.enums import ErrorCode
 from ..contracts.errors import ContractError, ContractFailure
 from ..agents.rules.trip_evidence import TripEvidenceSelection
-from ..agents.rules.common import RULES_VERSION, LEGACY_RULES_VERSION
+from ..agents.rules.common import RULES_VERSION, SUPPORTED_RULES_VERSIONS
 from .logistics_audit import canonical, decode, digest, LIMIT
 
 
@@ -42,7 +42,7 @@ def registered_identity(scope, *, new_write=False):
     }
     expected = versions.get(seed['validation_version'])
     if (expected is None or (seed['agent_version'],seed['tool_version']) != expected
-            or seed['kernel_version'] not in {RULES_VERSION, LEGACY_RULES_VERSION}
+            or seed['kernel_version'] not in SUPPORTED_RULES_VERSIONS
             or (new_write and (seed['validation_version'] != 'safety-advisory-validation-2'
                                or seed['kernel_version'] != RULES_VERSION))):
         raise ValueError('Unsupported or downgraded safety registration')

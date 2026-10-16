@@ -70,6 +70,8 @@ SUPPORTED_KERNEL_RULE_PAIRS = (
     ('b02-v1-rules-2', 'b02-v2-rules-2/trip-evidence-selection-1'),
     ('b02-v1-rules-2/a-meal-clarification-v1',
      'b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1'),
+    ('b02-v1-rules-2/a-meal-clarification-v1/a-profile-essentials-v1',
+     'b02-v2-rules-2/a-meal-clarification-v1/a-profile-essentials-v1/trip-evidence-selection-1'),
 )
 
 
@@ -83,9 +85,11 @@ class SafetyIdentitySeed(ContractModel):
     agent_version: Literal['campus-safety-advisory-agent-2']
     tool_version: Literal['safety-read-only-tools-2']
     validation_version: Literal['safety-advisory-validation-2']
-    kernel_version: Literal['b02-v1-rules-2', 'b02-v1-rules-2/a-meal-clarification-v1']
+    kernel_version: Literal['b02-v1-rules-2', 'b02-v1-rules-2/a-meal-clarification-v1',
+        'b02-v1-rules-2/a-meal-clarification-v1/a-profile-essentials-v1']
     dataset_rules_version: Literal['b02-v2-rules-2/trip-evidence-selection-1',
-        'b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1']
+        'b02-v2-rules-2/a-meal-clarification-v1/trip-evidence-selection-1',
+        'b02-v2-rules-2/a-meal-clarification-v1/a-profile-essentials-v1/trip-evidence-selection-1']
     prompt_sha256: Hash
     model_client: PublicSafetyClient
 
