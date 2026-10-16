@@ -9,13 +9,15 @@ import time
 from uuid import uuid4
 
 from ..auth import fail, require_role
-from ..contracts.dto import ConfirmedContext, RunScope, RunSnapshot, StoredRecommendations, StoredAssessment, RouteResult, VersionContext, LogisticsResult
+from ..contracts.dto import ConfirmedContext, RunScope, RunSnapshot, StoredRecommendations, StoredAssessment, RouteResult, VersionContext, LogisticsResult, SafetyResult
 from ..contracts.enums import ErrorCode, RunStage, RunStatus
 from ..contracts.errors import ContractError
 from .port import SqlitePersistencePort
 from .repository import Repository, encode, fingerprint, now
 from ..application.model_audit import load_model_trace
-from ..application.logistics_audit import load_audits, save as save_logistics
+from ..application.assessment_audits import load_audits
+from ..application.logistics_audit import save as save_logistics
+from ..application.safety_audit import save as save_safety
 
 
 @dataclass(frozen=True)
@@ -45,6 +47,10 @@ class RecoveryPort(SqlitePersistencePort):
             plan: Mapping[str, object], trace: Mapping[str, object], write_key: str) -> StoredAssessment:
         return await save_logistics(self, context, result, plan, trace, write_key)
 
+    async def save_model_safety_assessment(self, context: VersionContext, result: SafetyResult,
+            plan: Mapping[str, object], trace: Mapping[str, object], write_key: str) -> StoredAssessment:
+        return await save_safety(self, context, result, plan, trace, write_key)
+
     async def heartbeat(self):
         self.workflow.renew(self.user, self.attempt)
 
@@ -73,6 +79,7 @@ class WorkflowService:
         self.repository = Repository(database)
         self.context_provider = context_provider
         self.logistics_facts_provider = None
+        self.safety_facts_provider = None
 
     @staticmethod
     def command_key(key):

@@ -11,7 +11,7 @@ from ..contracts.enums import ErrorCode
 from .port import SqlitePersistencePort
 from .repository import Repository, encode, fingerprint, now
 from ..application.model_audit import load_model_trace
-from ..application.logistics_audit import load_audits
+from ..application.assessment_audits import load_audits
 
 
 class FinaliseInput(ContractModel):

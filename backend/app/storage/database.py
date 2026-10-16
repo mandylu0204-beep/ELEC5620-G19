@@ -175,6 +175,24 @@ CREATE TRIGGER no_delete_logistics_audit BEFORE DELETE ON model_logistics_audits
 """
 
 
+MIGRATION_10 = """
+CREATE TABLE model_safety_audits(
+ id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES users(id),
+ plan_id TEXT NOT NULL, run_id TEXT NOT NULL UNIQUE, version_id TEXT NOT NULL,
+ assessment_id TEXT NOT NULL UNIQUE, depends_on_assessment_id TEXT NOT NULL,
+ attempt_id TEXT NOT NULL, input_fingerprint TEXT NOT NULL,
+ configuration_fingerprint TEXT NOT NULL, payload_sha256 TEXT NOT NULL,
+ created_at TEXT NOT NULL, payload TEXT NOT NULL,
+ FOREIGN KEY(plan_id,version_id) REFERENCES versions(plan_id,id),
+ FOREIGN KEY(run_id,version_id,assessment_id) REFERENCES assessments(run_id,version_id,id),
+ FOREIGN KEY(run_id,version_id,depends_on_assessment_id) REFERENCES assessments(run_id,version_id,id));
+CREATE TRIGGER immutable_safety_audit BEFORE UPDATE ON model_safety_audits
+ BEGIN SELECT RAISE(ABORT, 'immutable safety audit'); END;
+CREATE TRIGGER no_delete_safety_audit BEFORE DELETE ON model_safety_audits
+ BEGIN SELECT RAISE(ABORT, 'immutable safety audit'); END;
+"""
+
+
 def execute_migration(connection, script):
     statement = ''
     for line in script.splitlines():
@@ -236,7 +254,11 @@ class Database:
                 connection.execute('CREATE TABLE deleted_requests(request_id TEXT PRIMARY KEY REFERENCES requests(id), deleted_at TEXT NOT NULL)')
                 connection.execute("INSERT INTO schema_migrations VALUES(9, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
                 versions.append(9)
-            if versions != [1, 2, 3, 4, 5, 6, 7, 8, 9]:
+            if versions == [1, 2, 3, 4, 5, 6, 7, 8, 9]:
+                execute_migration(connection, MIGRATION_10)
+                connection.execute("INSERT INTO schema_migrations VALUES(10, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
+                versions.append(10)
+            if versions != [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
                 raise RuntimeError('Unsupported database schema version')
 
     @contextmanager
@@ -272,6 +294,6 @@ class Database:
         try:
             with self.transaction(write=False) as connection:
                 versions = [row[0] for row in connection.execute('SELECT version FROM schema_migrations ORDER BY version')]
-            return versions == [1, 2, 3, 4, 5, 6, 7, 8, 9]
+            return versions == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         except ContractFailure:
             return False

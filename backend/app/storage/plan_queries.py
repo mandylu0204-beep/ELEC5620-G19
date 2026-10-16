@@ -8,7 +8,7 @@ from .port import SqlitePersistencePort
 from .repository import Repository
 from .finalisation import final_index
 from ..application.model_audit import load_model_trace
-from ..application.logistics_audit import load_audits
+from ..application.assessment_audits import load_audits
 from .check_feedback import reassessment_feedback
 
 

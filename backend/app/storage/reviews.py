@@ -12,7 +12,7 @@ from ..contracts.errors import ContractFailure
 from .plan_queries import PlanQueries
 from .port import SqlitePersistencePort
 from .repository import Repository, encode, fingerprint, now
-from ..application.logistics_audit import load_audits
+from ..application.assessment_audits import load_audits
 
 
 class ReviewInput(ContractModel):

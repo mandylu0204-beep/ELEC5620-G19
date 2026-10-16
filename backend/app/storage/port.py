@@ -15,7 +15,9 @@ from ..contracts.enums import (
 from .database import Database
 from .repository import Repository, encode, fingerprint, now
 from ..application.model_audit import required as model_trace_required, trace_payload, validate_trace, trace_hash, load_model_trace
-from ..application.logistics_audit import required as logistics_audit_required, load_audits
+from ..application.logistics_audit import required as logistics_audit_required
+from ..application.assessment_audits import load_audits
+from ..application.safety_audit import required as safety_audit_required
 
 
 class SqlitePersistencePort:
@@ -134,6 +136,8 @@ class SqlitePersistencePort:
         kind = AssessmentKind(kind)
         if kind == AssessmentKind.LOGISTICS and logistics_audit_required(self.scope):
             fail(ErrorCode.CONTRACT_INVALID, '模型物流必须同时保存结构化方案和独立审计。')
+        if kind == AssessmentKind.SAFETY and safety_audit_required(self.scope):
+            fail(ErrorCode.CONTRACT_INVALID, 'Model safety must save its independent audit atomically.')
         result = (LogisticsResult if kind == AssessmentKind.LOGISTICS else SafetyResult).model_validate(result)
         self.validate_mode(result)
         if result.version_context != context:
@@ -250,7 +254,7 @@ class SqlitePersistencePort:
         # Audit validation precedes receipt replay as well as first routing.
         with self.db.transaction(write=False) as connection:
             self.active(connection, execution=True)
-            load_audits(connection, self.scope, Repository.stored_version(connection, self.scope), must_exist=logistics_audit_required(self.scope))
+            load_audits(connection, self.scope, Repository.stored_version(connection, self.scope), must_exist=(logistics_audit_required(self.scope) or safety_audit_required(self.scope)))
         proposed_route = PlanVersionStatus(proposed_route)
         if proposed_route not in {PlanVersionStatus.BLOCKED, PlanVersionStatus.REVISION_REQUIRED, PlanVersionStatus.ESCALATED, PlanVersionStatus.ELIGIBLE_FOR_FINALISATION}:
             fail(ErrorCode.INVALID_STATE, 'Agent 不允许设置此版本状态。')
@@ -275,7 +279,7 @@ class SqlitePersistencePort:
 
     def validate_completion(self, connection, stage):
         if connection.execute('SELECT 1 FROM run_versions WHERE run_id=?', (self.scope.run_id,)).fetchone():
-            load_audits(connection, self.scope, Repository.stored_version(connection, self.scope), must_exist=logistics_audit_required(self.scope))
+            load_audits(connection, self.scope, Repository.stored_version(connection, self.scope), must_exist=(logistics_audit_required(self.scope) or safety_audit_required(self.scope)))
         if model_trace_required(self.scope) and connection.execute('SELECT 1 FROM run_versions WHERE run_id=?', (self.scope.run_id,)).fetchone():
             load_model_trace(connection, self.scope, Repository.stored_version(connection, self.scope))
         recommendation = connection.execute('SELECT payload FROM recommendations WHERE run_id=?', (self.scope.run_id,)).fetchone()
