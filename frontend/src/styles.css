@@ -87,3 +87,7 @@ select{width:100%;height:41px;border:1px solid #dce1d4;border-radius:5px;color:#
 
 .registration-panel{max-width:640px;margin:0 auto}
 .registration-panel .primary-button{margin-top:20px}
+.password-requirements{list-style:none;padding:0;margin:10px 0 20px;font-size:.9rem;line-height:1.7}
+.password-requirements .requirement-met{color:#28603c}
+.password-requirements .requirement-pending{color:#8b5050}
+.requirement-state{font-size:.85em;margin-left:8px}

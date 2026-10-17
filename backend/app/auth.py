@@ -5,6 +5,7 @@ import secrets
 import time
 import re
 import unicodedata
+import string
 from uuid import uuid4
 
 from .contracts.enums import ErrorCode
@@ -73,8 +74,10 @@ class AuthService:
             fail(ErrorCode.INPUT_INVALID, '用户名请使用 3–32 位英文字母、数字、点、下划线或短横线，以字母或数字开头。')
         if not 1 <= len(display_name) <= 80 or any(unicodedata.category(char).startswith('C') for char in display_name):
             fail(ErrorCode.INPUT_INVALID, '请填写有效昵称，最多 80 个字符。')
-        if not 8 <= len(password) <= 256 or not password.strip():
-            fail(ErrorCode.INPUT_INVALID, '密码请使用 8–256 个字符，不能全部为空格。')
+        if (not 8 <= len(password) <= 256 or not re.search(r'[A-Z]', password)
+                or not re.search(r'[a-z]', password) or not re.search(r'[0-9]', password)
+                or not any(char in string.punctuation for char in password)):
+            fail(ErrorCode.INPUT_INVALID, '密码须为 8–256 个字符，并包含大写英文字母、小写英文字母、数字和半角特殊符号（如 ! @ #，空格不算）。')
         encoded = hash_password(password)
         with self.db.transaction() as connection:
             if (username in {item[1] for item in DEMO_ACCOUNTS}

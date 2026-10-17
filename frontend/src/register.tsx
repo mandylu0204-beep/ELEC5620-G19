@@ -3,15 +3,18 @@ import { Link,Navigate,useLocation,useNavigate } from 'react-router-dom';
 import { ApiFailure } from './api';
 import { privateApi,useSession } from './session';
 import { loginReturnPath } from './login_return';
+import { passwordChecks } from './password_policy';
 
 export function RegisterPage(){
   const {session}=useSession();const location=useLocation();const navigate=useNavigate();
   const locked=useRef(false);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
   const [username,setUsername]=useState('');const [name,setName]=useState('');
   const [password,setPassword]=useState('');const [confirmation,setConfirmation]=useState('');
+  const checks=passwordChecks(password);const validPassword=checks.every(item=>item.met);
   if(session)return <Navigate to={loginReturnPath(location.state?.returnTo,session.user.role)} replace/>;
   async function submit(event:FormEvent){
     event.preventDefault();if(locked.current)return;
+    if(!validPassword){setError('请先满足下方列出的全部密码要求。');return;}
     if(password!==confirmation){setError('两次输入的密码不一致。');return;}
     locked.current=true;setBusy(true);setError('');
     try{
@@ -28,10 +31,10 @@ export function RegisterPage(){
       <label htmlFor="register-name">昵称</label><input id="register-name" autoComplete="nickname" required maxLength={80} value={name} onChange={event=>setName(event.target.value)}/>
       <label htmlFor="register-username">用户名</label><input id="register-username" autoComplete="username" required minLength={3} maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9_.\-]{2,31}" aria-describedby="register-username-hint" value={username} onChange={event=>setUsername(event.target.value)}/>
       <p id="register-username-hint" className="field-hint">3–32 位英文字母、数字、点、下划线或短横线，以字母或数字开头；不区分大小写。</p>
-      <label htmlFor="register-password">密码</label><input id="register-password" type="password" autoComplete="new-password" required minLength={8} maxLength={256} aria-describedby="register-password-hint" value={password} onChange={event=>setPassword(event.target.value)}/>
-      <p id="register-password-hint" className="field-hint">至少 8 个字符。</p>
-      <label htmlFor="register-confirmation">确认密码</label><input id="register-confirmation" type="password" autoComplete="new-password" required minLength={8} maxLength={256} value={confirmation} onChange={event=>setConfirmation(event.target.value)}/>
+      <label htmlFor="register-password">密码</label><input id="register-password" type="password" autoComplete="new-password" required minLength={8} maxLength={256} aria-describedby="register-password-hint" value={password} onChange={event=>{setPassword(event.target.value);setError('');}}/>
+      <ul id="register-password-hint" className="password-requirements" aria-label="密码要求" aria-live="polite">{checks.map(item=><li key={item.key} className={item.met?'requirement-met':'requirement-pending'}><span aria-hidden="true">{item.met?'✓':'○'}</span> {item.label} <span className="requirement-state">{item.met?'已满足':'未满足'}</span></li>)}</ul>
+      <label htmlFor="register-confirmation">确认密码</label><input id="register-confirmation" type="password" autoComplete="new-password" required minLength={8} maxLength={256} value={confirmation} onChange={event=>{setConfirmation(event.target.value);setError('');}}/>
       {error&&<p className="error-box" role="alert">{error}</p>}
-      <button className="primary-button" disabled={busy}>{busy?'正在注册…':'注册并前往登录'} ↗</button>
+      <button className="primary-button" disabled={busy||!validPassword}>{busy?'正在注册…':'注册并前往登录'} ↗</button>
     </fieldset></form><p>已有账户？<Link className="text-link" to="/login" state={{returnTo:location.state?.returnTo}}>前往登录 ↗</Link></p></section></>;
 }

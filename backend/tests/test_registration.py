@@ -50,6 +50,9 @@ def test_registration_rejects_duplicates_headers_and_privilege_fields(tmp_path):
 @pytest.mark.parametrize('patch',[
     {'username':'ab'}, {'username':'has space'}, {'username':'../camper'},
     {'username':'x'*33}, {'password':'short'}, {'password':' '*8},
+    {'password':'abcdef1!'}, {'password':'ABCDEF1!'}, {'password':'Abcdefg!'},
+    {'password':'Abcdef12'}, {'password':'Abcdef1 '}, {'password':'Abcdef1💡'},
+    {'password':'Abcde1!'}, {'password':'A'+'a'*254+'1!'},
     {'display_name':' '}, {'display_name':'bad\nname'},
 ])
 def test_registration_rejects_invalid_inputs(tmp_path,patch):
@@ -58,3 +61,10 @@ def test_registration_rejects_invalid_inputs(tmp_path,patch):
         assert result.status_code in {400,422}
         with client.app.state.database.transaction(write=False) as connection:
             assert connection.execute('SELECT count(*) FROM users').fetchone()[0]==0
+
+
+@pytest.mark.parametrize('password',['Abcdef1!','A'+'a'*253+'1!'])
+def test_registration_accepts_password_length_boundaries(tmp_path,password):
+    with TestClient(create_app(Settings(_env_file=None,database_path=tmp_path/'registration.sqlite3',seed_demo_accounts=False))) as client:
+        assert client.post('/api/v1/auth/register',headers=HEADERS,json=INPUT|{'password':password}).status_code==201
+        assert client.post('/api/v1/auth/login',headers=HEADERS,json={'username':INPUT['username'],'password':password}).status_code==200
