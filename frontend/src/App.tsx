@@ -7,6 +7,7 @@ import { AccountControl, LoginPage, Protected, SessionProvider, useSession } fro
 import { ProfilePage } from './profile';
 import { RequestDetail, RequestsPage } from './requests';
 import { PlansPage, PlanPage } from './plans';
+import { RegisterPage } from './register';
 
 const DISCLAIMER = '本项目使用模拟数据，仅供演示，请勿据此安排真实出行。';
 type Status = { meta: Meta; ready: Ready };
@@ -61,6 +62,7 @@ function AppContent() {
           <Route path="/request/:requestId" element={<Protected role="CAMPER"><RequestDetail /></Protected>} />
           <Route path="/dev/request-preview" element={<RequestPreview enabled={status?.meta.features.request_preview === true && status.ready.status === 'ready'} />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/profile" element={<Protected role="CAMPER"><ProfilePage demoAvailable={['deterministic_demo','agent'].includes(status?.meta.execution_mode ?? '') && ['2.0.0','2.1.0'].includes(status?.meta.dataset_version ?? '')} datasetVersion={status?.meta.dataset_version} /></Protected>} />
           <Route path="/plans" element={<Protected role="CAMPER"><PlansPage /></Protected>} />
           <Route path="/plans/:planId/finals/:finalId" element={<Protected role="CAMPER"><FinalPage /></Protected>} />

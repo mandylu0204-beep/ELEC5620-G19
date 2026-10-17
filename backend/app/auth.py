@@ -3,6 +3,9 @@ import hashlib
 import hmac
 import secrets
 import time
+import re
+import unicodedata
+from uuid import uuid4
 
 from .contracts.enums import ErrorCode
 from .contracts.errors import ContractError, ContractFailure
@@ -63,9 +66,28 @@ class AuthService:
                 if connection.execute('SELECT 1 FROM users WHERE username=?', (username,)).fetchone() is None:
                     connection.execute('INSERT INTO users VALUES(?,?,?,?,?)', (user_id, username, name, role, hash_password(password)))
 
+    def register(self, username: str, display_name: str, password: str):
+        username = username.strip().lower()
+        display_name = display_name.strip()
+        if not re.fullmatch(r'[a-z0-9][a-z0-9_.-]{2,31}', username):
+            fail(ErrorCode.INPUT_INVALID, '用户名请使用 3–32 位英文字母、数字、点、下划线或短横线，以字母或数字开头。')
+        if not 1 <= len(display_name) <= 80 or any(unicodedata.category(char).startswith('C') for char in display_name):
+            fail(ErrorCode.INPUT_INVALID, '请填写有效昵称，最多 80 个字符。')
+        if not 8 <= len(password) <= 256 or not password.strip():
+            fail(ErrorCode.INPUT_INVALID, '密码请使用 8–256 个字符，不能全部为空格。')
+        encoded = hash_password(password)
+        with self.db.transaction() as connection:
+            if (username in {item[1] for item in DEMO_ACCOUNTS}
+                    or connection.execute('SELECT 1 FROM users WHERE lower(username)=?', (username,)).fetchone()):
+                fail(ErrorCode.VERSION_CONFLICT, '此用户名已被使用，请换一个。')
+            user = User(uuid4().hex, username, display_name, 'CAMPER')
+            connection.execute('INSERT INTO users VALUES(?,?,?,?,?)',
+                (user.id, user.username, user.display_name, user.role, encoded))
+            return user
+
     def login(self, username: str, password: str, previous_token: str | None):
         with self.db.transaction() as connection:
-            row = connection.execute('SELECT * FROM users WHERE username=?', (username,)).fetchone()
+            row = connection.execute('SELECT * FROM users WHERE lower(username)=?', (username.strip().lower(),)).fetchone()
             verified = verify_password(password, row['password_hash'] if row else self.dummy_hash)
             if not row or not verified:
                 fail(ErrorCode.UNAUTHENTICATED, '用户名或密码错误。')

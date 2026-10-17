@@ -12,6 +12,12 @@ class LoginInput(ContractModel):
     password: str = Field(min_length=1, max_length=256)
 
 
+class RegisterInput(ContractModel):
+    username: str = Field(min_length=3, max_length=80)
+    display_name: str = Field(min_length=1, max_length=80)
+    password: str = Field(min_length=8, max_length=256)
+
+
 class ProfileInput(ContractModel):
     profile: ProfileSnapshot
     expected_revision: StrictInt = Field(ge=0)
@@ -41,6 +47,14 @@ def writing_user(request: Request) -> User:
 
 
 router = APIRouter(prefix='/api/v1')
+
+
+@router.post('/auth/register', status_code=201)
+def register(body: RegisterInput, request: Request, response: Response):
+    write_header(request)
+    user = request.app.state.auth.register(body.username, body.display_name, body.password)
+    response.headers['Cache-Control'] = 'no-store'
+    return {'user': user.public()}
 
 
 @router.post('/auth/login')
