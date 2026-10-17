@@ -2,10 +2,19 @@
 
 Date: 2026-10-16, Australia/Sydney. Branch: `feature/llm-safety-agent`.
 Initial base: main `8a40deb`, including A28/A29. Reply to A's A30 draft.
-Current shared base: complete main `4c0662c` (A31/A32, deletion and page cleanup),
+R-S01 shared base: complete main `4c0662c` (A31/A32, deletion and page cleanup),
 merged into this branch as `e948f59`; R-S02 component base `ba7d9e5` retained.
 
-**Status: A independently accepted R-S02; B has addressed R-S01 on the complete A35 baseline. Final A30 freeze and production wiring still require A/B agreement.**
+**2026-10-17 current status: A independently accepted R-S01/R-S02 and froze the
+A30 component contract. B's Hybrid/Orchestrator integration now builds on the
+complete A36–A38 branch `338ea23`; see [the runtime handoff](safety_runtime_integration.md).
+Defaults remain rules; real campus/browser safety acceptance is still pending.**
+
+The component-delivery statements below retain their original scope. Statements
+that storage/flags/factory/Hybrid wiring were pending describe that earlier
+component release, not the current A38+B runtime implementation. A36 has now
+allocated migration 10; B adds no migration or replacement production database.
+
 See [the R-S02 reply](a30_rs02_b_reply.md) and [the R-S01 reply](a30_rs01_b_reply.md).
 New registrations use agent/tool/
 validator v2 and the v2 schema bundle. The original v1 bundle and pure replay
