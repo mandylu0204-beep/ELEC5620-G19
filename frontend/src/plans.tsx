@@ -3,7 +3,7 @@ import type { SafetyAudit } from './safety_advisory';
 import { LogisticsIssues, type LogisticsIssue } from './logistics_issues';
 import { logisticsQuestions, needsMealChoice } from './logistics_guidance';
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { FinalisePanel } from './finalise';
 import { RetryPlanning, ChangePlanning } from './planning';
 import { NextSteps } from './next_steps';
@@ -91,9 +91,9 @@ export function PlansPage(){
   </>;
 }
 
-export function PlanPage(){const {planId}=useParams();const [search,setSearch]=useSearchParams();const runId=search.get('run_id');const {data,error,refresh}=useSavedRead<PlanDetail>('/plans/'+planId+(runId?'?run_id='+encodeURIComponent(runId):''),runActive);
+export function PlanPage(){const location=useLocation();const {planId}=useParams();const [search,setSearch]=useSearchParams();const runId=search.get('run_id');const {data,error,refresh}=useSavedRead<PlanDetail>('/plans/'+planId+(runId?'?run_id='+encodeURIComponent(runId):''),runActive);
   if(!data)return <><div className="page-heading"><h1>读取规划记录</h1></div>{error&&<p className="error-box" role="alert">{error}</p>}<button className="secondary-button" onClick={refresh}>重新读取</button><Link className="text-link" to="/plans">返回方案列表 ↗</Link></>;
-  return <PlanView data={data} error={error} refresh={refresh} current={()=>setSearch({})}/>;
+  return <>{location.state?.profileSaved===true&&<p className="success-box" role="status">露营资料已保存。请点击“使用最新资料重新规划”，核对安排后更新方案。</p>}<PlanView data={data} error={error} refresh={refresh} current={()=>setSearch({})}/></>;
 }
 const CAMPSITE_NAMES: Record<string, string> = {
   'demo-pine-camp':'Demo Pine Camp', 'demo-river-flat':'Demo River Flat', 'demo-ridge-lookout':'Demo Ridge Lookout',

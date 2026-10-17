@@ -3,7 +3,7 @@ import type { LogisticsIssue } from './logistics_issues';
 export type DraftEquipment={item_key:string;label:string;quantity:string;unit:string;capacity:string;confirmed:boolean};
 type Catalog=readonly (readonly string[])[];
 export type ProfileDraft={equipment:DraftEquipment[];transport:string;vehicles:string;km:string;
-  children:string;childrenCount:string;experience:string};
+  children:string;childrenCount:string;experience:string;group?:string};
 
 function equipmentKey(field:string){return /^equipment\.([a-z_]+)(?:\.(quantity|capacity))?$/.exec(field)?.[1]??null;}
 
@@ -37,8 +37,14 @@ export function profileGuidance(draft:ProfileDraft,issues:LogisticsIssue[],focus
         const id=(part:string)=>`gear-${part}-${index}`;
         const vehicle=key==='vehicle';
         if(!item.quantity.trim())hints[id('quantity')]=vehicle?'填写本次实际可用的车辆数；还没有车辆可填 0。':'填写本次实际可用的数量；没有此装备可填 0，系统会保留缺口。';
+        else if(key==='tent'&&Number(draft.group??required?.capacity_persons)>0){
+          const need=Number(draft.group??required?.capacity_persons);
+          const capacity=rows.filter(({item})=>item.confirmed&&item.unit==='item'&&positive(item.quantity)&&positive(item.capacity))
+            .reduce((sum,{item})=>sum+Number(item.quantity)*Number(item.capacity),0);
+          if(capacity<need)hints[id('quantity')]=`已核实帐篷共可住 ${capacity} 人，本次需 ${need} 人。请核对数量与每顶容量；尚未落实的帐篷不要记为已拥有。`;
+        }
         else if(related?.code==='EQUIPMENT_SHORTAGE'&&Number(required?.quantity)>total)
-          hints[id('quantity')]=`此行程需要 ${required?.quantity}，目前已核实 ${total}。请按实际安排补充，尚未落实的物品不要记为已拥有。`;
+          hints[id('quantity')]=`上次检查记录的需求为 ${required?.quantity}，当前已核实 ${total}。请按实际拥有情况填写；保存后重新规划，会按最新资料重新计算所需数量。`;
         const expected=vehicle?'vehicle':key==='tent'?'item':null;
         if(expected&&item.unit!==expected)hints[id('unit')]=vehicle?'车辆请使用“辆”，不要使用“件”。':'帐篷请使用“件”，数量按帐篷件数填写。';
         const absent=item.quantity.trim()==='0';

@@ -89,3 +89,13 @@ test('header navigation keeps correction context, supports stove alternative and
   assert.deepEqual(logisticsDestinations([issue('evidence.weather','WEATHER_DATA',{target:'SAFETY',action_url:null})]),{profile:null,request:null,safety:true});
   assert.equal(logisticsDestinations([issue('equipment.tent','EQUIPMENT_DETAILS',{action_url:'https://example.com'})]).profile,null);
 });
+
+test('tent correction uses current confirmed sleeping capacity instead of stale required tent count',()=>{
+  const previous=issue('equipment.tent.quantity','EQUIPMENT_SHORTAGE',{required:{quantity:'2',capacity_persons:2}});
+  const small={...tent,capacity:'1'};
+  assert.match(profileGuidance(draft([small]),[previous])['gear-quantity-0'],/共可住 1 人，本次需 2 人/);
+  assert.deepEqual(profileGuidance(draft([{...small,capacity:'2'}]),[previous]),{});
+  assert.ok(profileGuidance(draft([{...small,capacity:'2',confirmed:false}]),[previous])['gear-confirmed-0']);
+  assert.match(profileGuidance(draft([{...small,capacity:'2'}],{group:'3'}),[previous])['gear-quantity-0'],/本次需 3 人/);
+  assert.deepEqual(profileGuidance(draft([small,{...small}]),[previous]),{});
+});
