@@ -1,4 +1,4 @@
-"""Local-only registration/provider checks; no production orchestration claim."""
+"""Real Hybrid registration/provider checks; all campus traffic is mocked."""
 from types import SimpleNamespace
 
 import pytest
@@ -24,27 +24,13 @@ def settings(tmp_path,**changes):
         database_path=tmp_path/'runtime.sqlite3',planning_enabled=True,**changes)
 
 
-def enable_registration_test_double(monkeypatch):
-    # Explicitly tests A registration, NOT B's future Hybrid/Orchestrator wiring.
-    class RegistrationOnlyHybrid(HybridPlanningAgent):
-        safety_audit_contract='1.0'
-        def __init__(self,*args,safety_agent=None,**kwargs):
-            self.safety_agent=safety_agent
-            super().__init__(*args,**kwargs)
-        async def assess_safety_with_trace(self,*args):
-            raise AssertionError('Registration tests must not perform inference')
-    import app.agents.hybrid_planning_agent as module
-    monkeypatch.setattr(module,'HybridPlanningAgent',RegistrationOnlyHybrid)
-    monkeypatch.setattr(Orchestrator,'safety_audit_contract','1.0',raising=False)
-
-
 @pytest.mark.parametrize('logistics_mode,safety_mode',[
     ('rules','rules'),('model','rules'),('rules','model'),('model','model')])
 def test_factory_collects_all_seeds_before_one_final_context(tmp_path,monkeypatch,logistics_mode,safety_mode):
     calls,_=mock_campus(monkeypatch)
-    enable_registration_test_double(monkeypatch)
     config=settings(tmp_path,logistics_execution=logistics_mode,safety_execution=safety_mode)
     binding=build_v2_hybrid_binding(config,inspect_dataset(config))
+    assert type(binding.agent) is HybridPlanningAgent
     context=binding.context.model_dump(mode='json')
     for role,mode in (('logistics',logistics_mode),('safety',safety_mode)):
         choices=binding.context.selection_config
@@ -62,6 +48,9 @@ def test_factory_collects_all_seeds_before_one_final_context(tmp_path,monkeypatc
 
 def test_unwired_production_safety_flag_fails_closed_without_network(tmp_path,monkeypatch):
     calls,_=mock_campus(monkeypatch)
+    # Explicitly remove a required production capability rather than depending
+    # on the historical absence of B's now-implemented orchestration.
+    monkeypatch.setattr(Orchestrator,'safety_audit_contract',None)
     config=settings(tmp_path,safety_execution='model')
     app=create_app(config)
     with TestClient(app) as client:
@@ -120,7 +109,6 @@ def test_safety_flag_default_and_invalid_values():
 def test_safety_registration_preserves_revision_feedback(tmp_path,monkeypatch):
     from dataclasses import replace
     calls,_=mock_campus(monkeypatch)
-    enable_registration_test_double(monkeypatch)
     config=settings(tmp_path,logistics_execution='model',safety_execution='model')
     descriptor=inspect_dataset(config)
     context=descriptor.context.model_copy(update={'selection_config':{
@@ -135,7 +123,6 @@ def test_safety_registration_preserves_revision_feedback(tmp_path,monkeypatch):
 
 def test_safety_model_rejects_v2_without_trip_selector(tmp_path,monkeypatch):
     calls,_=mock_campus(monkeypatch)
-    enable_registration_test_double(monkeypatch)
     config=Settings(_env_file=None,execution_mode='agent',safety_execution='model',
         dataset_path=ROOT/'data/synthetic_demo_v2',database_path=tmp_path/'unsupported.sqlite3')
     with pytest.raises(ContractFailure):build_v2_hybrid_binding(config,inspect_dataset(config))
