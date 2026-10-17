@@ -1,5 +1,6 @@
+import { failureGuidance } from './failure_guidance';
 import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { ApiFailure } from './api';
 import type { PlanDetail } from './plans';
 import { privateApi, useSession } from './session';
@@ -56,10 +57,11 @@ export function RetryPlanning({ data, refresh }: { data: PlanDetail; refresh: ()
   const [error, setError] = useState('');
   const command = useRef<{ runId: string; revision: number; key: string } | null>(null);
   const run = data.run;
-  if (!run || run.status !== 'FAILED') return null;
-  if (run.error?.code === 'INPUT_INVALID') return <p className="muted">当前输入或修改意见需要调整。重试不会修改已登记的要求，请使用“调整需求并重新确认”入口。</p>;
+  if (!run || run.status !== 'FAILED' || !run.is_active) return null;
+  const guidance=failureGuidance(data)!;
+  if (['INPUT_INVALID','REQUEST_NOT_CONFIRMED'].includes(run.error?.code??'')) return <><p>本次要求需要重新核对，直接继续不会更新已确认的资料。</p><Link className="text-link" to={'/request?copy_from='+encodeURIComponent(data.plan.request_id)}>调整需求并重新确认 ↗</Link></>;
   async function retry() {
-    if (!run || !session || busy || !data.retry_available) return;
+    if (!run || !session || busy || !guidance.canRetry) return;
     if (command.current?.runId !== run.run_id || command.current.revision !== run.revision) {
       command.current = { runId: run.run_id, revision: run.revision, key: crypto.randomUUID() };
     }
@@ -77,7 +79,7 @@ export function RetryPlanning({ data, refresh }: { data: PlanDetail; refresh: ()
     } finally { setBusy(false); }
   }
   return <div className="planning-retry">
-    {data.retry_available ? <><p>重试会保留已保存的版本与评估，从中断位置继续；不会解除安全阻止条件。</p><button className="primary-button" disabled={busy} onClick={retry}>{busy ? '正在提交重试…' : '重试规划'}</button></> : <p className="muted">{data.retry_unavailable_reason ?? '当前运行不能重试。'}</p>}
+    {guidance.canRetry ? <><p>{guidance.retryDescription}</p><button className="primary-button" disabled={busy} onClick={retry}>{busy ? '正在提交…' : guidance.retryLabel}</button></> : <><p className="muted">这次执行暂不能直接继续。已有记录会保留，请联系项目负责人核对原因。</p>{data.retry_unavailable_reason&&<details><summary>查看无法继续的原因</summary><p>{data.retry_unavailable_reason}</p></details>}</>}
     {error && <p className="error-box" role="alert">{error}</p>}
   </div>;
 }

@@ -1,3 +1,4 @@
+import { failureGuidance } from './failure_guidance';
 import { SafetyAdvisoryPanel } from './safety_advisory_panel';
 import type { SafetyAudit } from './safety_advisory';
 import { LogisticsIssues, type LogisticsIssue } from './logistics_issues';
@@ -122,6 +123,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
   const logisticsAudit = data.model_assessment_audits?.LOGISTICS;
   const noMatch = recommendation?.search_outcome==='NO_MATCH';
   const {version,run,confirmed_context:confirmed} = data;
+  const failure=failureGuidance(data);
   const safetyBinding = version&&safetyAssessment&&logisticsAssessment
     &&safetyAssessment.depends_on_assessment_id===logisticsAssessment.assessment_id
     &&['plan_id','plan_version_id','run_id','input_fingerprint'].every(key=>
@@ -144,6 +146,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
   const hiddenCodes = new Set(['VERSION_STATE','ASSESSMENT_BLOCKED','RUN_NOT_SUCCEEDED','REVISION_REQUIRED','REVIEW_REQUIRED',
     ...(qualityIssues.length?['EVIDENCE_COVERAGE','EVIDENCE_UNAVAILABLE','ROAD_UNAVAILABLE']:[]),
     ...(rawWarnings.some(item=>item.code==='ROAD_CLOSED')?['ROAD_UNAVAILABLE']:[])]);
+  if(run?.status==='FAILED')['ASSESSMENTS_MISSING','ITINERARY_MISSING'].forEach(code=>hiddenCodes.add(code));
   const weatherFields:Record<string,string>={'gear_rule_input.forecast_rain_mm':'降雨','gear_rule_input.temperature_max_c':'最高气温',
     'gear_rule_input.temperature_min_c':'最低气温','gear_rule_input.wind_kph':'风速',
     'evidence.weather.forecast_rain_mm':'降雨','evidence.weather.temperature_max_c':'最高气温',
@@ -189,10 +192,19 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       </dl>
     </header>
     {error&&<p className="error-box" role="alert">读取更新失败：{error}</p>}
-    {!review&&!snapshot&&run?.is_active&&!['PENDING','RUNNING'].includes(run.status)&&requirements&&<ReplanFromProfile key={data.plan.plan_id} requestId={data.plan.request_id} requirements={requirements}/>}
+    {!review&&!snapshot&&run?.is_active&&!['PENDING','RUNNING','FAILED'].includes(run.status)&&requirements&&<ReplanFromProfile key={data.plan.plan_id} requestId={data.plan.request_id} requirements={requirements}/>}
     {!review&&!snapshot&&<CheckFeedback data={data}/>}
     {!snapshot&&run&&!run.is_active&&<div className="mode-notice"><span>正在查看历史方案，评估属于当时的证据。</span>{current&&<button className="secondary-button" onClick={current}>查看当前方案</button>}</div>}
-    {run?.error&&<div className="error-box" role="alert"><strong>本次执行未完成</strong><p>{run.error.message}</p>{!review&&!snapshot&&<RetryPlanning data={data} refresh={refresh}/>}</div>}
+    {failure&&<section className="panel error-box" role="alert" aria-label="本次执行的恢复说明"><h2>{failure.title}</h2>
+      {failure.saved.length>0?<p>已保存：{failure.saved.join('、')}。</p>:<p>本次尚未保存行程。</p>}
+      <p>{failure.completionNote}</p>
+      {run?.error&&<details><summary>查看失败原因</summary><p>{run.error.message}</p></details>}
+      {!review&&!snapshot&&<RetryPlanning data={data} refresh={refresh}/>}
+    </section>}
+    {!review&&!snapshot&&run?.is_active&&run.status==='FAILED'&&requirements&&<details className="panel"><summary>资料或出行要求有变化？重新规划</summary>
+      <p>继续未完成的步骤沿用本次已确认的资料。若已修改露营资料，请保存后使用下方入口核对并生成新方案；原行程会保留。</p>
+      <ReplanFromProfile key={data.plan.plan_id} requestId={data.plan.request_id} requirements={requirements}/>
+    </details>}
     {!['PENDING','RUNNING'].includes(run?.status??'')&&(warnings.length>0 || overBudget || hasSafetyIssue)&&<section className="plan-attention" role="alert" aria-label="需要处理的问题">
       <div><span className="attention-mark" aria-hidden="true">!</span><div><h2>{data.current_inputs_error?'此前检查发现的问题':'确认方案前需要处理'}</h2><ul>
         {overBudget&&<li>行程估算超出预算 {aud(logistics?.budget_difference_cents)}。</li>}

@@ -5,7 +5,7 @@ import type { PlanDetail } from './plans';
 // Navigation guidance only; all operations remain controlled by server flags.
 export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}) {
   const run=data.run;
-  if(!run?.is_active||['PENDING','RUNNING'].includes(run.status))return null;
+  if(!run?.is_active||['PENDING','RUNNING','FAILED'].includes(run.status))return null;
   const reasons=new Set(data.eligibility?.blocking_reasons.map(item=>item.code));
   const review=data.reviews.at(-1);
   const safety=data.assessments.find(item=>item.kind==='SAFETY')?.result;
@@ -19,14 +19,6 @@ export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}
     description=data.current_inputs_state==='CHANGED'
       ? '用于检查方案的资料或服务设置已更新，此前的费用和安全结果仅供参考。可以保留行程重新检查；如修改日期、人数或预算，请重新确认需求。'
       : '当前无法核对已有检查结果，暂不能确认保存。你的行程和已有结果仍然保留，请在服务恢复后再检查。';
-  }else if(run.status==='FAILED'){
-    if(run.error?.code==='REQUEST_NOT_CONFIRMED'){
-      title='请重新确认需求';description='修改涉及预算、日期或必须条件，请核对新需求并确认后再规划。';
-    }else if(run.error?.code==='INPUT_INVALID'){
-      title='请调整本次要求';description='本次输入或修改意见暂不支持，请查看原因并调整需求后重新确认。';
-    }else{
-      title='规划暂未完成';description=data.retry_available?'原方案和已完成的检查已保留，可从中断位置继续规划。':'当前暂时无法继续规划，请联系项目负责人检查服务。';
-    }
   }else if(data.recommendations?.result.search_outcome==='NO_MATCH'){
     title='可以参考最接近的营地';description='下方会列出最接近的营地及未满足的条件。参考差异调整预算、日期或必须条件，再重新确认需求。';
   }else if(data.version?.status==='FINALISED')return null;
