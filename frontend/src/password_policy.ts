@@ -1,7 +1,7 @@
 export function passwordChecks(password:string){
   const length=Array.from(password).length;
   return [
-    {key:'length',label:'8–256 个字符',met:length>=8&&length<=256},
+    {key:'length',label:'至少 8 位',met:length>=8&&length<=256},
     {key:'upper',label:'至少一个大写英文字母（A–Z）',met:/[A-Z]/.test(password)},
     {key:'lower',label:'至少一个小写英文字母（a–z）',met:/[a-z]/.test(password)},
     {key:'digit',label:'至少一个数字（0–9）',met:/[0-9]/.test(password)},
