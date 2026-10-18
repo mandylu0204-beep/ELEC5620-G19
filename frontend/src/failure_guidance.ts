@@ -1,5 +1,5 @@
 type Context={plan_id:string;plan_version_id:string;run_id:string;input_fingerprint:string};
-type FailedPlan={run:{run_id:string;status:string;stage:string;operation:string;is_active:boolean}|null;
+type FailedPlan={run:{run_id:string;status:string;stage:string;operation:string;is_active:boolean;error?:{code:string}|null}|null;
   version:{version_context:Context}|null;recommendations:{result?:{search_outcome?:string}}|null;
   assessments:{kind:string;version_context:Context}[];retry_available?:boolean};
 
@@ -22,7 +22,18 @@ export function failureGuidance(data:FailedPlan){
   const canRetry=run.is_active&&data.retry_available===true;
   const label=run.stage==='ASSESSING_SAFETY'&&!safety?'继续安全检查'
     :run.stage==='ASSESSING_LOGISTICS'&&!logistics?'继续装备与费用检查':'继续未完成的步骤';
+  const code=run.error?.code;
+  const explanation=code==='INPUT_INVALID'||code==='REQUEST_NOT_CONFIRMED'
+    ?'本次需求需要核对并重新确认，请按提示补充资料。'
+    :code==='PERSISTENCE_FAILURE'
+    ?'本次结果未能完整保存。无需因此重新填写露营请求。'
+    :code==='AGENT_FAILURE'||code==='ADAPTER_FAILURE'||code==='CONTRACT_INVALID'
+    ?'本次服务处理未能完成。无需仅为此重新填写露营请求。'
+    :code==='STALE_CONTEXT'
+    ?'本次执行所用资料已变化，请核对最新资料后再继续。'
+    :'本次执行未完成，已有内容会继续保留。';
   return {title:noMatch?'搜索结果尚未确认完成':titles[run.stage]??'本次执行尚未完成',saved,canRetry,retryLabel:label,
+    explanation,
     retryDescription:run.operation==='REASSESS'
       ?'继续本次检查会保留原行程，复用已保存的检查结果；尚未保存的检查可能重新执行。'
       :'继续本次执行会复用已保存的行程与检查结果；尚未保存的步骤可能重新执行。',

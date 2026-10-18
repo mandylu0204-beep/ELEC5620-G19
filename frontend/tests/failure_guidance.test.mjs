@@ -48,3 +48,25 @@ test('no-match completion failure does not imply that downstream safety checks s
   data.run.is_active=false;
   assert.match(failureGuidance(data).completionNote,/历史执行/);
 });
+
+test('service failures do not send users back to refill requests or guess a provider cause',()=>{
+  for(const code of ['AGENT_FAILURE','ADAPTER_FAILURE','CONTRACT_INVALID','PERSISTENCE_FAILURE']){
+    const data=fixture();data.run.error={code,message:'Unexpected workflow failure; retry resumes persisted steps.'};
+    const value=failureGuidance(data);
+    assert.match(value.explanation,/无需.*重新填写/);
+    assert.doesNotMatch(value.explanation,/VPN|额度|超时|502|Unexpected/);
+    assert.equal(value.retryLabel,'继续安全检查');
+    data.retry_available=false;
+    assert.equal(failureGuidance(data).canRetry,false);
+  }
+});
+
+test('input and confirmation failures ask for correction, while unknown errors remain neutral',()=>{
+  for(const code of ['INPUT_INVALID','REQUEST_NOT_CONFIRMED']){
+    const data=fixture();data.run.error={code};
+    assert.match(failureGuidance(data).explanation,/核对并重新确认/);
+    assert.doesNotMatch(failureGuidance(data).explanation,/无需/);
+  }
+  const data=fixture();data.run.error={code:'FUTURE_ERROR'};
+  assert.equal(failureGuidance(data).explanation,'本次执行未完成，已有内容会继续保留。');
+});

@@ -196,6 +196,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
     {!review&&!snapshot&&<CheckFeedback data={data}/>}
     {!snapshot&&run&&!run.is_active&&<div className="mode-notice"><span>正在查看历史方案，评估属于当时的证据。</span>{current&&<button className="secondary-button" onClick={current}>查看当前方案</button>}</div>}
     {failure&&<section className="panel error-box" role="alert" aria-label="本次执行的恢复说明"><h2>{failure.title}</h2>
+      <p>{failure.explanation}</p>
       {failure.saved.length>0?<p>已保存：{failure.saved.join('、')}。</p>:<p>本次尚未保存行程。</p>}
       <p>{failure.completionNote}</p>
       {run?.error&&<details><summary>查看失败原因</summary><p>{run.error.message}</p></details>}
