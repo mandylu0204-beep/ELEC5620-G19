@@ -1,4 +1,4 @@
-"""AgentPort: real campus planning and opt-in logistics with guarded kernels.
+"""AgentPort: campus planning and opt-in assessment roles with guarded kernels.
 
 No application registration, private trace cache, audit sink or new database.
 """
@@ -17,6 +17,7 @@ from ..llm.coordinator import PlanningCoordinator, PlanningOutcome, canonical, d
 from ..llm.client import strict_json
 from ..llm.logistics_agent import LogisticsOutcome
 from ..llm.logistics_validation import validate_logistics_payload
+from ..llm.safety_agent import SafetyOutcome
 from ..workflow.configuration import WorkflowConfiguration, failure
 from .rules import interpretation, logistics, planning, safety
 from .rules.common import RULES_VERSION, ensure_execution_mode, input_failure
@@ -53,7 +54,7 @@ def build_hybrid_configuration(dataset, coordinator, *, safety_case_ids=(), scen
 
 
 class HybridPlanningAgent:
-    """Complete AgentPort: model planning and opt-in registered model logistics.
+    """Complete AgentPort: model planning and opt-in registered assessment roles.
 
     agent denotes the mixed runtime, not a claim that every step uses an LLM.
     Only PLAN/REVISE generate a model itinerary; REASSESS does not call it.
@@ -61,14 +62,16 @@ class HybridPlanningAgent:
     supported_operations = frozenset({'PLAN', 'REVISE', 'REASSESS'})
     rules_version = HYBRID_VERSION
     logistics_audit_contract = '1.0'
+    safety_audit_contract = '1.0'
 
     def __init__(self, dataset, coordinator: PlanningCoordinator, *, workflow_configuration=None,
-                 heartbeat_interval=20, logistics_agent=None):
+                 heartbeat_interval=20, logistics_agent=None, safety_agent=None):
         if coordinator.dataset is not dataset:
             raise failure(ErrorCode.STALE_CONTEXT, 'Coordinator must consume the same loaded dataset object.')
         self.dataset, self.coordinator = dataset, coordinator
         self.workflow_configuration = workflow_configuration or build_hybrid_configuration(dataset, coordinator)
         self.logistics_agent = logistics_agent
+        self.safety_agent = safety_agent
         self.heartbeat_interval = heartbeat_interval
         self._check_configuration()
 
@@ -99,6 +102,27 @@ class HybridPlanningAgent:
                 raise failure(ErrorCode.STALE_CONTEXT, 'Hybrid logistics component is missing or differs from registered identity.') from exc
         elif self.logistics_agent is not None or any(key.startswith('a_logistics_') for key in choices):
             raise failure(ErrorCode.STALE_CONTEXT, 'Unregistered logistics component or conflicting model markers.')
+        if choices.get('a_safety_mode') == 'model':
+            try:
+                role = self.safety_agent
+                seed = strict_json(choices['a_safety_identity_seed'])
+                identity = role.identity
+                if (choices.get('a_safety_audit_required') != '1'
+                        or choices.get('a_safety_audit_contract') != self.safety_audit_contract
+                        or context.dataset_version != '2.1.0'
+                        or role.dataset is not self.dataset or role.configuration.context != context
+                        or role.client.settings.max_turns < 3
+                        or not all(callable(getattr(role, name, None)) for name in
+                            ('assess_safety_with_trace', 'validate_safety_artifacts'))
+                        or identity['workflow_context'] != context.model_dump(mode='json')
+                        or identity['configuration_fingerprint'] != digest(canonical({
+                            **seed, 'workflow_context': context.model_dump(mode='json')}))
+                        or seed != role.identity_seed):
+                    raise ValueError('Safety identity differs')
+            except (ValueError, TypeError, KeyError, AttributeError) as exc:
+                raise failure(ErrorCode.STALE_CONTEXT, 'Hybrid safety component is missing or differs from registered identity.') from exc
+        elif self.safety_agent is not None or any(key.startswith('a_safety_') for key in choices):
+            raise failure(ErrorCode.STALE_CONTEXT, 'Unregistered safety component or conflicting model markers.')
 
     def _input(self, model, value):
         self._check_configuration()
@@ -169,8 +193,29 @@ class HybridPlanningAgent:
             identity=self.logistics_agent.identity)
 
     async def assess_safety(self, input: SafetyInput) -> SafetyResult:
+        if self.safety_agent is not None:
+            return (await self.assess_safety_with_trace(input)).assessment
         return self._rule_result(safety.assess(self.dataset, self._input(SafetyInput, input),
             expected_mode=ExecutionMode.AGENT), 'safety assessment')
+
+    async def assess_safety_with_trace(self, input: SafetyInput) -> SafetyOutcome:
+        validated = self._input(SafetyInput, input)
+        if self.safety_agent is None:
+            raise failure(ErrorCode.CONTRACT_INVALID, 'Model safety was not registered; no rules fallback.')
+        outcome = await self.safety_agent.assess_safety_with_trace(validated)
+        self._check_configuration()
+        self.validate_safety_artifacts(validated, outcome.assessment,
+            outcome.plan.model_dump(mode='json'), outcome.trace.model_dump(mode='json'))
+        # Do not apply _rule_result: the formal result must equal the complete
+        # authoritative baseline byte-for-byte; model advice/trace stay separate.
+        return outcome
+
+    def validate_safety_artifacts(self, input, result, plan, trace):
+        """Pure replay over the registered pinned facts; no model/persistence IO."""
+        validated = self._input(SafetyInput, input)
+        if self.safety_agent is None:
+            raise failure(ErrorCode.CONTRACT_INVALID, 'Model safety was not registered.')
+        return self.safety_agent.validate_safety_artifacts(validated, result, plan, trace)
 
     async def orchestrate(self, input: OrchestrateInput, persistence: PersistencePort) -> RunResult:
         from ..workflow.orchestration import Orchestrator

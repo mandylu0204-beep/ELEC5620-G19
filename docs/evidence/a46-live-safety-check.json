@@ -1,0 +1,132 @@
+{
+  "source_commit": "05568f0672c62bd2ad26d861f1ad1d3092d4be91",
+  "date": "2026-10-17",
+  "status": "PARTIAL_FAILED",
+  "live_http_requests": [
+    {
+      "role": "PLANNING",
+      "status": 200,
+      "seconds": 2.14
+    },
+    {
+      "role": "PLANNING",
+      "status": 200,
+      "seconds": 8.062
+    },
+    {
+      "role": "LOGISTICS",
+      "status": 200,
+      "seconds": 0.891
+    },
+    {
+      "role": "LOGISTICS",
+      "status": 200,
+      "seconds": 13.766
+    },
+    {
+      "role": "LOGISTICS",
+      "status": 200,
+      "seconds": 4.469
+    },
+    {
+      "role": "SAFETY",
+      "status": 200,
+      "seconds": 0.906
+    },
+    {
+      "role": "SAFETY",
+      "status": 502,
+      "failed": true,
+      "seconds": 30.266
+    }
+  ],
+  "application": {
+    "operation": "plan",
+    "plan_id": "019aeb55b9bd48018505e479a609af06",
+    "run_id": "fa65fa72bf834c58a94643cf615a1c3e",
+    "status": "FAILED",
+    "stage": "ASSESSING_SAFETY",
+    "error": {
+      "allowed_actions": [
+        "RETRY"
+      ],
+      "code": "AGENT_FAILURE",
+      "context": {
+        "component": "campus_model",
+        "elapsed_ms": "31484",
+        "request_message_bytes": "15364",
+        "role": "SAFETY",
+        "safety_turn": "2"
+      },
+      "field_errors": [],
+      "message": "校园模型网络请求失败；请检查校园网络/VPN 后重试。",
+      "recoverable": true
+    },
+    "version_id": "d74f75048d334e2b9c90bc63a690e370",
+    "version_number": 1,
+    "eligible": false,
+    "outcomes": {
+      "LOGISTICS": "PASSED"
+    },
+    "audit_roles": [
+      "LOGISTICS"
+    ],
+    "audit_ids": {
+      "LOGISTICS": "2aa5a128872c4d9682edc346379f5f37"
+    },
+    "safety_dependency_matches": null,
+    "campus_http_requests": 7,
+    "safety_dependency_check_status": "NOT_APPLICABLE_NO_SAVED_SAFETY_ASSESSMENT"
+  },
+  "failure_checks": {
+    "restart_read": "passed",
+    "run_status": "FAILED",
+    "finalisation_http": 422,
+    "safety_audit_absent": true,
+    "sqlite_integrity": "ok",
+    "foreign_key_violations": 0,
+    "counts": {
+      "versions": 1,
+      "assessments": 1,
+      "model_planning_traces": 1,
+      "model_logistics_audits": 1,
+      "model_safety_audits": 0
+    }
+  },
+  "process_only_model_settings": {
+    "max_completion_tokens": 4096,
+    "reasoning_effort": "low",
+    "timeout_seconds": 45,
+    "max_attempts": 2,
+    "max_turns": 4
+  },
+  "guard": {
+    "max_http_requests": 24,
+    "stop_after_first_http_or_network_failure": true,
+    "blocked_retry_not_sent_to_campus": true
+  },
+  "limits": [
+    "No complete live SAFETY audit or advisory accepted.",
+    "No live REVISE or REASSESS executed.",
+    "No token usage or monetary charge measured.",
+    "The guard deliberately suppressed the built-in retry after HTTP 502; the final network error wording therefore includes the guard effect.",
+    "Actual HTTP body length and response-header correlation IDs were not captured and cannot be supplied retrospectively."
+  ],
+  "failure_diagnostics": {
+    "role": "SAFETY",
+    "model_turn": 2,
+    "actual_http_request_number": 7,
+    "http_status": 502,
+    "request_message_content_utf8_bytes": 15364,
+    "request_message_bytes_definition": "Sum of UTF-8 byte lengths of messages[*].content, recorded by SafetyAgent. Excludes JSON framing/escaping, message roles, model parameters and HTTP headers. Not the actual HTTP body length.",
+    "actual_http_body_bytes": null,
+    "actual_http_body_bytes_capture_status": "NOT_CAPTURED",
+    "response_header_correlation_ids": null,
+    "response_header_capture_status": "NOT_CAPTURED",
+    "response_header_note": "The original observer recorded only role, status and time to response headers. Correlation IDs cannot be recovered from these records. This does not mean the response had no correlation header.",
+    "transport_time_to_response_headers_seconds": 30.266,
+    "component_elapsed_ms_including_guarded_retry": 31484,
+    "component_elapsed_note": "Elapsed since the safety assessment started; includes the first successful tool-read turn and the blocked automatic retry. Not solely second-request duration.",
+    "guard_effect": "First 502 was real. Subsequent automatic retry was rejected locally before transmission; final application network-error wording includes this guard effect."
+  }
+}
