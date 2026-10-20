@@ -50,6 +50,12 @@ async def execute(args):
         'itinerary': outcome.itinerary.model_dump(mode='json'), 'trace': outcome.trace.model_dump(mode='json')}
 
 
+def _print_json(value, *, indent=None):
+    # Escapes preserve decoded Unicode while remaining safe on restrictive
+    # Windows stdout/pipes. Do not change the caller's stream encoding.
+    print(json.dumps(value, ensure_ascii=True, indent=indent))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     group = parser.add_mutually_exclusive_group(required=True)
@@ -60,13 +66,13 @@ def main():
     try:
         result = asyncio.run(execute(args))
     except ContractFailure as exc:
-        print(json.dumps({'status': 'FAILED', 'error': exc.error.model_dump(mode='json')}, ensure_ascii=False))
+        _print_json({'status': 'FAILED', 'error': exc.error.model_dump(mode='json')})
         return 1
     except (ValueError, OSError, KeyError, ValidationError):
         # Do not echo local config values or malformed response/input payloads.
-        print(json.dumps({'status': 'FAILED', 'message': '本地模型配置或演示输入无效。'}, ensure_ascii=False))
+        _print_json({'status': 'FAILED', 'message': '本地模型配置或演示输入无效。'})
         return 1
-    print(json.dumps(result, ensure_ascii=False, indent=2))
+    _print_json(result, indent=2)
     return 0
 
 
