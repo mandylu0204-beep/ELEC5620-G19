@@ -108,8 +108,8 @@ def _tent_count(profile, group):
 def _active(trigger, context):
     group, profile, campsites, requirements, mode = context[:5]
     dataset, policy_values = context[5:]
-    if dataset.v2_policy is not None:
-        row = dataset.v2_policy['gear'][trigger.gear_rule_id]
+    if dataset.has_v2_policy:
+        row = dataset.get_gear_policy(trigger.gear_rule_id)
         active, missing = _eval_expression(row['trigger_json'], policy_values)
         policy_values['_missing_inputs'].update(missing)
         # Unknown conditions are conservatively included; the resulting unknown
@@ -151,8 +151,8 @@ def _active(trigger, context):
 def _required(rule, context):
     group, profile, campsites, requirements, mode = context[:5]
     dataset, policy_values = context[5:]
-    if dataset.v2_policy is not None:
-        row = dataset.v2_policy['gear'][rule.gear_rule_id]
+    if dataset.has_v2_policy:
+        row = dataset.get_gear_policy(rule.gear_rule_id)
         active, trigger_missing = _eval_expression(row['trigger_json'], policy_values)
         if active is None and 'meal_mode' in trigger_missing:
             # This is a conditional requirement awaiting a user choice, not a
@@ -197,7 +197,7 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
     campsites = [dataset.get_campsite(key) for key in nights]
     group, mode = Decimal(profile.group_size), meal_mode(requirements)
     policy_values = {}
-    if dataset.v2_policy is not None:
+    if dataset.has_v2_policy:
         tent_capacity = _available(profile, 'tent', 'person_space', group)
         tent_count = _tent_count(profile, group)
         sleeping_bags = _available(profile, 'sleeping_bag', 'item', group)
@@ -216,7 +216,7 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
                     or weather.valid_to is None or weather.valid_to < requirements.end_date
                     or not weather.summary):
                 continue
-            facts.append(dataset.safety_facts.get(case.safety_case_id, {}))
+            facts.append(dataset.get_safety_facts(case.safety_case_id))
         def known_fact(name):
             values = [fact.get(name) for fact in facts]
             return values[0] if values and all(value == values[0] for value in values) else None
@@ -259,16 +259,16 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
         }
     context = (group, profile, campsites, requirements, mode, dataset, policy_values)
     clarifications, blockers, sources = [], [], [campsite.source_ref for campsite in campsites]
-    if dataset.v2_policy is not None and evidence_selection is not None:
+    if dataset.has_v2_policy and evidence_selection is not None:
         sources.extend(ref for evidence in evidence_selection.scenario_context.evidence for ref in evidence.source_refs)
     assumptions = [
         'Gear quantities are conservative synthetic planning rules, not real safety advice.',
         ('Conditional v2 weather gear uses only selected, current, trip-covering synthetic observations; unknown triggers are conservatively included.'
-         if dataset.v2_policy is not None else 'Conditional weather gear is provisionally included because LogisticsInput has no weather context.'),
+         if dataset.has_v2_policy else 'Conditional weather gear is provisionally included because LogisticsInput has no weather context.'),
         'Food/water use synthetic provision-value allowances, not a claim of actual purchases.',
         'Priced equipment gaps are estimates; they do not confirm a hire or purchase.',
     ]
-    if dataset.v2_policy is not None and evidence_selection is not None:
+    if dataset.has_v2_policy and evidence_selection is not None:
         assumptions.append('Trip evidence selection digest: ' + evidence_selection.selection_digest + '.')
 
     def clarify(field, question, reason):
@@ -302,8 +302,8 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
             continue
         sources.append(rule.source_ref)
         key, unit = ITEMS[rule.item_name]
-        if dataset.v2_policy is not None:
-            source_rule = dataset.v2_policy['gear'][rule.gear_rule_id]
+        if dataset.has_v2_policy:
+            source_rule = dataset.get_gear_policy(rule.gear_rule_id)
             if source_rule['item_key'] != key or source_rule['quantity_unit'] not in V2_UNITS:
                 raise rule_failure(f'Unsupported v2 item/unit mapping for {rule.gear_rule_id}.', 'gear_rules')
             unit = V2_UNITS[source_rule['quantity_unit']]
@@ -330,22 +330,22 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
             arrangement_status=arrangement, essential=details['essential'],
         ))
         if details['essential'] and missing is None:
-            if required is None and mode is None and dataset.v2_policy is not None:
-                related = [dataset.v2_policy['gear'][rule.gear_rule_id] for rule in dataset.gear_rules
+            if required is None and mode is None and dataset.has_v2_policy:
+                related = [dataset.get_gear_policy(rule.gear_rule_id) for rule in dataset.gear_rules
                            if rule.source_ref in details['sources']]
                 if any('meal_mode' in _eval_expression(row['trigger_json'], policy_values)[1] for row in related):
                     meal_pending_keys.add(key)
                     continue  # Resolve the meal choice first; do not ask users to confirm an inferred need.
             reason = 'Essential stock or requirement is unknown/unconfirmed.'
-            if dataset.v2_policy is not None:
-                row = dataset.v2_policy['gear'][next(item.gear_rule_id for item in dataset.gear_rules if item.source_ref in details['sources'])]
+            if dataset.has_v2_policy:
+                row = dataset.get_gear_policy(next(item.gear_rule_id for item in dataset.gear_rules if item.source_ref in details['sources']))
                 _, unknown = _eval_expression(row['quantity_json'], policy_values)
                 if unknown:
                     reason = 'Missing v2 rule inputs: ' + ', '.join(sorted(unknown)) + '.'
             clarify(f'equipment.{key}', f'Confirm {key} quantity, units and capacity where relevant.', reason)
         if details['essential'] and missing is not None and missing > 0 and details['mandatory']:
             blockers.append(Blocker(code='ESSENTIAL_GEAR_MISSING', message=f'{key} has an unresolved gap of {missing} {details["unit"]}.', source_refs=details['sources']))
-    if dataset.v2_policy is not None:
+    if dataset.has_v2_policy:
         for name in sorted(policy_values['_missing_inputs']):
             if name == 'meal_mode':
                 continue  # Already represented by the actionable meal_mode clarification.
@@ -398,8 +398,8 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
         reference = dataset.get_cost_reference(cost_id)
         if (reference.category, reference.unit) != EXPECTED_COST_UNITS[cost_id]:
             raise rule_failure(f'Cost reference {cost_id} has unsupported category/unit semantics.', 'cost_reference')
-        if dataset.v2_policy is not None:
-            row = dataset.v2_policy['costs'][cost_id]
+        if dataset.has_v2_policy:
+            row = dataset.get_cost_policy(cost_id)
             if row['rate_source'] != 'typical_aud':
                 raise rule_failure(f'Unsupported v2 rate source for {cost_id}.', 'cost_reference')
             values = {

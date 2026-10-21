@@ -1,5 +1,6 @@
 """Read-only v1 snapshot adapter. No database, Agent, clock or test-oracle access."""
 import csv
+from copy import deepcopy
 import hashlib
 import io
 import json
@@ -248,7 +249,7 @@ def _index(records: list[Record], id_field: str) -> dict[str, Record]:
 
 
 class SyntheticDataset:
-    """Detached read snapshot. Public DTOs are deep copies, not mutable cache views."""
+    """Detached source views, not a guarantee that a whole binding is immutable."""
 
     def __init__(
         self, context: DatasetContext, campsites: dict[str, CampsiteRecord],
@@ -262,11 +263,48 @@ class SyntheticDataset:
         self._profiles, self._requests, self._safety = profiles, requests, safety
         # v2-only declarative source material. Kept separate from shared DTOs so
         # contract 1.0 remains stable and the source expressions remain auditable.
-        self.v2_policy = v2_policy
-        self.runtime_requests = runtime_requests or {}
-        self.safety_facts = safety_facts or {}
-        self.runtime_profiles = runtime_profiles or {}
+        # Own the source objects: neither constructor aliases nor exported views
+        # may mutate a snapshot reused by another component.
+        self._v2_policy = deepcopy(v2_policy)
+        self._runtime_requests = deepcopy(runtime_requests) if runtime_requests is not None else {}
+        self._safety_facts = deepcopy(safety_facts) if safety_facts is not None else {}
+        self._runtime_profiles = deepcopy(runtime_profiles) if runtime_profiles is not None else {}
         self.adapter_version = ADAPTER_VERSION
+
+    @property
+    def has_v2_policy(self) -> bool:
+        return self._v2_policy is not None
+
+    @property
+    def v2_policy(self) -> dict | None:
+        """Detached compatibility view; rule hot paths use per-record getters."""
+        return deepcopy(self._v2_policy)
+
+    @property
+    def runtime_requests(self) -> dict:
+        return deepcopy(self._runtime_requests)
+
+    @property
+    def safety_facts(self) -> dict:
+        return deepcopy(self._safety_facts)
+
+    @property
+    def runtime_profiles(self) -> dict[str, ProfileSnapshot]:
+        return deepcopy(self._runtime_profiles)
+
+    def _policy_record(self, kind: str, record_id: str) -> dict:
+        if self._v2_policy is None or record_id not in self._v2_policy[kind]:
+            raise _failure('Synthetic policy record does not exist.', record_id=record_id)
+        return deepcopy(self._v2_policy[kind][record_id])
+
+    def get_gear_policy(self, gear_rule_id: str) -> dict:
+        return self._policy_record('gear', gear_rule_id)
+
+    def get_cost_policy(self, cost_id: str) -> dict:
+        return self._policy_record('costs', cost_id)
+
+    def get_safety_facts(self, safety_case_id: str) -> dict:
+        return deepcopy(self._safety_facts.get(safety_case_id, {}))
 
     @property
     def context(self) -> DatasetContext:
@@ -330,13 +368,13 @@ class SyntheticDataset:
         if demo_context.dataset_version != self._context.dataset_version:
             raise _stale('DemoContext and source dataset versions differ.')
         request = self.get_request(request_id)
-        runtime = self.runtime_requests.get(request_id) if self.runtime_requests else None
+        runtime = self._runtime_requests.get(request_id)
         raw_text = runtime['natural_language_request'] if runtime is not None else request.raw_text
-        profile_snapshot = self.runtime_profiles.get(request_id) or self.get_profile(request.profile_id).snapshot
+        profile_snapshot = self._runtime_profiles.get(request_id) or self.get_profile(request.profile_id).snapshot
         if runtime is not None and runtime.get('profile_snapshot', {}).get('profile_id') != request.profile_id:
             raise _failure('Runtime request profile snapshot does not match its linked profile.', record_id=request_id)
         return InterpretRequestInput(
-            raw_text=raw_text, profile_snapshot=profile_snapshot,
+            raw_text=raw_text, profile_snapshot=profile_snapshot.model_copy(deep=True),
             demo_context=demo_context,
         )
 

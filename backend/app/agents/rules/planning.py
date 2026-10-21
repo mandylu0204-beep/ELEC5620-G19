@@ -110,7 +110,7 @@ def recommend(dataset, input) -> RecommendCampsitesResult:
         excluded_candidates=excluded,
         **artifact(input.demo_context, sources, assumptions=[
             'Soft-match count, known nightly fee, then campsite ID determine stable ranking.',
-            *(['v2 quiet and step-free fields are synthetic demo assumptions, not real-world verification.'] if dataset.v2_policy is not None else []),
+            *(['v2 quiet and step-free fields are synthetic demo assumptions, not real-world verification.'] if dataset.has_v2_policy else []),
         ]),
     )
 
