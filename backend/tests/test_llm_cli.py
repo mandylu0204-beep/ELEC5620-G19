@@ -69,7 +69,12 @@ def test_empty_key_cli_exits_cleanly_without_live_network(tmp_path):
 
 @pytest.mark.parametrize('encoding', ['ascii', 'cp1252', 'utf-8'])
 @pytest.mark.parametrize('outcome', ['success', 'contract_failure', 'invalid_input'])
-def test_main_json_roundtrips_on_strict_output_streams(monkeypatch, capsys, encoding, outcome):
+@pytest.mark.parametrize('newline', [
+    pytest.param(None, id='native'),
+    pytest.param('\n', id='lf'),
+    pytest.param('\r\n', id='crlf'),
+])
+def test_main_json_roundtrips_on_strict_output_streams(monkeypatch, capsys, encoding, outcome, newline):
     message = '离线检查：中文与符号 🏕️'
     error = ContractError(code='AGENT_FAILURE', message=message)
     expected = {'status': 'OFFLINE_SUCCESS', 'message': message, 'items': ['第二行', 'é']}
@@ -93,7 +98,7 @@ def test_main_json_roundtrips_on_strict_output_streams(monkeypatch, capsys, enco
     monkeypatch.setattr(cli, 'execute', execute)
     monkeypatch.setattr(cli, 'CampusModelClient', forbidden_client)
     monkeypatch.setattr(sys, 'argv', ['offline-cli-output', '--probe'])
-    with io.TextIOWrapper(io.BytesIO(), encoding=encoding, errors='strict') as stream:
+    with io.TextIOWrapper(io.BytesIO(), encoding=encoding, errors='strict', newline=newline) as stream:
         with redirect_stdout(stream):
             code = cli.main()
         assert stream.encoding == encoding and stream.errors == 'strict'
@@ -105,8 +110,13 @@ def test_main_json_roundtrips_on_strict_output_streams(monkeypatch, capsys, enco
     assert json.loads(output.decode(encoding)) == expected
     assert 'PRIVATE_SYNTHETIC_CONFIG' not in output.decode(encoding)
     assert not capsys.readouterr().err
+    lines = output.splitlines()
+    line_ending = (os.linesep if newline is None else newline).encode('ascii')
+    assert output == line_ending.join(lines) + line_ending
     if outcome == 'success':
-        assert output.startswith(b'{\n  "status":')
+        # Pretty-printing is defined by logical lines, not platform newline bytes.
+        assert lines[0] == b'{'
+        assert lines[1].startswith(b'  "status":')
 
 
 @pytest.mark.parametrize('encoding', ['ascii', 'cp1252', 'utf-8'])
