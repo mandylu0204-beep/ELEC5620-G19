@@ -18,18 +18,22 @@ class ParsedSnapshots:
     @contextmanager
     def transaction(self):
         # Publish only after the entire runtime registration succeeded.
-        if self._pending.get() is not None:
-            raise RuntimeError('Nested parsed snapshot transaction')
+        parent = self._pending.get()
         pending = OrderedDict()
         token = self._pending.set(pending)
         try:
             yield
-            with self._lock:
-                self._entries.update(pending)
-                for key in pending:
-                    self._entries.move_to_end(key)
-                while len(self._entries) > self.capacity:
-                    self._entries.popitem(last=False)
+            if parent is not None:
+                parent.update(pending)
+                while len(parent) > self.capacity:
+                    parent.popitem(last=False)
+            else:
+                with self._lock:
+                    self._entries.update(pending)
+                    for key in pending:
+                        self._entries.move_to_end(key)
+                    while len(self._entries) > self.capacity:
+                        self._entries.popitem(last=False)
         finally:
             self._pending.reset(token)
 
@@ -44,3 +48,5 @@ class ParsedSnapshots:
         if pending is None:
             raise RuntimeError('Parsed snapshots require a registration transaction')
         pending[key] = deepcopy(dataset)
+        while len(pending) > self.capacity:
+            pending.popitem(last=False)

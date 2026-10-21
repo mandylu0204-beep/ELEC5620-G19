@@ -203,6 +203,33 @@ def test_cache_capacity_and_copy_on_both_boundaries():
     assert cache.get('one') is None and len(cache._entries) == 2
 
 
+def test_nested_registration_only_publishes_after_outer_success():
+    cache = ParsedSnapshots(capacity=2)
+    with pytest.raises(ValueError):
+        with cache.transaction():
+            with cache.transaction():
+                cache.stage('inner', {'rows': []})
+            assert cache.get('inner') is None
+            raise ValueError('Outer registration failed')
+    assert cache.get('inner') is None
+    with cache.transaction():
+        with cache.transaction():
+            cache.stage('inner', {'rows': []})
+        assert cache.get('inner') is None
+    assert cache.get('inner') == {'rows': []}
+
+
+def test_failed_nested_registration_discards_only_its_candidates():
+    cache = ParsedSnapshots(capacity=2)
+    with cache.transaction():
+        cache.stage('outer', {})
+        with pytest.raises(ValueError):
+            with cache.transaction():
+                cache.stage('inner', {})
+                raise ValueError('Inner registration failed')
+    assert cache.get('outer') == {} and cache.get('inner') is None
+
+
 def test_concurrent_resolutions_have_independent_public_dicts(tmp_path, parse_calls):
     app = create_app(config(tmp_path))
     with ThreadPoolExecutor(max_workers=3) as pool:
