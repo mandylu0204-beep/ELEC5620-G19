@@ -61,6 +61,39 @@ def test_app_instances_do_not_share_cache(tmp_path, parse_calls):
     assert len(parse_calls) == 2
 
 
+def test_two_argument_wraps_factory_keeps_legacy_call_contract(tmp_path, parse_calls, monkeypatch):
+    key = ('deterministic_demo', 'CampMate Synthetic Demo Dataset v2')
+    calls = []
+
+    @wraps(build_v2_binding)
+    def legacy(settings, descriptor):
+        calls.append(1)
+        return build_v2_binding(settings, descriptor)
+
+    monkeypatch.setitem(DATASET_AGENT_FACTORIES, key, legacy)
+    cfg = config(tmp_path)
+    app = create_app(cfg)
+    current = app.state.runtime.resolve()
+    assert len(calls) == 2 and len(parse_calls) == 2
+    assert current.dataset == build_v2_binding(cfg, current.descriptor).context
+
+
+def test_snapshot_wrapper_typeerror_is_not_retried_as_legacy(tmp_path, monkeypatch):
+    app = create_app(config(tmp_path))
+    key = ('deterministic_demo', 'CampMate Synthetic Demo Dataset v2')
+    calls = []
+
+    @wraps(build_v2_binding)
+    def broken(settings, descriptor, **options):
+        calls.append(options)
+        raise TypeError('factory implementation failed')
+
+    monkeypatch.setitem(DATASET_AGENT_FACTORIES, key, broken)
+    with pytest.raises(TypeError, match='factory implementation failed'):
+        app.state.runtime.resolve()
+    assert len(calls) == 1 and 'parsed_snapshots' in calls[0]
+
+
 @pytest.mark.parametrize('change', ['feedback', 'selection', 'factory', 'date'])
 def test_context_and_factory_changes_do_not_reuse_wrong_snapshot(tmp_path, parse_calls, monkeypatch, change):
     cfg = config(tmp_path)

@@ -6,7 +6,7 @@ factories return the actual Agent together with its complete workflow context.
 from dataclasses import dataclass, replace
 import hashlib
 import json
-from inspect import unwrap
+from inspect import signature, unwrap
 from threading import RLock
 
 from pydantic import ValidationError
@@ -264,9 +264,21 @@ class AgentRuntime:
             factory = DATASET_AGENT_FACTORIES.get((settings.execution_mode, descriptor.provenance.source_name))
             if factory is None:
                 raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='该数据版本的业务 Adapter 尚未注册，不能启动规划。', context={'dataset_version': context.dataset_version}))
+            snapshot_options = dict(parsed_snapshots=self._parsed_snapshots,
+                snapshot_key=(today.isoformat(), settings.model_dump_json(), factory))
+            accepts_snapshot_options = False
             if unwrap(factory) in PARSED_SNAPSHOT_FACTORIES:
+                try:
+                    # @wraps exposes the original signature by default, but the
+                    # callable wrapper may still accept only the legacy pair.
+                    signature(factory, follow_wrapped=False).bind(settings, descriptor, **snapshot_options)
+                except (TypeError, ValueError):
+                    pass
+                else:
+                    accepts_snapshot_options = True
+            if accepts_snapshot_options:
                 binding = factory(settings, descriptor, parsed_snapshots=self._parsed_snapshots,
-                    snapshot_key=(today.isoformat(), settings.model_dump_json(), factory))
+                    snapshot_key=snapshot_options['snapshot_key'])
             else:
                 binding = factory(settings, descriptor)
             agent, context = binding.agent, binding.context
