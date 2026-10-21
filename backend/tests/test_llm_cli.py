@@ -1,4 +1,6 @@
 import asyncio
+from contextlib import redirect_stdout
+import io
 import json
 import os
 from pathlib import Path
@@ -12,6 +14,7 @@ import pytest
 from app.llm import __main__ as cli
 from app.llm.client import CampusModelClient
 from app.llm.config import CampusModelSettings
+from app.contracts.errors import ContractError, ContractFailure
 from llm_fixtures import ROOT, completion, final_action, tool_action
 
 
@@ -62,6 +65,74 @@ def test_empty_key_cli_exits_cleanly_without_live_network(tmp_path):
     assert result.returncode == 1 and not result.stderr
     value = json.loads(result.stdout)
     assert value['status'] == 'FAILED' and value['error']['code'] == 'AGENT_FAILURE'
+
+
+@pytest.mark.parametrize('encoding', ['ascii', 'cp1252', 'utf-8'])
+@pytest.mark.parametrize('outcome', ['success', 'contract_failure', 'invalid_input'])
+@pytest.mark.parametrize('newline', [
+    pytest.param(None, id='native'),
+    pytest.param('\n', id='lf'),
+    pytest.param('\r\n', id='crlf'),
+])
+def test_main_json_roundtrips_on_strict_output_streams(monkeypatch, capsys, encoding, outcome, newline):
+    message = '离线检查：中文与符号 🏕️'
+    error = ContractError(code='AGENT_FAILURE', message=message)
+    expected = {'status': 'OFFLINE_SUCCESS', 'message': message, 'items': ['第二行', 'é']}
+    if outcome == 'contract_failure':
+        expected = {'status': 'FAILED', 'error': error.model_dump(mode='json')}
+    elif outcome == 'invalid_input':
+        expected = {'status': 'FAILED', 'message': '本地模型配置或演示输入无效。'}
+    calls = []
+
+    async def execute(args):
+        calls.append(args)
+        if outcome == 'contract_failure':
+            raise ContractFailure(error)
+        if outcome == 'invalid_input':
+            raise ValueError('PRIVATE_SYNTHETIC_CONFIG_MUST_NOT_BE_PRINTED')
+        return expected
+
+    def forbidden_client(*args, **kwargs):
+        raise AssertionError('Output tests must not construct a model client')
+
+    monkeypatch.setattr(cli, 'execute', execute)
+    monkeypatch.setattr(cli, 'CampusModelClient', forbidden_client)
+    monkeypatch.setattr(sys, 'argv', ['offline-cli-output', '--probe'])
+    with io.TextIOWrapper(io.BytesIO(), encoding=encoding, errors='strict', newline=newline) as stream:
+        with redirect_stdout(stream):
+            code = cli.main()
+        assert stream.encoding == encoding and stream.errors == 'strict'
+        stream.flush()
+        output = stream.buffer.getvalue()
+    assert code == (0 if outcome == 'success' else 1)
+    assert len(calls) == 1 and calls[0].probe
+    assert output.isascii()
+    assert json.loads(output.decode(encoding)) == expected
+    assert 'PRIVATE_SYNTHETIC_CONFIG' not in output.decode(encoding)
+    assert not capsys.readouterr().err
+    lines = output.splitlines()
+    line_ending = (os.linesep if newline is None else newline).encode('ascii')
+    assert output == line_ending.join(lines) + line_ending
+    if outcome == 'success':
+        # Pretty-printing is defined by logical lines, not platform newline bytes.
+        assert lines[0] == b'{'
+        assert lines[1].startswith(b'  "status":')
+
+
+@pytest.mark.parametrize('encoding', ['ascii', 'cp1252', 'utf-8'])
+def test_empty_key_subprocess_json_on_non_utf8_and_utf8_streams(tmp_path, encoding):
+    path = tmp_path / 'private.env'
+    path.write_text('ELEC5620_API_KEY=\n', encoding='utf-8')
+    env = {key: value for key, value in os.environ.items() if not key.upper().startswith('ELEC5620_')}
+    env.update(PYTHONIOENCODING=encoding + ':strict', PYTHONUTF8='0',
+        ELEC5620_BASE_URL='http://offline.invalid/v1')
+    result = subprocess.run([sys.executable, '-B', '-m', 'app.llm', '--probe', '--env-file', str(path)],
+        cwd=ROOT / 'backend', env=env, capture_output=True, timeout=10)
+    assert result.returncode == 1 and not result.stderr
+    assert result.stdout.isascii()
+    value = json.loads(result.stdout.decode(encoding))
+    assert value['status'] == 'FAILED' and value['error']['code'] == 'AGENT_FAILURE'
+    assert value['error']['message']
 
 
 def test_git_ignores_private_env_but_keeps_public_template():
