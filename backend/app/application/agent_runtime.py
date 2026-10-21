@@ -6,6 +6,7 @@ factories return the actual Agent together with its complete workflow context.
 from dataclasses import dataclass, replace
 import hashlib
 import json
+from inspect import unwrap
 from threading import RLock
 
 from pydantic import ValidationError
@@ -79,13 +80,14 @@ def build_v1_rule_binding(settings, descriptor):
     return AgentBinding(RuleAgent(dataset, workflow_configuration=configuration), configuration.context)
 
 
-def build_v2_binding(settings, descriptor):
+def build_v2_binding(settings, descriptor, *, parsed_snapshots=None, snapshot_key=()):
     """Bind the sealed v2 bytes and explicit safety selections to a real RuleAgent."""
     from ..adapters.synthetic_dataset_v2 import SyntheticDatasetV2Adapter
     from ..agents.rule_agent import RuleAgent
     from ..workflow import WorkflowConfiguration
 
-    dataset = SyntheticDatasetV2Adapter(settings.dataset_path).load(expected_context=descriptor.context)
+    dataset = SyntheticDatasetV2Adapter(settings.dataset_path).load(expected_context=descriptor.context,
+        parsed_snapshots=parsed_snapshots, snapshot_key=snapshot_key)
     dataset.selected_safety_case_ids = tuple(settings.workflow_safety_case_ids)
     base = descriptor.context.model_copy(update={'rules_version': descriptor.context.rules_version + '/a-runtime-bindings-v2'})
     configuration = WorkflowConfiguration(dataset, safety_case_ids=settings.workflow_safety_case_ids,
@@ -95,7 +97,7 @@ def build_v2_binding(settings, descriptor):
 
 
 # B can register v2 under its own explicit source family. No fallback to v1.
-def build_v2_hybrid_binding(settings, descriptor):
+def build_v2_hybrid_binding(settings, descriptor, *, parsed_snapshots=None, snapshot_key=()):
     from ..adapters.synthetic_dataset_v2 import SyntheticDatasetV2Adapter
     from ..agents.hybrid_planning_agent import HybridPlanningAgent, build_hybrid_configuration
     from ..llm.config import CampusModelSettings
@@ -122,7 +124,9 @@ def build_v2_hybrid_binding(settings, descriptor):
         raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE,
             message='Campus model local configuration is invalid.')) from None
     client.validate_configuration()
-    dataset = SyntheticDatasetV2Adapter(settings.dataset_path).load(expected_context=descriptor.context)
+    dataset = SyntheticDatasetV2Adapter(settings.dataset_path).load(expected_context=descriptor.context,
+        parsed_snapshots=parsed_snapshots,
+        snapshot_key=(snapshot_key, json.dumps(client.settings.public_identity(), sort_keys=True)))
     coordinator = PlanningCoordinator(dataset, client)
     identity = coordinator.identity
     choices = {**descriptor.context.selection_config, 'a_model_trace_required':'1', 'a_model_trace_contract':'1.0',
@@ -189,11 +193,15 @@ DATASET_AGENT_FACTORIES = {
     (ExecutionMode.AGENT, 'CampMate Synthetic Demo Dataset v2'): build_v2_hybrid_binding,
 }
 
+PARSED_SNAPSHOT_FACTORIES = (build_v2_binding, build_v2_hybrid_binding)
+
 
 class AgentRuntime:
     def __init__(self, state):
+        from .parsed_snapshots import ParsedSnapshots
         self.state = state
         self._lock = RLock()
+        self._parsed_snapshots = ParsedSnapshots(capacity=4)
         self.configured_agent = None
         state.agent = create_agent(state.settings.execution_mode)
         self.managed_mode = state.settings.execution_mode if state.agent is None and state.settings.execution_mode in {ExecutionMode.DETERMINISTIC_DEMO, ExecutionMode.AGENT} else None
@@ -208,7 +216,8 @@ class AgentRuntime:
         # HTTP reads run in worker threads while the supervisor runs on asyncio.
         # Keep the managed Agent marker and state.agent replacement consistent.
         with self._lock:
-            return self._resolve(feedback=feedback, snapshot_day=snapshot_day)
+            with self._parsed_snapshots.transaction():
+                return self._resolve(feedback=feedback, snapshot_day=snapshot_day)
 
     def for_scope(self, scope):
         choices=scope.dataset_context.selection_config
@@ -255,7 +264,11 @@ class AgentRuntime:
             factory = DATASET_AGENT_FACTORIES.get((settings.execution_mode, descriptor.provenance.source_name))
             if factory is None:
                 raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='该数据版本的业务 Adapter 尚未注册，不能启动规划。', context={'dataset_version': context.dataset_version}))
-            binding = factory(settings, descriptor)
+            if unwrap(factory) in PARSED_SNAPSHOT_FACTORIES:
+                binding = factory(settings, descriptor, parsed_snapshots=self._parsed_snapshots,
+                    snapshot_key=(today.isoformat(), settings.model_dump_json(), factory))
+            else:
+                binding = factory(settings, descriptor)
             agent, context = binding.agent, binding.context
             if feedback is not None and context.selection_config.get('revision_feedback') != feedback:
                 raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='当前 Adapter 尚未接通修改意见，不能启动修订。'))

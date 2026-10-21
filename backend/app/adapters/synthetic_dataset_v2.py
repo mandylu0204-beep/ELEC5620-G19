@@ -170,7 +170,7 @@ class SyntheticDatasetV2Adapter:
     def __init__(self, dataset_path):
         self.dataset_path = Path(dataset_path)
 
-    def load(self, *, expected_context=None):
+    def load(self, *, expected_context=None, parsed_snapshots=None, snapshot_key=()):
         filename = ''
         try:
             root = self.dataset_path.resolve(strict=True)
@@ -183,62 +183,77 @@ class SyntheticDatasetV2Adapter:
             actual['manifest.json'] = hashlib.sha256(manifest).hexdigest()
             if expected_context is not None and any(expected_context.file_digests.get(name) != value for name, value in actual.items()):
                 raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='v2 Adapter 消费的原始字节与应用登记摘要不一致。'))
-            parsed = {name: (_csv(payload) if name.endswith('.csv') else _json(payload)) for name, payload in payloads.items()}
-            for rows in parsed.values():
-                for row in rows:
-                    _source(row, '', required_text(row.get('request_id') or row.get('safety_case_id') or row.get('profile_id') or row.get('campsite_id') or row.get('gear_rule_id') or row.get('cost_id')))
-            manifest_value = _json(manifest)
-            version = manifest_value.get('dataset_version')
-            if version not in {'2.0.0', '2.1.0'} or any(manifest_value.get('files_sha256', {}).get('data/' + name) != value for name, value in actual.items() if name != 'manifest.json'):
-                raise ValueError('v2 package seal does not match consumed bytes')
-            if len({row.get('source_name') for name, rows in parsed.items() for row in rows}) != 1 or next(iter({row.get('source_name') for name, rows in parsed.items() for row in rows})) != SOURCE_NAME:
-                raise ValueError('Mixed source names')
-            camps = _index([_campsite(row) for row in parsed[BUSINESS_FILES[0]]], 'campsite_id')
-            gear_rows = parsed[BUSINESS_FILES[1]]
-            costs_rows = parsed[BUSINESS_FILES[2]]
-            gear = _index([_gear(row) for row in gear_rows], 'gear_rule_id')
-            cost_records = _index([_cost(row) for row in costs_rows], 'cost_id')
-            profiles = _index([_profile(row) for row in parsed[BUSINESS_FILES[3]]], 'profile_id')
-            requests = _index([_request(row) for row in parsed[BUSINESS_FILES[4]]], 'request_id')
-            safety_rows = parsed[RUNTIME_FILES[1]]
-            safety = _index([_safety(row, 'runtime_safety_evidence.json') for row in safety_rows], 'safety_case_id')
-            if any(record.campsite_id not in camps for record in safety.values()):
-                raise ValueError('Safety record references unknown campsite')
-            if any(record.profile_id not in profiles for record in requests.values()):
-                raise ValueError('Request references unknown profile')
-            rules = {required_text(row['gear_rule_id']): row | {'trigger_json': _json(row['trigger_json'].encode()), 'quantity_json': _json(row['quantity_json'].encode())} for row in gear_rows}
-            costs = {required_text(row['cost_id']): row | {'quantity_json': _json(row['quantity_json'].encode())} for row in costs_rows}
-            if len(rules) != len(gear_rows) or len(costs) != len(costs_rows):
-                raise ValueError('Duplicate rule or cost ID')
-            # Preserve machine policies verbatim after parsing, alongside common DTO projections.
-            policy = {'gear': rules, 'costs': costs, 'safety': {row['safety_case_id']: row for row in safety_rows}}
-            runtime_requests = {row['request_id']: row for row in parsed[RUNTIME_FILES[0]]}
-            runtime_profiles = {}
-            for request_id, row in runtime_requests.items():
-                if row['profile_id'] not in profiles or row['profile_snapshot'].get('profile_id') != row['profile_id']:
-                    raise ValueError('Runtime request has an unlinked profile snapshot')
-                candidate = _profile(row['profile_snapshot'])
-                if candidate.snapshot != profiles[row['profile_id']].snapshot:
-                    raise ValueError('Runtime profile snapshot disagrees with canonical profile mapping')
-                runtime_profiles[request_id] = candidate.snapshot
-            context = DatasetContext(dataset_version=version, file_digests=actual,
-                rules_version='a-request-normalization-v1')
-            if expected_context is not None and any(expected_context.file_digests.get(name) != value for name, value in actual.items()):
-                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='v2 Adapter 输入身份已变化。'))
-            dataset = SyntheticDataset(context, camps, gear, cost_records, profiles, requests, safety,
-                v2_policy=policy, runtime_requests=runtime_requests,
-                safety_facts={key: row.get('evidence_facts', {}) for key, row in policy['safety'].items()},
-                runtime_profiles=runtime_profiles)
-            dataset.adapter_version = ADAPTER_VERSION_V2
-            dataset.rules_version = V2_RULES_VERSION
-            if version == '2.1.0':
-                from ..agents.rules.trip_evidence import POLICY_VERSION, TripEvidenceSelector
-                if manifest_value.get('evidence_selection_policy') != POLICY_VERSION:
-                    raise ValueError('Unregistered trip evidence policy')
-                dataset.trip_evidence_selector = TripEvidenceSelector(dataset, safety_rows)
-                dataset.rules_version += '/' + POLICY_VERSION
+            from ..agents.rules.trip_evidence import POLICY_VERSION, TripEvidenceSelector
+            cache_key = (snapshot_key, str(root), type(self), type(self)._parse,
+                ADAPTER_VERSION_V2, V2_RULES_VERSION, POLICY_VERSION, TripEvidenceSelector,
+                tuple(sorted(actual.items())),
+                expected_context.model_dump_json() if expected_context is not None else None)
+            if parsed_snapshots is not None:
+                cached = parsed_snapshots.get(cache_key)
+                if cached is not None:
+                    return cached
+            dataset = self._parse(payloads, manifest, actual, expected_context)
+            if parsed_snapshots is not None:
+                parsed_snapshots.stage(cache_key, dataset)
             return dataset
         except ContractFailure:
             raise
         except (OSError, UnicodeError, ValueError, TypeError, KeyError, ArithmeticError, csv.Error) as exc:
             raise _fail('无法严格读取或验证已封存的 v2 业务与运行数据。', filename) from exc
+
+    def _parse(self, payloads, manifest, actual, expected_context):
+        parsed = {name: (_csv(payload) if name.endswith('.csv') else _json(payload)) for name, payload in payloads.items()}
+        for rows in parsed.values():
+            for row in rows:
+                _source(row, '', required_text(row.get('request_id') or row.get('safety_case_id') or row.get('profile_id') or row.get('campsite_id') or row.get('gear_rule_id') or row.get('cost_id')))
+        manifest_value = _json(manifest)
+        version = manifest_value.get('dataset_version')
+        if version not in {'2.0.0', '2.1.0'} or any(manifest_value.get('files_sha256', {}).get('data/' + name) != value for name, value in actual.items() if name != 'manifest.json'):
+            raise ValueError('v2 package seal does not match consumed bytes')
+        if len({row.get('source_name') for name, rows in parsed.items() for row in rows}) != 1 or next(iter({row.get('source_name') for name, rows in parsed.items() for row in rows})) != SOURCE_NAME:
+            raise ValueError('Mixed source names')
+        camps = _index([_campsite(row) for row in parsed[BUSINESS_FILES[0]]], 'campsite_id')
+        gear_rows = parsed[BUSINESS_FILES[1]]
+        costs_rows = parsed[BUSINESS_FILES[2]]
+        gear = _index([_gear(row) for row in gear_rows], 'gear_rule_id')
+        cost_records = _index([_cost(row) for row in costs_rows], 'cost_id')
+        profiles = _index([_profile(row) for row in parsed[BUSINESS_FILES[3]]], 'profile_id')
+        requests = _index([_request(row) for row in parsed[BUSINESS_FILES[4]]], 'request_id')
+        safety_rows = parsed[RUNTIME_FILES[1]]
+        safety = _index([_safety(row, 'runtime_safety_evidence.json') for row in safety_rows], 'safety_case_id')
+        if any(record.campsite_id not in camps for record in safety.values()):
+            raise ValueError('Safety record references unknown campsite')
+        if any(record.profile_id not in profiles for record in requests.values()):
+            raise ValueError('Request references unknown profile')
+        rules = {required_text(row['gear_rule_id']): row | {'trigger_json': _json(row['trigger_json'].encode()), 'quantity_json': _json(row['quantity_json'].encode())} for row in gear_rows}
+        costs = {required_text(row['cost_id']): row | {'quantity_json': _json(row['quantity_json'].encode())} for row in costs_rows}
+        if len(rules) != len(gear_rows) or len(costs) != len(costs_rows):
+            raise ValueError('Duplicate rule or cost ID')
+        # Preserve machine policies verbatim after parsing, alongside common DTO projections.
+        policy = {'gear': rules, 'costs': costs, 'safety': {row['safety_case_id']: row for row in safety_rows}}
+        runtime_requests = {row['request_id']: row for row in parsed[RUNTIME_FILES[0]]}
+        runtime_profiles = {}
+        for request_id, row in runtime_requests.items():
+            if row['profile_id'] not in profiles or row['profile_snapshot'].get('profile_id') != row['profile_id']:
+                raise ValueError('Runtime request has an unlinked profile snapshot')
+            candidate = _profile(row['profile_snapshot'])
+            if candidate.snapshot != profiles[row['profile_id']].snapshot:
+                raise ValueError('Runtime profile snapshot disagrees with canonical profile mapping')
+            runtime_profiles[request_id] = candidate.snapshot
+        context = DatasetContext(dataset_version=version, file_digests=actual,
+            rules_version='a-request-normalization-v1')
+        if expected_context is not None and any(expected_context.file_digests.get(name) != value for name, value in actual.items()):
+            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='v2 Adapter 输入身份已变化。'))
+        dataset = SyntheticDataset(context, camps, gear, cost_records, profiles, requests, safety,
+            v2_policy=policy, runtime_requests=runtime_requests,
+            safety_facts={key: row.get('evidence_facts', {}) for key, row in policy['safety'].items()},
+            runtime_profiles=runtime_profiles)
+        dataset.adapter_version = ADAPTER_VERSION_V2
+        dataset.rules_version = V2_RULES_VERSION
+        if version == '2.1.0':
+            from ..agents.rules.trip_evidence import POLICY_VERSION, TripEvidenceSelector
+            if manifest_value.get('evidence_selection_policy') != POLICY_VERSION:
+                raise ValueError('Unregistered trip evidence policy')
+            dataset.trip_evidence_selector = TripEvidenceSelector(dataset, safety_rows)
+            dataset.rules_version += '/' + POLICY_VERSION
+        return dataset
