@@ -137,7 +137,9 @@ def retry_fields(request, user, data):
                 reason = exc.error.message
         data['retry_unavailable_reason'] = None if data['retry_available'] else reason
     can_change = bool(available and data['current_version_revision'] is not None and run and run['is_active'] and run['status'] not in {'PENDING','RUNNING'})
-    operations = state.runtime.resolve().supported_operations if available else frozenset()
+    # No operation can be offered while this record cannot be changed. Current
+    # availability and scope validation below still run independently.
+    operations = state.runtime.resolve().supported_operations if can_change else frozenset()
     data['revision_available'] = can_change and 'REVISE' in operations
     data['reassessment_available'] = can_change and 'REASSESS' in operations
     data['current_inputs_error'] = None

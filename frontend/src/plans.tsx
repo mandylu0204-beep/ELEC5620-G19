@@ -21,6 +21,7 @@ import { ApiFailure, type ApiError, type Requirements } from './api';
 import { ProfileSummary, equipmentLabel, type Profile } from './profile';
 import { privateApi, useSession } from './session';
 import { mergeProgress, progressPath, type RunProgress } from './plan_progress';
+import { startSavedPolling } from './saved_polling';
 
 export type Source = { dataset_file:string; record_id:string; provenance:{source_name:string; source_type:string; source_date:string; demo_only:boolean}; valid_from:string|null; valid_to:string|null };
 type Artifact = { execution_mode:string; source_refs:Source[]; assumptions:string[]; uncertainties:string[] };
@@ -58,9 +59,10 @@ async function readPlanProgress(value:PlanDetail,signal:AbortSignal):Promise<Pla
 
 export function useSavedRead<T>(path:string,poll:(value:T)=>boolean,progress?:(value:T,signal:AbortSignal)=>Promise<T|null>){
   const {reload}=useSession();const [data,setData]=useState<T|null>(null);const [error,setError]=useState('');const [retry,setRetry]=useState(0);
-  useEffect(()=>{const controller=new AbortController();let timer:ReturnType<typeof setTimeout>|undefined;let previous:T|null=null;setData(null);setError('');
-    async function read(){try{const update=previous&&progress?await progress(previous,controller.signal):null;if(controller.signal.aborted)return;const value=update??await privateApi<T>(path,{signal:controller.signal});if(controller.signal.aborted)return;previous=value;setData(value);setError('');if(poll(value))timer=setTimeout(read,2500);}catch(reason){if(controller.signal.aborted)return;setError(reason instanceof ApiFailure?`${reason.message}（追踪号 ${reason.envelope.trace_id}）`:'连接失败；已显示的内容来自最近一次成功读取。');if(reason instanceof ApiFailure&&reason.envelope.error.code==='UNAUTHENTICATED')reload();}}
-    void read();return()=>{controller.abort();clearTimeout(timer);};
+  useEffect(()=>{setData(null);setError('');
+    return startSavedPolling<T>({read:signal=>privateApi<T>(path,{signal}),progress,poll,
+      onValue:value=>{setData(value);setError('');},
+      onError:reason=>{setError(reason instanceof ApiFailure?`${reason.message}（追踪号 ${reason.envelope.trace_id}）`:'连接失败；已显示的内容来自最近一次成功读取。');if(reason instanceof ApiFailure&&reason.envelope.error.code==='UNAUTHENTICATED')reload();}});
   },[path,retry,poll,progress,reload]);
   return {data,error,refresh:()=>setRetry(value=>value+1)};
 }
