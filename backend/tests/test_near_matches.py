@@ -16,7 +16,7 @@ from test_v2_http_demo import application, INPUTS, CASES
 def comparison(camps,req=None,profile=None):
     dataset=make_agent().dataset
     req,profile=req or requirements(budget_cents=100),profile or full_profile()
-    fake=SimpleNamespace(campsites=camps,v2_policy=None)
+    fake=SimpleNamespace(campsites=camps,v2_policy=None,has_v2_policy=False)
     result=recommend(fake,RecommendCampsitesInput(confirmed_requirements=req,profile_snapshot=profile,demo_context=DEMO))
     confirmed=ConfirmedContext(request_id='near-unit-request',confirmed_at=datetime.now(timezone.utc),requirements=req,
         profile_snapshot=profile,demo_context=DEMO,dataset_context=dataset.context)
@@ -64,7 +64,7 @@ def test_stale_metadata_uses_saved_exclusions_and_does_not_replace_old_price_or_
     data,_=comparison([base_camp()])
     value=guidance(data,None,metadata_note='changed')
     assert value['near_matches'][0]['campsite_subtotal_cents'] is None and value['metadata_note']=='changed'
-    changed=SimpleNamespace(campsites=[base_camp(nightly_fee_cents=0)],v2_policy=None)
+    changed=SimpleNamespace(campsites=[base_camp(nightly_fee_cents=0)],v2_policy=None,has_v2_policy=False)
     value=guidance(data,changed)
     assert value['near_matches'][0]['nightly_fee_cents'] is None
     assert value['near_matches'][0]['issues'][0]['original_reason']=='Campsite fee alone exceeds the confirmed group budget.'
