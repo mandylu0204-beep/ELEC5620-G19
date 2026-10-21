@@ -133,3 +133,18 @@ class PlanQueries:
                 fail(ErrorCode.NOT_FOUND, '运行不存在。')
             plan_id = row['plan_id']
         return self.detail(user, plan_id, run_id)
+
+    def progress(self, user, run_id):
+        """Persisted progress only; never a capability or finalisation decision."""
+        require_role(user, 'CAMPER')
+        with self.db.transaction(write=False) as connection:
+            row = connection.execute('''SELECT p.id AS plan_id,p.active_run_id,
+                r.id AS run_id,r.status,r.stage,r.revision
+                FROM runs r JOIN plans p ON p.id=r.plan_id
+                WHERE r.id=? AND p.owner_id=? AND p.deleted_at IS NULL''',
+                (run_id, user.id)).fetchone()
+            if not row:
+                fail(ErrorCode.NOT_FOUND, '运行不存在。')
+            return {'plan_id': row['plan_id'], 'active_run_id': row['active_run_id'],
+                'run': {key: row[key] for key in ('run_id', 'status', 'stage', 'revision')}
+                    | {'is_active': row['active_run_id'] == row['run_id']}}

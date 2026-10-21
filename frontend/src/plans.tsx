@@ -20,6 +20,7 @@ import type { TripCoverage } from './trip_coverage';
 import { ApiFailure, type ApiError, type Requirements } from './api';
 import { ProfileSummary, equipmentLabel, type Profile } from './profile';
 import { privateApi, useSession } from './session';
+import { mergeProgress, progressPath, type RunProgress } from './plan_progress';
 
 export type Source = { dataset_file:string; record_id:string; provenance:{source_name:string; source_type:string; source_date:string; demo_only:boolean}; valid_from:string|null; valid_to:string|null };
 type Artifact = { execution_mode:string; source_refs:Source[]; assumptions:string[]; uncertainties:string[] };
@@ -50,12 +51,17 @@ const runActive=(value:PlanDetail)=>value.run?.is_active===true&&(
     value.eligibility?.blocking_reasons.every(item=>item.code==='REVIEW_REQUIRED')===true));
 const plansActive=(value:{plans:PlanRow[]})=>value.plans.some(row=>['PENDING','RUNNING'].includes(row.run_status??''));
 
-export function useSavedRead<T>(path:string,poll:(value:T)=>boolean){
+async function readPlanProgress(value:PlanDetail,signal:AbortSignal):Promise<PlanDetail|null>{
+  const path=progressPath(value);
+  return path ? mergeProgress(value,await privateApi<RunProgress>(path,{signal})) : null;
+}
+
+export function useSavedRead<T>(path:string,poll:(value:T)=>boolean,progress?:(value:T,signal:AbortSignal)=>Promise<T|null>){
   const {reload}=useSession();const [data,setData]=useState<T|null>(null);const [error,setError]=useState('');const [retry,setRetry]=useState(0);
-  useEffect(()=>{const controller=new AbortController();let timer:ReturnType<typeof setTimeout>|undefined;setData(null);setError('');
-    async function read(){try{const value=await privateApi<T>(path,{signal:controller.signal});if(controller.signal.aborted)return;setData(value);setError('');if(poll(value))timer=setTimeout(read,2500);}catch(reason){if(controller.signal.aborted)return;setError(reason instanceof ApiFailure?`${reason.message}（追踪号 ${reason.envelope.trace_id}）`:'连接失败；已显示的内容来自最近一次成功读取。');if(reason instanceof ApiFailure&&reason.envelope.error.code==='UNAUTHENTICATED')reload();}}
+  useEffect(()=>{const controller=new AbortController();let timer:ReturnType<typeof setTimeout>|undefined;let previous:T|null=null;setData(null);setError('');
+    async function read(){try{const update=previous&&progress?await progress(previous,controller.signal):null;if(controller.signal.aborted)return;const value=update??await privateApi<T>(path,{signal:controller.signal});if(controller.signal.aborted)return;previous=value;setData(value);setError('');if(poll(value))timer=setTimeout(read,2500);}catch(reason){if(controller.signal.aborted)return;setError(reason instanceof ApiFailure?`${reason.message}（追踪号 ${reason.envelope.trace_id}）`:'连接失败；已显示的内容来自最近一次成功读取。');if(reason instanceof ApiFailure&&reason.envelope.error.code==='UNAUTHENTICATED')reload();}}
     void read();return()=>{controller.abort();clearTimeout(timer);};
-  },[path,retry,poll,reload]);
+  },[path,retry,poll,progress,reload]);
   return {data,error,refresh:()=>setRetry(value=>value+1)};
 }
 
@@ -92,7 +98,7 @@ export function PlansPage(){
   </>;
 }
 
-export function PlanPage(){const location=useLocation();const {planId}=useParams();const [search,setSearch]=useSearchParams();const runId=search.get('run_id');const {data,error,refresh}=useSavedRead<PlanDetail>('/plans/'+planId+(runId?'?run_id='+encodeURIComponent(runId):''),runActive);
+export function PlanPage(){const location=useLocation();const {planId}=useParams();const [search,setSearch]=useSearchParams();const runId=search.get('run_id');const {data,error,refresh}=useSavedRead<PlanDetail>('/plans/'+planId+(runId?'?run_id='+encodeURIComponent(runId):''),runActive,readPlanProgress);
   if(!data)return <><div className="page-heading"><h1>读取规划记录</h1></div>{error&&<p className="error-box" role="alert">{error}</p>}<button className="secondary-button" onClick={refresh}>重新读取</button><Link className="text-link" to="/plans">返回方案列表 ↗</Link></>;
   return <>{location.state?.profileSaved===true&&<p className="success-box" role="status">露营资料已保存。请点击“使用最新资料重新规划”，核对安排后更新方案。</p>}<PlanView data={data} error={error} refresh={refresh} current={()=>setSearch({})}/></>;
 }

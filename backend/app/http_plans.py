@@ -194,3 +194,16 @@ def plan_detail(plan_id: str, request: Request, run_id: str | None = None, user:
 @router.get('/runs/{run_id}')
 def run_detail(run_id: str, request: Request, user: User = Depends(current_user)):
     return retry_fields(request, user, request.app.state.plan_queries.run(user, run_id))
+
+
+@router.get('/runs/{run_id}/progress')
+def run_progress(run_id: str, request: Request, response: Response, user: User = Depends(current_user)):
+    response.headers['Cache-Control'] = 'no-store'
+    state = request.app.state
+    data = state.plan_queries.progress(user, run_id)  # Authorize before lease access.
+    if data['run']['is_active'] and data['run']['status'] == 'RUNNING':
+        # Keep the existing expired-worker lease guard. No runtime/data/model
+        # resolution or business eligibility is needed to report persisted state.
+        state.dispatcher.expire_if_needed(user, run_id)
+        data = state.plan_queries.progress(user, run_id)
+    return data
