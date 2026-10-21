@@ -32,6 +32,14 @@ from test_rule_orchestration import FailOnce, Proxy
 from test_v2_http_demo import CASES, ROOT, assessment, finalise, launch
 
 
+from audit_test_reads import internal_audit_reads, json_with_internal_audits
+
+# These tests verify private persistence; public role-scoped reads are tested separately.
+wait_run = internal_audit_reads(wait_run)
+launch = internal_audit_reads(launch)
+finalise = internal_audit_reads(finalise)
+
+
 def mock_roles(monkeypatch, *, settings=None):
     from app.llm import client, config
     requests, control = [], {}
@@ -117,7 +125,7 @@ def test_four_http_scenarios_use_both_registered_roles(tmp_path, monkeypatch, ca
         'missing_evidence': 'demo-river-flat', 'road_closure': 'demo-moonlit-field'}[case]
     with TestClient(application(tmp_path, case)) as client:
         assert client.get('/api/v1/health/ready').status_code == 200
-        meta = client.get('/api/v1/meta').json()
+        meta = json_with_internal_audits(client, client.get('/api/v1/meta'))
         assert meta['planning_stages']['logistics'] == meta['planning_stages']['itinerary'] == 'model'
         assert meta['planning_stages']['safety'] == 'rules' and requests == []
         headers = sign_in(client)
@@ -141,16 +149,16 @@ def test_revision_and_reassessment_have_new_logistics_not_new_origin_trace(tmp_p
         old = launch(client, headers, 'budget_revision')
         response = change(client, headers, old, 'revise', feedback='cheaper campsite')
         assert response.status_code == 202, response.text
-        revised = wait_run(client, response.json()['run_id'], 'SUCCEEDED')
+        revised = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'SUCCEEDED')
         assert revised['finalisation_available'] and revised['version']['version_number'] == 2
         original_audit, revised_audit = assert_audit(old), assert_audit(revised)
         assert original_audit['audit_id'] != revised_audit['audit_id']
         assert role_counts(requests) == {'PLANNING': 4, 'LOGISTICS': 6}
         path, snapshot = finalise(client, headers, revised)
-        current = client.get('/api/v1/plans/'+revised['plan']['plan_id']).json()
+        current = json_with_internal_audits(client, client.get('/api/v1/plans/'+revised['plan']['plan_id']))
         response = change(client, headers, current, key='two-role-reassess-123456')
         assert response.status_code == 202, response.text
-        reassessed = wait_run(client, response.json()['run_id'], 'SUCCEEDED')
+        reassessed = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'SUCCEEDED')
         audit = assert_audit(reassessed)
         assert role_counts(requests) == {'PLANNING': 4, 'LOGISTICS': 9}
         assert reassessed['version']['content'] == revised['version']['content']
@@ -158,7 +166,7 @@ def test_revision_and_reassessment_have_new_logistics_not_new_origin_trace(tmp_p
         assert audit['run_id'] != revised_audit['run_id'] and audit['assessment_id'] != revised_audit['assessment_id']
         assert audit['trace']['input_sha256'] != revised_audit['trace']['input_sha256']
         assert reassessed['model_planning_trace'] == revised['model_planning_trace']
-        assert client.get(path).json()['final_record'] == snapshot
+        assert json_with_internal_audits(client, client.get(path))['final_record'] == snapshot
         assert db_counts(client.app)['model_logistics_audits'] == 3
 
 
@@ -175,8 +183,8 @@ def test_saved_audit_and_final_readback_survive_new_logistics_prompt(tmp_path, m
         sign_in(client)
         saved = client.get('/api/v1/runs/'+detail['run']['run_id'])
         assert saved.status_code == 200
-        assert saved.json()['model_assessment_audits']['LOGISTICS'] == old_audit
-        assert client.get(path).json()['final_record'] == snapshot
+        assert json_with_internal_audits(client, saved)['model_assessment_audits']['LOGISTICS'] == old_audit
+        assert json_with_internal_audits(client, client.get(path))['final_record'] == snapshot
     assert role_counts(requests) == {'PLANNING': 2, 'LOGISTICS': 3}
 
 
@@ -210,13 +218,13 @@ def test_restart_after_failed_save_resumes_only_missing_steps(tmp_path, monkeypa
         headers = sign_in(client)
         confirmed = confirmed_request(client, headers)
         begun = start(client, headers, request_id=confirmed['request_id'], revision=confirmed['revision'])
-        failed = wait_run(client, begun.json()['run_id'], 'FAILED')
+        failed = wait_run(client, json_with_internal_audits(client, begun)['run_id'], 'FAILED')
         assert failed['retry_available']
         old_audit = failed['model_assessment_audits'].get('LOGISTICS')
         content, origin = failed['version']['content'], failed['model_planning_trace']
     with TestClient(application(tmp_path)) as client:
         headers = sign_in(client)
-        failed = client.get('/api/v1/runs/'+failed['run']['run_id']).json()
+        failed = json_with_internal_audits(client, client.get('/api/v1/runs/'+failed['run']['run_id']))
         assert retry(client, headers, failed).status_code == 202
         result = wait_run(client, failed['run']['run_id'], 'SUCCEEDED')
         audit = assert_audit(result)
@@ -237,7 +245,7 @@ def test_atomic_logistics_failure_keeps_saved_planning_and_retries_only_logistic
             condition = " WHEN NEW.operation='logistics'" if table == 'write_receipts' else ''
             db.execute(f"CREATE TRIGGER offline_logistics_failure BEFORE INSERT ON {table}{condition} BEGIN SELECT RAISE(ABORT,'injected temporary failure'); END")
         begun = start(client, headers, request_id=confirmed['request_id'], revision=confirmed['revision'])
-        failed = wait_run(client, begun.json()['run_id'], 'FAILED')
+        failed = wait_run(client, json_with_internal_audits(client, begun)['run_id'], 'FAILED')
         assert failed['retry_available'] and failed['model_assessment_audits'] == {}
         assert db_counts(client.app) == dict(versions=1, assessments=0, gear_checklists=0,
             model_planning_traces=1, model_logistics_audits=0)
@@ -256,7 +264,7 @@ def test_no_match_skips_both_models_and_audits(tmp_path, monkeypatch):
         headers = sign_in(client)
         confirmed = confirmed_request(client, headers, 'no_match')
         begun = start(client, headers, request_id=confirmed['request_id'], revision=confirmed['revision'])
-        result = wait_run(client, begun.json()['run_id'], 'SUCCEEDED')
+        result = wait_run(client, json_with_internal_audits(client, begun)['run_id'], 'SUCCEEDED')
         assert result['recommendations']['result']['search_outcome'] == 'NO_MATCH'
         assert result.get('model_assessment_audits', {}) == {} and result['version'] is None and requests == []
         assert db_counts(client.app)['model_logistics_audits'] == 0
@@ -270,7 +278,7 @@ def test_logistics_failure_keeps_real_plan_without_rules_fallback(tmp_path, monk
         headers = sign_in(client)
         confirmed = confirmed_request(client, headers)
         begun = start(client, headers, request_id=confirmed['request_id'], revision=confirmed['revision'])
-        failed = wait_run(client, begun.json()['run_id'], 'FAILED')
+        failed = wait_run(client, json_with_internal_audits(client, begun)['run_id'], 'FAILED')
         assert failed['run']['stage'] == 'ASSESSING_LOGISTICS'
         assert failed['run']['error']['recoverable'] is recoverable
         assert failed['assessments'] == [] and failed['model_assessment_audits'] == {}
@@ -301,7 +309,7 @@ def test_corrupt_checkpoint_never_regenerates_or_becomes_retryable(tmp_path, mon
         headers = sign_in(client)
         confirmed = confirmed_request(client, headers)
         begun = start(client, headers, request_id=confirmed['request_id'], revision=confirmed['revision'])
-        failed = wait_run(client, begun.json()['run_id'], 'FAILED')
+        failed = wait_run(client, json_with_internal_audits(client, begun)['run_id'], 'FAILED')
         assert retry(client, headers, failed).status_code == 202
         broken = wait_run(client, failed['run']['run_id'], 'FAILED')
         error = broken['run']['error']
@@ -324,7 +332,7 @@ def test_port_integrity_failure_is_not_promoted_to_retry(tmp_path, monkeypatch, 
         headers = sign_in(client)
         confirmed = confirmed_request(client, headers)
         begun = start(client, headers, request_id=confirmed['request_id'], revision=confirmed['revision'])
-        failed = wait_run(client, begun.json()['run_id'], 'FAILED')
+        failed = wait_run(client, json_with_internal_audits(client, begun)['run_id'], 'FAILED')
         assert failed['run']['error']['recoverable'] is False and not failed['retry_available']
         assert failed['run']['error']['allowed_actions'] == ['CONTACT_OPERATOR']
 
@@ -338,7 +346,7 @@ def test_missing_model_save_capability_fails_before_model_or_business_writes(tmp
         headers = sign_in(client)
         confirmed = confirmed_request(client, headers)
         begun = start(client, headers, request_id=confirmed['request_id'], revision=confirmed['revision'])
-        failed = wait_run(client, begun.json()['run_id'], 'FAILED')
+        failed = wait_run(client, json_with_internal_audits(client, begun)['run_id'], 'FAILED')
         assert failed['run']['error']['code'] == 'CONTRACT_INVALID' and requests == []
         assert db_counts(client.app)['versions'] == db_counts(client.app)['assessments'] == 0
 
@@ -348,7 +356,7 @@ def test_unready_model_mode_never_probes_or_falls_back(tmp_path, monkeypatch, se
     requests, _ = mock_roles(monkeypatch, settings=settings)
     with TestClient(application(tmp_path)) as client:
         assert client.get('/api/v1/health/ready').status_code == 503
-        assert client.get('/api/v1/meta').json()['planning_stages']['logistics'] != 'model'
+        assert json_with_internal_audits(client, client.get('/api/v1/meta'))['planning_stages']['logistics'] != 'model'
         assert requests == []
 
 
@@ -448,7 +456,7 @@ def test_lost_lease_cancels_logistics_and_rejects_late_artifacts(tmp_path, monke
         headers = sign_in(client)
         confirmed = confirmed_request(client, headers)
         begun = start(client, headers, request_id=confirmed['request_id'], revision=confirmed['revision'])
-        failed = wait_run(client, begun.json()['run_id'], 'FAILED')
+        failed = wait_run(client, json_with_internal_audits(client, begun)['run_id'], 'FAILED')
         assert cancelled.is_set() and failed['run']['error']['code'] == 'STALE_CONTEXT'
         assert db_counts(client.app)['assessments'] == db_counts(client.app)['model_logistics_audits'] == 0
         assert role_counts(requests) == {'PLANNING': 2, 'LOGISTICS': 1}
@@ -466,8 +474,8 @@ def test_foreign_owner_and_restarted_history_use_saved_two_role_audits(tmp_path,
         assert client.get(path).status_code == 404
     with TestClient(application(tmp_path)) as client:
         sign_in(client)
-        assert client.get(path).json()['final_record'] == snapshot
-        restored = client.get('/api/v1/plans/'+detail['plan']['plan_id']).json()
+        assert json_with_internal_audits(client, client.get(path))['final_record'] == snapshot
+        restored = json_with_internal_audits(client, client.get('/api/v1/plans/'+detail['plan']['plan_id']))
         assert restored['model_assessment_audits']['LOGISTICS'] == audit
         assert role_counts(requests) == {'PLANNING': 2, 'LOGISTICS': 3}
 
@@ -484,7 +492,7 @@ def test_hybrid_rejects_logistics_identity_drift_during_model_wait(tmp_path, mon
         headers = sign_in(client)
         confirmed = confirmed_request(client, headers)
         begun = start(client, headers, request_id=confirmed['request_id'], revision=confirmed['revision'])
-        failed = wait_run(client, begun.json()['run_id'], 'FAILED')
+        failed = wait_run(client, json_with_internal_audits(client, begun)['run_id'], 'FAILED')
         assert failed['run']['error']['code'] == 'STALE_CONTEXT'
         assert db_counts(client.app)['model_logistics_audits'] == 0
 

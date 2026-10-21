@@ -8,6 +8,7 @@ from app.contracts.dto import RecommendCampsitesResult
 from app.storage.plan_queries import PlanQueries
 from app.storage.database import Database
 from app.storage.repository import Repository
+from app.application.presentation import plan_response
 from plan_fixtures import create, call
 from test_accounts import login
 
@@ -37,7 +38,7 @@ def test_partial_progress_uses_saved_artifacts_and_survives_restart(view_client)
     row=client.get('/api/v1/plans').json()['plans'][0]
     assert row['plan_id']==scope.plan_id and row['version_number']==1
     restarted=Database(app.state.database.path); restarted.initialize()
-    assert PlanQueries(restarted).detail(user,scope.plan_id)==result
+    assert plan_response(PlanQueries(restarted).detail(user,scope.plan_id),user)==result
 
 
 @pytest.mark.parametrize('case',['unknown','closed','complete'])

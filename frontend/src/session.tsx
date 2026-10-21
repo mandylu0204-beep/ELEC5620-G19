@@ -56,7 +56,7 @@ export function AccountControl() {
   const navigate = useNavigate();
   if (loading) return <span>检查账户…</span>;
   if (!session) return <Link className="account-link" to="/login">登录 ↗</Link>;
-  return <div className="account-control"><span>{session.user.display_name} · {session.user.role === 'FOUNDER' ? 'Founder' : 'Camper'}</span><button disabled={busy} onClick={async () => { setBusy(true); setError(''); try { await logout(); navigate('/login'); } catch { setError('退出失败，请重试'); } finally { setBusy(false); } }}>{busy ? '正在退出' : '退出'}</button>{error && <span role="alert">{error}</span>}</div>;
+  return <div className="account-control"><span>{session.user.display_name} · {session.user.role === 'FOUNDER' ? '审核员' : '露营用户'}</span><button disabled={busy} onClick={async () => { setBusy(true); setError(''); try { await logout(); navigate('/login'); } catch { setError('退出失败，请重试'); } finally { setBusy(false); } }}>{busy ? '正在退出' : '退出'}</button>{error && <span role="alert">{error}</span>}</div>;
 }
 
 export function Protected({ role, children }: { role: User['role']; children: ReactNode }) {
@@ -65,7 +65,7 @@ export function Protected({ role, children }: { role: User['role']; children: Re
   if (loading) return <section className="panel">正在检查登录状态…</section>;
   if (error) return <section className="panel"><p role="alert">{error}</p><button onClick={reload}>重新连接</button></section>;
   if (!session) return <section className="panel"><h2>先登录你的账户</h2><p>登录后可继续当前操作。</p><Link className="primary-button" to="/login" state={{returnTo:location.pathname+location.search}}>去登录 ↗</Link></section>;
-  if (session.user.role !== role) return <section className="panel"><h2>当前账户没有此页面权限</h2><p>Camper 查看自己的资料与方案；Founder 处理人工审核。</p></section>;
+  if (session.user.role !== role) return <section className="panel"><h2>当前账户没有此页面权限</h2><p>露营用户查看自己的资料与方案；审核员处理人工审核。</p></section>;
   return <div key={session.user.user_id}>{children}</div>;
 }
 
@@ -84,5 +84,5 @@ export function LoginPage() {
     catch (reason) { setError(reason instanceof ApiFailure ? reason.message : '登录失败，请检查服务连接。'); }
     finally { setBusy(false); }
   }
-  return <><div className="page-heading"><span className="eyebrow">YOUR ACCOUNT</span><h1>欢迎回来。</h1><p>登录后，继续你的露营计划。</p></div><div className="preview-grid"><section className="panel"><h2>账户登录</h2>{registeredUsername&&<p className="success-box" role="status">注册成功，请使用新账户登录。</p>}<form onSubmit={submit}><label htmlFor="username">用户名</label><input id="username" autoComplete="username" maxLength={80} required disabled={busy} value={username} onChange={event => setUsername(event.target.value)} /><label htmlFor="password">密码</label><input id="password" type="password" autoComplete="current-password" maxLength={256} required disabled={busy} value={password} onChange={event => setPassword(event.target.value)} />{error && <p className="error-box" role="alert">{error}</p>}<button className="primary-button" disabled={busy}>{busy ? '正在登录…' : '登录'} <span>↗</span></button></form><p>还没有账户？<Link className="text-link" to="/register" state={{returnTo:location.state?.returnTo}}>注册账户 ↗</Link></p></section><section className="panel next-panel"><span className="tag">SYNTHETIC DEMO ACCOUNTS</span><h2>本地演示账户</h2><p>使用下方演示账号体验不同角色。</p><dl className="demo-accounts">{[['camper.a','CampMate-A-2026!'],['camper.b','CampMate-B-2026!'],['founder','CampMate-Founder-2026!']].map(([name, pass]) => <div key={name}><dt>{name}</dt><dd><code>{pass}</code></dd></div>)}</dl><p className="muted">露营者管理资料与行程，负责人审核方案。</p></section></div></>;
+  return <><div className="page-heading"><span className="eyebrow">账户登录</span><h1>欢迎回来。</h1><p>登录后，继续你的露营计划。</p></div><div className="preview-grid"><section className="panel"><h2>账户登录</h2>{registeredUsername&&<p className="success-box" role="status">注册成功，请使用新账户登录。</p>}<form onSubmit={submit}><label htmlFor="username">用户名</label><input id="username" autoComplete="username" maxLength={80} required disabled={busy} value={username} onChange={event => setUsername(event.target.value)} /><label htmlFor="password">密码</label><input id="password" type="password" autoComplete="current-password" maxLength={256} required disabled={busy} value={password} onChange={event => setPassword(event.target.value)} />{error && <p className="error-box" role="alert">{error}</p>}<button className="primary-button" disabled={busy}>{busy ? '正在登录…' : '登录'} <span>↗</span></button></form><p>还没有账户？<Link className="text-link" to="/register" state={{returnTo:location.state?.returnTo}}>注册账户 ↗</Link></p></section><section className="panel next-panel"><span className="tag">演示账户</span><h2>本地演示账户</h2><p>使用下方演示账号体验不同角色。</p><dl className="demo-accounts">{[['camper.a','CampMate-A-2026!'],['camper.b','CampMate-B-2026!'],['founder','CampMate-Founder-2026!']].map(([name, pass]) => <div key={name}><dt>{name}</dt><dd><code>{pass}</code></dd></div>)}</dl><p className="muted">露营者管理资料与行程，负责人审核方案。</p></section></div></>;
 }

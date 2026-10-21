@@ -8,7 +8,7 @@ const amount=(cents:number|null)=>cents===null?'未知':new Intl.NumberFormat('e
 export function NearMatches({value,requestId}:{value:RecommendationGuidance|null|undefined;requestId:string}){
   if(!value)return null;
   return <section className="panel near-matches" aria-label="最接近的营地比较">
-    <span className="eyebrow">COMPARE & ADJUST</span><h2>最接近的营地</h2>
+    <span className="eyebrow">比较与调整</span><h2>最接近的营地</h2>
     <p>这 {value.near_matches.length} 个营地最接近你的需求，仍有以下条件需要调整或核实。</p>
     <p className="muted">以下价格仅含营地费。</p>
     {value.metadata_note&&<p className="clarifications">{value.metadata_note}</p>}

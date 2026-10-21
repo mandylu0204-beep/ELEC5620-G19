@@ -16,7 +16,7 @@ from test_v2_http_demo import application, INPUTS, CASES
 def comparison(camps,req=None,profile=None):
     dataset=make_agent().dataset
     req,profile=req or requirements(budget_cents=100),profile or full_profile()
-    fake=SimpleNamespace(campsites=camps,v2_policy=None)
+    fake=SimpleNamespace(campsites=camps,v2_policy=None,has_v2_policy=False)
     result=recommend(fake,RecommendCampsitesInput(confirmed_requirements=req,profile_snapshot=profile,demo_context=DEMO))
     confirmed=ConfirmedContext(request_id='near-unit-request',confirmed_at=datetime.now(timezone.utc),requirements=req,
         profile_snapshot=profile,demo_context=DEMO,dataset_context=dataset.context)

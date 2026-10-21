@@ -58,7 +58,9 @@ def test_revision_receives_previous_version_and_saves_feedback_and_new_evidence(
         assert current['version']['version_number'] == 2
         assert current['version']['content']['selected_campsite_ids'] != old['version']['content']['selected_campsite_ids']
         assert current['version']['content']['revision_reason'] == 'change campsite'
-        assert current['confirmed_context']['dataset_context']['selection_config']['a_revision_feedback'] == 'change campsite'
+        from audit_test_reads import CAMPER
+        internal = app.state.plan_queries.detail(CAMPER,current['plan']['plan_id'])
+        assert internal['confirmed_context']['dataset_context']['selection_config']['a_revision_feedback'] == 'change campsite'
         assert len(current['assessments']) == 2 and not current['reviews']
         assert current['version']['version_context']['input_fingerprint'] != old['version']['version_context']['input_fingerprint']
         # The alternate campsite has no fixture evidence; revision cannot imply safety clearance.

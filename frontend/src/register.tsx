@@ -26,7 +26,7 @@ export function RegisterPage(){
     }catch(reason){setError(reason instanceof ApiFailure?reason.message:'注册结果暂未确认，请检查连接；如账号已创建，可直接登录。');}
     finally{locked.current=false;setBusy(false);}
   }
-  return <><div className="page-heading"><span className="eyebrow">JOIN CAMPMATE</span><h1>开启你的露营计划。</h1><p>创建账户，保存专属于你的资料与行程。</p></div>
+  return <><div className="page-heading"><span className="eyebrow">加入露营伙伴</span><h1>开启你的露营计划。</h1><p>创建账户，保存专属于你的资料与行程。</p></div>
     <section className="panel registration-panel"><h2>注册账户</h2><form onSubmit={submit}><fieldset disabled={busy}>
       <label htmlFor="register-name">昵称</label><input id="register-name" autoComplete="nickname" required maxLength={80} value={name} onChange={event=>setName(event.target.value)}/>
       <label htmlFor="register-username">用户名</label><input id="register-username" autoComplete="username" required minLength={3} maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9_.\-]{2,31}" aria-describedby="register-username-hint" value={username} onChange={event=>setUsername(event.target.value)}/>

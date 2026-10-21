@@ -44,6 +44,9 @@ def project(data):
             current={'records': rows, 'available_quantity': fact.get('available_quantity'), 'unit': fact.get('unit')},
             required={'quantity': fact.get('required_quantity'), 'missing_quantity': fact.get('missing_quantity'),
                 'capacity_persons': profile.get('group_size') if key in {'tent', 'vehicle'} else None})
+        if key == 'tent':
+            from .presentation import tent_capacity
+            issues['equipment.'+key]['tent_capacity'] = tent_capacity(profile, logistics)
 
     questions = logistics.get('clarifications', [])
     fields = {row['field'] for row in questions}

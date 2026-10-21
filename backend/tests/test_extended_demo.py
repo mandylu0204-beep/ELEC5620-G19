@@ -151,6 +151,8 @@ def test_real_rule_approval_finalisation_and_fresh_review_after_reassessment(app
         assert reassessed['run']['run_id'] != current['run']['run_id']
         assert reassessed['reviews'] == [] and not reassessed['finalisation_available']
         assert reassessed['version']['status'] == 'ESCALATED'
-        assert client.get(final_path).json()['final_record'] == snapshot
+        from app.application.presentation import plan_response
+        from audit_test_reads import CAMPER
+        assert client.get(final_path).json()['final_record'] == plan_response({'final_record':snapshot},CAMPER)['final_record']
         founder = sign_in(client, 'founder', 'CampMate-Founder-2026!')
         assert client.post(review_path, headers=founder, json=body).status_code == 409

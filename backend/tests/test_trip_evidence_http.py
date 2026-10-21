@@ -27,6 +27,12 @@ ROOT=Path(__file__).resolve().parents[2]
 PACKAGE=ROOT/'data/synthetic_demo_v2_1'
 
 
+from audit_test_reads import internal_audit_reads, json_with_internal_audits
+
+# Runtime audit assertions use internal reads, not the public Camper response.
+finalise = internal_audit_reads(finalise)
+
+
 def wait_run(client,run_id,status):
     # The expanded immutable index is verified on HTTP reads. Five seconds
     # from tiny legacy fixtures is flaky under concurrent CI load. This only
@@ -35,7 +41,7 @@ def wait_run(client,run_id,status):
     while time.monotonic()<deadline:
         response=client.get('/api/v1/runs/'+run_id)
         assert response.status_code==200,response.status_code
-        data=response.json(); run=data['run']
+        data=json_with_internal_audits(client, response); run=data['run']
         if run['status']==status:
             return data
         if run['status'] in {'FAILED','CANCELLED','SUCCEEDED'}:
@@ -64,17 +70,17 @@ def launch(client,headers,case='normal',*,start=None,unknown_tent=False):
         payload['raw_text']=payload['raw_text'].replace(old,start)
     result=client.post('/api/v1/requests',headers=headers,json=payload)
     assert result.status_code==201,result.text
-    request=result.json(); path='/api/v1/requests/'+request['request_id']
+    request=json_with_internal_audits(client, result); path='/api/v1/requests/'+request['request_id']
     result=client.post(path+'/interpret',headers=headers,json={'expected_revision':request['revision']})
-    assert result.status_code==200 and result.json()['status']=='AWAITING_CONFIRMATION',result.text
-    result=client.post(path+'/confirm',headers=headers,json={'expected_revision':result.json()['revision'],
+    assert result.status_code==200 and json_with_internal_audits(client, result)['status']=='AWAITING_CONFIRMATION',result.text
+    result=client.post(path+'/confirm',headers=headers,json={'expected_revision':json_with_internal_audits(client, result)['revision'],
         'command_key':'trip-confirm-123456','acknowledged':True})
     assert result.status_code==200,result.text
-    confirmed=result.json()
+    confirmed=json_with_internal_audits(client, result)
     result=client.post(path+'/plan',headers=headers,json={'expected_request_revision':confirmed['revision'],
         'command_key':'trip-plan-123456'})
     assert result.status_code==202,result.text
-    return result.json()['run_id']
+    return json_with_internal_audits(client, result)['run_id']
 
 
 @pytest.mark.parametrize('model',[False,True])
@@ -89,7 +95,7 @@ def test_one_instance_revises_campsite_then_reassesses_without_switching_safety_
         assert not old['finalisation_available']
         response=change(client,headers,old,'revise',feedback='cheaper campsite')
         assert response.status_code==202,response.text
-        revised=wait_run(client,response.json()['run_id'],'SUCCEEDED')
+        revised=wait_run(client,json_with_internal_audits(client, response)['run_id'],'SUCCEEDED')
         assert revised['version']['content']['selected_campsite_ids']==['demo-moonlit-field']
         assert assessment(revised,'SAFETY')['result']['outcome']=='PASSED'
         assert revised['finalisation_available']
@@ -100,13 +106,13 @@ def test_one_instance_revises_campsite_then_reassesses_without_switching_safety_
         assert any(key.startswith('trip-demo-moonlit-field') for key in ids)
         assert not any(key.startswith('trip-demo-wattle-rest') for key in ids)
         path,snapshot=finalise(client,headers,revised)
-        current=client.get('/api/v1/plans/'+old['plan']['plan_id']).json()
+        current=json_with_internal_audits(client, client.get('/api/v1/plans/'+old['plan']['plan_id']))
         response=change(client,headers,current,key='trip-reassess-123456')
         assert response.status_code==202,response.text
-        reassessed=wait_run(client,response.json()['run_id'],'SUCCEEDED')
+        reassessed=wait_run(client,json_with_internal_audits(client, response)['run_id'],'SUCCEEDED')
         assert reassessed['version']['version_context']['plan_version_id']==revised['version']['version_context']['plan_version_id']
         assert reassessed['version']['content']==revised['version']['content']
-        assert client.get(path).json()['final_record']==snapshot
+        assert json_with_internal_audits(client, client.get(path))['final_record']==snapshot
         if model:
             before,after=assert_audit(revised),assert_audit(reassessed)
             assert before['audit_id']!=after['audit_id']
@@ -198,10 +204,10 @@ def test_new_index_snapshot_does_not_rewrite_historical_saved_audit_or_final(tmp
         headers=sign_in(client)
         read=client.get('/api/v1/runs/'+detail['run']['run_id'])
         assert read.status_code==200,read.text
-        assert read.json()['model_planning_trace']==origin
-        assert read.json()['model_assessment_audits']['LOGISTICS']==audit
-        assert read.json()['current_inputs_error'] is not None
-        assert client.get(path).json()['final_record']==snapshot
+        assert json_with_internal_audits(client, read)['model_planning_trace']==origin
+        assert json_with_internal_audits(client, read)['model_assessment_audits']['LOGISTICS']==audit
+        assert json_with_internal_audits(client, read)['current_inputs_error'] is not None
+        assert json_with_internal_audits(client, client.get(path))['final_record']==snapshot
         assert role_counts(requests)=={'PLANNING':2,'LOGISTICS':3}
 
 
@@ -227,9 +233,9 @@ def test_changed_index_cannot_resume_old_failed_run_or_regenerate_saved_model_pr
         headers=sign_in(client)
         read=client.get('/api/v1/runs/'+failed['run']['run_id'])
         assert read.status_code==200
-        assert read.json()['model_assessment_audits']['LOGISTICS']==audit
-        result=retry(client,headers,read.json())
-        assert result.status_code==409 and result.json()['error']['code']=='STALE_CONTEXT'
+        assert json_with_internal_audits(client, read)['model_assessment_audits']['LOGISTICS']==audit
+        result=retry(client,headers,json_with_internal_audits(client, read))
+        assert result.status_code==409 and json_with_internal_audits(client, result)['error']['code']=='STALE_CONTEXT'
         assert role_counts(requests)=={'PLANNING':2,'LOGISTICS':3}
 
 

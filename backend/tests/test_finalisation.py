@@ -14,6 +14,7 @@ from app.storage.finalisation import FinaliseInput, FinalisationService
 from app.storage.plan_queries import PlanQueries
 from app.storage.repository import Repository
 from app.storage.reviews import ReviewInput
+from app.application.presentation import plan_response
 from plan_fixtures import create, call
 from test_accounts import login, CLIENT_HEADER
 from test_reviews import command as review_command
@@ -83,8 +84,8 @@ def test_final_snapshot_atomic_idempotent_and_restart(final_client,case):
     duplicate=command(updated,'different-command')
     assert client.post(path+'/finalise',headers=headers,json=duplicate).status_code==409
     restarted=Database(app.state.database.path);restarted.initialize()
-    assert FinalisationService(restarted).detail(camper,scope.plan_id,saved['final_id'])==record
-    assert PlanQueries(restarted).detail(camper,scope.plan_id)==updated
+    assert plan_response(FinalisationService(restarted).detail(camper,scope.plan_id,saved['final_id']),camper)==record
+    assert plan_response(PlanQueries(restarted).detail(camper,scope.plan_id),camper)==updated
     app.state.repository.save_profile(camper,ProfileSnapshot(group_size=5),0)
     assert client.get(finalpath).json()==record
     with app.state.database.transaction(write=False) as connection:

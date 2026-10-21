@@ -43,6 +43,14 @@ class PlanQueries:
                 item['end_date'] = confirmed['requirements']['end_date'] if confirmed else None
                 final = connection.execute('SELECT * FROM final_records WHERE plan_id=? ORDER BY rowid DESC LIMIT 1', (row['plan_id'],)).fetchone()
                 item['last_final'] = final_index(final, row) if final else None
+                from ..application.logistics_issues import project
+                from ..application.presentation import display_status
+                assessments = [{'kind': v['kind'], 'result': json.loads(v['payload'])['result']} for v in connection.execute(
+                    'SELECT kind,payload FROM assessments WHERE run_id=?', (row['active_run_id'],))]
+                by_kind = {v['kind']: v['result'] for v in assessments}
+                issues = project({'plan': item, 'confirmed_context': confirmed, 'assessments': assessments}) if confirmed else []
+                item['display_status'] = display_status(row['run_status'], row['version_status'],
+                    by_kind.get('LOGISTICS'), by_kind.get('SAFETY'), issues)
                 result.append(item)
             return result
 

@@ -34,7 +34,7 @@ export function ReplanFromProfile({requestId,requirements}:{requestId:string;req
   const profile=record?.confirmed_context?.profile_snapshot??record?.profile_snapshot??null;
   const ready=!!record&&['AWAITING_CONFIRMATION','CONFIRMED'].includes(record.status);
   return <section className="panel replan-panel" aria-label="使用最新资料重新规划">
-    <div className="logistics-todos-heading"><div><h2>更新资料后，重新规划</h2><p>保留本次目的地、日期、预算和偏好，使用最新保存的露营资料生成新方案。</p></div>
+    <div className="logistics-todos-heading"><div><h2>更新资料后，重新规划</h2><p>保留本次目的地、日期、预算和偏好，使用最新保存的露营资料生成新方案。此操作不会更新原方案的确认快照或替换原检查；核对并确认后，新方案还需完成检查。</p></div>
       {!open&&<button className="primary-button" disabled={busy} onClick={prepare}>使用最新资料重新规划 ↗</button>}</div>
     {open&&<div className="replan-preview">
       {busy&&<p role="status">正在处理，请稍候…</p>}

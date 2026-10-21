@@ -74,7 +74,9 @@ def test_v2_identity_metadata_and_demo_snapshot_follow_selected_package(package)
         assert response.status_code == 200
         confirmed = response.json()['confirmed_context']
         assert confirmed['demo_context']['dataset_version'] == confirmed['dataset_context']['dataset_version'] == '2.0.0'
-        assert set(RUNTIME_FILES).issubset(confirmed['dataset_context']['file_digests'])
+        from audit_test_reads import CAMPER
+        internal = client.app.state.requests.get(CAMPER,ready['request_id'])['confirmed_context']
+        assert set(RUNTIME_FILES).issubset(internal['dataset_context']['file_digests'])
 
 
 @pytest.mark.parametrize('changed', ['runtime_requests.json', 'runtime_safety_evidence.json', 'scenario', 'selection'])

@@ -26,6 +26,9 @@ export function TripCoveragePanel({value,requestId}:{value:TripCoverage|null|und
         ?`尚未覆盖：${issue.uncovered_ranges.map(range).join('；')}。`
         :'现有资料分布于多个有效区间，尚没有一份资料能独立覆盖整段行程。'
         :explanation[issue.code]??'当前资料尚不能支持此次行程的判断。'}</p>
+      {issue.code!=='OUTSIDE_VALIDITY'&&issue.uncovered_ranges.length>0&&<p>缺少日期：{issue.uncovered_ranges.map(range).join('；')}。</p>}
+      <p>影响：本项检查尚未完成，不能据此确认整段行程安全。处理：调整日期或营地，或保留草稿等待适用资料更新后重新检查。</p>
+      {issue.kind==='WEATHER'&&<p>建议重查：{value.next_weather_check_on?`${value.next_weather_check_on} 或之后`:'临近出发、预报覆盖所缺日期后'}{value.weather_requires_staged_checks?'，并在途中分段复查':''}；届时仍以实际资料为准。</p>}
       {issue.available_ranges.length>0&&<details><summary>查看已发布资料的日期</summary><ul>{issue.available_ranges.map((item,i)=><li key={i}>{range(item)}</li>)}</ul></details>}
     </li>)}</ul>
     {(value.alternative_campsites.length>0||value.alternative_dates.length>0)&&<div className="coverage-options"><h3>可以参考的调整</h3>

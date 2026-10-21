@@ -56,7 +56,8 @@ def test_decision_is_persisted_once_with_exact_evidence(review_client,decision,s
     assert client.get('/api/v1/review-queue').json()=={'reviews':[]}
     restarted=Database(app.state.database.path);restarted.initialize()
     founder=User('founder','founder','Founder','FOUNDER')
-    assert ReviewService(restarted).detail(founder,scope.plan_id)==updated
+    from app.application.presentation import plan_response
+    assert plan_response(ReviewService(restarted).detail(founder,scope.plan_id),founder)==updated
     login(client)
     own=client.get('/api/v1/plans/'+scope.plan_id).json()
     assert own['reviews']==updated['reviews'] and own['eligibility']['eligible']==eligible

@@ -161,7 +161,10 @@ def test_saved_history_uses_archived_facts_without_current_provider_or_credentia
     saved.wf.logistics_facts_provider=lambda *args: pytest.fail('History recomputed current data')
     sign_in(saved.client)
     detail=saved.client.get('/api/v1/plans/'+saved.scope.plan_id)
-    assert detail.status_code==200 and detail.json()['model_assessment_audits']['LOGISTICS']['trace']['role']=='LOGISTICS'
+    assert detail.status_code==200 and 'trace' not in detail.json()['model_assessment_audits']['LOGISTICS']
+    from audit_test_reads import CAMPER
+    internal=saved.app.state.plan_queries.detail(CAMPER,saved.scope.plan_id)
+    assert internal['model_assessment_audits']['LOGISTICS']['trace']['role']=='LOGISTICS'
     assert len(saved.calls)==3
 
 
