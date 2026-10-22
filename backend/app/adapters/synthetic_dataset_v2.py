@@ -184,7 +184,8 @@ class SyntheticDatasetV2Adapter:
             if expected_context is not None and any(expected_context.file_digests.get(name) != value for name, value in actual.items()):
                 raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='v2 Adapter 消费的原始字节与应用登记摘要不一致。'))
             from ..agents.rules.trip_evidence import POLICY_VERSION, TripEvidenceSelector
-            cache_key = (snapshot_key, str(root), type(self), type(self)._parse,
+            from .snapshot_archive import FORMAT_VERSION
+            cache_key = (FORMAT_VERSION, snapshot_key, str(root), type(self), type(self)._parse,
                 ADAPTER_VERSION_V2, V2_RULES_VERSION, POLICY_VERSION, TripEvidenceSelector,
                 tuple(sorted(actual.items())),
                 expected_context.model_dump_json() if expected_context is not None else None)

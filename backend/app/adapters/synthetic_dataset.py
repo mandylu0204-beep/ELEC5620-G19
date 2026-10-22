@@ -260,7 +260,7 @@ class SyntheticDataset:
     ):
         self._context = context
         self._campsites, self._gear_rules, self._costs = campsites, gear_rules, costs
-        self._profiles, self._requests, self._safety = profiles, requests, safety
+        self._profiles, self._requests, self._safety = profiles, requests, deepcopy(safety)
         # v2-only declarative source material. Kept separate from shared DTOs so
         # contract 1.0 remains stable and the source expressions remain auditable.
         # Own the source objects: neither constructor aliases nor exported views
@@ -278,7 +278,11 @@ class SyntheticDataset:
     @property
     def v2_policy(self) -> dict | None:
         """Detached compatibility view; rule hot paths use per-record getters."""
-        return deepcopy(self._v2_policy)
+        from .snapshot_archive import RawSafetyArchive
+        result = deepcopy(self._v2_policy)
+        if result is not None and type(result.get('safety')) is RawSafetyArchive:
+            result['safety'] = dict(result['safety'].items())
+        return result
 
     @property
     def runtime_requests(self) -> dict:
@@ -336,11 +340,17 @@ class SyntheticDataset:
 
     @property
     def safety_cases(self) -> tuple[SafetyRecord, ...]:
+        from .snapshot_archive import SafetyArchive
+        if type(self._safety) is SafetyArchive:
+            return tuple(self._safety.values())
         return tuple(record.model_copy(deep=True) for record in self._safety.values())
 
     def _get(self, records: dict[str, Record], record_id: str) -> Record:
         if record_id not in records:
             raise _failure('Synthetic source record does not exist.', record_id=record_id)
+        from .snapshot_archive import SafetyArchive
+        if type(records) is SafetyArchive:
+            return records[record_id]
         return records[record_id].model_copy(deep=True)
 
     def get_campsite(self, campsite_id: str) -> CampsiteRecord:
