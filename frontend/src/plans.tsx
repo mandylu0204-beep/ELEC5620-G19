@@ -63,6 +63,10 @@ export function useSavedRead<T>(path:string,poll:(value:T)=>boolean){
 function Sources({refs}:{refs:Source[]}){return refs.length?<details className="source-details"><summary>来源记录（{refs.length}）</summary><ul>{refs.map((ref,index)=><li key={index}><strong>{ref.dataset_file} · {ref.record_id}</strong><span>{ref.provenance.source_type} · {ref.provenance.source_name} · 来源日期 {ref.provenance.source_date}</span>{(ref.valid_from||ref.valid_to)&&<span>适用范围：{ref.valid_from??'未知'} 至 {ref.valid_to??'未知'}</span>}</li>)}</ul></details>:<p className="muted">没有提供来源记录。</p>;}
 function Blockers({items}:{items:Blocker[]}){return items.length?<div className="clarifications"><h3>需要处理的条件</h3><ul>{[...new Set(items.map(item=>blockerText(item.code)))].map(text=><li key={text}><strong>问题：</strong>{text}<p>影响：当前条件尚不能用于确认最终方案。处理：核对对应资料或调整安排后重新检查；需要人工审核时请等待审核。</p></li>)}</ul><details><summary>查看检查详情</summary>{items.map((item,index)=><div key={index}><p><strong>{item.code}</strong> · {item.message}</p>{item.source_refs.length>0&&<Sources refs={item.source_refs}/>}</div>)}</details></div>:null;}
 
+export function NewPlanPrompt(){
+  return <section className="panel"><h2>还没有露营方案</h2><p>先完善同行、交通和装备资料，再填写并确认露营需求。</p><Link className="text-link" to="/profile">开始规划 ↗</Link></section>;
+}
+
 export function PlansPage(){
   const {session,reload}=useSession();
   const [confirmDelete,setConfirmDelete]=useState<string|null>(null);
@@ -84,7 +88,7 @@ export function PlansPage(){
   const rows=data?.plans.filter(row=>!deleted.has(row.plan_id))??[];
   return <><div className="page-heading"><span className="eyebrow">方案总览</span><h1>我的露营方案</h1><p>查看安排、处理待确认事项，保存你的最终方案。</p></div>{error&&<p className="error-box" role="alert">{error}</p>}<button className="secondary-button" onClick={refresh}>刷新方案</button>
     {deleteError&&<p className="error-box" role="alert">{deleteError}</p>}
-    {!data?<section className="panel"><p>正在读取…</p></section>:!rows.length?<section className="panel"><h2>还没有露营方案</h2><p>填写资料并确认需求后，即可开始规划。</p><Link className="text-link" to="/request">开始规划 ↗</Link></section>:<div className="plan-cards">{rows.map(row=><article className="panel plan-list-card" key={row.plan_id}><Link className="plan-card" to={'/plans/'+row.plan_id}><h2>{row.destination??'露营方案'}</h2><p className="tag">{planRowState(row)}</p>
+    {!data?<section className="panel"><p>正在读取…</p></section>:!rows.length?<NewPlanPrompt/>:<div className="plan-cards">{rows.map(row=><article className="panel plan-list-card" key={row.plan_id}><Link className="plan-card" to={'/plans/'+row.plan_id}><h2>{row.destination??'露营方案'}</h2><p className="tag">{planRowState(row)}</p>
       {row.start_date&&row.end_date&&<p>{row.start_date} — {row.end_date}</p>}{row.version_number?<p>版本 {row.version_number}</p>:row.search_outcome==='NO_MATCH'?<p>比较最接近的营地，再调整你的条件。</p>:<p>完成规划后可查看行程。</p>}
       {row.run_status==='RUNNING'&&<p>正在{label(row.stage)}</p>}{row.last_final&&!row.last_final.is_current&&<p className="muted">已保留此前保存的最终方案</p>}<small>创建于 {time(row.created_at)}（悉尼时间）</small><span className="text-link">{row.search_outcome==='NO_MATCH'?'查看营地比较':'查看方案'} ↗</span></Link>
       {confirmDelete===row.plan_id?<div className="plan-delete-confirm" role="group" aria-label="确认删除方案"><p>删除这份方案？删除后将不再显示，也无法在页面中恢复。</p><div><button className="secondary-button delete-plan-button" disabled={deleting!==null} onClick={()=>void removePlan(row.plan_id)}>{deleting===row.plan_id?'正在删除…':'确认删除'}</button><button className="secondary-button" disabled={deleting!==null} onClick={()=>{setConfirmDelete(null);setDeleteError('');}}>取消</button></div></div>

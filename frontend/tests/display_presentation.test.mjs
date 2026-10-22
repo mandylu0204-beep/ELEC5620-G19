@@ -15,12 +15,120 @@ after(()=>server.close());
 const panels=await server.ssrLoadModule('/src/display_panels.tsx');
 const {LogisticsIssues}=await server.ssrLoadModule('/src/logistics_issues.tsx');
 const {TripCoveragePanel}=await server.ssrLoadModule('/src/trip_coverage.tsx');
-const {PlanView}=await server.ssrLoadModule('/src/plans.tsx');
+const {PlanView,NewPlanPrompt}=await server.ssrLoadModule('/src/plans.tsx');
+const {App}=await server.ssrLoadModule('/src/App.tsx');
+const {GroupSizeField,EquipmentUnitField,addEquipment,changeEquipmentCategory,fixedEquipmentUnit,ProfileSummary}=await server.ssrLoadModule('/src/profile.tsx');
 const {SessionProvider}=await server.ssrLoadModule('/src/session.tsx');
 const render=(component,props)=>renderToStaticMarkup(h(component,props));
 const routed=(component,props)=>renderToStaticMarkup(h(MemoryRouter,null,h(component,props)));
 const tent={records:[{quantity:2,capacity_per_tent:1,total_capacity:2,confirmed:true,unit:'item'}],
   group_size:3,registered_tent_count:2,registered_capacity:2,assessed_capacity:'2',required_person_spaces:'3',missing_person_spaces:'1'};
+
+const gear=(patch={})=>({item_key:'tent',label:'帐篷',quantity:'2',unit:'item',capacity:'3',confirmed:true,...patch});
+test('fixed equipment units are readonly, tent displays 顶 but retains item for calculations',()=>{
+  for(const [key,unit,title] of [['tent','item','顶'],['drinking_water','litre','升'],['meal_supplies','portion','份'],['transport_itinerary','plan','份计划']]){
+    const item=gear({item_key:key,unit});
+    const html=render(EquipmentUnitField,{item,index:0,onChange(){throw new Error('Must not change on read');}});
+    assert.match(html,/readonly=""/i);assert.match(html,new RegExp(`value="${title}"`));
+    assert.doesNotMatch(html,/<select|<option/);assert.equal(item.unit,unit);
+    assert.equal(fixedEquipmentUnit(key),unit);
+  }
+  assert.equal(fixedEquipmentUnit('warm_layers','v1'),'set');
+  assert.equal(fixedEquipmentUnit('warm_layers','2.1.0'),'item');
+});
+test('only other equipment can select units; selection reports actual backend code',()=>{
+  let selected='';const props={item:gear({item_key:'other'}),index:0,onChange(value){selected=value;}};
+  const html=render(EquipmentUnitField,props);
+  assert.match(html,/<select/);assert.doesNotMatch(html,/readonly/i);
+  for(const unit of ['item','litre','portion','vehicle','plan','set'])assert.ok(html.includes(`value="${unit}"`));
+  const select=EquipmentUnitField(props).props.children.find(child=>child?.type==='select');
+  select.props.onChange({target:{value:'litre'}});assert.equal(selected,'litre');
+});
+test('legacy mismatched unit stays visible until explicit correction; rendering never changes saved facts',()=>{
+  const item=gear({unit:'litre'});let corrected='';
+  const props={item,index:0,onChange(value){corrected=value;}};
+  const html=render(EquipmentUnitField,props);
+  assert.match(html,/value="升"/);assert.match(html,/已保存的单位与类别不符/);
+  assert.equal(item.unit,'litre');assert.equal(corrected,'');
+  const button=EquipmentUnitField(props).props.children.find(child=>child?.type==='button');
+  button.props.onClick();assert.equal(corrected,'item');assert.equal(item.unit,'litre');
+});
+test('adding same-category equipment numbers generic names without changing quantity, capacity or confirmation',()=>{
+  const original=[gear()];const copy=JSON.stringify(original);
+  const items=addEquipment(original,'tent');
+  assert.deepEqual(items.map(item=>item.label),['帐篷一','帐篷二']);
+  assert.equal(JSON.stringify(original),copy);
+  assert.deepEqual(items[0],{...original[0],label:'帐篷一'});
+  assert.deepEqual(items[1],gear({label:'帐篷二',quantity:'',capacity:'',confirmed:false}));
+  assert.deepEqual(addEquipment([],'tent').map(item=>item.label),['帐篷一']);
+  assert.equal(addEquipment(items,'tent')[2].label,'帐篷三');
+});
+test('custom names and existing numbered names survive additions and removals without collisions',()=>{
+  const items=[gear({label:'三人帐'}),gear({label:'帐篷一'}),gear({label:'帐篷三'})];
+  assert.deepEqual(addEquipment(items,'tent').map(item=>item.label),['三人帐','帐篷一','帐篷三','帐篷二']);
+  let many=[];for(let i=0;i<12;i++)many=addEquipment(many,'tent');
+  assert.equal(many[9].label,'帐篷十');assert.equal(many[11].label,'帐篷十二');
+  assert.equal(new Set(many.map(item=>item.label)).size,12);
+});
+test('category changes assign target units and distinct auto names while preserving user-defined names',()=>{
+  let items=addEquipment(addEquipment([],'tent'),'tent');
+  items=changeEquipmentCategory(items,1,'drinking_water');
+  assert.equal(items[1].label,'饮用水一');assert.equal(items[1].unit,'litre');
+  items=changeEquipmentCategory(items,1,'tent');
+  assert.deepEqual(items.map(item=>item.label),['帐篷一','帐篷二']);assert.equal(items[1].unit,'item');
+  const custom=changeEquipmentCategory([gear({label:'备用物品'})],0,'meal_supplies');
+  assert.equal(custom[0].label,'备用物品');assert.equal(custom[0].unit,'portion');
+  assert.equal(changeEquipmentCategory([gear({unit:'litre'})],0,'other')[0].unit,'litre');
+  assert.equal(addEquipment([],'warm_layers','v1')[0].unit,'set');
+});
+test('profile snapshots preserve distinguishing tent names and individual capacities',()=>{
+  const profile=planFixture().confirmed_context.profile_snapshot;
+  profile.equipment=[{...gear({label:'三人帐'}),quantity:1,capacity_persons:3},{...gear({label:'单人帐'}),quantity:1,capacity_persons:1}];
+  const html=render(ProfileSummary,{profile});
+  assert.match(html,/三人帐：1 顶/);assert.match(html,/单人帐：1 顶/);
+  assert.match(html,/该行总住宿容量 3 人/);assert.match(html,/该行总住宿容量 1 人/);
+});
+
+test('initial blank group field is neutral but still required and constrained to positive whole numbers',()=>{
+  const html=render(GroupSizeField,{value:'',error:'请填写小组人数。',revealValidation:false,onTouch(){},onChange(){}});
+  assert.match(html,/aria-invalid="false"/);
+  assert.match(html,/必填/);assert.match(html,/required=""/);
+  assert.match(html,/min="1"/);assert.match(html,/step="1"/);
+  assert.match(html,/包括所有同行者/);
+  assert.doesNotMatch(html,/field-error|请填写小组人数/);
+});
+test('blur and native invalid events reveal group errors without saving or calling a model',()=>{
+  let touched=false,changed='';
+  const props={value:'',error:'请填写小组人数。',revealValidation:false,onTouch(){touched=true;},onChange(value){changed=value;}};
+  const input=GroupSizeField(props).props.children.find(child=>child?.type==='input');
+  input.props.onBlur();assert.equal(touched,true);
+  let html=render(GroupSizeField,{...props,revealValidation:touched});
+  assert.match(html,/aria-invalid="true"/);assert.match(html,/请填写小组人数/);
+  touched=false;input.props.onInvalid();assert.equal(touched,true);
+  input.props.onChange({target:{value:'3'}});assert.equal(changed,'3');
+  html=render(GroupSizeField,{...props,value:changed,error:undefined,revealValidation:true});
+  assert.doesNotMatch(html,/field-error|请填写小组人数/);
+  assert.match(html,/aria-invalid="false"/);
+});
+test('explicit correction guidance is retained even before interacting with the group field',()=>{
+  const html=render(GroupSizeField,{value:'',guidance:'请补充本次同行人数。',revealValidation:false,onTouch(){},onChange(){}});
+  assert.match(html,/aria-invalid="true"/);assert.match(html,/请补充本次同行人数/);
+});
+
+test('logged-in plan-list start action begins with profile, not request confirmation',()=>{
+  const html=routed(NewPlanPrompt,{});
+  assert.match(html,/<a[^>]*href="\/profile"[^>]*>开始规划/);
+  assert.doesNotMatch(html,/href="\/request"/);
+  assert.match(html,/先完善同行、交通和装备资料/);
+});
+test('home and fallback start links also follow profile-first onboarding',()=>{
+  for(const route of ['/','/missing-page']){
+    const html=renderToStaticMarkup(h(MemoryRouter,{initialEntries:[route]},h(App)));
+    const startLinks=html.match(/<a\b[^>]*>开始规划[^<]*(?:<span>[^<]*<\/span>)?<\/a>/g)??[];
+    assert.equal(startLinks.length,1,route);
+    assert.match(startLinks[0],/href="\/profile"/);
+  }
+});
 
 test('tent component shows total accommodation capacity, not one tent per camper',()=>{
   const text=render(panels.TentCapacityPanel,{value:tent});

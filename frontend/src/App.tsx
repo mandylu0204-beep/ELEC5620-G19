@@ -79,7 +79,7 @@ function AppContent() {
 
 function Overview() {
   return <>
-    <section className="hero"><div><span className="eyebrow">让准备更有依据</span><h1>一次露营，<br />从一份清晰的计划开始。</h1><p>规划行程，准备装备，<br className="desktop-break" />让下一次出发更从容。</p><Link className="primary-button" to="/request">开始规划 <span>↗</span></Link></div><div className="hero-art"><span>清晰规划，从容出发</span><Mountain /><div>规划 · 检查 · 审核</div></div></section>
+    <section className="hero"><div><span className="eyebrow">让准备更有依据</span><h1>一次露营，<br />从一份清晰的计划开始。</h1><p>规划行程，准备装备，<br className="desktop-break" />让下一次出发更从容。</p><Link className="primary-button" to="/profile">开始规划 <span>↗</span></Link></div><div className="hero-art"><span>清晰规划，从容出发</span><Mountain /><div>规划 · 检查 · 审核</div></div></section>
     <section className="section-heading"><div><span className="eyebrow">出行准备</span><h2>为下一次出发做好准备</h2></div></section>
     <div className="journey">{[['01', '说说你的计划', '目的地、日期与预算'], ['02', '找到合适的营地', '比较营地，查看行程'], ['03', '准备好再出发', '核对装备、费用与安全'], ['04', '保存你的方案', '保留方案，随时回看']].map(([number, title, description]) => <div key={number}><span className="step-number">{number}</span><h3>{title}</h3><p>{description}</p></div>)}</div>
     <div className="bottom-grid"><section className="panel"><span className="eyebrow">同行小组</span><h2>完善露营资料</h2><p>告诉我们同行人数、已有装备和交通安排。</p><Link className="text-link" to="/profile">编辑资料 ↗</Link></section><section className="panel next-panel"><span className="eyebrow">已有方案</span><h2>继续你的计划</h2><p>查看已有方案，调整行程或回看保存的安排。</p><Link className="text-link" to="/plans">查看我的方案 ↗</Link></section></div>
@@ -115,5 +115,5 @@ function RequestPreview({ enabled }: { enabled: boolean }) {
 }
 
 function Upcoming({ title, description }: { title: string; description: string }) {
-  return <><div className="page-heading"><span className="eyebrow">页面未找到</span><h1>{title}</h1></div><section className="panel upcoming"><Mountain /><h2>没有找到这个页面</h2><p>{description}</p><Link to="/request" className="text-link">开始规划 ↗</Link></section></>;
+  return <><div className="page-heading"><span className="eyebrow">页面未找到</span><h1>{title}</h1></div><section className="panel upcoming"><Mountain /><h2>没有找到这个页面</h2><p>{description}</p><Link to="/profile" className="text-link">开始规划 ↗</Link></section></>;
 }
