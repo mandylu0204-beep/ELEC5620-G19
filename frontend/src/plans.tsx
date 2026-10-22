@@ -32,8 +32,8 @@ type Logistics = Artifact & {outcome:string;transport_feasible:boolean|null;gear
 export type Safety = Artifact & {outcome:string;risk_level:string;confidence:string;requires_human_review:boolean;data_quality:{[key:string]:string};evidence:{kind:string;summary:string|null;source_date:string|null;status:string;valid_from:string|null;valid_to:string|null;road_state:string|null;source_refs:Source[]}[];hazards:string[];recommended_actions:string[];unresolved_conflicts:string[];mandatory_blockers:Blocker[]};
 type Assessment = {assessment_id:string;kind:string;depends_on_assessment_id?:string|null;version_context:Version['version_context'];result:Logistics|Safety};
 type Eligibility = {eligible:boolean;blocking_reasons:Blocker[];review_required:boolean;valid_review_id:string|null};
-export type FinalIndex = {final_id:string;plan_version_id:string;run_id:string;version_number:number;finalised_at:string;is_current:boolean};
-export type PlanDetail = {display_status?:string|null;tent_capacity?:TentCapacity;planning_explanation?:PlanningExplanation|null;can_view_model_diagnostics?:boolean;model_diagnostics?:ModelDiagnostics;logistics_issues?:LogisticsIssue[];trip_evidence_coverage?:TripCoverage|null;current_inputs_state?:'CHANGED'|'UNAVAILABLE'|null;check_feedback?:{status:'IN_PROGRESS'|'COMPLETED'|'FAILED'|'INCOMPLETE';started_at:string;completed_at:string|null;comparison:'NOT_COMPARABLE'|'UNCHANGED'|'CHANGED';compared_run_id:string|null;changed_sections:string[]}|null;model_assessment_audits?:{LOGISTICS?:LogisticsAudit;SAFETY?:SafetyAudit};recommendation_guidance?:RecommendationGuidance|null;revision_available?:boolean;reassessment_available?:boolean;current_version_revision?:number|null;current_inputs_error?:string|null;planning_available?:boolean;retry_available?:boolean;retry_unavailable_reason?:string|null;finalisation_available:boolean;last_final:FinalIndex|null;selected_final:FinalIndex|null;final_history:FinalIndex[];reviews:{review_id:string;decision:string;reason:string;reviewer_user_id:string}[];review_available?:boolean;plan:{plan_id:string;request_id:string;active_run_id:string|null;current_version_id:string|null;final_version_id:string|null;created_at:string};run:Run|null;run_history:{run_id:string;status:string;stage:string;created_at:string;plan_version_id:string|null;version_number:number|null}[];confirmed_context:{request_id:string;requirements:Requirements;profile_snapshot:Profile;demo_context:{demo_today:string;mode:string};dataset_context:{dataset_version:string}}|null;events:{id:number;stage:string;status:string;error:ErrorInfo|null;created_at:string}[];version:Version|null;assessments:Assessment[];recommendations:{recommendation_id:string;result:Artifact & {search_outcome:string;candidates:{campsite_id:string;rank:number;reasons:string[];material_uncertainties:string[]}[];excluded_candidates:{campsite_id:string;reasons:string[]}[]}}|null;route:{status:string;eligibility:Eligibility}|null;eligibility:Eligibility|null};
+export type FinalIndex = {plan_id:string;final_id:string;plan_version_id:string;run_id:string;version_number:number;finalised_at:string;is_current:boolean};
+export type PlanDetail = {series_last_final?:FinalIndex|null;trip_series?:{trip_series_id:string;series_revision:number;current_plan_id:string|null;predecessor_plan_id:string|null;is_current:boolean}|null;display_status?:string|null;tent_capacity?:TentCapacity;planning_explanation?:PlanningExplanation|null;can_view_model_diagnostics?:boolean;model_diagnostics?:ModelDiagnostics;logistics_issues?:LogisticsIssue[];trip_evidence_coverage?:TripCoverage|null;current_inputs_state?:'CHANGED'|'UNAVAILABLE'|null;check_feedback?:{status:'IN_PROGRESS'|'COMPLETED'|'FAILED'|'INCOMPLETE';started_at:string;completed_at:string|null;comparison:'NOT_COMPARABLE'|'UNCHANGED'|'CHANGED';compared_run_id:string|null;changed_sections:string[]}|null;model_assessment_audits?:{LOGISTICS?:LogisticsAudit;SAFETY?:SafetyAudit};recommendation_guidance?:RecommendationGuidance|null;revision_available?:boolean;reassessment_available?:boolean;current_version_revision?:number|null;current_inputs_error?:string|null;planning_available?:boolean;retry_available?:boolean;retry_unavailable_reason?:string|null;finalisation_available:boolean;last_final:FinalIndex|null;selected_final:FinalIndex|null;final_history:FinalIndex[];reviews:{review_id:string;decision:string;reason:string;reviewer_user_id:string}[];review_available?:boolean;plan:{plan_id:string;request_id:string;active_run_id:string|null;current_version_id:string|null;final_version_id:string|null;created_at:string};run:Run|null;run_history:{run_id:string;status:string;stage:string;created_at:string;plan_version_id:string|null;version_number:number|null}[];confirmed_context:{request_id:string;requirements:Requirements;profile_snapshot:Profile;demo_context:{demo_today:string;mode:string};dataset_context:{dataset_version:string}}|null;events:{id:number;stage:string;status:string;error:ErrorInfo|null;created_at:string}[];version:Version|null;assessments:Assessment[];recommendations:{recommendation_id:string;result:Artifact & {search_outcome:string;candidates:{campsite_id:string;rank:number;reasons:string[];material_uncertainties:string[]}[];excluded_candidates:{campsite_id:string;reasons:string[]}[]}}|null;route:{status:string;eligibility:Eligibility}|null;eligibility:Eligibility|null};
 type PlanRow = {display_status?:string|null;search_outcome?:string|null;start_date?:string|null;end_date?:string|null;last_final:FinalIndex|null;plan_id:string;request_id:string;destination:string|null;created_at:string;execution_mode:string|null;run_status:string|null;stage:string|null;version_status:string|null;version_number:number|null};
 const LABEL:{[key:string]:string} = {PENDING:'等待执行',RUNNING:'执行中',SUCCEEDED:'检查已完成',FAILED:'执行失败',CANCELLED:'已取消',SUPERSEDED:'已被新运行取代',RECOMMENDING:'推荐营地',GENERATING:'生成行程',SAVING_VERSION:'保存版本',ASSESSING_LOGISTICS:'装备与物流',ASSESSING_SAFETY:'安全评估',ROUTING:'判断下一步',COMPLETED:'完成检查',DRAFT:'草稿',ASSESSING:'正在评估',REVISION_REQUIRED:'需要修订',ESCALATED:'等待审核员处理',BLOCKED:'方案有待完善',ELIGIBLE_FOR_FINALISATION:'可以保存方案',REJECTED:'审核未通过',FINALISED:'已保存',PASSED:'评估通过',REVISION:'需要修订',REVIEW:'需要审核',WEATHER:'天气',FIRE:'营火限制',ROAD:'道路',RESTRICTION:'营地限制',AVAILABLE:'可用',MISSING:'缺失',STALE:'过期',CONFLICTING:'冲突',LOW:'低',MEDIUM:'中',HIGH:'高',UNKNOWN:'未知',OPEN:'开放',CLOSED:'关闭',OWNED:'已自备',CONFIRMED_RENTAL:'已确认租借',UNCONFIRMED:'未确认',CAMPSITE:'营地',TRANSPORT:'交通',FOOD:'食物',WATER:'饮用水',ADDITIONAL_GEAR:'新增装备',PLAN:'初次规划',REASSESS:'重新评估',REVISE:'方案修订',TRAVEL:'交通',CAMP:'露营',ACTIVITY:'活动'};
 const STAGES=['RECOMMENDING','GENERATING','SAVING_VERSION','ASSESSING_LOGISTICS','ASSESSING_SAFETY','ROUTING','COMPLETED'];
@@ -67,28 +67,64 @@ export function NewPlanPrompt(){
   return <section className="panel"><h2>还没有露营方案</h2><p>先完善同行、交通和装备资料，再填写并确认露营需求。</p><Link className="text-link" to="/profile">开始规划 ↗</Link></section>;
 }
 
+export type TripSeriesCardData={trip_series_id:string;revision:number;current_plan:PlanRow|null;history:PlanRow[];last_final:FinalIndex|null};
+const seriesActive=(value:{trip_series:TripSeriesCardData[];independent_plans:PlanRow[]})=>plansActive({plans:[...value.independent_plans,...value.trip_series.flatMap(item=>item.current_plan?[item.current_plan]:[])]});
+export function TripSeriesCard({value,onDeletePlan,onDeleteSeries,busy}:{value:TripSeriesCardData;onDeletePlan:(id:string)=>void;onDeleteSeries:()=>void;busy:boolean}){
+  const row=value.current_plan;
+  return <article className="panel plan-list-card" aria-label="一次出行">
+    {row?<Link className="plan-card" to={'/plans/'+row.plan_id}><h2>{row.destination??'露营方案'}</h2>
+      <p className="tag">{planRowState(row)}</p><p>{row.start_date} — {row.end_date}</p>
+      <small>当前方案 · {time(row.created_at)}（悉尼时间）</small></Link>:<><h2>当前方案已删除</h2><p>仅保留下方未删除历史，不会自动恢复旧方案或旧待办。</p></>}
+    {value.last_final&&<div className="saved-plan-notice"><p>{row&&['PENDING','RUNNING'].includes(row.run_status??'')?'此前最终方案已保留，本次检查尚未完成':value.last_final.is_current?'当前最终方案已保存':'此前最终方案已保留，不代表本次检查通过'}</p>
+      <Link to={'/plans/'+value.last_final.plan_id+'/finals/'+value.last_final.final_id}>查看保存的最终方案 ↗</Link></div>}
+    {value.history.length>0&&<details><summary>历史方案（{value.history.length}）</summary><ul>{value.history.map(old=><li key={old.plan_id}>
+      <Link to={'/plans/'+old.plan_id}>{old.destination??'历史方案'} · {time(old.created_at)}</Link>（历史记录，不是本次检查结果）
+      <button className="text-button" disabled={busy} onClick={()=>onDeletePlan(old.plan_id)}>删除此历史方案</button>
+    </li>)}</ul></details>}
+    <div className="plan-card-actions">{row&&<button className="secondary-button" disabled={busy||['PENDING','RUNNING'].includes(row.run_status??'')} onClick={()=>onDeletePlan(row.plan_id)}>删除当前方案</button>}
+      <button className="secondary-button" disabled={busy} onClick={onDeleteSeries}>删除整次出行</button></div>
+  </article>;
+}
+
 export function PlansPage(){
   const {session,reload}=useSession();
   const [confirmDelete,setConfirmDelete]=useState<string|null>(null);
   const [deleting,setDeleting]=useState<string|null>(null);
   const [deleteError,setDeleteError]=useState('');
   const [deleted,setDeleted]=useState<Set<string>>(new Set());
+  const [seriesDelete,setSeriesDelete]=useState<TripSeriesCardData|null>(null);
+  const seriesDeleteCommand=useRef<{identity:string;key:string}|null>(null);
+  async function removeSeries(){
+    if(!seriesDelete||!session||deleting)return;
+    const identity=seriesDelete.trip_series_id+':'+seriesDelete.revision;
+    if(seriesDeleteCommand.current?.identity!==identity)seriesDeleteCommand.current={identity,key:crypto.randomUUID()};
+    setDeleting(seriesDelete.trip_series_id);setDeleteError('');
+    try{await privateApi('/trip-series/'+encodeURIComponent(seriesDelete.trip_series_id)+'/delete',{method:'POST',headers:{'Content-Type':'application/json','X-CampMate-Client':'1','X-CSRF-Token':session.csrf_token},body:JSON.stringify({command_key:seriesDeleteCommand.current.key,expected_series_revision:seriesDelete.revision})});setSeriesDelete(null);refreshSeries();}
+    catch(reason){setDeleteError(reason instanceof Error?reason.message:'删除失败，请重试。');}
+    finally{setDeleting(null);}
+  }
   async function removePlan(planId:string){
     if(!session||deleting)return;
     setDeleting(planId);setDeleteError('');
     try{
       await privateApi<void>('/plans/'+encodeURIComponent(planId),{method:'DELETE',headers:{'X-CampMate-Client':'1','X-CSRF-Token':session.csrf_token}});
-      setDeleted(value=>new Set([...value,planId]));setConfirmDelete(null);refresh();
+      setDeleted(value=>new Set([...value,planId]));setConfirmDelete(null);
+      refreshSeries();
     }catch(reason){
       setDeleteError(reason instanceof ApiFailure?reason.message:'删除失败，请重试。');
       if(reason instanceof ApiFailure&&reason.envelope.error.code==='UNAUTHENTICATED')reload();
     }finally{setDeleting(null);}
   }
-  const {data,error,refresh}=useSavedRead<{plans:PlanRow[]}>('/plans',plansActive);
-  const rows=data?.plans.filter(row=>!deleted.has(row.plan_id))??[];
+  const {data:seriesData,error,refresh}=useSavedRead<{trip_series:TripSeriesCardData[];independent_plans:PlanRow[]}>('/trip-series',seriesActive);
+  const refreshSeries=refresh;
+  const rows=seriesData?.independent_plans.filter(row=>!deleted.has(row.plan_id))??[];
   return <><div className="page-heading"><span className="eyebrow">方案总览</span><h1>我的露营方案</h1><p>查看安排、处理待确认事项，保存你的最终方案。</p></div>{error&&<p className="error-box" role="alert">{error}</p>}<button className="secondary-button" onClick={refresh}>刷新方案</button>
     {deleteError&&<p className="error-box" role="alert">{deleteError}</p>}
-    {!data?<section className="panel"><p>正在读取…</p></section>:!rows.length?<NewPlanPrompt/>:<div className="plan-cards">{rows.map(row=><article className="panel plan-list-card" key={row.plan_id}><Link className="plan-card" to={'/plans/'+row.plan_id}><h2>{row.destination??'露营方案'}</h2><p className="tag">{planRowState(row)}</p>
+    <Link className="secondary-button" to="/profile">新建独立出行 ↗</Link>
+    {seriesDelete&&<section className="error-box" role="alert"><p>删除整次出行及全部方案？页面将不能再读取其历史和最终记录；服务端审计内部保留。</p><button disabled={!!deleting} onClick={removeSeries}>确认删除整次出行</button><button disabled={!!deleting} onClick={()=>setSeriesDelete(null)}>取消</button></section>}
+    {seriesData&&confirmDelete&&!rows.some(row=>row.plan_id===confirmDelete)&&<section className="error-box" role="alert"><p>删除选中的方案？删除历史不会改变当前方案；删除当前方案后不会自动恢复历史方案。</p><button disabled={!!deleting} onClick={()=>void removePlan(confirmDelete)}>确认删除选中方案</button><button disabled={!!deleting} onClick={()=>setConfirmDelete(null)}>取消</button></section>}
+    <div className="plan-cards">{seriesData?.trip_series.map(value=><TripSeriesCard key={value.trip_series_id} value={value} busy={!!deleting} onDeletePlan={setConfirmDelete} onDeleteSeries={()=>setSeriesDelete(value)}/>)}</div>
+    {!seriesData?<section className="panel"><p>正在读取…</p></section>:!rows.length&&!seriesData.trip_series.length?<NewPlanPrompt/>:<div className="plan-cards">{rows.map(row=><article className="panel plan-list-card" key={row.plan_id}><Link className="plan-card" to={'/plans/'+row.plan_id}><h2>{row.destination??'露营方案'}</h2><p className="tag">{planRowState(row)}</p>
       {row.start_date&&row.end_date&&<p>{row.start_date} — {row.end_date}</p>}{row.version_number?<p>版本 {row.version_number}</p>:row.search_outcome==='NO_MATCH'?<p>比较最接近的营地，再调整你的条件。</p>:<p>完成规划后可查看行程。</p>}
       {row.run_status==='RUNNING'&&<p>正在{label(row.stage)}</p>}{row.last_final&&!row.last_final.is_current&&<p className="muted">已保留此前保存的最终方案</p>}<small>创建于 {time(row.created_at)}（悉尼时间）</small><span className="text-link">{row.search_outcome==='NO_MATCH'?'查看营地比较':'查看方案'} ↗</span></Link>
       {confirmDelete===row.plan_id?<div className="plan-delete-confirm" role="group" aria-label="确认删除方案"><p>删除这份方案？删除后将不再显示，也无法在页面中恢复。</p><div><button className="secondary-button delete-plan-button" disabled={deleting!==null} onClick={()=>void removePlan(row.plan_id)}>{deleting===row.plan_id?'正在删除…':'确认删除'}</button><button className="secondary-button" disabled={deleting!==null} onClick={()=>{setConfirmDelete(null);setDeleteError('');}}>取消</button></div></div>
@@ -128,6 +164,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
   const logisticsAudit = data.model_assessment_audits?.LOGISTICS;
   const noMatch = recommendation?.search_outcome==='NO_MATCH';
   const {version,run,confirmed_context:confirmed} = data;
+  const savedFinal=data.last_final??data.series_last_final;
   const failure=failureGuidance(data);
   const safetyBinding = version&&safetyAssessment&&logisticsAssessment
     &&safetyAssessment.depends_on_assessment_id===logisticsAssessment.assessment_id
@@ -197,7 +234,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       </dl>
     </header>
     {error&&<p className="error-box" role="alert">读取更新失败：{error}</p>}
-    {!review&&!snapshot&&run?.is_active&&!['PENDING','RUNNING','FAILED'].includes(run.status)&&requirements&&<ReplanFromProfile key={data.plan.plan_id} requestId={data.plan.request_id} requirements={requirements}/>}
+    {!review&&!snapshot&&run?.is_active&&(!data.trip_series||data.trip_series.is_current)&&!['PENDING','RUNNING','FAILED'].includes(run.status)&&requirements&&<ReplanFromProfile key={data.plan.plan_id} source={{plan_id:data.plan.plan_id,expected_series_revision:data.trip_series?.series_revision??0,expected_current_version_id:data.plan.current_version_id,expected_version_revision:data.current_version_revision??null,expected_active_run_id:run!.run_id,expected_run_revision:run!.revision}} previousProfile={confirmed!.profile_snapshot} refreshSource={refresh}/>}
     {!review&&!snapshot&&<CheckFeedback data={data}/>}
     {!snapshot&&run&&!run.is_active&&<div className="mode-notice"><span>正在查看历史方案，评估属于当时的证据。</span>{current&&<button className="secondary-button" onClick={current}>查看当前方案</button>}</div>}
     {failure&&<section className="panel error-box" role="alert" aria-label="本次执行的恢复说明"><h2>{failure.title}</h2>
@@ -207,9 +244,9 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       {run?.error&&<details><summary>查看失败原因</summary><p>{run.error.message}</p></details>}
       {!review&&!snapshot&&<RetryPlanning data={data} refresh={refresh}/>}
     </section>}
-    {!review&&!snapshot&&run?.is_active&&run.status==='FAILED'&&requirements&&<details className="panel"><summary>资料或出行要求有变化？重新规划</summary>
+    {!review&&!snapshot&&(!data.trip_series||data.trip_series.is_current)&&run?.is_active&&run.status==='FAILED'&&requirements&&<details className="panel"><summary>资料或出行要求有变化？重新规划</summary>
       <p>继续未完成的步骤沿用本次已确认的资料。若已修改露营资料，请保存后使用下方入口核对并生成新方案；原行程会保留。</p>
-      <ReplanFromProfile key={data.plan.plan_id} requestId={data.plan.request_id} requirements={requirements}/>
+      <ReplanFromProfile key={data.plan.plan_id} source={{plan_id:data.plan.plan_id,expected_series_revision:data.trip_series?.series_revision??0,expected_current_version_id:data.plan.current_version_id,expected_version_revision:data.current_version_revision??null,expected_active_run_id:run!.run_id,expected_run_revision:run!.revision}} previousProfile={confirmed!.profile_snapshot} refreshSource={refresh}/>
     </details>}
     {!['PENDING','RUNNING'].includes(run?.status??'')&&(warnings.length>0 || overBudget || hasSafetyIssue)&&<section className="plan-attention" role="alert" aria-label="需要处理的问题">
       <div><span className="attention-mark" aria-hidden="true">!</span><div><h2>{data.current_inputs_error?'此前检查发现的问题':'确认方案前需要处理'}</h2><ul>
@@ -223,7 +260,8 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
     {review&&data.current_inputs_error&&<div className="mode-notice"><strong>检查结果待更新</strong><p>这份方案的检查依据暂时无法与当前资料核对，更新检查后才能继续审核。</p><details><summary>查看系统详情</summary><p>{data.current_inputs_error}</p></details></div>}
     {<LogisticsIssues items={logisticsIssues} disabled={snapshot||review||!run?.is_active||['PENDING','RUNNING'].includes(run?.status??'')} onSafety={()=>{setSection('safety');tabRefs.current[3]?.focus();}}/>}
     {!review&&!snapshot&&<NextSteps data={data} onRecheck={()=>{setAdjustOpen(true);document.getElementById(prefix+'-adjust')?.scrollIntoView({block:'start'});}}/>}
-    {!snapshot&&!review&&data.last_final&&<div className="saved-plan-notice"><span>{['PENDING','RUNNING'].includes(run?.status??'')?'此前最终方案已保留，本次检查尚未完成':data.last_final.is_current?'当前最终方案已保存':'保留了一份历史最终方案'}</span><Link className="text-link" to={'/plans/'+data.plan.plan_id+'/finals/'+data.last_final.final_id}>查看保存的方案 ↗</Link></div>}
+    {!snapshot&&!review&&data.trip_series&&!data.trip_series.is_current&&<div className="mode-notice">这是本次出行的历史方案，原待办已被后继方案取代；旧审核不授权新结果。{data.trip_series.current_plan_id&&<Link to={'/plans/'+data.trip_series.current_plan_id}>查看当前方案 ↗</Link>}</div>}
+    {!snapshot&&!review&&savedFinal&&<div className="saved-plan-notice"><span>{['PENDING','RUNNING'].includes(run?.status??'')?'此前最终方案已保留，本次检查尚未完成':savedFinal.is_current?'当前最终方案已保存':'保留了一份历史最终方案，不代表本次检查通过'}</span><Link className="text-link" to={'/plans/'+savedFinal.plan_id+'/finals/'+savedFinal.final_id}>查看保存的方案 ↗</Link></div>}
     {!review&&!snapshot&&(data.revision_available||data.reassessment_available)&&<details className="plan-adjust" id={prefix+'-adjust'} key={run?.run_id} open={adjustOpen} onToggle={event=>setAdjustOpen(event.currentTarget.open)}>
       <summary>修改行程或更新检查 <span aria-hidden="true">↗</span></summary><ChangePlanning data={data} refresh={refresh}/>
     </details>}
@@ -278,7 +316,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       <section className="panel"><h2>本次需求</h2>{confirmed&&<><p>{requirements?.start_date} → {requirements?.end_date} · {requirements?.duration_nights} 晚 / {requirements?.duration_days} 天 · {aud(requirements?.budget_cents)}</p><details><summary>本次采用的资料</summary><ProfileSummary profile={confirmed.profile_snapshot}/></details></>}
         <details className="source-details"><summary>记录编号与输入指纹</summary><p className="identifier">{run?.run_id??'未登记'}</p><p className="identifier">{version?.version_context.input_fingerprint??'尚未保存版本指纹'}</p></details>
         {recommendation&&recommendation.excluded_candidates.length>0&&<details className="source-details"><summary>被排除营地的原始理由</summary>{recommendation.excluded_candidates.map(item=><article key={item.campsite_id}><h3>{campName(item.campsite_id)}</h3><ul>{item.reasons.map((reason,index)=><li key={index}>{reason}</li>)}</ul></article>)}</details>}
-        {!review&&!snapshot&&<><h3>保存的方案</h3>{data.final_history.length?<ul className="plan-history-list">{data.final_history.map(item=><li key={item.final_id}><Link to={'/plans/'+data.plan.plan_id+'/finals/'+item.final_id}>版本 {item.version_number} · {item.is_current?'当前方案':'历史方案'}<small>{time(item.finalised_at)}</small></Link></li>)}</ul>:<p className="muted">尚未保存最终方案。</p>}
+        {!review&&!snapshot&&<><h3>保存的方案</h3>{data.final_history.length?<ul className="plan-history-list">{data.final_history.map(item=><li key={item.final_id}><Link to={'/plans/'+item.plan_id+'/finals/'+item.final_id}>版本 {item.version_number} · {item.is_current?'当前方案':'历史方案'}<small>{time(item.finalised_at)}</small></Link></li>)}</ul>:<p className="muted">尚未保存最终方案。</p>}
           <h3>版本与评估历史</h3><ul className="plan-history-list">{data.run_history.map(item=><li key={item.run_id}><Link to={'/plans/'+data.plan.plan_id+'?run_id='+encodeURIComponent(item.run_id)}>{item.version_number?`版本 ${item.version_number}`:'尚无版本'} · {label(item.status)}<small>{time(item.created_at)}</small></Link>{item.run_id===data.plan.active_run_id&&<span className="tag">当前</span>}</li>)}</ul>
         </>}
       </section>

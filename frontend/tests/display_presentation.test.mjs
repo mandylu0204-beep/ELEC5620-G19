@@ -15,7 +15,10 @@ after(()=>server.close());
 const panels=await server.ssrLoadModule('/src/display_panels.tsx');
 const {LogisticsIssues}=await server.ssrLoadModule('/src/logistics_issues.tsx');
 const {TripCoveragePanel}=await server.ssrLoadModule('/src/trip_coverage.tsx');
-const {PlanView,NewPlanPrompt}=await server.ssrLoadModule('/src/plans.tsx');
+const {PlanView,NewPlanPrompt,TripSeriesCard}=await server.ssrLoadModule('/src/plans.tsx');
+const {ProfileAdoptionPreview}=await server.ssrLoadModule('/src/replan.tsx');
+const {historicalReviewNotice}=await server.ssrLoadModule('/src/reviews.tsx');
+const {profileChanges}=await server.ssrLoadModule('/src/profile_changes.ts');
 const {App}=await server.ssrLoadModule('/src/App.tsx');
 const {GroupSizeField,EquipmentUnitField,addEquipment,changeEquipmentCategory,fixedEquipmentUnit,ProfileSummary}=await server.ssrLoadModule('/src/profile.tsx');
 const {SessionProvider}=await server.ssrLoadModule('/src/session.tsx');
@@ -25,6 +28,35 @@ const tent={records:[{quantity:2,capacity_per_tent:1,total_capacity:2,confirmed:
   group_size:3,registered_tent_count:2,registered_capacity:2,assessed_capacity:'2',required_person_spaces:'3',missing_person_spaces:'1'};
 
 const gear=(patch={})=>({item_key:'tent',label:'帐篷',quantity:'2',unit:'item',capacity:'3',confirmed:true,...patch});
+test('historical approval copy cannot imply permission to save the current successor',()=>{
+  assert.match(historicalReviewNotice('HISTORY'),/不授权当前方案/);
+  assert.match(historicalReviewNotice('HISTORY'),/不能据此保存当前最终方案/);
+  assert.equal(historicalReviewNotice('APPROVAL'),null);
+});
+test('adoption preview shows exact revision and changed inventory, people and transport without a formal pass',()=>{
+  const before=planFixture().confirmed_context.profile_snapshot;
+  const after=structuredClone(before);after.group_size=4;after.transport.estimated_km='150';
+  after.equipment=[{item_key:'tent',label:'三人帐',quantity:1,unit:'item',capacity_persons:3,confirmed:false}];
+  const changes=profileChanges(before,after);
+  assert.deepEqual(changes.map(item=>item.section),['同行人数','装备与车辆','交通安排']);
+  const html=render(ProfileAdoptionPreview,{before,after,revision:7,sourceRevision:2});
+  for(const value of ['revision 7','revision：2','原方案采用','本次拟采用','三人帐','未核实','150 km','不代表正式检查通过'])assert.ok(html.includes(value),value);
+  assert.doesNotMatch(html,/检查通过<|已核实拥有/);
+  assert.deepEqual(profileChanges(before,{...structuredClone(before),profile_id:'different-metadata'}),[]);
+  const named=structuredClone(after);named.equipment=[{...after.equipment[0],item_key:'sleeping_bag',unit:'item',capacity_persons:null}];
+  const changed=structuredClone(named);changed.equipment[0].item_key='groundsheet';
+  assert.equal(profileChanges(named,changed)[0].section,'装备与车辆');
+});
+test('series card uses explicit final owning plan and never presents old success as new check success',()=>{
+  const value={trip_series_id:'trip',revision:2,current_plan:{plan_id:'new-plan',run_status:'RUNNING',destination:'本次出行',created_at:'2026-10-22T00:00:00Z'},
+    history:[{plan_id:'old-plan',destination:'原方案',created_at:'2026-10-21T00:00:00Z'}],last_final:{plan_id:'old-plan',final_id:'saved',is_current:false}};
+  const html=routed(TripSeriesCard,{value,busy:false,onDeletePlan(){},onDeleteSeries(){}});
+  assert.match(html,/href="\/plans\/old-plan\/finals\/saved"/);
+  assert.doesNotMatch(html,/\/plans\/new-plan\/finals\/saved/);
+  assert.match(html,/本次检查尚未完成/);assert.match(html,/历史方案（1）/);
+  const archived=routed(TripSeriesCard,{value:{...value,current_plan:null},busy:false,onDeletePlan(){},onDeleteSeries(){}});
+  assert.match(archived,/当前方案已删除/);assert.match(archived,/不会自动恢复旧方案或旧待办/);
+});
 test('fixed equipment units are readonly, tent displays 顶 but retains item for calculations',()=>{
   for(const [key,unit,title] of [['tent','item','顶'],['drinking_water','litre','升'],['meal_supplies','portion','份'],['transport_itinerary','plan','份计划']]){
     const item=gear({item_key:key,unit});
@@ -214,7 +246,7 @@ test('historical and final plan components use saved tent facts and mark all sug
 });
 test('running new check keeps previous final but never displays its status as this check result',()=>{
   const value=planFixture();value.run={...value.run,is_active:true,status:'RUNNING',operation:'REASSESS'};
-  value.version.status='FINALISED';value.last_final={final_id:'old',is_current:true};
+  value.version.status='FINALISED';value.last_final={plan_id:'plan',final_id:'old',is_current:true};
   const html=renderPlan(value);
   assert.match(html,/plan-status-neutral/);assert.match(html,/此前最终方案已保留，本次检查尚未完成/);
   assert.match(html,/正在重新检查/);
