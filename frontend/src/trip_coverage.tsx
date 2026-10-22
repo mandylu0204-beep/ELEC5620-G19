@@ -18,7 +18,7 @@ export function TripCoveragePanel({value,requestId}:{value:TripCoverage|null|und
   if(!value)return null;
   if(!value.issues.length)return <p className="coverage-complete">已找到覆盖此次行程的四类安全资料，具体出行限制见下方检查结果。</p>;
   return <section className="trip-coverage" aria-label="资料覆盖与可选调整"><h3>哪些资料还不能支持这次行程？</h3>
-    {value.weather_forecast_window&&value.issues.some(item=>item.kind==='WEATHER')&&<div className="coverage-options"><p>行程已保留，天气仍待确认。本次检查日期为 {value.checked_on}，当前模拟天气预报覆盖 {range(value.weather_forecast_window)}。</p>
+    {value.weather_forecast_window&&value.issues.some(item=>item.kind==='WEATHER')&&<div className="coverage-options"><p>行程已保留，天气仍待确认。本次检查日期为 {value.checked_on}，现有天气预估覆盖 {range(value.weather_forecast_window)}。</p>
       {value.weather_requires_staged_checks?<p>这次行程超过七天，单次天气预报无法覆盖全程；需要临近出发及途中分段检查，当前不能确认全程安全。</p>
         :value.next_weather_check_on&&<p>可先核对行程、装备与费用，建议在 {value.next_weather_check_on} 或之后重新检查天气。届时仍以实际检查结果为准。</p>}</div>}
     <ul>{value.issues.map((issue,index)=><li key={index}><strong>{campName(issue.campsite_id)} · {checkNames[issue.kind]??issue.kind}</strong>

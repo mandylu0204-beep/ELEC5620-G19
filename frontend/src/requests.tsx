@@ -10,7 +10,7 @@ type RequestContext = { supported_destinations: string[]; execution_mode: string
 type Record = { request_id: string; raw_text: string; explicit_fields: Partial<Requirements>; status: string; revision: number; created_at: string; summary: PreviewResult | null; profile_snapshot: Profile | null; profile_revision: number | null; error: { message:string } | null; confirmed_context: { requirements: Requirements; profile_snapshot: Profile; confirmed_at: string; demo_context: { mode:string } } | null; planning_available:boolean; planning_plan_id?:string|null };
 type Draft = { raw: string; destination: string; start: string; nights: string; days: string; end: string; budget: string; preferences: string; constraints: string };
 const EMPTY: Draft = {raw:'',destination:'',start:'',nights:'',days:'',end:'',budget:'',preferences:'',constraints:''};
-const STATUS: {[key:string]:string} = {DRAFT:'草稿',ANALYSING:'正在生成摘要',NEEDS_CLARIFICATION:'需要澄清',UNSUPPORTED:'超出演示范围',AWAITING_CONFIRMATION:'等待你的确认',CONFIRMED:'需求已确认'};
+const STATUS: {[key:string]:string} = {DRAFT:'草稿',ANALYSING:'正在生成摘要',NEEDS_CLARIFICATION:'需要澄清',UNSUPPORTED:'暂不支持该地区',AWAITING_CONFIRMATION:'等待你的确认',CONFIRMED:'需求已确认'};
 
 function fromRecord(record: Record): Draft {
   const value = record.explicit_fields;
@@ -76,7 +76,7 @@ function requestFailure(reason:unknown,fallback:string) {
 function useRequestContext() {
   const [context,setContext] = useState<RequestContext|null>(null);
   const [error,setError] = useState('');
-  useEffect(()=>{ const controller=new AbortController(); privateApi<RequestContext>('/request-context',{signal:controller.signal}).then(value=>{if(!controller.signal.aborted)setContext(value);}).catch(reason=>{if(!controller.signal.aborted)setError(reason instanceof ApiFailure?reason.message:'无法读取演示范围，请重新打开页面。');}); return()=>controller.abort(); },[]);
+  useEffect(()=>{ const controller=new AbortController(); privateApi<RequestContext>('/request-context',{signal:controller.signal}).then(value=>{if(!controller.signal.aborted)setContext(value);}).catch(reason=>{if(!controller.signal.aborted)setError(reason instanceof ApiFailure?reason.message:'无法读取地区信息，请重新打开页面。');}); return()=>controller.abort(); },[]);
   return {context,error};
 }
 

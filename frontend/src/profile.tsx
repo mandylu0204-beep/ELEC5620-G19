@@ -121,7 +121,7 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
       quantity: String(item.quantity), unit: item.unit, capacity: 'capacity_persons' in item ? String(item.capacity_persons) : '', confirmed: item.confirmed })),mode,String(profile.transport.vehicle_count));
     setEquipment(prepared);setTransport(mode);setVehicles(mode==='CAR'?vehicleCount(prepared):'');
     setKm(profile.transport.estimated_km); setAssumptions(''); setAccessibility('');
-    setDirty(true); setError(''); setMessage('已载入演示样例，尚未保存。请核对并保存。');
+    setDirty(true); setError(''); setMessage('已载入资料样例，尚未保存。请核对并保存。');
   }
   function changed() { setDirty(true); setMessage(''); setError(''); }
   function replaceEquipment(items:EquipmentForm[]) {setEquipment(items);if(transport==='CAR')setVehicles(vehicleCount(items));changed();}
@@ -169,7 +169,7 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
     const id=profileFocusId(activeFocus,equipment); if(id==='add-equipment')return;const node=id?document.getElementById(id):null;
     if(node){node.focus();node.scrollIntoView({block:'center'});focusDone.current=activeFocus;}
   },[loaded,relatedLoaded,activeFocus,equipment]);
-  const saveHint=busy?'正在保存资料…':!dirty?revision?(returnPlan?'资料已保存，可以返回方案重新规划。':'资料已保存，可以继续填写需求。'):demoAvailable?'填写自己的资料，或展开下方演示样例。':'填写自己的资料，保存后继续。':problemIds.length?`${issues[problemIds[0]]}${problemIds.length>1?` 另有 ${problemIds.length-1} 项需要修改。`:''}`:'有未保存的修改，请保存后继续。';
+  const saveHint=busy?'正在保存资料…':!dirty?revision?(returnPlan?'资料已保存，可以返回方案重新规划。':'资料已保存，可以继续填写需求。'):demoAvailable?'填写自己的资料，或展开下方资料样例。':'填写自己的资料，保存后继续。':problemIds.length?`${issues[problemIds[0]]}${problemIds.length>1?` 另有 ${problemIds.length-1} 项需要修改。`:''}`:'有未保存的修改，请保存后继续。';
   const units=[['item','件'],['litre','升'],['portion','份'],['vehicle','辆'],['plan','份计划'],['set','套']];
   return <div className="onboarding-page"><TripFlow step={1}/><div className="onboarding-heading"><div><span className="eyebrow">YOUR CAMPING PROFILE</span><h1>为同行的人做好准备。</h1><p>填写小组、交通与已有装备，让计划更贴合你们。</p></div>{loaded&&<span className="onboarding-status">{dirty?'有未保存修改':revision?'资料已保存':'开始填写'}</span>}</div>
     {error&&<p className="error-box" role="alert">{error}</p>}{message&&<p className="success-box" role="status">{message}</p>}
@@ -182,7 +182,7 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
     {relatedError&&<div className="error-box" role="alert"><p>{relatedError}</p><button type="button" className="secondary-button" onClick={()=>setIssueRetry(value=>value+1)}>重新载入</button></div>}
     {!loaded?<section className="panel"><p>正在读取资料…</p><button className="secondary-button" onClick={()=>setRefresh(value=>value+1)}>重新读取</button></section>:<form className="profile-form" onSubmit={save}><fieldset disabled={busy}>
       <div className="profile-intro"><span>填写自己的露营资料</span><p>不确定的数量、容量和路程可以留空，后续评估会提示需要补充的信息。</p></div>
-      {demoAvailable&&<details className="demo-profile-option"><summary>想先体验？使用演示样例</summary><div><p>样例包含两位同行者、交通安排与装备。载入后请核对并保存。</p><button type="button" className="secondary-button" onClick={loadDemo}>载入演示资料</button></div></details>}
+      {demoAvailable&&<details className="demo-profile-option"><summary>想先体验？使用资料样例</summary><div><p>样例包含两位同行者、交通安排与装备。载入后请核对并保存。</p><button type="button" className="secondary-button" onClick={loadDemo}>载入资料样例</button></div></details>}
       <div className="bottom-grid profile-main-grid"><section className="panel"><div className="section-title"><span className="eyebrow">WHO'S COMING</span><h2>小组信息</h2></div><div className="form-grid">
         <div><label htmlFor="group-size">小组人数（含儿童） <span className="required-mark">必填</span></label><input id="group-size" type="number" min="1" step="1" required value={group} aria-invalid={!!(issues['group-size']||guidance['group-size'])} aria-describedby="group-hint" onChange={event=>{setGroup(event.target.value);changed();}}/><FieldHint id="group-hint" error={issues['group-size']??guidance['group-size']}>包括所有同行者。</FieldHint></div>
         <div><label htmlFor="experience">露营经验</label><select id="experience" aria-invalid={!!guidance.experience} aria-describedby="experience-hint" value={experience} onChange={event=>{setExperience(event.target.value);changed();}}><option value="">尚未明确</option>{LEVELS.map(([key,label])=><option key={key} value={key}>{label}</option>)}{experience&&!LEVELS.some(([key])=>key===experience)&&<option value={experience}>{experience}</option>}</select><FieldHint id="experience-hint" error={guidance.experience}/></div>

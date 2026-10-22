@@ -10,6 +10,7 @@ from ..contracts.dto import DatasetContext, Provenance
 from ..contracts.enums import ErrorCode
 from ..contracts.errors import ContractError, ContractFailure
 from ..dataset_paths import data_file_path, manifest_file_path
+from ..adapters.catalogue_identity import CATALOGUE_FILE, SYDNEY_VERSION, read_catalogue
 
 BUSINESS_FILES = (
     'synthetic_campsites.csv', 'synthetic_gear_rules.csv', 'synthetic_cost_reference.csv',
@@ -98,6 +99,8 @@ def inspect_dataset(settings):
         source_v2 = source.source_name == 'CampMate Synthetic Demo Dataset v2'
         if not (version.startswith('2.') if source_v2 else version == 'v1' or version.startswith('1.')):
             raise ValueError('Version and source name differ')
+        if version == SYDNEY_VERSION:
+            payloads['data/' + CATALOGUE_FILE] = read_catalogue(root, manifest)
 
         runtime_present = [(root / 'data' / name).exists() for name in RUNTIME_FILES]
         if (source_v2 or any(runtime_present)) and not all(runtime_present):

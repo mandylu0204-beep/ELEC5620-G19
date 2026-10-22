@@ -11,6 +11,7 @@ from zoneinfo import ZoneInfo
 from ..adapters.synthetic_dataset_v2 import SyntheticDatasetV2Adapter, BUSINESS_FILES, RUNTIME_FILES
 from ..agents.rules.trip_evidence import POLICY_VERSION
 from ..dataset_paths import data_file_path, manifest_file_path
+from ..adapters.catalogue_identity import CATALOGUE_FILE, SYDNEY_VERSION
 
 PROVENANCE = {'source_type':'SYNTHETIC','source_name':'CampMate Synthetic Demo Dataset v2',
               'source_date':'2026-10-07','demo_only':True}
@@ -26,6 +27,8 @@ def timestamp(day):
 
 def build(original, periods, *, rolling_day=None):
     dataset = SyntheticDatasetV2Adapter(original).load()
+    sydney = dataset.context.dataset_version == SYDNEY_VERSION
+    output_version = SYDNEY_VERSION if sydney else '2.1.0'
     old_rows = json.loads(data_file_path(original,'runtime_safety_evidence.json').read_bytes())
     events = []
     for row in old_rows:
@@ -86,7 +89,7 @@ def build(original, periods, *, rolling_day=None):
                     day+=timedelta(days=1)
             for kind in ('FIRE','ROAD','RESTRICTION'):
                 relevant=[v for v in events if v['campsite_id']==camp.campsite_id and v['kind']==kind and v['start']<=finish and v['end']>=begin]
-                if kind=='FIRE' and camp.fire_allowed is False:
+                if kind=='FIRE' and camp.fire_allowed is False and not sydney:
                     # The campsite's permanent ban already covers this period;
                     # dated reminders must not split one unchanged source fact.
                     record(camp,kind,begin,finish,timestamp(begin-timedelta(days=1)),
@@ -101,11 +104,13 @@ def build(original, periods, *, rolling_day=None):
                     active=[v for v in relevant if v['start']<=end and v['end']>=start]
                     observed=max([v['observed_at'] for v in active],default=timestamp(begin-timedelta(days=1)))
                     record(camp,kind,start,end,observed,state='CLOSED' if active and kind=='ROAD' else 'OPEN',
-                           ban=camp.fire_allowed is False or bool(active and kind=='FIRE'),
+                           ban=(camp.fire_allowed is False and not sydney) or bool(active and kind=='FIRE'),
                            closed=bool(active and kind=='RESTRICTION'),origins=[v['origin_id'] for v in active])
     content={}
     for name in (*BUSINESS_FILES,*RUNTIME_FILES):
         content['data/'+name]=data_file_path(original,name).read_bytes()
+    if sydney:
+        content['data/' + CATALOGUE_FILE] = data_file_path(original, CATALOGUE_FILE).read_bytes()
     index=encode(sorted(rows,key=lambda row:row['safety_case_id']))
     content['data/runtime_safety_evidence.json']=index
     content['data/synthetic_safety_scenarios.json']=index
@@ -150,5 +155,15 @@ Read-only validation from the repository root:
         content.pop('tests/fixtures/legacy_runtime_safety_evidence.json',None)
         content['README.md']=b'Generated synthetic simulation only. Never use for real travel.\n'
         manifest['files_sha256']={name:hashlib.sha256(data).hexdigest() for name,data in sorted(content.items())}
+    if sydney:
+        # A new catalogue must not be silently relabelled as the sealed 2.1
+        # snapshot. Keep field citations and assumptions in every daily input.
+        coverage['dataset_version'] = output_version
+        coverage['provenance_note'] = 'Official location references with estimated costs and simulated dynamic conditions; see data/source_catalogue.json.'
+        content['coverage.json'] = encode(coverage)
+        manifest.update(dataset_version=output_version,
+                        derived_from='sydney_surrounds_v2_2/2.2.0')
+        content['README.md'] = b'Sydney and surrounds location catalogue. Dynamic conditions are simulated, not live observations. See data/source_catalogue.json.\n'
+        manifest['files_sha256'] = {name:hashlib.sha256(data).hexdigest() for name,data in sorted(content.items())}
     content['manifest.json']=encode(manifest)
     return content

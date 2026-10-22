@@ -1,0 +1,1479 @@
+{
+  "assumptions": {
+    "capacity": "Unless an explicit per-site source is recorded, max_group_size is a conservative product planning cap of4, not a campground occupancy claim.",
+    "coordinates": "Only Lane Cove has explicit decimal GPS in the checked official visitor page. Other legacy fictional coordinates were removed.",
+    "dynamic_conditions": "Weather, road state and current fire state are simulated inputs, not verified live conditions. Old fictional closures were removed. Check official alerts independently for real travel.",
+    "prices": "Whole-group reference allowances are not operator prices. No booking, ferry fare, availability, traffic or live weather API was queried.",
+    "seasons": "Catalogue supports year-round trip input, subject to date guards and simulated coverage; this is not a booking availability promise.",
+    "unknowns": "Unknown public transport, accessibility, fire permission or potable supply are not converted into false/true. No guaranteed quietness is inferred from quiet hours."
+  },
+  "campsites": {
+    "bents-basin": {
+      "access_notes": "2WD access via Wolstenholme Avenue. Most campsites permit parking beside the tent; some require a short walk. Accessible amenities may require an MLAK key.",
+      "checked_on": "2026-10-23",
+      "fields": {
+        "booking_required": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "facilities": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground",
+          "status": "OFFICIAL",
+          "value": [
+            "toilets",
+            "hot showers",
+            "barbecue facilities",
+            "picnic tables",
+            "accessible path"
+          ]
+        },
+        "fire_allowed": {
+          "note": "Permission is conditional on designated facilities and current restrictions. Wood/solid-fuel prohibitions are not a comprehensive ban on gas cooking.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "latitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "longitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "mandatory_restrictions": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": [
+            "Bring all drinking water",
+            "Enter via Wolstenholme Avenue, not Bents Basin Road",
+            "Use designated fire rings or raised cooking equipment, subject to current restrictions",
+            "Keep noise down after 10pm"
+          ]
+        },
+        "max_group_size": {
+          "note": "Supported single-site planning group cap, not the maximum occupancy of the real campground. Larger multi-site/group bookings are not priced by this catalogue.",
+          "status": "PRODUCT_LIMIT",
+          "value": 4
+        },
+        "name": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground",
+          "status": "OFFICIAL",
+          "value": "Bents Basin campground"
+        },
+        "nightly_fee_aud": {
+          "note": "Whole-group per-night planning allowance, including a reference park-entry/parking allowance where applicable. Not an official tariff, availability result or booking quote.",
+          "status": "REFERENCE_ESTIMATE",
+          "value": "60"
+        },
+        "pets_allowed": {
+          "note": "Certified assistance animals are an exception to national park pet restrictions.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "potable_water": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "public_transport_access": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "quiet_environment": {
+          "note": "Noise rules do not guarantee quiet surroundings.",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "region": {
+          "note": "Grouping for Sydney, Blue Mountains and Central Coast; not a local government boundary.",
+          "status": "PRODUCT_LABEL",
+          "value": "Sydney & Surrounds"
+        },
+        "risk_tags": {
+          "note": "Qualitative planning tags derived from access, water and reception notes; not a measured risk or current emergency alert.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground/visitor-info",
+          "status": "PRODUCT_TAGS",
+          "value": [
+            "limited_water",
+            "limited_mobile_reception"
+          ]
+        },
+        "showers": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "step_free_path": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "subregion": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground",
+          "status": "OFFICIAL",
+          "value": "Greendale, Bents Basin State Conservation Area"
+        },
+        "supported_seasons": {
+          "note": "Year-round planning catalogue coverage, subject to real booking availability and current alerts; does not certify that dates are bookable.",
+          "status": "PRODUCT_ASSUMPTION",
+          "value": [
+            "all"
+          ]
+        },
+        "toilets": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "vehicle_access": {
+          "note": "Direct vehicle camping is the current planning attribute. Nearby carparks plus carrying gear do not count as camping beside a vehicle.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "wheelchair_accessible": {
+          "note": "Conditional or assisted access is kept unknown rather than represented as independent access.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": true
+        }
+      },
+      "official_name": "Bents Basin campground",
+      "pricing_notes": "Official page requires a date-specific availability/booking query for actual camping prices. Catalogue amount is an independently chosen planning estimate; no live booking query was made.",
+      "source_urls": [
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground",
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bents-basin-campground/visitor-info"
+      ],
+      "static_restrictions": [
+        "Bring all drinking water",
+        "Enter via Wolstenholme Avenue, not Bents Basin Road",
+        "Use designated fire rings or raised cooking equipment, subject to current restrictions",
+        "Keep noise down after 10pm"
+      ]
+    },
+    "bonnie-vale": {
+      "access_notes": "Vehicle camping, or Cronulla to Bundeena ferry followed by a 15 minute walk. Concrete paths reach accessible amenities; campsites are on flat grass.",
+      "checked_on": "2026-10-23",
+      "fields": {
+        "booking_required": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "facilities": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground",
+          "status": "OFFICIAL",
+          "value": [
+            "toilets",
+            "hot showers",
+            "drinking water",
+            "gas/electric barbecues",
+            "picnic tables",
+            "accessible path"
+          ]
+        },
+        "fire_allowed": {
+          "note": "Permission is conditional on designated facilities and current restrictions. Wood/solid-fuel prohibitions are not a comprehensive ban on gas cooking.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "latitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "longitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "mandatory_restrictions": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": [
+            "Campfires and solid fuel burners prohibited; gas/electric barbecues provided",
+            "One parking space per site",
+            "Keep noise down after 10pm"
+          ]
+        },
+        "max_group_size": {
+          "note": "Supported single-site planning group cap, not the maximum occupancy of the real campground. Larger multi-site/group bookings are not priced by this catalogue.",
+          "status": "PRODUCT_LIMIT",
+          "value": 4
+        },
+        "name": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground",
+          "status": "OFFICIAL",
+          "value": "Bonnie Vale campground"
+        },
+        "nightly_fee_aud": {
+          "note": "Whole-group per-night planning allowance, including a reference park-entry/parking allowance where applicable. Not an official tariff, availability result or booking quote.",
+          "status": "REFERENCE_ESTIMATE",
+          "value": "85"
+        },
+        "pets_allowed": {
+          "note": "Certified assistance animals are an exception to national park pet restrictions.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "potable_water": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "public_transport_access": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "quiet_environment": {
+          "note": "Noise rules do not guarantee quiet surroundings.",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "region": {
+          "note": "Grouping for Sydney, Blue Mountains and Central Coast; not a local government boundary.",
+          "status": "PRODUCT_LABEL",
+          "value": "Sydney & Surrounds"
+        },
+        "risk_tags": {
+          "note": "Qualitative planning tags derived from access, water and reception notes; not a measured risk or current emergency alert.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground/visitor-info",
+          "status": "PRODUCT_TAGS",
+          "value": [
+            "limited_mobile_reception"
+          ]
+        },
+        "showers": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "step_free_path": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "subregion": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground",
+          "status": "OFFICIAL",
+          "value": "Bundeena, Royal National Park"
+        },
+        "supported_seasons": {
+          "note": "Year-round planning catalogue coverage, subject to real booking availability and current alerts; does not certify that dates are bookable.",
+          "status": "PRODUCT_ASSUMPTION",
+          "value": [
+            "all"
+          ]
+        },
+        "toilets": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "vehicle_access": {
+          "note": "Direct vehicle camping is the current planning attribute. Nearby carparks plus carrying gear do not count as camping beside a vehicle.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "wheelchair_accessible": {
+          "note": "Conditional or assisted access is kept unknown rather than represented as independent access.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": true
+        }
+      },
+      "official_name": "Bonnie Vale campground",
+      "pricing_notes": "Official page requires a date-specific availability/booking query for actual camping prices. Catalogue amount is an independently chosen planning estimate; no live booking query was made.",
+      "source_urls": [
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground",
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/bonnie-vale-campground/visitor-info"
+      ],
+      "static_restrictions": [
+        "Campfires and solid fuel burners prohibited; gas/electric barbecues provided",
+        "One parking space per site",
+        "Keep noise down after 10pm"
+      ]
+    },
+    "cattai": {
+      "access_notes": "Drive into the campground. Grass and gravel terrain may require wheelchair assistance; an accessible toilet is available.",
+      "checked_on": "2026-10-23",
+      "fields": {
+        "booking_required": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "facilities": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground",
+          "status": "OFFICIAL",
+          "value": [
+            "toilets",
+            "hot showers",
+            "barbecue facilities",
+            "camp kitchen",
+            "accessible toilet"
+          ]
+        },
+        "fire_allowed": {
+          "note": "Permission is conditional on designated facilities and current restrictions. Wood/solid-fuel prohibitions are not a comprehensive ban on gas cooking.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "latitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "longitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "mandatory_restrictions": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": [
+            "Bring drinking and cooking water; available water needs treatment",
+            "Fires only in designated or portable off-the-ground barbecues, subject to current restrictions",
+            "Observe gate hours; retain the booking gate code",
+            "Keep noise down after 10pm"
+          ]
+        },
+        "max_group_size": {
+          "note": "Supported single-site planning group cap, not the maximum occupancy of the real campground. Larger multi-site/group bookings are not priced by this catalogue.",
+          "status": "PRODUCT_LIMIT",
+          "value": 4
+        },
+        "name": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground",
+          "status": "OFFICIAL",
+          "value": "Cattai campground"
+        },
+        "nightly_fee_aud": {
+          "note": "Whole-group per-night planning allowance, including a reference park-entry/parking allowance where applicable. Not an official tariff, availability result or booking quote.",
+          "status": "REFERENCE_ESTIMATE",
+          "value": "55"
+        },
+        "pets_allowed": {
+          "note": "Certified assistance animals are an exception to national park pet restrictions.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "potable_water": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "public_transport_access": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "quiet_environment": {
+          "note": "Noise rules do not guarantee quiet surroundings.",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "region": {
+          "note": "Grouping for Sydney, Blue Mountains and Central Coast; not a local government boundary.",
+          "status": "PRODUCT_LABEL",
+          "value": "Sydney & Surrounds"
+        },
+        "risk_tags": {
+          "note": "Qualitative planning tags derived from access, water and reception notes; not a measured risk or current emergency alert.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground/visitor-info",
+          "status": "PRODUCT_TAGS",
+          "value": [
+            "limited_water"
+          ]
+        },
+        "showers": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "step_free_path": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground/visitor-info",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "subregion": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground",
+          "status": "OFFICIAL",
+          "value": "Hawkesbury, Cattai National Park"
+        },
+        "supported_seasons": {
+          "note": "Year-round planning catalogue coverage, subject to real booking availability and current alerts; does not certify that dates are bookable.",
+          "status": "PRODUCT_ASSUMPTION",
+          "value": [
+            "all"
+          ]
+        },
+        "toilets": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "vehicle_access": {
+          "note": "Direct vehicle camping is the current planning attribute. Nearby carparks plus carrying gear do not count as camping beside a vehicle.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "wheelchair_accessible": {
+          "note": "Conditional or assisted access is kept unknown rather than represented as independent access.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground/visitor-info",
+          "status": "UNKNOWN",
+          "value": null
+        }
+      },
+      "official_name": "Cattai campground",
+      "pricing_notes": "Official page requires a date-specific availability/booking query for actual camping prices. Catalogue amount is an independently chosen planning estimate; no live booking query was made.",
+      "source_urls": [
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground",
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/cattai-campground/visitor-info"
+      ],
+      "static_restrictions": [
+        "Bring drinking and cooking water; available water needs treatment",
+        "Fires only in designated or portable off-the-ground barbecues, subject to current restrictions",
+        "Observe gate hours; retain the booking gate code",
+        "Keep noise down after 10pm"
+      ]
+    },
+    "cockatoo-island": {
+      "access_notes": "Public ferries serve the island. BYO tent sites have accessible shower and toilet facilities. The wider heritage island has separate accessibility constraints.",
+      "checked_on": "2026-10-23",
+      "fields": {
+        "booking_required": {
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "facilities": {
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/",
+          "status": "OFFICIAL",
+          "value": [
+            "toilets",
+            "hot showers",
+            "communal kitchen",
+            "boiling water",
+            "accessible toilet",
+            "accessible shower"
+          ]
+        },
+        "fire_allowed": {
+          "note": "Permission is conditional on designated facilities and current restrictions. Wood/solid-fuel prohibitions are not a comprehensive ban on gas cooking.",
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/byo-tent-option/",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "latitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "longitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "mandatory_restrictions": {
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/byo-tent-option/",
+          "status": "OFFICIAL",
+          "value": [
+            "BYO tent on a 4m by 4m unpowered site; standard occupancy is 4 guests",
+            "Advance booking required; same-day bookings not accepted",
+            "Arrive by ferry or other water transport and carry equipment from the wharf"
+          ]
+        },
+        "max_group_size": {
+          "note": "Supported single-site planning group cap, not the maximum occupancy of the real campground. Larger multi-site/group bookings are not priced by this catalogue.",
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/byo-tent-option/",
+          "status": "OFFICIAL",
+          "value": 4
+        },
+        "name": {
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/",
+          "status": "OFFICIAL",
+          "value": "Cockatoo Island waterfront campground"
+        },
+        "nightly_fee_aud": {
+          "note": "Whole-group per-night planning allowance, including a reference park-entry/parking allowance where applicable. Not an official tariff, availability result or booking quote.",
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/byo-tent-option/",
+          "status": "REFERENCE_ESTIMATE",
+          "value": "65"
+        },
+        "pets_allowed": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "potable_water": {
+          "note": "Boiling water is listed for Cockatoo Island, but unrestricted potable tap supply is not established in the checked page.",
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "public_transport_access": {
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/byo-tent-option/",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "quiet_environment": {
+          "note": "Noise rules do not guarantee quiet surroundings.",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "region": {
+          "note": "Grouping for Sydney, Blue Mountains and Central Coast; not a local government boundary.",
+          "status": "PRODUCT_LABEL",
+          "value": "Sydney & Surrounds"
+        },
+        "risk_tags": {
+          "note": "Qualitative planning tags derived from access, water and reception notes; not a measured risk or current emergency alert.",
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/byo-tent-option/",
+          "status": "PRODUCT_TAGS",
+          "value": []
+        },
+        "showers": {
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "step_free_path": {
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/byo-tent-option/",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "subregion": {
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/",
+          "status": "OFFICIAL",
+          "value": "Cockatoo Island, Sydney Harbour"
+        },
+        "supported_seasons": {
+          "note": "Year-round planning catalogue coverage, subject to real booking availability and current alerts; does not certify that dates are bookable.",
+          "status": "PRODUCT_ASSUMPTION",
+          "value": [
+            "all"
+          ]
+        },
+        "toilets": {
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "vehicle_access": {
+          "note": "Direct vehicle camping is the current planning attribute. Nearby carparks plus carrying gear do not count as camping beside a vehicle.",
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/byo-tent-option/",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "wheelchair_accessible": {
+          "note": "Conditional or assisted access is kept unknown rather than represented as independent access.",
+          "source_url": "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/byo-tent-option/",
+          "status": "OFFICIAL",
+          "value": true
+        }
+      },
+      "official_name": "Cockatoo Island waterfront campground",
+      "pricing_notes": "Operator BYO rate checked: Monday-Thursday AUD55/night, Friday-Sunday AUD65/night for up to4; one extra guest costs AUD15/night. Product uses65 as a reference, caps group at4 and does not implement special-event pricing.",
+      "source_urls": [
+        "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/",
+        "https://www.cockatooisland.gov.au/en/stay/waterfront-campground/byo-tent-option/"
+      ],
+      "static_restrictions": [
+        "BYO tent on a 4m by 4m unpowered site; standard occupancy is 4 guests",
+        "Advance booking required; same-day bookings not accepted",
+        "Arrive by ferry or other water transport and carry equipment from the wharf"
+      ]
+    },
+    "euroka": {
+      "access_notes": "Drive to the campground carparks, then carry equipment 5 to 15 metres. Tent sites do not permit camping beside a vehicle. Uneven ground; toilets are wheelchair accessible.",
+      "checked_on": "2026-10-23",
+      "fields": {
+        "booking_required": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "facilities": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground",
+          "status": "OFFICIAL",
+          "value": [
+            "toilets",
+            "wood barbecues",
+            "picnic tables",
+            "carpark with signed walking access to campsites"
+          ]
+        },
+        "fire_allowed": {
+          "note": "Permission is conditional on designated facilities and current restrictions. Wood/solid-fuel prohibitions are not a comprehensive ban on gas cooking.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "latitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "longitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "mandatory_restrictions": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": [
+            "Tent-only sites; walk 5 to 15 metres from campground parking",
+            "Bring all drinking and cooking water",
+            "Campfires prohibited; cooking is permitted in provided wood barbecues and fire rings, subject to current restrictions",
+            "Observe Glenbrook gate hours",
+            "Keep noise down after 10pm"
+          ]
+        },
+        "max_group_size": {
+          "note": "Supported single-site planning group cap, not the maximum occupancy of the real campground. Larger multi-site/group bookings are not priced by this catalogue.",
+          "status": "PRODUCT_LIMIT",
+          "value": 4
+        },
+        "name": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground",
+          "status": "OFFICIAL",
+          "value": "Euroka campground"
+        },
+        "nightly_fee_aud": {
+          "note": "Whole-group per-night planning allowance, including a reference park-entry/parking allowance where applicable. Not an official tariff, availability result or booking quote.",
+          "status": "REFERENCE_ESTIMATE",
+          "value": "45"
+        },
+        "pets_allowed": {
+          "note": "Certified assistance animals are an exception to national park pet restrictions.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "potable_water": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "public_transport_access": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "quiet_environment": {
+          "note": "Noise rules do not guarantee quiet surroundings.",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "region": {
+          "note": "Grouping for Sydney, Blue Mountains and Central Coast; not a local government boundary.",
+          "status": "PRODUCT_LABEL",
+          "value": "Sydney & Surrounds"
+        },
+        "risk_tags": {
+          "note": "Qualitative planning tags derived from access, water and reception notes; not a measured risk or current emergency alert.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground/visitor-info",
+          "status": "PRODUCT_TAGS",
+          "value": [
+            "limited_water",
+            "limited_mobile_reception"
+          ]
+        },
+        "showers": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "step_free_path": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground/visitor-info",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "subregion": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground",
+          "status": "OFFICIAL",
+          "value": "Glenbrook, Blue Mountains National Park"
+        },
+        "supported_seasons": {
+          "note": "Year-round planning catalogue coverage, subject to real booking availability and current alerts; does not certify that dates are bookable.",
+          "status": "PRODUCT_ASSUMPTION",
+          "value": [
+            "all"
+          ]
+        },
+        "toilets": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "vehicle_access": {
+          "note": "Direct vehicle camping is the current planning attribute. Nearby carparks plus carrying gear do not count as camping beside a vehicle.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "wheelchair_accessible": {
+          "note": "Conditional or assisted access is kept unknown rather than represented as independent access.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground/visitor-info",
+          "status": "UNKNOWN",
+          "value": null
+        }
+      },
+      "official_name": "Euroka campground",
+      "pricing_notes": "Official page requires a date-specific availability/booking query for actual camping prices. Catalogue amount is an independently chosen planning estimate; no live booking query was made.",
+      "source_urls": [
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground",
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/euroka-campground/visitor-info"
+      ],
+      "static_restrictions": [
+        "Tent-only sites; walk 5 to 15 metres from campground parking",
+        "Bring all drinking and cooking water",
+        "Campfires prohibited; cooking is permitted in provided wood barbecues and fire rings, subject to current restrictions",
+        "Observe Glenbrook gate hours",
+        "Keep noise down after 10pm"
+      ]
+    },
+    "lane-cove": {
+      "access_notes": "2WD access via Plassey Road, or walk about 900 metres from North Ryde station. Accessible shower and toilet at amenities block 3; assistance may be required.",
+      "checked_on": "2026-10-23",
+      "fields": {
+        "booking_required": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "facilities": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park",
+          "status": "OFFICIAL",
+          "value": [
+            "toilets",
+            "hot showers",
+            "drinking water",
+            "gas/electric barbecues",
+            "camp kitchen",
+            "picnic tables",
+            "swimming pool"
+          ]
+        },
+        "fire_allowed": {
+          "note": "Permission is conditional on designated facilities and current restrictions. Wood/solid-fuel prohibitions are not a comprehensive ban on gas cooking.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "latitude": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park/visitor-info",
+          "status": "OFFICIAL",
+          "value": "-33.78952666"
+        },
+        "longitude": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park/visitor-info",
+          "status": "OFFICIAL",
+          "value": "151.14316666"
+        },
+        "mandatory_restrictions": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park/visitor-info",
+          "status": "OFFICIAL",
+          "value": [
+            "Enter via Plassey Road, not Riverside Drive",
+            "One vehicle per site",
+            "Campfires and solid fuel burners prohibited; gas/electric barbecues provided",
+            "Amplified music prohibited"
+          ]
+        },
+        "max_group_size": {
+          "note": "Supported single-site planning group cap, not the maximum occupancy of the real campground. Larger multi-site/group bookings are not priced by this catalogue.",
+          "status": "PRODUCT_LIMIT",
+          "value": 4
+        },
+        "name": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park",
+          "status": "OFFICIAL",
+          "value": "Lane Cove caravan park"
+        },
+        "nightly_fee_aud": {
+          "note": "Whole-group per-night planning allowance, including a reference park-entry/parking allowance where applicable. Not an official tariff, availability result or booking quote.",
+          "status": "REFERENCE_ESTIMATE",
+          "value": "95"
+        },
+        "pets_allowed": {
+          "note": "Certified assistance animals are an exception to national park pet restrictions.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "potable_water": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "public_transport_access": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park/visitor-info",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "quiet_environment": {
+          "note": "Noise rules do not guarantee quiet surroundings.",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "region": {
+          "note": "Grouping for Sydney, Blue Mountains and Central Coast; not a local government boundary.",
+          "status": "PRODUCT_LABEL",
+          "value": "Sydney & Surrounds"
+        },
+        "risk_tags": {
+          "note": "Qualitative planning tags derived from access, water and reception notes; not a measured risk or current emergency alert.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park/visitor-info",
+          "status": "PRODUCT_TAGS",
+          "value": []
+        },
+        "showers": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "step_free_path": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park/visitor-info",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "subregion": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park",
+          "status": "OFFICIAL",
+          "value": "Macquarie Park, Lane Cove National Park"
+        },
+        "supported_seasons": {
+          "note": "Year-round planning catalogue coverage, subject to real booking availability and current alerts; does not certify that dates are bookable.",
+          "status": "PRODUCT_ASSUMPTION",
+          "value": [
+            "all"
+          ]
+        },
+        "toilets": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "vehicle_access": {
+          "note": "Direct vehicle camping is the current planning attribute. Nearby carparks plus carrying gear do not count as camping beside a vehicle.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park/visitor-info",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "wheelchair_accessible": {
+          "note": "Conditional or assisted access is kept unknown rather than represented as independent access.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park/visitor-info",
+          "status": "UNKNOWN",
+          "value": null
+        }
+      },
+      "official_name": "Lane Cove caravan park",
+      "pricing_notes": "Official page requires a date-specific availability/booking query for actual camping prices. Catalogue amount is an independently chosen planning estimate; no live booking query was made.",
+      "source_urls": [
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park",
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/lane-cove-caravan-park/visitor-info"
+      ],
+      "static_restrictions": [
+        "Enter via Plassey Road, not Riverside Drive",
+        "One vehicle per site",
+        "Campfires and solid fuel burners prohibited; gas/electric barbecues provided",
+        "Amplified music prohibited"
+      ]
+    },
+    "little-beach": {
+      "access_notes": "Walk 750 metres from the carpark along a gravel trail with uphill sections. No wheelchair access.",
+      "checked_on": "2026-10-23",
+      "fields": {
+        "booking_required": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "facilities": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground",
+          "status": "OFFICIAL",
+          "value": [
+            "toilets",
+            "gas/electric barbecues",
+            "picnic tables",
+            "carpark with signed walking access to campsites"
+          ]
+        },
+        "fire_allowed": {
+          "note": "Permission is conditional on designated facilities and current restrictions. Wood/solid-fuel prohibitions are not a comprehensive ban on gas cooking.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "latitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "longitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "mandatory_restrictions": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": [
+            "Carry all equipment and water along a 750 metre gravel trail from Grahame Drive",
+            "Maximum 6 people per campsite",
+            "Wood campfires prohibited at campground and beach",
+            "No overnight stays in vehicles",
+            "Keep noise down after 10pm"
+          ]
+        },
+        "max_group_size": {
+          "note": "Supported single-site planning group cap, not the maximum occupancy of the real campground. Larger multi-site/group bookings are not priced by this catalogue.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": 6
+        },
+        "name": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground",
+          "status": "OFFICIAL",
+          "value": "Little Beach campground"
+        },
+        "nightly_fee_aud": {
+          "note": "Whole-group per-night planning allowance, including a reference park-entry/parking allowance where applicable. Not an official tariff, availability result or booking quote.",
+          "status": "REFERENCE_ESTIMATE",
+          "value": "35"
+        },
+        "pets_allowed": {
+          "note": "Certified assistance animals are an exception to national park pet restrictions.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "potable_water": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "public_transport_access": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "quiet_environment": {
+          "note": "Noise rules do not guarantee quiet surroundings.",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "region": {
+          "note": "Grouping for Sydney, Blue Mountains and Central Coast; not a local government boundary.",
+          "status": "PRODUCT_LABEL",
+          "value": "Sydney & Surrounds"
+        },
+        "risk_tags": {
+          "note": "Qualitative planning tags derived from access, water and reception notes; not a measured risk or current emergency alert.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground/visitor-info",
+          "status": "PRODUCT_TAGS",
+          "value": [
+            "limited_water",
+            "limited_mobile_reception"
+          ]
+        },
+        "showers": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "step_free_path": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "subregion": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground",
+          "status": "OFFICIAL",
+          "value": "Bouddi, Central Coast"
+        },
+        "supported_seasons": {
+          "note": "Year-round planning catalogue coverage, subject to real booking availability and current alerts; does not certify that dates are bookable.",
+          "status": "PRODUCT_ASSUMPTION",
+          "value": [
+            "all"
+          ]
+        },
+        "toilets": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "vehicle_access": {
+          "note": "Direct vehicle camping is the current planning attribute. Nearby carparks plus carrying gear do not count as camping beside a vehicle.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "wheelchair_accessible": {
+          "note": "Conditional or assisted access is kept unknown rather than represented as independent access.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        }
+      },
+      "official_name": "Little Beach campground",
+      "pricing_notes": "Official page requires a date-specific availability/booking query for actual camping prices. Catalogue amount is an independently chosen planning estimate; no live booking query was made.",
+      "source_urls": [
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground",
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/little-beach-campground/visitor-info"
+      ],
+      "static_restrictions": [
+        "Carry all equipment and water along a 750 metre gravel trail from Grahame Drive",
+        "Maximum 6 people per campsite",
+        "Wood campfires prohibited at campground and beach",
+        "No overnight stays in vehicles",
+        "Keep noise down after 10pm"
+      ]
+    },
+    "putty-beach": {
+      "access_notes": "Park near the campground and carry equipment to the tent site. Kerbs and grass separate parking from sites; NPWS lists no wheelchair access despite an accessible toilet.",
+      "checked_on": "2026-10-23",
+      "fields": {
+        "booking_required": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "facilities": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground",
+          "status": "OFFICIAL",
+          "value": [
+            "toilets",
+            "outdoor shower",
+            "drinking water",
+            "gas/electric barbecues",
+            "picnic tables",
+            "carpark with signed walking access to campsites"
+          ]
+        },
+        "fire_allowed": {
+          "note": "Permission is conditional on designated facilities and current restrictions. Wood/solid-fuel prohibitions are not a comprehensive ban on gas cooking.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "latitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "longitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "mandatory_restrictions": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": [
+            "Tent-only sites with a short walk from parking; no overnight stays in vehicles",
+            "Wood campfires prohibited at campground and beach",
+            "Keep noise down after 10pm"
+          ]
+        },
+        "max_group_size": {
+          "note": "Supported single-site planning group cap, not the maximum occupancy of the real campground. Larger multi-site/group bookings are not priced by this catalogue.",
+          "status": "PRODUCT_LIMIT",
+          "value": 4
+        },
+        "name": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground",
+          "status": "OFFICIAL",
+          "value": "Putty Beach campground"
+        },
+        "nightly_fee_aud": {
+          "note": "Whole-group per-night planning allowance, including a reference park-entry/parking allowance where applicable. Not an official tariff, availability result or booking quote.",
+          "status": "REFERENCE_ESTIMATE",
+          "value": "65"
+        },
+        "pets_allowed": {
+          "note": "Certified assistance animals are an exception to national park pet restrictions.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "potable_water": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "public_transport_access": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "quiet_environment": {
+          "note": "Noise rules do not guarantee quiet surroundings.",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "region": {
+          "note": "Grouping for Sydney, Blue Mountains and Central Coast; not a local government boundary.",
+          "status": "PRODUCT_LABEL",
+          "value": "Sydney & Surrounds"
+        },
+        "risk_tags": {
+          "note": "Qualitative planning tags derived from access, water and reception notes; not a measured risk or current emergency alert.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground/visitor-info",
+          "status": "PRODUCT_TAGS",
+          "value": [
+            "limited_mobile_reception"
+          ]
+        },
+        "showers": {
+          "note": "Outdoor shower only.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "step_free_path": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground/visitor-info",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "subregion": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground",
+          "status": "OFFICIAL",
+          "value": "Killcare, Bouddi National Park"
+        },
+        "supported_seasons": {
+          "note": "Year-round planning catalogue coverage, subject to real booking availability and current alerts; does not certify that dates are bookable.",
+          "status": "PRODUCT_ASSUMPTION",
+          "value": [
+            "all"
+          ]
+        },
+        "toilets": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "vehicle_access": {
+          "note": "Direct vehicle camping is the current planning attribute. Nearby carparks plus carrying gear do not count as camping beside a vehicle.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "wheelchair_accessible": {
+          "note": "Conditional or assisted access is kept unknown rather than represented as independent access.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        }
+      },
+      "official_name": "Putty Beach campground",
+      "pricing_notes": "Official page requires a date-specific availability/booking query for actual camping prices. Catalogue amount is an independently chosen planning estimate; no live booking query was made.",
+      "source_urls": [
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground",
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/putty-beach-campground/visitor-info"
+      ],
+      "static_restrictions": [
+        "Tent-only sites with a short walk from parking; no overnight stays in vehicles",
+        "Wood campfires prohibited at campground and beach",
+        "Keep noise down after 10pm"
+      ]
+    },
+    "tallow-beach": {
+      "access_notes": "Steep 1.2 km walk from Hawke Head Drive parking. Not recommended for elderly or very young campers. Access roads may require 4WD in wet weather.",
+      "checked_on": "2026-10-23",
+      "fields": {
+        "booking_required": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "facilities": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground",
+          "status": "OFFICIAL",
+          "value": [
+            "toilets",
+            "carpark with signed walking access to campsites"
+          ]
+        },
+        "fire_allowed": {
+          "note": "Permission is conditional on designated facilities and current restrictions. Wood/solid-fuel prohibitions are not a comprehensive ban on gas cooking.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "latitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "longitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "mandatory_restrictions": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": [
+            "Carry all equipment and drinking water down a steep 1.2 km gravel trail",
+            "Wood campfires prohibited at campground and beach",
+            "Bring a cooking stove",
+            "No overnight stays in vehicles",
+            "Keep noise down after 10pm"
+          ]
+        },
+        "max_group_size": {
+          "note": "Supported single-site planning group cap, not the maximum occupancy of the real campground. Larger multi-site/group bookings are not priced by this catalogue.",
+          "status": "PRODUCT_LIMIT",
+          "value": 4
+        },
+        "name": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground",
+          "status": "OFFICIAL",
+          "value": "Tallow Beach campground"
+        },
+        "nightly_fee_aud": {
+          "note": "Whole-group per-night planning allowance, including a reference park-entry/parking allowance where applicable. Not an official tariff, availability result or booking quote.",
+          "status": "REFERENCE_ESTIMATE",
+          "value": "35"
+        },
+        "pets_allowed": {
+          "note": "Certified assistance animals are an exception to national park pet restrictions.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "potable_water": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "public_transport_access": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "quiet_environment": {
+          "note": "Noise rules do not guarantee quiet surroundings.",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "region": {
+          "note": "Grouping for Sydney, Blue Mountains and Central Coast; not a local government boundary.",
+          "status": "PRODUCT_LABEL",
+          "value": "Sydney & Surrounds"
+        },
+        "risk_tags": {
+          "note": "Qualitative planning tags derived from access, water and reception notes; not a measured risk or current emergency alert.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground/visitor-info",
+          "status": "PRODUCT_TAGS",
+          "value": [
+            "steep_terrain",
+            "limited_water",
+            "limited_mobile_reception"
+          ]
+        },
+        "showers": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "step_free_path": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "subregion": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground",
+          "status": "OFFICIAL",
+          "value": "Killcare, Bouddi National Park"
+        },
+        "supported_seasons": {
+          "note": "Year-round planning catalogue coverage, subject to real booking availability and current alerts; does not certify that dates are bookable.",
+          "status": "PRODUCT_ASSUMPTION",
+          "value": [
+            "all"
+          ]
+        },
+        "toilets": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "vehicle_access": {
+          "note": "Direct vehicle camping is the current planning attribute. Nearby carparks plus carrying gear do not count as camping beside a vehicle.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "wheelchair_accessible": {
+          "note": "Conditional or assisted access is kept unknown rather than represented as independent access.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        }
+      },
+      "official_name": "Tallow Beach campground",
+      "pricing_notes": "Official page requires a date-specific availability/booking query for actual camping prices. Catalogue amount is an independently chosen planning estimate; no live booking query was made.",
+      "source_urls": [
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground",
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/tallow-beach-campground/visitor-info"
+      ],
+      "static_restrictions": [
+        "Carry all equipment and drinking water down a steep 1.2 km gravel trail",
+        "Wood campfires prohibited at campground and beach",
+        "Bring a cooking stove",
+        "No overnight stays in vehicles",
+        "Keep noise down after 10pm"
+      ]
+    },
+    "the-basin": {
+      "access_notes": "Arrive by Palm Beach ferry, boat or a steep 2.8 km walking track. Wheelchair access is by ferry with assistance potentially required.",
+      "checked_on": "2026-10-23",
+      "fields": {
+        "booking_required": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "facilities": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground",
+          "status": "OFFICIAL",
+          "value": [
+            "toilets",
+            "cold showers",
+            "drinking water",
+            "gas/electric barbecues",
+            "picnic tables",
+            "carpark with signed walking access to campsites"
+          ]
+        },
+        "fire_allowed": {
+          "note": "Permission is conditional on designated facilities and current restrictions. Wood/solid-fuel prohibitions are not a comprehensive ban on gas cooking.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "latitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "longitude": {
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "mandatory_restrictions": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": [
+            "Arrival by ferry, boat or on foot; no vehicle access to the campground",
+            "From West Head Road parking, carry equipment down a steep 2.8 km track",
+            "Fires only in designated wood barbecues or bookable fire pits, subject to current restrictions",
+            "Noise restrictions after 10pm; heat beads prohibited"
+          ]
+        },
+        "max_group_size": {
+          "note": "Supported single-site planning group cap, not the maximum occupancy of the real campground. Larger multi-site/group bookings are not priced by this catalogue.",
+          "status": "PRODUCT_LIMIT",
+          "value": 4
+        },
+        "name": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground",
+          "status": "OFFICIAL",
+          "value": "The Basin campground"
+        },
+        "nightly_fee_aud": {
+          "note": "Whole-group per-night planning allowance, including a reference park-entry/parking allowance where applicable. Not an official tariff, availability result or booking quote.",
+          "status": "REFERENCE_ESTIMATE",
+          "value": "60"
+        },
+        "pets_allowed": {
+          "note": "Certified assistance animals are an exception to national park pet restrictions.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "potable_water": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "public_transport_access": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "quiet_environment": {
+          "note": "Noise rules do not guarantee quiet surroundings.",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "region": {
+          "note": "Grouping for Sydney, Blue Mountains and Central Coast; not a local government boundary.",
+          "status": "PRODUCT_LABEL",
+          "value": "Sydney & Surrounds"
+        },
+        "risk_tags": {
+          "note": "Qualitative planning tags derived from access, water and reception notes; not a measured risk or current emergency alert.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground/visitor-info",
+          "status": "PRODUCT_TAGS",
+          "value": [
+            "steep_terrain",
+            "limited_mobile_reception"
+          ]
+        },
+        "showers": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "step_free_path": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground/visitor-info",
+          "status": "UNKNOWN",
+          "value": null
+        },
+        "subregion": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground",
+          "status": "OFFICIAL",
+          "value": "Pittwater, Ku-ring-gai Chase National Park"
+        },
+        "supported_seasons": {
+          "note": "Year-round planning catalogue coverage, subject to real booking availability and current alerts; does not certify that dates are bookable.",
+          "status": "PRODUCT_ASSUMPTION",
+          "value": [
+            "all"
+          ]
+        },
+        "toilets": {
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground",
+          "status": "OFFICIAL",
+          "value": true
+        },
+        "vehicle_access": {
+          "note": "Direct vehicle camping is the current planning attribute. Nearby carparks plus carrying gear do not count as camping beside a vehicle.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground/visitor-info",
+          "status": "OFFICIAL",
+          "value": false
+        },
+        "wheelchair_accessible": {
+          "note": "Conditional or assisted access is kept unknown rather than represented as independent access.",
+          "source_url": "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground/visitor-info",
+          "status": "UNKNOWN",
+          "value": null
+        }
+      },
+      "official_name": "The Basin campground",
+      "pricing_notes": "Official page requires a date-specific availability/booking query for actual camping prices. Catalogue amount is an independently chosen planning estimate; no live booking query was made.",
+      "source_urls": [
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground",
+        "https://www.nationalparks.nsw.gov.au/camping-and-accommodation/campgrounds/the-basin-campground/visitor-info"
+      ],
+      "static_restrictions": [
+        "Arrival by ferry, boat or on foot; no vehicle access to the campground",
+        "From West Head Road parking, carry equipment down a steep 2.8 km track",
+        "Fires only in designated wood barbecues or bookable fire pits, subject to current restrictions",
+        "Noise restrictions after 10pm; heat beads prohibited"
+      ]
+    }
+  },
+  "checked_on": "2026-10-23",
+  "dataset_version": "2.2.0",
+  "description": "Official static campsite facts with separately identified planning limits, reference costs and simulated dynamic conditions.",
+  "provenance_policy": "Frozen legacy source DTO is retained as SYNTHETIC because the combined input includes generated weather, road and fire scenarios. Official field-level evidence is tracked here and sealed in manifest; this is not a live official data feed.",
+  "region": "Sydney & Surrounds"
+}

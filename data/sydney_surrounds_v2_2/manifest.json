@@ -1,0 +1,28 @@
+{
+  "catalogue_file": "data/source_catalogue.json",
+  "catalogue_policy": "sydney-static-with-simulated-dynamics-1",
+  "dataset_version": "2.2.0",
+  "derived_from": "synthetic_demo_v2_1/2.1.0",
+  "evidence_selection_policy": "trip-evidence-selection-1",
+  "files_sha256": {
+    "README.md": "31ef3b52ceb8f92c2ac2cacebcfb004facc7995f8b2ea1f39ecbbb9e202616be",
+    "coverage.json": "9d4236ef478dba3cb0f84356f30e236a1da40bbcb9f67b48028bc11067ddbef1",
+    "data/runtime_requests.json": "6083d7e8d9ef39dfb0f16f48b8c1d9109695cd39f2de3e6df2bf9cd689eecf1a",
+    "data/runtime_safety_evidence.json": "fa03a8df1c5e6d76b19dc873e23b03745fd55a6ccb92bcb3d93bd0b5df866d6d",
+    "data/source_catalogue.json": "6eea5205281d41e308e5a0cc8f2c0225b6a3b685ad990579ab6f20c7ae04b8fe",
+    "data/synthetic_campsites.csv": "b82a2d3995f56dae9a3c1ae8f529dbca30a6584d3efb0ad5dd251c813a7d64db",
+    "data/synthetic_cost_reference.csv": "0497d27b8cf16d05a6adb9514e70847630b698cf38e1c1abfc02ad3bda4f9ddb",
+    "data/synthetic_gear_rules.csv": "a4802c50891728d055510ad5fd137759862e7b496d3ac35e4e408358fc40afc1",
+    "data/synthetic_profiles.json": "defe44772351284b67334f4e1a93ebde8d8a2840572d93b16cfa0ac3cfb2231f",
+    "data/synthetic_requests.json": "a968f5baeb4610d41dd0a906b3c43cc1d82bbe15c1922d1bbcbde82ff7cafe10",
+    "data/synthetic_safety_scenarios.json": "fa03a8df1c5e6d76b19dc873e23b03745fd55a6ccb92bcb3d93bd0b5df866d6d"
+  },
+  "original_manifest_sha256": "638d0b887defd50afc95c73295ec86c11a4336deb44c55df329f9c46e2fed731",
+  "provenance": {
+    "demo_only": true,
+    "source_date": "2026-10-07",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_type": "SYNTHETIC"
+  },
+  "revision_date": "2026-10-23"
+}

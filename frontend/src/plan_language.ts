@@ -3,7 +3,7 @@ export type CheckEvidence={kind:string;summary:string|null;source_date:string|nu
   valid_from:string|null;valid_to:string|null;road_state:string|null;
   source_refs:{valid_from:string|null;valid_to:string|null}[]};
 type Dates={start_date?:string|null;end_date?:string|null};
-export const checkNames:Record<string,string>={WEATHER:'天气信息',FIRE:'营火规定',ROAD:'道路通行',RESTRICTION:'营地规定'};
+export const checkNames:Record<string,string>={WEATHER:'天气预估',FIRE:'营火规定',ROAD:'道路通行',RESTRICTION:'营地规定'};
 
 export function evidenceState(item:CheckEvidence,dates?:Dates|null){
   if(item.status==='CONFLICTING')return {title:'资料有冲突',detail:'现有资料的说明不一致，暂时无法确认。'};
@@ -54,7 +54,10 @@ export function blockerText(code:string){
 
 export function safetySummary(text:string|null){
   if(!text)return null;
-  return ({'Mild synthetic conditions.':'演示天气资料：天气温和。','Dry synthetic conditions.':'演示天气资料：天气干燥。',
-    'No adverse synthetic weather.':'演示天气资料：未注明恶劣天气。','No synthetic fire restriction.':'演示资料未注明额外营火限制。',
-    'Synthetic comprehensive no-fire restriction.':'演示资料规定禁止使用明火。','Closed road access.':'道路通行关闭。'} as Record<string,string>)[text]??null;
+  return ({'Mild synthetic conditions.':'天气预估：天气温和。','Dry synthetic conditions.':'天气预估：天气干燥。',
+    'No adverse synthetic weather.':'天气预估：未注明恶劣天气。','No synthetic fire restriction.':'现有资料未注明额外营火限制。',
+    'Synthetic comprehensive no-fire restriction.':'现有资料规定禁止使用明火。','Closed road access.':'道路通行关闭。',
+    'Estimated mild conditions.':'天气预估：天气温和。','Estimated dry conditions.':'天气预估：天气干燥。',
+    'No additional fire restriction recorded.':'现有资料未注明额外营火限制。',
+    'No adverse weather estimated.':'天气预估：未注明恶劣天气。'} as Record<string,string>)[text]??null;
 }

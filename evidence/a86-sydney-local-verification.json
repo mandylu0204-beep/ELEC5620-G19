@@ -1,0 +1,76 @@
+{
+  "base_source": "6bbc85fc5dba3d9e9b42158a0b8e2d74f8b0ba5c",
+  "branch": "feature/sydney-campsite-data",
+  "dataset_version": "2.2.0",
+  "package_manifest_sha256": "508a2d3d3a83241df30f46ecb0d69e9d7e98f153ed8bb166e1f303a128d9b162",
+  "catalogue_sha256": "6eea5205281d41e308e5a0cc8f2c0225b6a3b685ad990579ab6f20c7ae04b8fe",
+  "campsites": 10,
+  "sealed_package_files_including_manifest": 12,
+  "backend": {
+    "distinct_targeted_passed": 168,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "batches": [
+      {
+        "passed": 59,
+        "report": "var/sydney-targeted.xml"
+      },
+      {
+        "passed": 118,
+        "report": "var/sydney-rules.xml"
+      },
+      {
+        "passed": 17,
+        "report": "var/sydney-catalogue-final.xml"
+      }
+    ],
+    "counts_are_deduplicated": true,
+    "full_suite_run": false
+  },
+  "frontend": {
+    "passed": 59,
+    "failed": 0,
+    "skipped": 0,
+    "typecheck": "passed",
+    "build": "passed",
+    "build_notice": "Vite reported a minified chunk over 500 kB; build succeeded."
+  },
+  "shared_schema_check": "passed",
+  "deterministic_package_comparison": "12 files match",
+  "browser": {
+    "mode": "deterministic_demo",
+    "database": "independent local SQLite",
+    "trip_start": "2026-10-25",
+    "trip_end": "2026-10-27",
+    "group_size": 2,
+    "budget_cents": 100000,
+    "campsite_id": "little-beach",
+    "initial_water_litres": 12,
+    "reported_water_shortfall_litres": 4,
+    "updated_water_litres": 16,
+    "replan_preserved_request_fields": true,
+    "final_estimate_cents": 26100,
+    "safety_rule_outcome": "PASSED",
+    "final_save": "passed",
+    "reload": "passed",
+    "actual_access_note_visible": "750 metres from the carpark along a gravel trail",
+    "normal_visible_final_text_demo_labels": false,
+    "screenshot_sha256": "bcab7856acd41c3717505232a8d365f8ebbf5ecb4f3e1cdaf414a07b52102d25"
+  },
+  "old_packages_unchanged": true,
+  "shared_contract_migration": false,
+  "personal_configuration_changed": false,
+  "existing_database_changed": false,
+  "cloud_tests": 0,
+  "campus_calls": 0,
+  "main_merge": false,
+  "model_safety_for_2_2": "remains unsupported and fails closed; launcher explicitly selects rules",
+  "live_services": [
+    "no live booking",
+    "no live weather",
+    "no live road/fire alerts",
+    "no live routing"
+  ],
+  "source_citations": "data/sydney_surrounds_v2_2/data/source_catalogue.json"
+}
