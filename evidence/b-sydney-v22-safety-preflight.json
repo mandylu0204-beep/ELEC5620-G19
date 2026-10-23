@@ -1,0 +1,92 @@
+{
+  "task": "B Sydney 2.2 model safety offline preflight and A/B proposal",
+  "review_date": "2026-10-23",
+  "timezone": "Australia/Sydney",
+  "base_source": "fee6bb7f6832a4697dbee7794aff37319fe5e734",
+  "current_development_base": "180701c5432d03339f12ec593188d7bddb41207d",
+  "branch": "feature/sydney-v22-model-safety",
+  "status": "PREFLIGHT_PASSED_PROPOSAL_PENDING_A_B_CONFIRMATION",
+  "production_adaptation_implemented": false,
+  "model_safety_v22_enabled": false,
+  "default_safety": "rules",
+  "pytest": {
+    "passed": 15,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "reported_seconds": 1.03,
+    "junit_started_at": "2026-10-23T14:27:17.549609+11:00",
+    "selection": [
+      "backend/tests/test_sydney_safety_preflight.py",
+      "backend/tests/test_safety_kernel_identity.py::test_saved_old_kernel_archives_replay_unchanged_without_live_dataset",
+      "backend/tests/test_safety_contract_export.py"
+    ],
+    "new_preflight_cases": 11,
+    "legacy_replay_cases": 2,
+    "frozen_contract_export_cases": 2,
+    "raw_junit": "var/b-v22-preflight.cAgh2n/result.xml",
+    "raw_junit_private_local_only": true
+  },
+  "checks": {
+    "sealed_and_daily_v22_factory_reject_before_model_configuration_or_client": true,
+    "logistics_rules_and_model_choices_both_preserve_safety_rejection": true,
+    "standalone_safety_component_rejects_v22": true,
+    "v22_rule_binding_retains_all_file_digests_and_original_selection_markers": true,
+    "rule_binding_has_no_model_safety_markers": true,
+    "v2_seed_compose_acceptance_is_not_runtime_authorisation": true,
+    "catalogue_digest_change_changes_full_identity_fingerprint": true,
+    "launcher_forces_rules_despite_inherited_model_safety": true,
+    "archived_v1_and_v2_replay_unchanged": true,
+    "frozen_v1_and_v2_contract_exports_match": true,
+    "shared_schema_check_passed": true,
+    "production_source_data_launchers_and_contracts_unchanged_from_base": true
+  },
+  "isolation": {
+    "new_tests_block_model_settings_and_client_construction": true,
+    "new_tests_block_httpx_sync_and_async_send": true,
+    "launcher_child_process_mocked": true,
+    "private_model_env_file_read": false,
+    "personal_database_used": false,
+    "database_created_by_new_preflight": false,
+    "temporary_generated_snapshots_only": true,
+    "campus_http_requests": 0,
+    "cloud_or_actions_runs": 0,
+    "browser_workflow_rerun": false,
+    "full_backend_suite_rerun": false,
+    "formal_safety_artifact_written": false
+  },
+  "baseline_followup": {
+    "source": "180701c5432d03339f12ec593188d7bddb41207d",
+    "source_update": "Fast-forward of the feature branch; no stash, rewrite or merge commit",
+    "original_uncommitted_files_unchanged_during_fast_forward": true,
+    "preflight_test_sha256": "01ef23ea6a75e5188233a973ac20d0198cb72828427ccaaf9a0b40dcd5ab8712",
+    "upstream_scope": "Review presentation including backend read-only display projection, frontend, related tests and reports; no safety component, registration, audit, dataset or launcher change",
+    "pytest": {
+      "same_selection_as_original": true,
+      "passed": 15,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "reported_seconds": 1.05,
+      "junit_started_at": "2026-10-23T14:39:41.055068+11:00",
+      "raw_junit": "var/b-v22-preflight-180701c.yWp6eB/result.xml",
+      "raw_junit_private_local_only": true
+    },
+    "shared_schema_check_passed": true,
+    "production_source_data_launchers_and_contracts_unchanged_from_followup_source": true,
+    "original_fee6bb7_result_preserved": true,
+    "frontend_or_browser_rerun": false,
+    "full_backend_suite_rerun": false,
+    "campus_http_requests": 0,
+    "cloud_or_actions_runs": 0
+  },
+  "coordination_update": "Per the user's relay, A waits for B's new-data model safety integration before further user testing. B leads the next offline implementation; A-owned registration/audit version agreements remain to be confirmed, not a requirement for duplicate A implementation or tests.",
+  "next_gate": "B proceeds with offline v3 component/contract implementation; confirm exact dataset/version support, old v2 new-write compatibility and A-owned audit/registration boundaries before production wiring",
+  "limitations": [
+    "Tests validate existing fail-closed boundaries, not successful v22 model safety.",
+    "Identity composition hashes caller-supplied context; it does not certify file provenance, ownership or registration.",
+    "No claim of real model behaviour, new full-suite acceptance or browser acceptance."
+  ]
+}
