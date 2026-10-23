@@ -1,0 +1,199 @@
+{
+  "task": "B independent A92 2.2/v3 bounded live acceptance",
+  "date": "2026-10-23",
+  "timezone": "Australia/Sydney",
+  "control_source": "b5e6b4a678c8e09ad151487b477f24ccfac4d1eb",
+  "application_source": "1450631ad95fed13997f5410f14078a873c0481b",
+  "control_sha256": {
+    "guard.py": "8b294af557734e41f0f9d5207b27613a466df33d4198fcf1e0ec251e161e2900",
+    "run.py": "4f4561ec372ffb7bc99d9321c1a9de7c039342902735193f399c68a6c9058b26",
+    "test_control.py": "a7e7b0500eedae38892c39f56255b9cab1ed6a9d8f58e70398435893c147f872"
+  },
+  "result": "FAILED_STOPPED",
+  "failure_stage": "ASSESSING_LOGISTICS",
+  "run_status": "FAILED",
+  "error_code": "CONTRACT_INVALID",
+  "failure_classification": "LOGISTICS_LENGTH_FINISH_REJECTED_BY_EXISTING_CLIENT",
+  "run_id": "9b194ad5bd9247df9caf381afe950e9c",
+  "plan_id": "e71e898fd51e490c9f4ab7474537360a",
+  "authorised_limits": {
+    "all_campus_http": 8,
+    "safety_http_included_in_total": 4
+  },
+  "actual_requests": 4,
+  "role_counts": {
+    "PLANNING": 2,
+    "LOGISTICS": 2,
+    "SAFETY": 0
+  },
+  "guard_stopped": true,
+  "first_error_request_number": 4,
+  "public_model_identity": {
+    "base_url": "http://10.167.60.148:8000/v1",
+    "model": "campus-qwen",
+    "timeout_seconds": 45,
+    "max_completion_tokens": 2048,
+    "max_attempts": 2,
+    "max_turns": 4
+  },
+  "reasoning_effort": null,
+  "reasoning_effort_status": "NOT_CONFIGURED_NOT_SENT",
+  "configuration_modified": false,
+  "configuration_matches_historical_4096_low_profile": false,
+  "requests": [
+    {
+      "number": 1,
+      "role": "PLANNING",
+      "started_utc": "2026-10-23T05:55:44.567294+00:00",
+      "body_bytes": 8483,
+      "body_sha256": "184ec422bfbdffdc39aee5436aa667c9d2d4e47b0490b8001d0360da4947f629",
+      "status": 200,
+      "headers_ms": 1601.576,
+      "first_body_ms": 1603.138,
+      "response_bytes": 1199,
+      "complete_ms": 1603.225,
+      "finish_reason": "stop",
+      "correlation_ids": {
+        "x-request-id": "req_b1c7cf9eb2b042329d16135a6ccf4f9b"
+      },
+      "usage": {
+        "prompt_tokens": 1757,
+        "total_tokens": 1858,
+        "completion_tokens": 101
+      },
+      "started_australia_sydney": "2026-10-23T16:55:44.567294+11:00",
+      "ended_utc": null,
+      "ended_timestamp_status": "NOT_CAPTURED",
+      "client_completion_accepted": true
+    },
+    {
+      "number": 2,
+      "role": "PLANNING",
+      "started_utc": "2026-10-23T05:55:46.173873+00:00",
+      "body_bytes": 16998,
+      "body_sha256": "c9607cdd0562a70f1cdb26e92bf9cb226badff4570dd991e29c8930af9765b1d",
+      "status": 200,
+      "headers_ms": 8062.825,
+      "first_body_ms": 8064.337,
+      "response_bytes": 3563,
+      "complete_ms": 8064.668,
+      "finish_reason": "stop",
+      "correlation_ids": {
+        "x-request-id": "req_eb55d17f80af4cb5b7fd647f3588b6a8"
+      },
+      "usage": {
+        "prompt_tokens": 3732,
+        "total_tokens": 4439,
+        "completion_tokens": 707
+      },
+      "started_australia_sydney": "2026-10-23T16:55:46.173873+11:00",
+      "ended_utc": null,
+      "ended_timestamp_status": "NOT_CAPTURED",
+      "client_completion_accepted": true
+    },
+    {
+      "number": 3,
+      "role": "LOGISTICS",
+      "started_utc": "2026-10-23T05:55:54.467473+00:00",
+      "body_bytes": 8970,
+      "body_sha256": "d19427af9cb7551af9942ddce64206a4721a1c7a8ea655626def576430433234",
+      "status": 200,
+      "headers_ms": 1917.07,
+      "first_body_ms": 1918.253,
+      "response_bytes": 1365,
+      "complete_ms": 1918.311,
+      "finish_reason": "stop",
+      "correlation_ids": {
+        "x-request-id": "req_694bc2727adb4e0090073a421b8ab098"
+      },
+      "usage": {
+        "prompt_tokens": 1920,
+        "total_tokens": 2063,
+        "completion_tokens": 143
+      },
+      "started_australia_sydney": "2026-10-23T16:55:54.467473+11:00",
+      "ended_utc": null,
+      "ended_timestamp_status": "NOT_CAPTURED",
+      "client_completion_accepted": true
+    },
+    {
+      "number": 4,
+      "role": "LOGISTICS",
+      "started_utc": "2026-10-23T05:55:56.396903+00:00",
+      "body_bytes": 23520,
+      "body_sha256": "621cb95ce56c949ef2d2b6f743da3c36082aa86581638d939ac41449ba89e478",
+      "status": 200,
+      "headers_ms": 22347.585,
+      "first_body_ms": 22349.69,
+      "response_bytes": 9508,
+      "complete_ms": 22349.724,
+      "finish_reason": "length",
+      "correlation_ids": {
+        "x-request-id": "req_a4fac5358f5d4e8982c44b99d0fbda0d"
+      },
+      "usage": null,
+      "started_australia_sydney": "2026-10-23T16:55:56.396903+11:00",
+      "ended_utc": null,
+      "ended_timestamp_status": "NOT_CAPTURED",
+      "client_completion_accepted": false
+    }
+  ],
+  "last_request_usage": null,
+  "total_round_token_usage": null,
+  "usage_status": "First three requests recorded; failed fourth request usage not captured; no full-round total fabricated",
+  "independent_database": true,
+  "independent_snapshots": true,
+  "preexisting_runs_or_databases_operated": false,
+  "artifact_counts_after_stop": {
+    "runs": 1,
+    "versions": 1,
+    "model_planning_traces": 1,
+    "model_logistics_audits": 0,
+    "model_safety_audits": 0,
+    "assessments": 0,
+    "final_records": 0
+  },
+  "formal_safety_audit_acceptance": "NOT_REACHED",
+  "restart_safety_audit_readback": "NOT_REACHED",
+  "other_user_isolation_live_check": "NOT_REACHED",
+  "browser_acceptance": "NOT_RUN_BECAUSE_LIVE_WORKFLOW_FAILED",
+  "manual_recovery_attempts": 0,
+  "additional_plan_attempts": 0,
+  "probes": 0,
+  "guard_reset_or_rebuilt_after_live_start": false,
+  "alternate_live_directory_attempted": false,
+  "model_parameters_changed_after_failure": false,
+  "cloud_runs": 0,
+  "main_merged": false,
+  "committed_or_pushed": false,
+  "contacted_A_or_proxy_operator": false,
+  "offline_control_review": {
+    "initial_passed": 14,
+    "initial_setup_errors": 2,
+    "initial_cause": "Fresh checkout var parent absent; no real HTTP requests",
+    "same_offline_basetemp_after_local_directory_setup": true,
+    "final_tests": 16,
+    "passed": 16,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 4.06,
+    "additional_mock_checks_max_attempts_2": [
+      "network exception stops after one dispatch",
+      "HTTP 502 stops after one dispatch",
+      "HTTP 200 invalid client envelope stops after one dispatch"
+    ]
+  },
+  "limits": [
+    "All four real responses were HTTP 200; no 502 or 429 observed; no quota-balance conclusion",
+    "finish_reason=length is directly observed; raw output and failed response usage are not retained in shared evidence",
+    "No 2.2/v3 real safety inference occurred, so safety integration/live success cannot be concluded",
+    "End wall-clock timestamps were not collected by the frozen control; they remain null rather than inferred",
+    "Existing local configuration was 2048 tokens with no reasoning_effort, not the previous 4096/low acceptance profile"
+  ],
+  "private_raw_evidence_retained_locally": true,
+  "finite_source_sha256": {
+    "transport.json": "bfc4bca23fa45154cdfa1cb111f6c63945f99ed5ec2fda87a84545a4111fd50f",
+    "result.json": "34aa551c083e0c4a2fec1084b7b5da5cd5a7fa1f096f6596924de0abc1e1d549"
+  }
+}

@@ -35,10 +35,14 @@ The new database therefore initially has no personal saved profiles or plans.
 Explicit `--mode agent` opts into the existing campus planning client;
 `--mode agent --logistics model` also opts into model logistics and requires the
 user's existing local model configuration. Neither was called for this delivery.
-Safety remains **rules**. Frozen model-safety support is still restricted to 2.1;
-2.2 is rejected rather than silently bypassing its registered contract or falling
-back after a model failure. Do not treat offline rule acceptance as new model
-role acceptance. This launcher intentionally does not enable model safety.
+Safety defaults to **rules**. Explicit `--mode agent --safety model` selects the
+independent 2.2/v3 safety adviser; add `--logistics model` for all three model
+roles. These options can incur real campus requests and require separate user
+approval for acceptance testing. Do not run them as a health probe. The 2.1/v2
+path and archived validators remain separate; unsupported or incomplete safety
+wiring fails rather than falling back after a model error. The new 2.2/v3 path
+has offline regression coverage only, not real-campus/browser acceptance.
+See [B's v3 integration handoff](b_sydney_v22_model_safety_handoff.md).
 
 ## Facts, assumptions and presentation
 

@@ -104,12 +104,13 @@ class HybridPlanningAgent:
             raise failure(ErrorCode.STALE_CONTEXT, 'Unregistered logistics component or conflicting model markers.')
         if choices.get('a_safety_mode') == 'model':
             try:
+                from ..llm.safety_support import matches_live_protocol
                 role = self.safety_agent
                 seed = strict_json(choices['a_safety_identity_seed'])
                 identity = role.identity
                 if (choices.get('a_safety_audit_required') != '1'
                         or choices.get('a_safety_audit_contract') != self.safety_audit_contract
-                        or context.dataset_version != '2.1.0'
+                        or not matches_live_protocol(context.dataset_version, seed)
                         or role.dataset is not self.dataset or role.configuration.context != context
                         or role.client.settings.max_turns < 3
                         or not all(callable(getattr(role, name, None)) for name in

@@ -1,0 +1,130 @@
+{
+  "task": "B Sydney 2.2/v3 model safety component and production-port wiring, offline only",
+  "date": "2026-10-23",
+  "timezone": "Australia/Sydney",
+  "common_base": "180701c5432d03339f12ec593188d7bddb41207d",
+  "preflight_commit_pushed": "1b407f7",
+  "branch": "feature/sydney-v22-model-safety",
+  "implementation_source": "Implementation snapshot after preflight commit, recorded before commit and identified by artifact hashes; independent A review and merge pending",
+  "default_safety": "rules",
+  "live_protocols": {
+    "2.1.0": "agent-2 / tools-2 / validation-2",
+    "2.2.0": "agent-3 / tools-3 / validation-3"
+  },
+  "shared_schema_version": "1.0",
+  "audit_contract_version": "1.0",
+  "new_migrations": 0,
+  "shared_schema_check": "PASSED",
+  "v3_schema_check": "PASSED",
+  "v1_v2_schema_and_identity_source_unchanged": true,
+  "sealed_datasets_unchanged": true,
+  "frontend_source_unchanged": true,
+  "full_backend": {
+    "status": "COMPLETED_WITH_FIXTURE_ERRORS_SUBSEQUENTLY_RESOLVED_BY_TARGETED_MODULE",
+    "tests": 1585,
+    "passed": 1558,
+    "failed": 0,
+    "errors": 27,
+    "skipped": 0,
+    "exit_code": 1,
+    "seconds": 694.29,
+    "junit_started_at": "2026-10-23T15:10:57.994412+11:00",
+    "error_module": "backend/tests/test_safety_audit_storage.py",
+    "cause": "One legacy storage test double registered dataset 2.0 as model safety v2, inconsistent with the exact live protocol matrix",
+    "new_v3_module_cases_inside_full_run": 28,
+    "real_http_transport_blocks": 0,
+    "raw_junit": "var/b-v22-full-regression.bQwgub/result.xml",
+    "archived_control_source": "scripts/v22_offline_transport_guard.py",
+    "control_source_sha256": "dec87223abf9e5a79a4199537a9c4c07d142d6263b79c2772d39366dae310c12",
+    "archived_control_matches_executed_local_source": true,
+    "real_http_transport_guard": "Local pytest plugin blocks httpx HTTPTransport and AsyncHTTPTransport; MockTransport and ASGI TestClient remain allowed"
+  },
+  "corrected_storage_module": {
+    "passed": 28,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "seconds": 12.63,
+    "junit_started_at": "2026-10-23T15:23:26.819543+11:00",
+    "raw_junit": "var/b-v22-storage-corrected.9eLEY1/result.xml",
+    "real_http_transport_blocks": 0,
+    "fix": "Only the storage fixture now uses actual 2.1 inputs and automatic selection; original assertions and production matrix unchanged",
+    "unresolved_initial_error_case_ids": 0,
+    "production_code_changed_after_full_run": false
+  },
+  "coverage_union": {
+    "unique_case_ids": 1587,
+    "calculation": "1585 initial full collection, 27 errored cases covered by corrected 28-case module (one overlap), plus two distinct source/date supplement cases",
+    "single_final_zero_error_full_run": false,
+    "full_rerun_after_fixture_fix": false,
+    "not_a_windows_or_cloud_acceptance_result": true
+  },
+  "supplementary_source_date_checks": {
+    "passed": 2,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "exit_code": 0,
+    "seconds": 8.07,
+    "junit_started_at": "2026-10-23T15:15:07.887443+11:00",
+    "raw_junit": "var/b-v22-source-date.Hje5vK/result.xml",
+    "real_http_transport_blocks": 0,
+    "note": "Added after the full run collected tests; distinct two-case supplement, not counted inside that full run",
+    "cases": [
+      "Explicit isolated copied/resealed 2.2 closure fixture remains BLOCKED and cannot finalise; shared package untouched",
+      "Midnight recovery reuses original snapshot and committed audit without model calls; new reassessment reads new snapshot without replanning"
+    ]
+  },
+  "development_history": [
+    {
+      "raw_junit": "var/b-v22-new-tests.D8Gwx1/result.xml",
+      "passed": 15,
+      "failed": 1,
+      "cause": "Test confirmation command key shorter than the existing interface minimum",
+      "fix": "Corrected test key only; production validation unchanged"
+    },
+    {
+      "raw_junit": "var/b-v22-new-tests-fixed.Hl5ZU6/result.xml",
+      "passed": 15,
+      "failed": 1,
+      "cause": "Test profile did not explicitly confirm children_count; existing rules correctly requested clarification",
+      "fix": "Explicit zero children in isolated test profile; no inferred production default"
+    },
+    {
+      "raw_junit": "var/b-v22-new-tests-confirmed.ZhEp0g/result.xml",
+      "passed": 23,
+      "failed": 0,
+      "exit_code": 0,
+      "seconds": 32.64,
+      "note": "Initial module before extra concurrency/launcher checks; overlapping subset, do not add to final totals"
+    }
+  ],
+  "tested_artifact_sha256": {
+    "backend/app/llm/safety_v3.py": "8d976bda6f9bc218eadcc282181c28a6a54baf2389a73466ac466eff8e0a3467",
+    "backend/app/llm/safety_support.py": "fd945101bb61dff29ad4ef98343a5b12913fea1c63e8c69eef8c0fbb9e675435",
+    "backend/app/llm/safety_agent.py": "229477f56c16893d62e96e6c990a19789b74f62fa09270233a50152558467ab6",
+    "backend/app/llm/safety_tools.py": "1e8580254979200432f585a265d811801f3c6ddef6c5efe9b2a9228b00441fce",
+    "backend/app/llm/safety_validation.py": "b68986592004f56d9c727fd769998e3a10c645c0ed789e0a4537100d44f37051",
+    "backend/app/application/agent_runtime.py": "0743b57e38c11de522fb9a9b15fb32bbd050b5a389a7fca3364e26d6c4e3344e",
+    "backend/app/application/safety_audit.py": "2b26841c97d5e5d75977dcca13799dfb46ab587182a16216f1fc95cbaeee9135",
+    "backend/app/agents/hybrid_planning_agent.py": "6aa68c0a13a25320c7bce1d79dbff87a65fff33367a520b43a052ade6e8e6ac2",
+    "scripts/sydney.py": "024c0e909fbc387fea4e8a20ec0c59d37d72e4f942f2e6e18280fee2a6979d10",
+    "backend/tests/test_sydney_model_safety.py": "622a0f44d58426b6901bda79943ef6b3d2eee4a1b3a3eed0ed55637fe4a7ab16",
+    "backend/tests/test_sydney_safety_snapshot_guards.py": "604e3ed7359be6817d4eb08720cde05616f879bbefd486cad519bba279af44b9",
+    "backend/tests/test_safety_audit_storage.py": "a9728912ad0936b0f858adff50e0de300406d3a1e88e035b9da25fbb68b16362",
+    "docs/contracts/safety_advisory_v3.schema.json": "07960566f707187f12d7e4a6e60ca2ab19697eadf46778a48cc363fb82152fa3"
+  },
+  "campus_http_requests": 0,
+  "cloud_or_actions_runs": 0,
+  "browser_acceptance_run": false,
+  "live_v22_model_acceptance": "NOT_RUN_REQUIRES_SEPARATE_USER_APPROVAL",
+  "main_merged": false,
+  "private_artifacts_committed": false,
+  "raw_junit_private_local_only": true,
+  "remaining": [
+    "No single final zero-error full rerun is claimed; A can decide whether another complete acceptance run is needed",
+    "A independently reviews dataset/protocol matrix, A-owned registration and audit boundaries",
+    "Separately approved bounded 2.2 campus/browser acceptance; no claim based on prior A64/A88/A90 evidence"
+  ]
+}

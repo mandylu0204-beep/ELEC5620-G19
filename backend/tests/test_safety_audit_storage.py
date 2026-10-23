@@ -1,8 +1,7 @@
-"""SQLite storage tests with an explicitly synthetic replay boundary, no inference.
+"""SQLite storage tests with a synthetic replay boundary, no inference.
 
-B's current identity is incompatible with A31 (R-S01). These tests do not claim
-combined real-component acceptance; actual rule facts and persisted contexts are
-used, while advisory validation is a test double until the agreed B revision.
+Use actual 2.1 inputs matching the registered v2 protocol. The deliberately
+synthetic advisory validator is still a storage test double, not model evidence.
 """
 import asyncio
 from copy import deepcopy
@@ -26,6 +25,7 @@ from app.workflow import WorkflowConfiguration
 from app.storage.repository import Repository
 from llm_fixtures import model_input
 from test_llm_logistics_agent import input_fixture
+from safety_fixtures import safety_fixture
 
 call = asyncio.run
 
@@ -38,7 +38,11 @@ class Artifact:
 
 @pytest.fixture
 def stored(tmp_path, monkeypatch):
-    dataset, original, _ = input_fixture()
+    dataset, original_safety, _, _, _ = safety_fixture()
+    _, original_logistics, _ = input_fixture()
+    original = SimpleNamespace(confirmed_requirements=original_safety.confirmed_requirements,
+        profile_snapshot=original_logistics.profile_snapshot,
+        saved_itinerary=original_safety.saved_itinerary, demo_context=original_safety.demo_context)
     seed = dict(agent_version='campus-safety-advisory-agent-2',tool_version='safety-read-only-tools-2',
         validation_version='safety-advisory-validation-2',kernel_version='b02-v1-rules-2/a-meal-clarification-v1/a-profile-essentials-v1',
         dataset_rules_version=dataset.rules_version,prompt_sha256='a'*64,
@@ -46,7 +50,7 @@ def stored(tmp_path, monkeypatch):
     markers = {'a_safety_mode':'model','a_safety_audit_required':'1','a_safety_audit_contract':'1.0',
         'a_safety_identity_seed':canonical(seed)}
     context = dataset.context.model_copy(update={'selection_config':markers})
-    config = WorkflowConfiguration(dataset,safety_case_ids=['safety-15'],registered_context=context)
+    config = WorkflowConfiguration(dataset,registered_context=context)
     app = create_app(Settings(_env_file=None,database_path=tmp_path/'safety.sqlite3'))
     with TestClient(app) as client:
         user = User('camper-a','camper.a','Camper A','CAMPER')
@@ -64,10 +68,10 @@ def stored(tmp_path, monkeypatch):
         log_input = LogisticsInput(version_context=version.version_context,saved_itinerary=version.content,
             confirmed_requirements=confirmed.requirements,profile_snapshot=confirmed.profile_snapshot,demo_context=scope.demo_context)
         log = call(port.save_assessment(version.version_context,'LOGISTICS',
-            logistics.assess(dataset,log_input,expected_mode='agent',safety_case_ids=['safety-15']),scope.write_keys['logistics']))
-        scenario = config.scenario_for(version.content.selected_campsite_ids)
-        selection = TripEvidenceSelection(selected_case_ids=['safety-15'],scenario_context=scenario,
-            weather_facts_by_campsite={},coverage_issues=[],selection_digest='a'*64)
+            logistics.assess(dataset,log_input,expected_mode='agent'),scope.write_keys['logistics']))
+        selection = config.resolve_trip_evidence(confirmed.requirements,
+            version.content.selected_campsite_ids,scope.demo_context)
+        scenario = selection.scenario_context
         input = SafetyInput(version_context=version.version_context,saved_itinerary=version.content,
             confirmed_requirements=confirmed.requirements,saved_logistics_assessment=log,scenario_context=scenario,demo_context=scope.demo_context)
         baseline = safety.assess(dataset,input,expected_mode='agent')

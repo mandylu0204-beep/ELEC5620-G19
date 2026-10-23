@@ -1,0 +1,888 @@
+{
+  "agent_version": "campus-safety-advisory-agent-3",
+  "encoded_utf8_limits": {
+    "action": 32768,
+    "client_request": 131072,
+    "client_response": 262144,
+    "complete_audit_payload": 524288,
+    "input": 131072,
+    "proposal": 24576,
+    "read_facts": 32768
+  },
+  "notes": [
+    "Default safety remains rules. Explicit model mode requires complete registered production wiring.",
+    "Shared schema and audit envelope remain 1.0; this is a distinct 2.2/v3 advisory protocol.",
+    "Sealed static location sources are distinct from simulated conditions and reference cost assumptions.",
+    "All existing v2 text/action/size/finding limits apply; no truncation, fallback or authority from model advice.",
+    "V1/V2 archived validators and prompt identities remain available without regeneration."
+  ],
+  "prompt_sha256": "64edc8f750252b678fb69eccfa954b1a01358d56c6984e7d331411455972c8a4",
+  "schemas": {
+    "action": {
+      "$defs": {
+        "EmptyArguments": {
+          "additionalProperties": false,
+          "properties": {},
+          "title": "EmptyArguments",
+          "type": "object"
+        },
+        "EvaluateSafetyAction": {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "const": "tool",
+              "title": "Action",
+              "type": "string"
+            },
+            "arguments": {
+              "$ref": "#/$defs/SafetyProposal"
+            },
+            "name": {
+              "const": "evaluate_safety_plan",
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          "required": [
+            "action",
+            "name",
+            "arguments"
+          ],
+          "title": "EvaluateSafetyAction",
+          "type": "object"
+        },
+        "FinalSafetyAction": {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "const": "final",
+              "title": "Action",
+              "type": "string"
+            },
+            "proposal": {
+              "$ref": "#/$defs/SafetyProposal"
+            }
+          },
+          "required": [
+            "action",
+            "proposal"
+          ],
+          "title": "FinalSafetyAction",
+          "type": "object"
+        },
+        "FindingChoice": {
+          "additionalProperties": false,
+          "properties": {
+            "action_code": {
+              "enum": [
+                "ACKNOWLEDGE_INFORMATION",
+                "CHECK_NEAR_DEPARTURE",
+                "OBTAIN_APPLICABLE_INFORMATION",
+                "RESOLVE_SOURCE_CONFLICT",
+                "REQUEST_HUMAN_REVIEW",
+                "CHANGE_TRIP",
+                "RESOLVE_LOGISTICS",
+                "CONFIRM_ACTIVITY_DETAILS"
+              ],
+              "title": "Action Code",
+              "type": "string"
+            },
+            "action_unverified": {
+              "maxLength": 600,
+              "minLength": 1,
+              "title": "Action Unverified",
+              "type": "string",
+              "x-safety-text-policy": "safety-advice-text-2",
+              "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+            },
+            "finding_key": {
+              "pattern": "^finding-[0-9a-f]{64}$",
+              "title": "Finding Key",
+              "type": "string"
+            },
+            "interpretation_unverified": {
+              "maxLength": 600,
+              "minLength": 1,
+              "title": "Interpretation Unverified",
+              "type": "string",
+              "x-safety-text-policy": "safety-advice-text-2",
+              "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+            }
+          },
+          "required": [
+            "finding_key",
+            "interpretation_unverified",
+            "action_code",
+            "action_unverified"
+          ],
+          "title": "FindingChoice",
+          "type": "object"
+        },
+        "ReadSafetyFactsAction": {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "const": "tool",
+              "title": "Action",
+              "type": "string"
+            },
+            "arguments": {
+              "$ref": "#/$defs/EmptyArguments"
+            },
+            "name": {
+              "const": "read_safety_facts",
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          "required": [
+            "action",
+            "name",
+            "arguments"
+          ],
+          "title": "ReadSafetyFactsAction",
+          "type": "object"
+        },
+        "SafetyProposal": {
+          "additionalProperties": false,
+          "properties": {
+            "action_priority": {
+              "items": {
+                "pattern": "^finding-[0-9a-f]{64}$",
+                "type": "string"
+              },
+              "maxItems": 64,
+              "minItems": 1,
+              "title": "Action Priority",
+              "type": "array"
+            },
+            "decision_summary_unverified": {
+              "maxLength": 1200,
+              "minLength": 1,
+              "title": "Decision Summary Unverified",
+              "type": "string",
+              "x-safety-text-policy": "safety-advice-text-2",
+              "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+            },
+            "findings": {
+              "items": {
+                "$ref": "#/$defs/FindingChoice"
+              },
+              "maxItems": 64,
+              "minItems": 1,
+              "title": "Findings",
+              "type": "array"
+            }
+          },
+          "required": [
+            "findings",
+            "action_priority",
+            "decision_summary_unverified"
+          ],
+          "title": "SafetyProposal",
+          "type": "object"
+        }
+      },
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ReadSafetyFactsAction"
+        },
+        {
+          "$ref": "#/$defs/EvaluateSafetyAction"
+        },
+        {
+          "$ref": "#/$defs/FinalSafetyAction"
+        }
+      ]
+    },
+    "finding_definition": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_actions": {
+          "items": {
+            "enum": [
+              "ACKNOWLEDGE_INFORMATION",
+              "CHECK_NEAR_DEPARTURE",
+              "OBTAIN_APPLICABLE_INFORMATION",
+              "RESOLVE_SOURCE_CONFLICT",
+              "REQUEST_HUMAN_REVIEW",
+              "CHANGE_TRIP",
+              "RESOLVE_LOGISTICS",
+              "CONFIRM_ACTIVITY_DETAILS"
+            ],
+            "type": "string"
+          },
+          "maxItems": 8,
+          "minItems": 1,
+          "title": "Allowed Actions",
+          "type": "array"
+        },
+        "campsite_id": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Campsite Id"
+        },
+        "category": {
+          "enum": [
+            "STATUS",
+            "EVIDENCE",
+            "UNASSOCIATED_EVIDENCE",
+            "BLOCKER",
+            "CONFLICT",
+            "UNCERTAINTY",
+            "HAZARD",
+            "LOGISTICS"
+          ],
+          "title": "Category",
+          "type": "string"
+        },
+        "fact_refs": {
+          "items": {
+            "maxLength": 512,
+            "minLength": 1,
+            "pattern": "^/(baseline|input|selection)/",
+            "type": "string"
+          },
+          "maxItems": 32,
+          "minItems": 1,
+          "title": "Fact Refs",
+          "type": "array"
+        },
+        "finding_key": {
+          "pattern": "^finding-[0-9a-f]{64}$",
+          "title": "Finding Key",
+          "type": "string"
+        }
+      },
+      "required": [
+        "finding_key",
+        "category",
+        "campsite_id",
+        "fact_refs",
+        "allowed_actions"
+      ],
+      "title": "FindingDefinition",
+      "type": "object"
+    },
+    "identity_seed": {
+      "$defs": {
+        "PublicSafetyClient": {
+          "additionalProperties": false,
+          "properties": {
+            "base_url": {
+              "maxLength": 2048,
+              "minLength": 1,
+              "title": "Base Url",
+              "type": "string"
+            },
+            "client_version": {
+              "const": "b04-campus-client-1",
+              "title": "Client Version",
+              "type": "string"
+            },
+            "max_attempts": {
+              "maximum": 3,
+              "minimum": 1,
+              "title": "Max Attempts",
+              "type": "integer"
+            },
+            "max_completion_tokens": {
+              "maximum": 8192,
+              "minimum": 128,
+              "title": "Max Completion Tokens",
+              "type": "integer"
+            },
+            "max_turns": {
+              "maximum": 6,
+              "minimum": 3,
+              "title": "Max Turns",
+              "type": "integer"
+            },
+            "model": {
+              "const": "campus-qwen",
+              "title": "Model",
+              "type": "string"
+            },
+            "reasoning_effort": {
+              "anyOf": [
+                {
+                  "const": "low",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Reasoning Effort"
+            },
+            "timeout_seconds": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "gt": 0,
+              "le": 120,
+              "title": "Timeout Seconds"
+            }
+          },
+          "required": [
+            "client_version",
+            "base_url",
+            "model",
+            "timeout_seconds",
+            "max_completion_tokens",
+            "max_attempts",
+            "max_turns"
+          ],
+          "title": "PublicSafetyClient",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "properties": {
+            "dataset_rules_version": {
+              "const": "b02-v2-rules-2/a-meal-clarification-v1/a-profile-essentials-v1/trip-evidence-selection-1"
+            },
+            "kernel_version": {
+              "const": "b02-v1-rules-2/a-meal-clarification-v1/a-profile-essentials-v1"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "agent_version": {
+          "const": "campus-safety-advisory-agent-3",
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "dataset_rules_version": {
+          "const": "b02-v2-rules-2/a-meal-clarification-v1/a-profile-essentials-v1/trip-evidence-selection-1",
+          "title": "Dataset Rules Version",
+          "type": "string"
+        },
+        "kernel_version": {
+          "const": "b02-v1-rules-2/a-meal-clarification-v1/a-profile-essentials-v1",
+          "title": "Kernel Version",
+          "type": "string"
+        },
+        "model_client": {
+          "$ref": "#/$defs/PublicSafetyClient"
+        },
+        "prompt_sha256": {
+          "const": "64edc8f750252b678fb69eccfa954b1a01358d56c6984e7d331411455972c8a4",
+          "title": "Prompt Sha256",
+          "type": "string"
+        },
+        "tool_version": {
+          "const": "safety-read-only-tools-3",
+          "title": "Tool Version",
+          "type": "string"
+        },
+        "validation_version": {
+          "const": "safety-advisory-validation-3",
+          "title": "Validation Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "agent_version",
+        "tool_version",
+        "validation_version",
+        "kernel_version",
+        "dataset_rules_version",
+        "prompt_sha256",
+        "model_client"
+      ],
+      "title": "SafetyIdentitySeed",
+      "type": "object"
+    },
+    "proposal": {
+      "$defs": {
+        "FindingChoice": {
+          "additionalProperties": false,
+          "properties": {
+            "action_code": {
+              "enum": [
+                "ACKNOWLEDGE_INFORMATION",
+                "CHECK_NEAR_DEPARTURE",
+                "OBTAIN_APPLICABLE_INFORMATION",
+                "RESOLVE_SOURCE_CONFLICT",
+                "REQUEST_HUMAN_REVIEW",
+                "CHANGE_TRIP",
+                "RESOLVE_LOGISTICS",
+                "CONFIRM_ACTIVITY_DETAILS"
+              ],
+              "title": "Action Code",
+              "type": "string"
+            },
+            "action_unverified": {
+              "maxLength": 600,
+              "minLength": 1,
+              "title": "Action Unverified",
+              "type": "string",
+              "x-safety-text-policy": "safety-advice-text-2",
+              "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+            },
+            "finding_key": {
+              "pattern": "^finding-[0-9a-f]{64}$",
+              "title": "Finding Key",
+              "type": "string"
+            },
+            "interpretation_unverified": {
+              "maxLength": 600,
+              "minLength": 1,
+              "title": "Interpretation Unverified",
+              "type": "string",
+              "x-safety-text-policy": "safety-advice-text-2",
+              "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+            }
+          },
+          "required": [
+            "finding_key",
+            "interpretation_unverified",
+            "action_code",
+            "action_unverified"
+          ],
+          "title": "FindingChoice",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "action_priority": {
+          "items": {
+            "pattern": "^finding-[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Action Priority",
+          "type": "array"
+        },
+        "decision_summary_unverified": {
+          "maxLength": 1200,
+          "minLength": 1,
+          "title": "Decision Summary Unverified",
+          "type": "string",
+          "x-safety-text-policy": "safety-advice-text-2",
+          "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/FindingChoice"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Findings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "findings",
+        "action_priority",
+        "decision_summary_unverified"
+      ],
+      "title": "SafetyProposal",
+      "type": "object"
+    },
+    "trace": {
+      "additionalProperties": false,
+      "properties": {
+        "configuration_fingerprint": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Configuration Fingerprint",
+          "type": "string"
+        },
+        "elapsed_ms": {
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Elapsed Ms",
+          "type": "integer"
+        },
+        "http_attempts": {
+          "maximum": 18,
+          "minimum": 3,
+          "title": "Http Attempts",
+          "type": "integer"
+        },
+        "input_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Sha256",
+          "type": "string"
+        },
+        "prompt_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Prompt Sha256",
+          "type": "string"
+        },
+        "proposal_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Proposal Sha256",
+          "type": "string"
+        },
+        "requested_model": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Requested Model",
+          "type": "string"
+        },
+        "response_sha256": {
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 6,
+          "minItems": 3,
+          "title": "Response Sha256",
+          "type": "array"
+        },
+        "role": {
+          "const": "SAFETY",
+          "title": "Role",
+          "type": "string"
+        },
+        "rule_facts_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Rule Facts Sha256",
+          "type": "string"
+        },
+        "served_models": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 6,
+          "title": "Served Models",
+          "type": "array"
+        },
+        "tool_calls": {
+          "items": {
+            "enum": [
+              "read_safety_facts",
+              "evaluate_safety_plan"
+            ],
+            "type": "string"
+          },
+          "maxItems": 5,
+          "minItems": 2,
+          "title": "Tool Calls",
+          "type": "array"
+        },
+        "tool_version": {
+          "const": "safety-read-only-tools-3",
+          "title": "Tool Version",
+          "type": "string"
+        },
+        "turns": {
+          "maximum": 6,
+          "minimum": 3,
+          "title": "Turns",
+          "type": "integer"
+        },
+        "usage": {
+          "additionalProperties": {
+            "maximum": 9223372036854775807,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "prompt_tokens",
+              "completion_tokens",
+              "total_tokens"
+            ]
+          },
+          "title": "Usage",
+          "type": "object"
+        },
+        "validation_passed": {
+          "title": "Validation Passed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "role",
+        "requested_model",
+        "served_models",
+        "configuration_fingerprint",
+        "input_sha256",
+        "rule_facts_sha256",
+        "proposal_sha256",
+        "prompt_sha256",
+        "tool_version",
+        "turns",
+        "http_attempts",
+        "elapsed_ms",
+        "tool_calls",
+        "response_sha256",
+        "usage",
+        "validation_passed"
+      ],
+      "title": "SafetyTrace",
+      "type": "object"
+    },
+    "validated_plan": {
+      "$defs": {
+        "Provenance": {
+          "additionalProperties": false,
+          "properties": {
+            "demo_only": {
+              "const": true,
+              "default": true,
+              "title": "Demo Only",
+              "type": "boolean"
+            },
+            "source_date": {
+              "const": "2026-10-07",
+              "default": "2026-10-07",
+              "title": "Source Date",
+              "type": "string"
+            },
+            "source_name": {
+              "default": "CampMate Synthetic Demo Dataset v1",
+              "enum": [
+                "CampMate Synthetic Demo Dataset v1",
+                "CampMate Synthetic Demo Dataset v2"
+              ],
+              "title": "Source Name",
+              "type": "string"
+            },
+            "source_type": {
+              "const": "SYNTHETIC",
+              "default": "SYNTHETIC",
+              "title": "Source Type",
+              "type": "string"
+            }
+          },
+          "title": "Provenance",
+          "type": "object"
+        },
+        "SafetyFinding": {
+          "additionalProperties": false,
+          "properties": {
+            "action_code": {
+              "enum": [
+                "ACKNOWLEDGE_INFORMATION",
+                "CHECK_NEAR_DEPARTURE",
+                "OBTAIN_APPLICABLE_INFORMATION",
+                "RESOLVE_SOURCE_CONFLICT",
+                "REQUEST_HUMAN_REVIEW",
+                "CHANGE_TRIP",
+                "RESOLVE_LOGISTICS",
+                "CONFIRM_ACTIVITY_DETAILS"
+              ],
+              "title": "Action Code",
+              "type": "string"
+            },
+            "action_unverified": {
+              "maxLength": 600,
+              "minLength": 1,
+              "title": "Action Unverified",
+              "type": "string",
+              "x-safety-text-policy": "safety-advice-text-2",
+              "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+            },
+            "fact_refs": {
+              "items": {
+                "maxLength": 512,
+                "minLength": 1,
+                "pattern": "^/(baseline|input|selection)/",
+                "type": "string"
+              },
+              "maxItems": 32,
+              "minItems": 1,
+              "title": "Fact Refs",
+              "type": "array"
+            },
+            "finding_key": {
+              "pattern": "^finding-[0-9a-f]{64}$",
+              "title": "Finding Key",
+              "type": "string"
+            },
+            "interpretation_unverified": {
+              "maxLength": 600,
+              "minLength": 1,
+              "title": "Interpretation Unverified",
+              "type": "string",
+              "x-safety-text-policy": "safety-advice-text-2",
+              "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+            }
+          },
+          "required": [
+            "finding_key",
+            "interpretation_unverified",
+            "action_code",
+            "action_unverified",
+            "fact_refs"
+          ],
+          "title": "SafetyFinding",
+          "type": "object"
+        },
+        "SourceRef": {
+          "additionalProperties": false,
+          "properties": {
+            "dataset_file": {
+              "title": "Dataset File",
+              "type": "string"
+            },
+            "provenance": {
+              "$ref": "#/$defs/Provenance"
+            },
+            "record_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Record Id",
+              "type": "string"
+            },
+            "valid_from": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Valid From"
+            },
+            "valid_to": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Valid To"
+            }
+          },
+          "required": [
+            "dataset_file",
+            "record_id"
+          ],
+          "title": "SourceRef",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "action_priority": {
+          "items": {
+            "pattern": "^finding-[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Action Priority",
+          "type": "array"
+        },
+        "decision_summary_unverified": {
+          "maxLength": 1200,
+          "minLength": 1,
+          "title": "Decision Summary Unverified",
+          "type": "string",
+          "x-safety-text-policy": "safety-advice-text-2",
+          "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/SafetyFinding"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Findings",
+          "type": "array"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "title": "Source Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "findings",
+        "action_priority",
+        "decision_summary_unverified",
+        "source_refs"
+      ],
+      "title": "ValidatedSafetyPlan",
+      "type": "object"
+    }
+  },
+  "semantic_limits": {
+    "attempts_per_turn_max": 3,
+    "baseline_evidence": 128,
+    "catalog_entries": 512,
+    "fact_refs_per_finding": 32,
+    "findings": 64,
+    "source_refs": 128,
+    "turns_max": 6,
+    "turns_min": 3
+  },
+  "shared_schema_version": "1.0",
+  "status": "IMPLEMENTED_OFFLINE_LIVE_ACCEPTANCE_PENDING",
+  "supported_dataset_versions": [
+    "2.2.0"
+  ],
+  "supported_kernel_rule_pairs": [
+    {
+      "dataset_rules_version": "b02-v2-rules-2/a-meal-clarification-v1/a-profile-essentials-v1/trip-evidence-selection-1",
+      "kernel_version": "b02-v1-rules-2/a-meal-clarification-v1/a-profile-essentials-v1"
+    }
+  ],
+  "text_policy": {
+    "excluded_unicode_categories": [
+      "Cc",
+      "Cf",
+      "Zl",
+      "Zp"
+    ],
+    "limitations": "Detectable syntax only; not complete URL, obfuscation, English-language or semantic-truth recognition.",
+    "link_like_patterns": [
+      "\\b[a-z][a-z0-9+.-]*://",
+      "\\b(?:https?|ftps?|sftp|file|mailto|tel|sms|data|javascript):",
+      "\\bwww[.\\u3002\\uff0e\\uff61]",
+      "(?<![\\w-])(?:[^\\W_](?:[^\\W_]|-){0,62}[.\\u3002\\uff0e\\uff61])+[^\\W\\d_](?:[^\\W\\d_]|-){1,62}(?![\\w-])",
+      "\\[[^\\]\\r\\n]*\\]\\(\\s*[^)]*\\)"
+    ],
+    "normalisation": "none; reject received text without rewriting",
+    "other_existing_exclusions": [
+      "numeric literals",
+      "matched HTML tags",
+      "code fences",
+      "selected detectable false-clearance/instruction-injection phrases"
+    ],
+    "regex_flags": [
+      "IGNORECASE",
+      "UNICODE"
+    ],
+    "unicode_data_version": "15.0.0",
+    "version": "safety-advice-text-2"
+  },
+  "tool_version": "safety-read-only-tools-3",
+  "validation_version": "safety-advisory-validation-3"
+}

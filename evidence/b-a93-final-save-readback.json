@@ -1,0 +1,213 @@
+{
+  "task": "A93 follow-up final save and readback on a consistent copy",
+  "result": "PASSED",
+  "application_source": "1450631ad95fed13997f5410f14078a873c0481b",
+  "reviewed_live_control_source": "b5e6b4a678c8e09ad151487b477f24ccfac4d1eb",
+  "a93_review_source": "b215049",
+  "live_evidence_commit": "7b1a102",
+  "prepared_utc": "2026-10-23T07:55:01.465078+00:00",
+  "completed_utc": "2026-10-23T07:58:20.105303+00:00",
+  "timezone": "Australia/Sydney",
+  "checking_date": "2026-10-23",
+  "public_model_identity": {
+    "base_url": "http://10.167.60.148:8000/v1",
+    "model": "campus-qwen",
+    "timeout_seconds": 45,
+    "max_completion_tokens": 4096,
+    "max_attempts": 2,
+    "max_turns": 4,
+    "reasoning_effort": "low"
+  },
+  "local_control_sha256": "0fe49489b90f3e424cbf080decc5da2f8f52b0c4eb953b95a402a4c0b44acc53",
+  "run_id": "7bd0b20963a843dabc8b8d5a7e49bd49",
+  "plan_id": "6d53078a0e2545f4811230f85bbf4698",
+  "final_id": "5979a2fc8f2c445080efc6a6b3ae9fa5",
+  "backup": {
+    "method": "SQLite read-only source connection .backup(), not file copying",
+    "integrity": "ok",
+    "foreign_key_check_passed": true,
+    "original_logical_sha256_before": "9698ba9a056092761561b83d92be0963fa16f44a62445d27d96fe438fb3ab869",
+    "copy_initial_logical_sha256": "9698ba9a056092761561b83d92be0963fa16f44a62445d27d96fe438fb3ab869",
+    "consistent_copy_verified": true,
+    "snapshots_copied_and_verified": true
+  },
+  "guards": {
+    "clock_mode": "current",
+    "date_override": false,
+    "scope_validation_unchanged": true,
+    "eligibility_validation_unchanged": true,
+    "csrf_and_ownership_validation_unchanged": true,
+    "model_completion_disabled": true,
+    "synchronous_and_asynchronous_http_transports_disabled": true,
+    "nonlocal_socket_connections_disabled": true,
+    "allowed_business_write": "one POST to the existing owned plan finalise endpoint on the copy only",
+    "new_plan_revise_reassess_recovery_endpoints_disabled": true,
+    "new_live_round_guard_created": false
+  },
+  "phases": {
+    "browser": {
+      "model_completion_attempts": 0,
+      "outbound_http_attempts": 0,
+      "nonlocal_socket_attempts": 0,
+      "finalise_requests": 1,
+      "finalise_statuses": [
+        200
+      ],
+      "blocked_other_business_writes": 0
+    },
+    "restart_readback": {
+      "model_completion_attempts": 0,
+      "outbound_http_attempts": 0,
+      "nonlocal_socket_attempts": 0,
+      "finalise_requests": 0,
+      "finalise_statuses": [],
+      "blocked_other_business_writes": 0
+    }
+  },
+  "final_snapshot": {
+    "saved_utc": "2026-10-23T07:57:30.763656+00:00",
+    "saved_australia_sydney": "2026-10-23T18:57:30.763656+11:00",
+    "final_records": 1,
+    "final_commands": 1,
+    "payload_sha256": "0dd64eb500f780068e41873fc24651e41238e5be60cd9c0e00ef51468ffdb4f4",
+    "safety_tool_version": "safety-read-only-tools-3",
+    "assessment_count": 2,
+    "original_content_unchanged": true,
+    "planning_trace_and_assessment_audits_match": true,
+    "eligibility_true_without_bypass": true,
+    "review_is_none": true,
+    "no_human_approval_fabricated": true
+  },
+  "restart_readback": {
+    "passed": true,
+    "fresh_python_process_and_application": true,
+    "full_final_snapshot_digest_matches": true,
+    "current_plan_shows_finalised": true,
+    "only_one_final_history_entry": true,
+    "further_finalisation_unavailable": true,
+    "other_user_http_status": 404,
+    "anonymous_http_status": 401
+  },
+  "browser": {
+    "final_save_submitted_once": true,
+    "final_save_http_status": 200,
+    "current_final_badge_visible": true,
+    "saved_final_heading_visible": true,
+    "final_snapshot_read_after_reload": true,
+    "saved_ai_safety_advice_visible": true,
+    "reference_not_verified_notice_retained": true,
+    "second_save_button_absent": true,
+    "no_human_approval_claim": true,
+    "tab_and_servers_closed": true
+  },
+  "unchanged_saved_artifacts": {
+    "runs": {
+      "count_before": 1,
+      "count_after": 1,
+      "sha256_before": "272f3120bb8a1a99076ca05d18cc62fb4017de297cea8b2b906f52501ecded08",
+      "sha256_after": "272f3120bb8a1a99076ca05d18cc62fb4017de297cea8b2b906f52501ecded08",
+      "unchanged": true
+    },
+    "run_versions": {
+      "count_before": 1,
+      "count_after": 1,
+      "sha256_before": "62c1b55a8fe29b0dc6898638dda50ecaa6c98d4bcc1fa5d3a0ebda3fcfd70e84",
+      "sha256_after": "62c1b55a8fe29b0dc6898638dda50ecaa6c98d4bcc1fa5d3a0ebda3fcfd70e84",
+      "unchanged": true
+    },
+    "recommendations": {
+      "count_before": 1,
+      "count_after": 1,
+      "sha256_before": "ede7688e054803852dfb0085a7be119b5654f6002dc58deb3a16d32727f5dc9c",
+      "sha256_after": "ede7688e054803852dfb0085a7be119b5654f6002dc58deb3a16d32727f5dc9c",
+      "unchanged": true
+    },
+    "assessments": {
+      "count_before": 2,
+      "count_after": 2,
+      "sha256_before": "49a77a36351c7bd8dc34f9df5e44d018dd6104a977d6b2d5138a19aa544b4ec8",
+      "sha256_after": "49a77a36351c7bd8dc34f9df5e44d018dd6104a977d6b2d5138a19aa544b4ec8",
+      "unchanged": true
+    },
+    "gear_checklists": {
+      "count_before": 1,
+      "count_after": 1,
+      "sha256_before": "28baaea3fc36ca1f6f8316f55d946beeca3f33ce82b7f7aac92f24e376241ae4",
+      "sha256_after": "28baaea3fc36ca1f6f8316f55d946beeca3f33ce82b7f7aac92f24e376241ae4",
+      "unchanged": true
+    },
+    "reviews": {
+      "count_before": 0,
+      "count_after": 0,
+      "sha256_before": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "sha256_after": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "unchanged": true
+    },
+    "run_events": {
+      "count_before": 8,
+      "count_after": 8,
+      "sha256_before": "4f05379bc13a1c4ec17f58637e58452a52a7c97cbdec2b4144959e3f32f82e58",
+      "sha256_after": "4f05379bc13a1c4ec17f58637e58452a52a7c97cbdec2b4144959e3f32f82e58",
+      "unchanged": true
+    },
+    "write_receipts": {
+      "count_before": 5,
+      "count_after": 5,
+      "sha256_before": "443fb8abdd33fc95f25593aa111691517afcedb78b3dbd3b306e0025dd42ee45",
+      "sha256_after": "443fb8abdd33fc95f25593aa111691517afcedb78b3dbd3b306e0025dd42ee45",
+      "unchanged": true
+    },
+    "model_planning_traces": {
+      "count_before": 1,
+      "count_after": 1,
+      "sha256_before": "d6911dbdcace52354c1b5ab3abe3f98ec375691d9f9b24ea3c4cf7412f01d676",
+      "sha256_after": "d6911dbdcace52354c1b5ab3abe3f98ec375691d9f9b24ea3c4cf7412f01d676",
+      "unchanged": true
+    },
+    "model_logistics_audits": {
+      "count_before": 1,
+      "count_after": 1,
+      "sha256_before": "7c3cda504dee140dc804f8b9b23ff6305b50e714d0ab211dd02cf5eb1ed425c2",
+      "sha256_after": "7c3cda504dee140dc804f8b9b23ff6305b50e714d0ab211dd02cf5eb1ed425c2",
+      "unchanged": true
+    },
+    "model_safety_audits": {
+      "count_before": 1,
+      "count_after": 1,
+      "sha256_before": "16a8dfe2b245b122bac452c6f89f06790bf22a81e010b2f1a36be5cd90f49f82",
+      "sha256_after": "16a8dfe2b245b122bac452c6f89f06790bf22a81e010b2f1a36be5cd90f49f82",
+      "unchanged": true
+    }
+  },
+  "original_unchanged": {
+    "database": true,
+    "logical_sha256_after": "9698ba9a056092761561b83d92be0963fa16f44a62445d27d96fe438fb3ab869",
+    "snapshot_files": true,
+    "snapshots_digest": {
+      "files": 12,
+      "sha256": "23971f7ac9ce7eac6e2bb032afa5d885e4574c4b334dc1dddcab562c957bc8fd"
+    },
+    "transport_report": true,
+    "transport_sha256": "3e7fbdbf7c5b199ad09dd041df634ba945cc13f0da9168dc279d0a004f03f3e6",
+    "original_final_records": 0,
+    "original_live_request_count": 8
+  },
+  "scope": {
+    "campus_calls_added": 0,
+    "extra_plan": 0,
+    "real_revise": 0,
+    "real_reassess": 0,
+    "failed_run_recovery": 0,
+    "model_parameter_or_identity_changed": false,
+    "personal_configuration_changed": false,
+    "production_source_changed": false,
+    "main_merge": false,
+    "commit_or_push": false,
+    "cloud_tests": 0,
+    "full_suite_rerun": false
+  },
+  "warnings": [
+    "Existing Starlette TestClient/httpx deprecation warning retained; no dependency change."
+  ],
+  "privacy": "No keys, Authorization/Cookie, full prompt, raw model response, private reasoning, database or snapshot payload shared."
+}

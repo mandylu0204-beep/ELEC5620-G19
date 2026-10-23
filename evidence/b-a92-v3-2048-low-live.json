@@ -1,0 +1,300 @@
+{
+  "application_source": "1450631ad95fed13997f5410f14078a873c0481b",
+  "control_source": "b5e6b4a678c8e09ad151487b477f24ccfac4d1eb",
+  "controller_exit_code": 1,
+  "result": {
+    "source": "1450631ad95fed13997f5410f14078a873c0481b",
+    "limit": 8,
+    "safety_limit": 4,
+    "campus_call_scope": "new PLAN: all three roles",
+    "input": "Explicit synthetic acceptance profile, two people, two nights, ready-to-eat meals, AUD1000",
+    "public_model_identity": {
+      "base_url": "http://10.167.60.148:8000/v1",
+      "model": "campus-qwen",
+      "timeout_seconds": 45,
+      "max_completion_tokens": 2048,
+      "max_attempts": 2,
+      "max_turns": 4,
+      "reasoning_effort": "low"
+    },
+    "result": "FAILED",
+    "run_id": "c0b4cd9555f0495fb317415a6b3225ca",
+    "plan_id": "db808c3a3b30411590ad703b8baf2047",
+    "run_status": "FAILED",
+    "error_code": "CONTRACT_INVALID",
+    "failure_category": "CONTROL_OR_RUNTIME_FAILURE",
+    "requests": 7
+  },
+  "requests": [
+    {
+      "number": 1,
+      "role": "PLANNING",
+      "started_utc": "2026-10-23T06:26:53.062678+00:00",
+      "body_bytes": 8508,
+      "body_sha256": "deb4bb738d5e45950255e8c0d6e5824bb3cedb021c2972d6d6cc6d35bc9d135e",
+      "status": 200,
+      "headers_ms": 2629.76,
+      "correlation_ids": {
+        "x-request-id": "req_81aa563d83d44c14bdfb194d78a88522"
+      },
+      "first_body_ms": 2631.489,
+      "response_bytes": 1224,
+      "complete_ms": 2631.579,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 1745,
+        "total_tokens": 1905,
+        "completion_tokens": 160
+      },
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9",
+      "client_completion_accepted": true,
+      "started_australia_sydney": "2026-10-23T17:26:53.062678+11:00",
+      "ended_utc": null,
+      "end_time_status": "NOT_CAPTURED"
+    },
+    {
+      "number": 2,
+      "role": "PLANNING",
+      "started_utc": "2026-10-23T06:26:55.697513+00:00",
+      "body_bytes": 17023,
+      "body_sha256": "895223b1609cb3dd7b6aebba5ef82928134a0afc5ed40f27b056d7f49130b88b",
+      "status": 200,
+      "headers_ms": 14482.492,
+      "correlation_ids": {
+        "x-request-id": "req_027c57b46476438dba7bf20746eee133"
+      },
+      "first_body_ms": 14483.846,
+      "response_bytes": 4467,
+      "complete_ms": 14484.234,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 3720,
+        "total_tokens": 4850,
+        "completion_tokens": 1130
+      },
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9",
+      "client_completion_accepted": true,
+      "started_australia_sydney": "2026-10-23T17:26:55.697513+11:00",
+      "ended_utc": null,
+      "end_time_status": "NOT_CAPTURED"
+    },
+    {
+      "number": 3,
+      "role": "LOGISTICS",
+      "started_utc": "2026-10-23T06:27:10.412389+00:00",
+      "body_bytes": 8995,
+      "body_sha256": "770180cb40ac01ad6a4916d3f725b90fefa1ae38ae6d2801e26650a23934f7f2",
+      "status": 200,
+      "headers_ms": 703.549,
+      "correlation_ids": {
+        "x-request-id": "req_b9d6060f861d416cba560e7c0ea6e0c9"
+      },
+      "first_body_ms": 704.811,
+      "response_bytes": 866,
+      "complete_ms": 704.868,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 1908,
+        "total_tokens": 1943,
+        "completion_tokens": 35
+      },
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9",
+      "client_completion_accepted": true,
+      "started_australia_sydney": "2026-10-23T17:27:10.412389+11:00",
+      "ended_utc": null,
+      "end_time_status": "NOT_CAPTURED"
+    },
+    {
+      "number": 4,
+      "role": "LOGISTICS",
+      "started_utc": "2026-10-23T06:27:11.128140+00:00",
+      "body_bytes": 23545,
+      "body_sha256": "d692f2351705334c9253150b65253851523cbe2b9612f401c0d4a6139c131c17",
+      "status": 200,
+      "headers_ms": 11665.94,
+      "correlation_ids": {
+        "x-request-id": "req_52734843f25d4c3e8ec0c1c190447d98"
+      },
+      "first_body_ms": 11667.485,
+      "response_bytes": 4099,
+      "complete_ms": 11667.961,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 5605,
+        "total_tokens": 6534,
+        "completion_tokens": 929
+      },
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9",
+      "client_completion_accepted": true,
+      "started_australia_sydney": "2026-10-23T17:27:11.128140+11:00",
+      "ended_utc": null,
+      "end_time_status": "NOT_CAPTURED"
+    },
+    {
+      "number": 5,
+      "role": "LOGISTICS",
+      "started_utc": "2026-10-23T06:27:22.808724+00:00",
+      "body_bytes": 34485,
+      "body_sha256": "ae6a385c388ce7d4abcd97a5f457bf531c6e12b4dcae40929f0068d16934b2cf",
+      "status": 200,
+      "headers_ms": 5307.126,
+      "correlation_ids": {
+        "x-request-id": "req_823e76d38a0747678f58357b91e4a14b"
+      },
+      "first_body_ms": 5308.138,
+      "response_bytes": 2339,
+      "complete_ms": 5309.038,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 8157,
+        "total_tokens": 8514,
+        "completion_tokens": 357
+      },
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9",
+      "client_completion_accepted": true,
+      "started_australia_sydney": "2026-10-23T17:27:22.808724+11:00",
+      "ended_utc": null,
+      "end_time_status": "NOT_CAPTURED"
+    },
+    {
+      "number": 6,
+      "role": "SAFETY",
+      "started_utc": "2026-10-23T06:27:28.351431+00:00",
+      "body_bytes": 6642,
+      "body_sha256": "7aa643d8662bf907ab862410016f8489abe3ee7b47bf0c2002331a7600775fd4",
+      "status": 200,
+      "headers_ms": 738.685,
+      "correlation_ids": {
+        "x-request-id": "req_8d363c65e7d94e339a403c0678a6651a"
+      },
+      "first_body_ms": 740.326,
+      "response_bytes": 857,
+      "complete_ms": 740.393,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 1547,
+        "total_tokens": 1582,
+        "completion_tokens": 35
+      },
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9",
+      "client_completion_accepted": true,
+      "started_australia_sydney": "2026-10-23T17:27:28.351431+11:00",
+      "ended_utc": null,
+      "end_time_status": "NOT_CAPTURED"
+    },
+    {
+      "number": 7,
+      "role": "SAFETY",
+      "started_utc": "2026-10-23T06:27:29.098233+00:00",
+      "body_bytes": 17697,
+      "body_sha256": "ae61556ff44b47a30b7c2316132aa9dd07a2385f2b23bf657f9bb0f686672245",
+      "status": 200,
+      "headers_ms": 23631.909,
+      "correlation_ids": {
+        "x-request-id": "req_480343ae38c547129f2f90cfdc465147"
+      },
+      "first_body_ms": 23633.642,
+      "response_bytes": 6941,
+      "complete_ms": 23634.113,
+      "finish_reason": "length",
+      "started_australia_sydney": "2026-10-23T17:27:29.098233+11:00",
+      "ended_utc": null,
+      "end_time_status": "NOT_CAPTURED"
+    }
+  ],
+  "counts_by_role": {
+    "PLANNING": 2,
+    "LOGISTICS": 3,
+    "SAFETY": 2
+  },
+  "transport_stopped": true,
+  "saved_counts": {
+    "plans": 1,
+    "runs": 1,
+    "versions": 1,
+    "recommendations": 1,
+    "assessments": 1,
+    "gear_checklists": 1,
+    "model_planning_traces": 1,
+    "model_logistics_audits": 1,
+    "model_safety_audits": 0,
+    "final_records": 0
+  },
+  "receipts_by_operation": {
+    "logistics": 1,
+    "recommendations": 1,
+    "version": 1
+  },
+  "persisted_run": {
+    "status": "FAILED",
+    "stage": "ASSESSING_SAFETY"
+  },
+  "usage_captured_request_count": 6,
+  "usage_sum_for_captured_requests_only": {
+    "prompt_tokens": 22682,
+    "completion_tokens": 2646,
+    "total_tokens": 25328
+  },
+  "failed_request_usage": "NOT_CAPTURED; client rejected finish_reason before exposing usage",
+  "control_sha256": {
+    "guard.py": "8b294af557734e41f0f9d5207b27613a466df33d4198fcf1e0ec251e161e2900",
+    "run.py": "4f4561ec372ffb7bc99d9321c1a9de7c039342902735193f399c68a6c9058b26",
+    "test_control.py": "a7e7b0500eedae38892c39f56255b9cab1ed6a9d8f58e70398435893c147f872"
+  },
+  "final_acceptance_result": "FAILED_OUTPUT_TRUNCATION",
+  "round_limits": {
+    "total_actual_request_limit": 8,
+    "safety_request_limit": 4,
+    "actual_requests": 7,
+    "safety_requests": 2,
+    "stopped_on_first_model_error": true,
+    "manual_retries": 0,
+    "additional_probes": 0,
+    "second_plan": 0
+  },
+  "scope": {
+    "new_independent_database_and_snapshots": true,
+    "prior_runs_operated": false,
+    "personal_environment_file_modified": false,
+    "application_source_modified": false,
+    "validation_weakened": false,
+    "safety_fallback_success_fabricated": false,
+    "browser_acceptance": "NOT_RUN_AFTER_FAILURE",
+    "restart_acceptance": "NOT_RUN_AFTER_FAILURE",
+    "final_save_performed": false,
+    "main_merged": false,
+    "commit_or_push": false,
+    "cloud_ci_run": false
+  },
+  "comparison": {
+    "same_application_source": "1450631ad95fed13997f5410f14078a873c0481b",
+    "same_control_source": "b5e6b4a678c8e09ad151487b477f24ccfac4d1eb",
+    "input_generation": "Same synthetic acceptance profile and request construction; independent IDs and fresh model generations, not byte-identical replay.",
+    "prior_4096_low": {
+      "result": "PASSED",
+      "actual_requests": 8,
+      "planning": 2,
+      "logistics": 3,
+      "safety": 3,
+      "all_http_200": true,
+      "all_finish_reason_stop": true,
+      "safety_second_response_completion_tokens": 2192
+    },
+    "current_2048_low": {
+      "result": "FAILED",
+      "failed_role": "SAFETY",
+      "role_turn": 2,
+      "global_request": 7,
+      "http_status": 200,
+      "finish_reason": "length"
+    },
+    "inference": "low alone did not prevent truncation in this run. 4096/low remains the passing configuration for the previously tested normal scenario, not a guarantee for all scenarios."
+  },
+  "privacy": {
+    "key_recorded": false,
+    "authorization_or_cookie_recorded": false,
+    "prompt_or_raw_reply_recorded": false,
+    "private_reasoning_recorded": false,
+    "failed_request_usage_or_exact_end_time_invented": false
+  }
+}
