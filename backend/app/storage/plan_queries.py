@@ -1,5 +1,6 @@
 """Read persisted artifacts from exactly one authorized run, never mix evaluations."""
 import json
+from contextlib import nullcontext
 
 from ..auth import fail, require_role
 from ..contracts.dto import RunScope, StoredAssessment, StoredRecommendations, RouteResult
@@ -20,9 +21,9 @@ class PlanQueries:
     def __init__(self, database):
         self.db = database
 
-    def list(self, user):
+    def list(self, user, *, connection=None):
         require_role(user, 'CAMPER')
-        with self.db.transaction(write=False) as connection:
+        with (nullcontext(connection) if connection is not None else self.db.transaction(write=False)) as connection:
             rows = connection.execute('''SELECT p.id AS plan_id,p.request_id,p.current_version_id,
                 p.final_version_id,p.active_run_id,p.created_at,r.status AS run_status,r.stage,
                 r.scope,v.status AS version_status,v.version_number,r.confirmed_context
@@ -81,12 +82,28 @@ class PlanQueries:
                       'reassessment_available': False, 'current_inputs_error': None,
                       'current_inputs_state': None, 'check_feedback': None,
                       'trip_evidence_coverage': None, 'logistics_issues': []}
+            from .trip_series import plan_series_view
+            result['trip_series'] = plan_series_view(connection, plan_id)
+            result['series_last_final'] = None
+            if result['trip_series'] and not review:
+                previous_final = connection.execute('''SELECT f.* FROM final_records f
+                    JOIN plans p ON p.id=f.plan_id JOIN plan_series_members m ON m.plan_id=p.id
+                    WHERE m.series_id=? AND p.deleted_at IS NULL ORDER BY f.created_at DESC,f.id DESC LIMIT 1''',
+                    (result['trip_series']['trip_series_id'],)).fetchone()
+                if previous_final:
+                    final_plan = connection.execute('SELECT * FROM plans WHERE id=?', (previous_final['plan_id'],)).fetchone()
+                    result['series_last_final'] = final_index(previous_final, final_plan)
+                    if previous_final['plan_id'] != result['trip_series']['current_plan_id']:
+                        result['series_last_final']['is_current'] = False
             current_version = connection.execute('SELECT revision FROM versions WHERE id=? AND plan_id=?',
                 (plan['current_version_id'], plan_id)).fetchone()
             result['current_version_revision'] = current_version['revision'] if current_version else None
             if not review:
                 result['final_history'] = [final_index(row, plan) for row in connection.execute(
                     'SELECT * FROM final_records WHERE plan_id=? ORDER BY rowid DESC', (plan_id,))]
+                if result['trip_series'] and not result['trip_series']['is_current']:
+                    for item in result['final_history']:
+                        item['is_current'] = False
                 result['last_final'] = next(iter(result['final_history']), None)
                 result['selected_final'] = next((item for item in result['final_history'] if item['run_id'] == selected), None)
             if not run:
@@ -122,7 +139,7 @@ class PlanQueries:
                 result['model_assessment_audits'] = load_audits(connection, scope, version)
                 result['assessments'] = [StoredAssessment.model_validate_json(row['payload']).model_dump(mode='json')
                     for row in connection.execute('SELECT payload FROM assessments WHERE run_id=? AND version_id=? ORDER BY kind', (run['id'], binding['version_id']))]
-                if active and plan['current_version_id'] == binding['version_id'] and version.status != 'FINALISED':
+                if active and (not result['trip_series'] or result['trip_series']['is_current']) and plan['current_version_id'] == binding['version_id'] and version.status != 'FINALISED':
                     result['eligibility'] = SqlitePersistencePort(self.db, plan['owner_id'], scope).decision(connection, version.version_context)[1].model_dump(mode='json')
                     result['finalisation_available'] = not review and version.status == 'ELIGIBLE_FOR_FINALISATION' and result['eligibility']['eligible'] and bool(result['route']) and run['status'] == 'SUCCEEDED' and run['stage'] == 'COMPLETED'
             result['check_feedback'] = reassessment_feedback(connection, plan_id, run, scope,

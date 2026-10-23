@@ -11,7 +11,12 @@ from test_reviews import review_client
 def test_queue_projects_saved_review_facts_without_profile_or_scope(review_client, case):
     client, app, camper, _ = review_client
     scope, _ = create(app.state.repository, camper, 'summary-' + case, case)
-    item = client.get('/api/v1/review-queue').json()['reviews'][0]
+    if case=='review':
+        item = client.get('/api/v1/review-queue').json()['reviews'][0]
+        assert client.get('/api/v1/assistance-queue').json()['plans']==[]
+    else:
+        assert client.get('/api/v1/review-queue').json()['reviews']==[]
+        item = client.get('/api/v1/assistance-queue').json()['plans'][0]
     detail = client.get('/api/v1/review/' + scope.plan_id).json()
     summary = item['summary']
     logistics = next(a['result'] for a in detail['assessments'] if a['kind'] == 'LOGISTICS')
@@ -59,7 +64,8 @@ def test_reassessment_queue_does_not_mix_original_high_risk_or_known_cost(review
     call(port.save_assessment(context, 'SAFETY', safety, newer.write_keys['safety']))
     call(port.route_assessed_version(context, 'ELIGIBLE_FOR_FINALISATION', 'independent reassessment fixture', newer.write_keys['route']))
     call(port.report_stage('COMPLETED', 'SUCCEEDED', None))
-    row = client.get('/api/v1/review-queue').json()['reviews'][0]
+    assert client.get('/api/v1/review-queue').json()['reviews']==[]
+    row = client.get('/api/v1/assistance-queue').json()['plans'][0]
     assert row['run_id'] == newer.run_id and row['plan_version_id'] == version.version_context.plan_version_id
     assert row['summary']['risk_level'] == 'LOW'
     assert row['summary']['total_cents'] is None

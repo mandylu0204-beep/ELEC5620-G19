@@ -82,7 +82,7 @@ def read_request(request_id: str, request: Request, user: User = Depends(current
 
 def planning_fields(request, user, result):
     with request.app.state.database.transaction(write=False) as connection:
-        plan = connection.execute('SELECT id FROM plans WHERE request_id=? AND owner_id=? ORDER BY created_at DESC LIMIT 1', (result['request_id'], user.id)).fetchone()
+        plan = connection.execute('SELECT id FROM plans WHERE request_id=? AND owner_id=? AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 1', (result['request_id'], user.id)).fetchone()
     return request_response({**result, 'planning_plan_id': plan['id'] if plan else None,
             'planning_available': request.app.state.dispatcher.available})
 

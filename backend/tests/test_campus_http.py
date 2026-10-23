@@ -278,5 +278,5 @@ def test_upgrade_from_schema_five_preserves_existing_profiles_and_adds_empty_aud
     with db.transaction(write=False) as connection:
         assert connection.execute('SELECT payload FROM profiles').fetchone()[0]=='{"group_size":2}'
         assert connection.execute('SELECT COUNT(*) FROM model_planning_traces').fetchone()[0]==0
-        assert connection.execute('SELECT COUNT(*) FROM schema_migrations').fetchone()[0]==10
+        assert connection.execute('SELECT COUNT(*) FROM schema_migrations').fetchone()[0]==11
     assert db.ready()

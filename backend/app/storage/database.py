@@ -193,6 +193,52 @@ CREATE TRIGGER no_delete_safety_audit BEFORE DELETE ON model_safety_audits
 """
 
 
+MIGRATION_11 = """
+CREATE TABLE trip_series(
+ id TEXT PRIMARY KEY, owner_id TEXT NOT NULL REFERENCES users(id),
+ current_plan_id TEXT REFERENCES plans(id), revision INTEGER NOT NULL CHECK(revision>=1),
+ deleted_at TEXT, created_at TEXT NOT NULL);
+CREATE TABLE plan_series_members(
+ plan_id TEXT PRIMARY KEY REFERENCES plans(id), series_id TEXT NOT NULL REFERENCES trip_series(id),
+ predecessor_plan_id TEXT REFERENCES plans(id), created_at TEXT NOT NULL);
+CREATE INDEX series_members ON plan_series_members(series_id);
+CREATE TABLE successor_requests(
+ request_id TEXT PRIMARY KEY REFERENCES requests(id), series_id TEXT NOT NULL REFERENCES trip_series(id),
+ predecessor_plan_id TEXT NOT NULL REFERENCES plans(id), source_context TEXT NOT NULL);
+CREATE TABLE successor_commands(
+ owner_id TEXT NOT NULL REFERENCES users(id), command_key TEXT NOT NULL, input_hash TEXT NOT NULL,
+ request_id TEXT NOT NULL REFERENCES successor_requests(request_id), PRIMARY KEY(owner_id,command_key));
+CREATE TABLE series_delete_commands(
+ owner_id TEXT NOT NULL REFERENCES users(id), command_key TEXT NOT NULL, input_hash TEXT NOT NULL,
+ series_id TEXT NOT NULL REFERENCES trip_series(id), PRIMARY KEY(owner_id,command_key));
+CREATE TABLE series_replacements(
+ id TEXT PRIMARY KEY, series_id TEXT NOT NULL REFERENCES trip_series(id),
+ old_plan_id TEXT NOT NULL REFERENCES plans(id), old_run_id TEXT REFERENCES runs(id),
+ old_version_id TEXT REFERENCES versions(id), new_plan_id TEXT NOT NULL REFERENCES plans(id),
+ new_run_id TEXT NOT NULL REFERENCES runs(id), created_at TEXT NOT NULL);
+CREATE TRIGGER immutable_series_member BEFORE UPDATE ON plan_series_members
+ BEGIN SELECT RAISE(ABORT, 'immutable series member'); END;
+CREATE TRIGGER immutable_successor_origin BEFORE UPDATE ON successor_requests
+ BEGIN SELECT RAISE(ABORT, 'immutable successor origin'); END;
+CREATE TRIGGER immutable_successor_command BEFORE UPDATE ON successor_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable successor command'); END;
+CREATE TRIGGER immutable_series_replacement BEFORE UPDATE ON series_replacements
+ BEGIN SELECT RAISE(ABORT, 'immutable series replacement'); END;
+CREATE TRIGGER immutable_series_delete_command BEFORE UPDATE ON series_delete_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable series delete command'); END;
+CREATE TRIGGER no_delete_series_member BEFORE DELETE ON plan_series_members
+ BEGIN SELECT RAISE(ABORT, 'immutable series member'); END;
+CREATE TRIGGER no_delete_successor_origin BEFORE DELETE ON successor_requests
+ BEGIN SELECT RAISE(ABORT, 'immutable successor origin'); END;
+CREATE TRIGGER no_delete_successor_command BEFORE DELETE ON successor_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable successor command'); END;
+CREATE TRIGGER no_delete_series_replacement BEFORE DELETE ON series_replacements
+ BEGIN SELECT RAISE(ABORT, 'immutable series replacement'); END;
+CREATE TRIGGER no_delete_series_delete_command BEFORE DELETE ON series_delete_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable series delete command'); END;
+"""
+
+
 def execute_migration(connection, script):
     statement = ''
     for line in script.splitlines():
@@ -258,7 +304,11 @@ class Database:
                 execute_migration(connection, MIGRATION_10)
                 connection.execute("INSERT INTO schema_migrations VALUES(10, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
                 versions.append(10)
-            if versions != [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]:
+            if versions == list(range(1, 11)):
+                execute_migration(connection, MIGRATION_11)
+                connection.execute("INSERT INTO schema_migrations VALUES(11, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
+                versions.append(11)
+            if versions != list(range(1, 12)):
                 raise RuntimeError('Unsupported database schema version')
 
     @contextmanager
@@ -294,6 +344,6 @@ class Database:
         try:
             with self.transaction(write=False) as connection:
                 versions = [row[0] for row in connection.execute('SELECT version FROM schema_migrations ORDER BY version')]
-            return versions == [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+            return versions == list(range(1, 12))
         except ContractFailure:
             return False

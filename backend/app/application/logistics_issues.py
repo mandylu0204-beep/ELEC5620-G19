@@ -24,7 +24,8 @@ def project(data):
         if target == 'PROFILE':
             url = '/profile?' + urlencode({'focus': focus, **origin})
         elif target == 'REQUEST':
-            url = '/request?' + urlencode({'copy_from': request_id, 'focus': 'request-meal' if field == 'meal_mode' else 'request-budget'})
+            focus = 'request-meal' if field == 'meal_mode' else 'request-budget'
+            url = ('/plans/' + data['plan']['plan_id'] + '/update?' + urlencode({'focus': focus})) if data['plan'].get('plan_id') else None
         else:
             url = None
         issues[key] = dict(issue_id=key, code=code, category=category, field=field,
@@ -47,6 +48,8 @@ def project(data):
         if key == 'tent':
             from .presentation import tent_capacity
             issues['equipment.'+key]['tent_capacity'] = tent_capacity(profile, logistics)
+        if key in {'camping_stove', 'fuel_canister', 'cooking_pot', 'fire_free_meal_plan'} and data['plan'].get('plan_id'):
+            issues['equipment.'+key]['arrangement_action_url'] = '/plans/' + data['plan']['plan_id'] + '/update?focus=request-meal'
 
     questions = logistics.get('clarifications', [])
     fields = {row['field'] for row in questions}
@@ -71,6 +74,12 @@ def project(data):
             add('meal_mode', 'MEAL_CHOICE' if meal_unknown else 'COOKING_ARRANGEMENT', 'USER_INPUT', 'meal_mode')
             if field == 'cooking_method' and not meal_unknown:
                 issues['meal_mode']['alternate_action_url'] = '/profile?' + urlencode({'focus': 'equipment.camping_stove', **origin})
+                # Fuel can be absent from the official checklist while the
+                # recorded stove count is zero. Surface the preparation bundle
+                # now, without inventing an active requirement or quantity.
+                from .cooking_preparation import outline
+                issues['meal_mode']['cooking_preparation'] = outline(confirmed.get('requirements') or {}, profile)
+                issues['meal_mode']['related_equipment'] = ['camping_stove', 'fuel_canister']
         elif field.startswith('equipment.'):
             key = field.split('.')[1]
             if key in dependencies:
@@ -125,8 +134,16 @@ def project(data):
         if key == 'unknown_transport' and 'transport.transport_type' in issues:
             continue
         if cost['unit_price_cents'] is None:
-            add('price.'+key, 'PRICE_DATA', 'DATA_GAP', 'cost.'+key, item=cost_gear.get(key),
-                current={'category': cost['category'], 'unit_price_cents': None})
+            gear_key = cost_gear.get(key) or (key if cost['category'] == 'ADDITIONAL_GEAR' and any(row['item_key'] == key for row in logistics['gear_checklist']) else None)
+            parent = issues.get('equipment.' + gear_key) if gear_key else None
+            if parent:
+                # Same underlying supply gap, not an unrelated user task. Keep
+                # the missing-price fact without changing the saved cost line.
+                parent.setdefault('cost_impacts', []).append({'code': 'PRICE_DATA', 'item_key': gear_key,
+                    'category': cost['category'], 'unit_price_cents': None})
+            else:
+                add('price.'+key, 'PRICE_DATA', 'DATA_GAP', 'cost.'+key, item=gear_key,
+                    current={'category': cost['category'], 'unit_price_cents': None})
         elif key == 'cost-02' and 'transport.estimated_km' in issues:
             continue
         elif key == 'cost-15' and 'transport.vehicle_count' in issues:
@@ -159,4 +176,8 @@ def project(data):
         for root in roots:
             if root in issues:
                 issues[root].setdefault('affects', []).append('equipment.'+key)
+                issues[root].setdefault('pending_checks', []).append({'item_key': key, 'status': 'WAITING_FOR_INPUT'})
+    for fact in logistics['gear_checklist']:
+        if meal_unknown and fact['item_key'] in {'camping_stove', 'fuel_canister', 'cooking_pot', 'fire_free_meal_plan'} and 'meal_mode' in issues:
+            issues['meal_mode'].setdefault('pending_checks', []).append({'item_key': fact['item_key'], 'status': 'DEPENDS_ON_MEAL_MODE'})
     return list(issues.values())

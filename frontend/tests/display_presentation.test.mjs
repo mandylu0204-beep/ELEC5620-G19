@@ -17,17 +17,79 @@ const {LogisticsIssues}=await server.ssrLoadModule('/src/logistics_issues.tsx');
 const {TripCoveragePanel}=await server.ssrLoadModule('/src/trip_coverage.tsx');
 const {PlanView,NewPlanPrompt,TripSeriesCard}=await server.ssrLoadModule('/src/plans.tsx');
 const {ProfileAdoptionPreview}=await server.ssrLoadModule('/src/replan.tsx');
+const {RequirementsChangePreview,RequestHistory}=await server.ssrLoadModule('/src/requests.tsx');
 const {historicalReviewNotice}=await server.ssrLoadModule('/src/reviews.tsx');
 const {profileChanges}=await server.ssrLoadModule('/src/profile_changes.ts');
 const {App}=await server.ssrLoadModule('/src/App.tsx');
 const {GroupSizeField,EquipmentUnitField,addEquipment,changeEquipmentCategory,fixedEquipmentUnit,ProfileSummary}=await server.ssrLoadModule('/src/profile.tsx');
 const {SessionProvider}=await server.ssrLoadModule('/src/session.tsx');
+const {CookingPreparationPanel,cookingDraft}=await server.ssrLoadModule('/src/cooking_preparation.tsx');
 const render=(component,props)=>renderToStaticMarkup(h(component,props));
 const routed=(component,props)=>renderToStaticMarkup(h(MemoryRouter,null,h(component,props)));
 const tent={records:[{quantity:2,capacity_per_tent:1,total_capacity:2,confirmed:true,unit:'item'}],
   group_size:3,registered_tent_count:2,registered_capacity:2,assessed_capacity:'2',required_person_spaces:'3',missing_person_spaces:'1'};
 
 const gear=(patch={})=>({item_key:'tent',label:'帐篷',quantity:'2',unit:'item',capacity:'3',confirmed:true,...patch});
+const preparation={scope:'PREPARATION_ONLY',official_assessment:false,fuel_price_status:'MISSING_REFERENCE',
+  items:['camping_stove','fuel_canister'].map(item_key=>({item_key,recorded:false,entered_quantity:null,confirmed_quantity:null,unit_valid:true}))};
+test('first cooking preparation names both items without declaring an inactive fuel rule unnecessary or passed',()=>{
+  const html=render(CookingPreparationPanel,{value:preparation});
+  for(const phrase of ['露营炉具','燃料罐','不是正式评估','不等于本次无需燃料','这不等于已经超预算','不要为通过检查虚填'])assert.ok(html.includes(phrase),phrase);
+  assert.doesNotMatch(html,/检查通过|确认已解决|href=|<button/);
+  const issue=routed(LogisticsIssues,{items:[{issue_id:'cooking_method',code:'COOKING_ARRANGEMENT',category:'USER_INPUT',target:'REQUEST',
+    cooking_preparation:preparation,alternate_action_url:'/profile?plan_id=p&focus=equipment.camping_stove'}],onSafety(){}});
+  assert.match(issue,/一起核对炉具与燃料资料/);assert.match(issue,/燃料罐/);
+});
+test('draft check is explicit and expires on edit; zero estimated gap cannot grant a formal pass',()=>{
+  const value={...preparation,required_fuel_quantity:'2',fuel_gap:'0',calculation_status:'DRAFT_ESTIMATE'};
+  const html=render(CookingPreparationPanel,{value:preparation,preview:value,onCheck(){}});
+  assert.match(html,/预估需要燃料罐 2 个/);assert.match(html,/预估缺口 0 个/);
+  assert.match(html,/不调用模型/);assert.doesNotMatch(html,/检查通过|已解决/);
+  const stale=render(CookingPreparationPanel,{value:preparation,preview:value,stale:true,onCheck(){}});
+  assert.match(stale,/上次预检查已过期/);assert.doesNotMatch(stale,/预估需要燃料罐 2 个/);
+  const unknown=render(CookingPreparationPanel,{value:preparation,preview:{...preparation,calculation_status:'WAITING_FOR_STOVE',example:{stove_quantity:1,fuel_quantity:'2'}}});
+  assert.match(unknown,/规则示例/);assert.match(unknown,/填 0 也不表示/);assert.match(unknown,/不是你已拥有/);
+});
+test('cooking preparation survives final/history rendering without offering an active profile update',()=>{
+  const data={...planFixture(),cooking_preparation:preparation};
+  const history=routed(PlanView,{data,error:'',refresh(){},snapshot:true});
+  assert.match(history,/炉具和配套燃料一起核对/);assert.doesNotMatch(history,/一起核对炉具与燃料资料 ↗/);
+  const reviewer=routed(PlanView,{data,error:'',refresh(){},review:true});
+  assert.match(reviewer,/炉具和配套燃料一起核对/);assert.doesNotMatch(reviewer,/一起核对炉具与燃料资料 ↗/);
+});
+test('cooking candidate preserves unknowns, units, duplicates and confirmation; names never decide item type',()=>{
+  const rows=[gear({item_key:'camping_stove',label:'燃料罐',quantity:'',confirmed:false}),gear({item_key:'fuel_canister',quantity:'2',unit:'set'}),gear()];
+  const before=structuredClone(rows);const draft=cookingDraft(rows);
+  assert.equal(draft.length,2);assert.equal(draft[0].item_key,'camping_stove');assert.equal(draft[0].quantity,null);assert.equal(draft[0].confirmed,false);
+  assert.equal(draft[1].unit,'set');assert.deepEqual(rows,before);
+  for(const quantity of ['-1','1.5','1e2','9007199254740992'])assert.throws(()=>cookingDraft([gear({item_key:'camping_stove',quantity})]),/非负整数/);
+});
+test('fuel task explains its own missing quote and offers real correction paths, not a price editor',()=>{
+  const item={issue_id:'equipment.fuel_canister',code:'EQUIPMENT_SHORTAGE',category:'EQUIPMENT_GAP',field:'equipment.fuel_canister.quantity',item_key:'fuel_canister',
+    current:{records:[],available_quantity:'0'},required:{quantity:'3',missing_quantity:'3'},target:'PROFILE',action_url:'/profile?plan_id=owned-plan&focus=equipment.fuel_canister.quantity',
+    arrangement_action_url:'/plans/owned-plan/update?focus=request-meal',cost_impacts:[{code:'PRICE_DATA',item_key:'fuel_canister',category:'ADDITIONAL_GEAR',unit_price_cents:null}]};
+  const html=routed(LogisticsIssues,{items:[item],onSafety(){}});
+  assert.match(html,/燃料罐 · 必要装备数量不足/);assert.match(html,/燃料罐补缺费用暂无法估算/);
+  assert.match(html,/不是另一项无关任务/);assert.match(html,/核对燃料罐资料/);assert.match(html,/调整本次用餐方式/);
+  assert.match(html,/不能把未知费用当作零元/);assert.doesNotMatch(html,/<h3>系统缺少适用报价/);
+  const history=routed(LogisticsIssues,{items:[item],disabled:true,onSafety(){}});
+  assert.doesNotMatch(history,/href=/);assert.match(history,/只展示当时的缺项/);
+});
+test('dependent checks remain visible before quantities are known and source-only problems have no fake link',()=>{
+  const html=routed(LogisticsIssues,{items:[{issue_id:'stove',code:'EQUIPMENT_DETAILS',category:'USER_INPUT',item_key:'camping_stove',target:'PROFILE',action_url:'/profile?focus=equipment.camping_stove',pending_checks:[{item_key:'fuel_canister',status:'WAITING_FOR_INPUT'}]}],onSafety(){}});
+  assert.match(html,/后续尚待明确：燃料罐/);assert.match(html,/暂不能确定具体需求/);
+  const price=routed(LogisticsIssues,{items:[{issue_id:'price.fuel',code:'PRICE_DATA',category:'DATA_GAP',item_key:'fuel_canister',target:'OPERATOR',action_url:null}],onSafety(){}});
+  assert.match(price,/燃料罐 · 系统缺少适用报价/);assert.doesNotMatch(price,/href=|<button/);
+});
+test('update summary shows actual requirement differences and request history stays collapsed',()=>{
+  const before=planFixture().confirmed_context.requirements;
+  const after={...before,budget_cents:40000,preferences:['self-catered meals']};
+  const html=render(RequirementsChangePreview,{before,after});
+  assert.match(html,/小组预算/);assert.match(html,/AUD 400\.00/);assert.match(html,/自行烹饪/);assert.match(html,/不代表正式检查通过/);
+  const history=routed(RequestHistory,{rows:[{request_id:'update',raw_text:'本次露营',status:'DRAFT',trip_series_id:'trip'}],deleting:null,selected:null,onSelect(){},onDelete(){},onCancel(){}});
+  assert.match(history,/<details class="panel request-history">/);assert.doesNotMatch(history,/<details[^>]*open/);
+  assert.match(history,/本次出行更新/);assert.match(history,/不代表新增了一次独立出行/);
+});
 test('historical approval copy cannot imply permission to save the current successor',()=>{
   assert.match(historicalReviewNotice('HISTORY'),/不授权当前方案/);
   assert.match(historicalReviewNotice('HISTORY'),/不能据此保存当前最终方案/);

@@ -2,6 +2,7 @@ import { failureGuidance } from './failure_guidance';
 import { SafetyAdvisoryPanel } from './safety_advisory_panel';
 import type { SafetyAudit } from './safety_advisory';
 import { LogisticsIssues, type LogisticsIssue } from './logistics_issues';
+import { CookingPreparationPanel, type CookingPreparation } from './cooking_preparation';
 import { logisticsQuestions, needsMealChoice } from './logistics_guidance';
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
@@ -197,6 +198,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
   const weatherOnlyLogistics = missingWeather.length>0 && logistics?.transport_feasible===true && !logistics.mandatory_blockers.length && logistics.clarifications.every(item=>!!weatherFields[item.field]);
   const mealUnknown=needsMealChoice(logistics?.clarifications??[]);
   const logisticsIssues=data.logistics_issues??[];
+  const cookingPreparation=(data as PlanDetail&{cooking_preparation?:CookingPreparation|null}).cooking_preparation;
   if(logisticsIssues.length)['LOGISTICS_INCOMPLETE','COSTS_INCOMPLETE','ESSENTIAL_GEAR_MISSING','TRANSPORT_UNAVAILABLE'].forEach(code=>hiddenCodes.add(code));
   const warnings = [...new Set(rawWarnings.filter(item=>!hiddenCodes.has(item.code)).map(item=>mealUnknown&&['LOGISTICS_INCOMPLETE','COSTS_INCOMPLETE'].includes(item.code)?'请先选择用餐方式，才能确定餐食费用及烹饪装备。':item.code==='LOGISTICS_INCOMPLETE'&&weatherOnlyLogistics?'缺少适用的天气资料，装备检查仍有待确认。':blockerText(item.code)))];
   const overBudget = logistics?.budget_difference_cents != null && logistics.budget_difference_cents > 0;
@@ -236,7 +238,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
     {error&&<p className="error-box" role="alert">读取更新失败：{error}</p>}
     {!review&&!snapshot&&run?.is_active&&(!data.trip_series||data.trip_series.is_current)&&!['PENDING','RUNNING','FAILED'].includes(run.status)&&requirements&&<ReplanFromProfile key={data.plan.plan_id} source={{plan_id:data.plan.plan_id,expected_series_revision:data.trip_series?.series_revision??0,expected_current_version_id:data.plan.current_version_id,expected_version_revision:data.current_version_revision??null,expected_active_run_id:run!.run_id,expected_run_revision:run!.revision}} previousProfile={confirmed!.profile_snapshot} refreshSource={refresh}/>}
     {!review&&!snapshot&&<CheckFeedback data={data}/>}
-    {!snapshot&&run&&!run.is_active&&<div className="mode-notice"><span>正在查看历史方案，评估属于当时的证据。</span>{current&&<button className="secondary-button" onClick={current}>查看当前方案</button>}</div>}
+    {!snapshot&&run&&(!run.is_active||data.trip_series?.is_current===false)&&<div className="mode-notice"><span>正在查看历史方案，评估属于当时的资料与证据，不是本次更新后的检查。</span>{data.trip_series?.is_current===false?data.trip_series.current_plan_id&&<Link className="secondary-button" to={'/plans/'+data.trip_series.current_plan_id}>查看本次出行当前方案</Link>:current&&<button className="secondary-button" onClick={current}>查看当前方案</button>}</div>}
     {failure&&<section className="panel error-box" role="alert" aria-label="本次执行的恢复说明"><h2>{failure.title}</h2>
       <p>{failure.explanation}</p>
       {failure.saved.length>0?<p>已保存：{failure.saved.join('、')}。</p>:<p>本次尚未保存行程。</p>}
@@ -258,7 +260,12 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       {hasSafetyIssue&&<button className="secondary-button" onClick={()=>{setSection('safety');tabRefs.current[3]?.focus();}}>查看安全信息</button>}
     </section>}
     {review&&data.current_inputs_error&&<div className="mode-notice"><strong>检查结果待更新</strong><p>这份方案的检查依据暂时无法与当前资料核对，更新检查后才能继续审核。</p><details><summary>查看系统详情</summary><p>{data.current_inputs_error}</p></details></div>}
-    {<LogisticsIssues items={logisticsIssues} disabled={snapshot||review||!run?.is_active||['PENDING','RUNNING'].includes(run?.status??'')} onSafety={()=>{setSection('safety');tabRefs.current[3]?.focus();}}/>}
+    {cookingPreparation&&!logisticsIssues.some(item=>item.cooking_preparation)&&<div className="panel">
+      <CookingPreparationPanel value={cookingPreparation}/>
+      {!snapshot&&!review&&run?.is_active&&data.trip_series?.is_current!==false&&!['PENDING','RUNNING'].includes(run.status)&&
+        <Link className="text-link" to={'/profile?plan_id='+encodeURIComponent(data.plan.plan_id)+'&focus=equipment.camping_stove'}>一起核对炉具与燃料资料 ↗</Link>}
+    </div>}
+    {<LogisticsIssues items={logisticsIssues} disabled={snapshot||review||!run?.is_active||data.trip_series?.is_current===false||['PENDING','RUNNING'].includes(run?.status??'')} onSafety={()=>{setSection('safety');tabRefs.current[3]?.focus();}}/>}
     {!review&&!snapshot&&<NextSteps data={data} onRecheck={()=>{setAdjustOpen(true);document.getElementById(prefix+'-adjust')?.scrollIntoView({block:'start'});}}/>}
     {!snapshot&&!review&&data.trip_series&&!data.trip_series.is_current&&<div className="mode-notice">这是本次出行的历史方案，原待办已被后继方案取代；旧审核不授权新结果。{data.trip_series.current_plan_id&&<Link to={'/plans/'+data.trip_series.current_plan_id}>查看当前方案 ↗</Link>}</div>}
     {!snapshot&&!review&&savedFinal&&<div className="saved-plan-notice"><span>{['PENDING','RUNNING'].includes(run?.status??'')?'此前最终方案已保留，本次检查尚未完成':savedFinal.is_current?'当前最终方案已保存':'保留了一份历史最终方案，不代表本次检查通过'}</span><Link className="text-link" to={'/plans/'+savedFinal.plan_id+'/finals/'+savedFinal.final_id}>查看保存的方案 ↗</Link></div>}
@@ -273,7 +280,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
     </div>
     <div {...pane('itinerary')}>
       {version&&<PlanningExplanationPanel value={data.planning_explanation} currentRunId={run?.run_id} siteName={title} reasons={recommendation?.candidates.find(item=>version.content.selected_campsite_ids.includes(item.campsite_id))?.reasons??[]} uncertainties={recommendation?.candidates.find(item=>version.content.selected_campsite_ids.includes(item.campsite_id))?.material_uncertainties??[]}/>}
-      {noMatch?data.recommendation_guidance?<NearMatches value={data.recommendation_guidance} requestId={data.plan.request_id}/>:<section className="panel"><h2>没有满足需求的营地</h2><p>请在“记录”中查看被排除营地的理由，调整条件并重新确认需求。</p></section>:<section className="panel itinerary-panel"><div className="section-title"><span className="eyebrow">行程安排</span><h2>行程安排</h2></div>
+      {noMatch?data.recommendation_guidance?<NearMatches value={data.recommendation_guidance} planId={data.plan.plan_id} readOnly={snapshot||review||!run?.is_active||data.trip_series?.is_current===false}/>:<section className="panel"><h2>没有满足需求的营地</h2><p>请在“记录”中查看被排除营地的理由，调整条件并重新确认需求。</p></section>:<section className="panel itinerary-panel"><div className="section-title"><span className="eyebrow">行程安排</span><h2>行程安排</h2></div>
         {version?<><div className="itinerary-camps">{version.content.selected_campsite_ids.map(id=><span key={id}>{campName(id)}</span>)}</div>
           {run?.operation==='REASSESS'&&<p className="muted">行程保持不变。{!snapshot&&!review&&'本轮检查进度和结果见上方。'}{logisticsAudit&&'装备与预算建议可在对应页面查看。'}</p>}
           <p className="mode-notice">以下时间为建议时间／待确认，不是已核实的入住、退房或交通时刻，请另行核实实际安排。</p>{version.content.itinerary_entries.length?<ol className="plan-timeline">{version.content.itinerary_entries.map((entry,index)=><li key={index}>
@@ -304,7 +311,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
         <div className="cost-notes"><p className="muted">费用为估算，实际支出以预订、采购及出行时的价格为准。</p>{logistics.cost_breakdown.some(line=>line.unit==='per_person_per_day')&&<p className="muted">食物和饮用水按人数及行程天数估算，单价为每人每天的费用。</p>}{logistics.cost_breakdown.some(line=>line.unit==='per_kilometre')&&<p className="muted">交通费用按登记的预计总路程估算。</p>}{logistics.cost_breakdown.some(line=>line.unit==='not_procured')&&<p className="muted">暂不采购的装备尚未计入采购费用，请确认实际获取方式及费用。</p>}</div>
       </>:<p className="plan-empty-text">尚未保存费用，金额未知。</p>}
     </section><LogisticsPlanPanel value={logisticsAudit} section="cost" money={aud} itemName={equipmentLabel} unitName={unitName}/></div>
-    <div {...pane('safety')}><SafetyInformation advisory={<SafetyAdvisoryPanel value={data.model_assessment_audits?.SAFETY} binding={safetyBinding} outdated={!!data.current_inputs_error} historical={snapshot||!run?.is_active}/>} coverage={data.trip_evidence_coverage} requestId={data.plan.request_id} value={safety} requirements={requirements} summary={safetyText} approved={validApproval} review={review} outdated={!!data.current_inputs_error} blockers={<><LogisticsIssues items={logisticsIssues.filter(item=>item.item_key||item.target==='PROFILE')} summary onGear={()=>{setSection('gear');tabRefs.current[1]?.focus();}} onSafety={()=>{}} disabled/><Blockers items={(safety?.mandatory_blockers??[]).filter(item=>!logisticsIssues.length||!['ESSENTIAL_GEAR_MISSING','TRANSPORT_UNAVAILABLE','LOGISTICS_INCOMPLETE','COSTS_INCOMPLETE'].includes(item.code))}/></>} notes={null} rawWarnings={rawWarnings} sources={refs=><Sources refs={refs}/>} label={label}/></div>
+    <div {...pane('safety')}><SafetyInformation advisory={<SafetyAdvisoryPanel value={data.model_assessment_audits?.SAFETY} binding={safetyBinding} outdated={!!data.current_inputs_error} historical={snapshot||!run?.is_active||data.trip_series?.is_current===false}/>} coverage={data.trip_evidence_coverage} requestId={data.plan.request_id} planId={data.plan.plan_id} readOnly={snapshot||review||!run?.is_active||data.trip_series?.is_current===false} value={safety} requirements={requirements} summary={safetyText} approved={validApproval} review={review} outdated={!!data.current_inputs_error} blockers={<><LogisticsIssues items={logisticsIssues.filter(item=>item.item_key||item.target==='PROFILE')} summary onGear={()=>{setSection('gear');tabRefs.current[1]?.focus();}} onSafety={()=>{}} disabled/><Blockers items={(safety?.mandatory_blockers??[]).filter(item=>!logisticsIssues.length||!['ESSENTIAL_GEAR_MISSING','TRANSPORT_UNAVAILABLE','LOGISTICS_INCOMPLETE','COSTS_INCOMPLETE'].includes(item.code))}/></>} notes={null} rawWarnings={rawWarnings} sources={refs=><Sources refs={refs}/>} label={label}/></div>
     <div {...pane('history')}>
       <section className="panel progress-panel"><div className="section-title"><span className="eyebrow">版本与执行记录</span><h2>规划记录</h2></div>
         {run?<><p>{label(run.operation)} · {label(run.status)}</p><ol className="progress-stages">{STAGES.map((stage,index)=>{const skipped=(noMatch&&run.status==='SUCCEEDED'&&index>0&&index<6)||(run.operation==='REASSESS'&&index===0);const currentStage=run.stage===stage&&!stepSaved[index]&&!skipped;return <li key={stage} className={stepSaved[index]?'stage-saved':currentStage?'stage-current':''}><span>{index+1}</span><strong>{label(stage)}</strong><small>{skipped?'无需执行':stepSaved[index]?run.operation==='REASSESS'&&(index===1||index===2)?'复用已保存':'已保存':currentStage?run.status==='FAILED'?'在此停止':'当前阶段':'尚无产物'}</small></li>;})}</ol>

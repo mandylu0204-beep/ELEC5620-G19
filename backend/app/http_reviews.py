@@ -8,6 +8,11 @@ from .application.presentation import plan_response
 router = APIRouter(prefix='/api/v1')
 
 
+@router.get('/assistance-queue')
+def assistance_queue(request: Request, user: User = Depends(current_user)):
+    return {'plans': request.app.state.reviews.queue(user, assistance=True)}
+
+
 @router.get('/review/{plan_id}')
 def detail(plan_id: str, request: Request, user: User = Depends(current_user)):
     return plan_response(request.app.state.reviews.detail(user, plan_id), user)

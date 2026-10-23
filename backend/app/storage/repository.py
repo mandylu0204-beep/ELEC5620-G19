@@ -68,6 +68,10 @@ class Repository:
             if active:
                 fail(ErrorCode.INVALID_STATE, '方案仍在生成或检查中，请完成后再删除。')
             connection.execute('UPDATE plans SET deleted_at=? WHERE id=?', (now(), plan_id))
+            from .trip_series import membership
+            series = membership(connection, plan_id)
+            if series and series['current_plan_id'] == plan_id:
+                connection.execute('UPDATE trip_series SET current_plan_id=NULL,revision=revision+1 WHERE id=?', (series['id'],))
 
     def list_plans(self, user: User):
         require_role(user, 'CAMPER')
@@ -110,13 +114,17 @@ class Repository:
             'expected_request_revision': expected_request_revision, 'single_plan': single_plan,
             'expected_version_revision': expected_version_revision, 'expected_run_revision': expected_run_revision,
             'demo': demo.model_dump(mode='json'), 'dataset': dataset.model_dump(mode='json')})
+        new_plan = plan_id is None
         with self.db.transaction() as connection:
             if command_key is not None:
                 previous = connection.execute('SELECT * FROM workflow_commands WHERE owner_id=? AND command_key=?', (user.id, command_key)).fetchone()
                 if previous:
                     if previous['operation'] != 'START' or previous['input_hash'] != input_hash:
                         fail(ErrorCode.IDEMPOTENCY_CONFLICT, '同一个 key 不能启动不同任务。')
-                    return RunScope.model_validate_json(previous['result'])
+                    saved_scope = RunScope.model_validate_json(previous['result'])
+                    from .trip_series import require_current
+                    require_current(connection, self.own_plan(connection, user, saved_scope.plan_id))
+                    return saved_scope
             request = connection.execute('SELECT * FROM requests WHERE id=? AND owner_id=?', (request_id, user.id)).fetchone()
             if not request:
                 fail(ErrorCode.NOT_FOUND, '请求不存在。')
@@ -134,9 +142,13 @@ class Repository:
                 if operation != 'PLAN' or expected_current_version_id is not None:
                     fail(ErrorCode.INVALID_STATE, '新方案只能发起 PLAN。')
                 plan_id = uuid4().hex
+                from .trip_series import validate_successor
+                validate_successor(connection, user, request_id)
                 connection.execute('INSERT INTO plans(id,owner_id,request_id,current_version_id,active_run_id,final_version_id,created_at) VALUES(?,?,?,?,?,?,?)', (plan_id, user.id, request_id, None, None, None, now()))
             else:
                 plan = self.own_plan(connection, user, plan_id)
+                from .trip_series import require_current
+                require_current(connection, plan)
                 if command_key is not None and plan['active_run_id'] != expected_active_run_id:
                     fail(ErrorCode.STALE_CONTEXT, '当前运行已变化，请刷新后启动新任务。')
                 if expected_run_revision is not None:
@@ -156,6 +168,9 @@ class Repository:
             scope = RunScope(command_id=uuid4().hex, run_id=uuid4().hex, plan_id=plan_id, request_id=request_id, operation=operation, expected_current_version_id=expected_current_version_id, demo_context=demo, dataset_context=dataset, write_keys={name: uuid4().hex for name in ('recommendations','version','logistics','safety','route')})
             connection.execute('INSERT INTO runs VALUES(?,?,?,?,?,?,?,?,?,?)', (scope.run_id, plan_id, request_id, encode(scope), encode(context), 'PENDING', 'RECOMMENDING', 0, None, now()))
             connection.execute('UPDATE plans SET active_run_id=?,request_id=? WHERE id=?', (scope.run_id, request_id, plan_id))
+            if new_plan:
+                from .trip_series import register_plan
+                register_plan(connection, user, request_id, plan_id, scope.run_id)
             if operation == 'REASSESS':
                 version = connection.execute('SELECT * FROM versions WHERE id=?', (expected_current_version_id,)).fetchone()
                 self.bind_version(connection, scope, context, version['id'], json.loads(version['content']))

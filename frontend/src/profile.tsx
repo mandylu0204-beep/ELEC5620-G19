@@ -1,6 +1,7 @@
 import { DiscardChanges } from './display_panels';
 import { changedSections, PROFILE_SAVED_NOTICE } from './display_facts';
 import { prepareMissingEquipment, profileGuidance } from './profile_guidance';
+import { CookingPreparationPanel, cookingDraft, type CookingPreparation } from './cooking_preparation';
 import { prepareProfileEquipment, vehicleCount } from './vehicle_profile';
 import { VehicleFields } from './vehicle_fields';
 import type { LogisticsIssue } from './logistics_issues';
@@ -117,14 +118,19 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
   const sourcePlan=search.get('plan_id'); const [relatedIssues,setRelatedIssues]=useState<LogisticsIssue[]>([]);
   const [relatedLoaded,setRelatedLoaded]=useState(false);const [relatedError,setRelatedError]=useState('');
   const [issueRetry,setIssueRetry]=useState(0);
+  const [cooking,setCooking]=useState<CookingPreparation|null>(null);
+  const [cookingPreview,setCookingPreview]=useState<{value:CookingPreparation;signature:string}|null>(null);
+  const [cookingBusy,setCookingBusy]=useState(false);const [cookingError,setCookingError]=useState('');
+  const cookingContext=useRef('');
   const preparedContext=useRef('');
   const discardReload=useRef(false);
   useEffect(()=>{discardReload.current=false;},[sourcePlan,requestedFocus,session?.user.user_id]);
   const returnPlan=sourcePlan&&/^[a-zA-Z0-9_-]{1,100}$/.test(sourcePlan)?'/plans/'+encodeURIComponent(sourcePlan):null;
-  const returnLabel=returnPlan?'返回方案，使用最新资料重新规划 ↗':'返回本次需求，核对并重新确认 ↗';
-  const returnRequest=returnPlan??(sourceRequest&&/^[a-zA-Z0-9_-]{1,100}$/.test(sourceRequest)?'/request?copy_from='+encodeURIComponent(sourceRequest):null);
+  const returnLabel=returnPlan?'核对修改并更新本次出行 ↗':'返回本次需求，核对并重新确认 ↗';
+  const returnRequest=returnPlan?returnPlan+'/update':(sourceRequest&&/^[a-zA-Z0-9_-]{1,100}$/.test(sourceRequest)?'/request/'+encodeURIComponent(sourceRequest):null);
   const [loaded, setLoaded] = useState(false);
   const [refresh, setRefresh] = useState(0);
+  cookingContext.current=`${sourcePlan??''}:${sourceRequest??''}:${refresh}:${issueRetry}`;
   const [revision, setRevision] = useState(0);
   const [group, setGroup] = useState('');
   const [groupTouched,setGroupTouched]=useState(false);
@@ -145,12 +151,16 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
   const unsavedSections=changedSections(savedDraft,formDraft,{group:'同行人数',experience:'露营经验',children:'儿童情况',childrenCount:'儿童人数',equipment:'帐篷及其他装备（数量、容量、确认状态）',transport:'交通方式',vehicles:'车辆数量',km:'预计路程',assumptions:'交通说明',accessibility:'同行特殊需求',format:'资料填写格式'});
   const dirty=unsavedSections.length>0;
   useEffect(()=>{
-    const controller=new AbortController();setRelatedIssues([]);setRelatedLoaded(false);setRelatedError('');
+    const controller=new AbortController();setRelatedIssues([]);setRelatedLoaded(false);setRelatedError('');setCooking(null);setCookingPreview(null);setCookingError('');
     if(sourcePlan&&/^[a-zA-Z0-9_-]{1,100}$/.test(sourcePlan)){
-      privateApi<{plan:{request_id:string};logistics_issues?:LogisticsIssue[]}>('/plans/'+encodeURIComponent(sourcePlan),{signal:controller.signal})
+      privateApi<{plan:{request_id:string};logistics_issues?:LogisticsIssue[];cooking_preparation?:CookingPreparation|null}>('/plans/'+encodeURIComponent(sourcePlan),{signal:controller.signal})
         .then(data=>{if(controller.signal.aborted)return;if(sourceRequest&&data.plan.request_id!==sourceRequest)throw new Error('Request mismatch');
-          setRelatedIssues((data.logistics_issues??[]).filter(item=>item.target==='PROFILE'));setRelatedLoaded(true);})
+          setRelatedIssues((data.logistics_issues??[]).filter(item=>item.target==='PROFILE'||item.code==='COOKING_ARRANGEMENT'));setCooking(data.cooking_preparation??null);setRelatedLoaded(true);})
         .catch(()=>{if(!controller.signal.aborted){setRelatedError('未能读取本次待补充事项，请重新载入；已有资料仍可编辑。');setRelatedLoaded(true);}});
+    }else if(sourceRequest&&/^[a-zA-Z0-9_-]{1,100}$/.test(sourceRequest)){
+      privateApi<{cooking_preparation?:CookingPreparation|null}>('/requests/'+encodeURIComponent(sourceRequest),{signal:controller.signal})
+        .then(data=>{if(!controller.signal.aborted){setCooking(data.cooking_preparation??null);setRelatedLoaded(true);}})
+        .catch(()=>{if(!controller.signal.aborted){setRelatedError('未能读取本次需求的准备清单，请重新载入；已有资料仍可编辑。');setRelatedLoaded(true);}});
     }else setRelatedLoaded(true);
     return()=>controller.abort();
   },[sourcePlan,sourceRequest,refresh,issueRetry]);
@@ -178,12 +188,25 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
     return () => controller.abort();
   }, [session?.user.user_id, refresh]);
   useEffect(()=>{
-    const token=`${session?.user.user_id}:${sourcePlan??''}:${requestedFocus}:${refresh}`;
+    const token=`${session?.user.user_id}:${sourcePlan??''}:${sourceRequest??''}:${requestedFocus}:${refresh}:${issueRetry}`;
     if(discardReload.current||!loaded||!relatedLoaded||relatedError||preparedContext.current===token)return;
     preparedContext.current=token;
-    const prepared=prepareMissingEquipment(equipment,relatedIssues,requestedFocus,EQUIPMENT_TYPES);
+    const prepared=prepareMissingEquipment(equipment,relatedIssues,requestedFocus,EQUIPMENT_TYPES,cooking?.items.map(item=>item.item_key)??[]);
     if(prepared!==equipment){setEquipment(prepared);focusDone.current='';}
-  },[loaded,relatedLoaded,relatedError,sourcePlan,requestedFocus,refresh,session?.user.user_id,equipment,relatedIssues]);
+  },[loaded,relatedLoaded,relatedError,sourcePlan,sourceRequest,requestedFocus,refresh,issueRetry,session?.user.user_id,equipment,relatedIssues,cooking]);
+  const cookingSignature=JSON.stringify(equipment.filter(item=>['camping_stove','fuel_canister'].includes(item.item_key)));
+  async function checkCooking(){
+    if(!session||cookingBusy||!relatedLoaded||relatedError||!cooking)return;
+    const context=cookingContext.current;const signature=cookingSignature;
+    setCookingBusy(true);setCookingError('');
+    try{
+      const value=await privateApi<CookingPreparation>('/preparation/cooking',{method:'POST',
+        headers:{'Content-Type':'application/json','X-CampMate-Client':'1','X-CSRF-Token':session.csrf_token},
+        body:JSON.stringify({...sourcePlan?{plan_id:sourcePlan}:{request_id:sourceRequest},equipment:cookingDraft(equipment)})});
+      if(cookingContext.current===context)setCookingPreview({value,signature});
+    }catch(reason){if(cookingContext.current===context){setCookingPreview(null);setCookingError(reason instanceof Error?reason.message:'准备预检查暂不可用，请按正式检查核对。');}}
+    finally{setCookingBusy(false);}
+  }
   function loadDemo() {
     const profile = demoInputs.profile;
     setGroupTouched(false);
@@ -213,7 +236,7 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
         transport: { transport_type: canonical(transport, MODES) || null, vehicle_count: integer(vehicles), estimated_km: km.trim() || null, assumptions: lines(assumptions) }, accessibility_requirements: canonicalTerms(lines(accessibility),'accessibility') };
       const saved = await privateApi<ProfileResponse>('/profile', { method:'PUT', headers:{ 'Content-Type':'application/json', 'X-CampMate-Client':'1', 'X-CSRF-Token':session.csrf_token }, body:JSON.stringify({ profile, expected_revision:revision }) });
       setRevision(saved.revision); setSavedDraft(formDraft); setMessage(returnPlan?'资料已保存；当前方案仍使用旧资料，采用新资料后的检查尚未完成。':'露营资料已保存，可以继续填写需求。');
-      if(returnAfterSave&&returnPlan)navigate(returnPlan,{state:{profileSaved:true}});
+      if(returnAfterSave&&returnRequest)navigate(returnRequest,{state:{profileSaved:true}});
     } catch (reason) {
       setError(reason instanceof ApiFailure ? [reason.message, ...reason.envelope.error.field_errors.map(item => item.message)].join(' ') : reason instanceof Error ? reason.message : '保存失败。');
       if (reason instanceof ApiFailure && reason.envelope.error.code === 'UNAUTHENTICATED') reload();
@@ -266,6 +289,8 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
         {transport==='CAR'&&<div><span>车辆总数</span><output id="vehicle-count" className="vehicle-total">{vehicles?`${vehicles} 辆`:'待填写'}</output><FieldHint id="vehicles-hint" error={guidance['vehicle-count']}>根据下方车辆数量自动汇总。</FieldHint></div>}
         <div><label htmlFor="estimated-km">预计总路程 km</label><input id="estimated-km" inputMode="decimal" pattern="[0-9]+([.][0-9]+)?" value={km} aria-invalid={!!(issues['estimated-km']||guidance['estimated-km'])} aria-describedby="km-hint" onChange={event=>{setKm(event.target.value);changed();}}/><FieldHint id="km-hint" error={issues['estimated-km']??guidance['estimated-km']}>填写总路程，未知可留空。</FieldHint></div>
       </div>{(transport==='CAR'||equipment.some(item=>item.item_key==='vehicle'))&&<VehicleFields equipment={equipment} issues={issues} guidance={guidance} onChange={updateEquipment} onRemove={removeEquipment} onAdd={()=>replaceEquipment([...equipment,{item_key:'vehicle',label:'车辆',quantity:'',unit:'vehicle',capacity:'',confirmed:false}])}/>}<label htmlFor="transport-assumptions">路程与交通说明（每行一项）</label><textarea id="transport-assumptions" value={assumptions} placeholder="例如：往返合计，使用自己的车辆" onChange={event=>{setAssumptions(event.target.value);changed();}}/></section></div>
+      <CookingPreparationPanel value={cooking} preview={cookingPreview?.value} stale={!!cookingPreview&&cookingPreview.signature!==cookingSignature}
+        onCheck={checkCooking} busy={cookingBusy} error={cookingError} onFocus={key=>{const index=equipment.findIndex(item=>item.item_key===key);const node=document.getElementById(`gear-quantity-${index}`);node?.focus();node?.scrollIntoView({block:'center'});}}/>
       <section className="panel equipment-panel"><div className="panel-title"><div><span className="eyebrow">装备准备</span><h2>已有装备 <small>{equipment.filter(item=>item.item_key!=='vehicle').length} 项</small></h2></div><button id="add-equipment" type="button" className="secondary-button" onClick={()=>{const key=activeFocus.split('.')[1];const type=EQUIPMENT_TYPES.find(([value])=>value===key&&value!=='vehicle')??EQUIPMENT_TYPES[0];focusDone.current='';setEquipment(items=>addEquipment(items,type[0],datasetVersion));changed();}}>添加装备</button></div><p className="field-hint">类别用于装备检查，名称用于区分同类物品，可改为“三人帐”“单人帐”等。不同容量请分行添加；每行数量表示该名称下有几件物品。帐篷按顶、水按升、餐食按份记录；仅“其他装备”可选择单位。勾选确认拥有的装备。</p>
         {!equipment.some(item=>item.item_key!=='vehicle')&&<div className="equipment-empty"><span aria-hidden="true">＋</span><p>还没有登记装备</p><small>添加已有物品；不确定的数量可以留空。</small></div>}
         {equipment.map((item,index)=>item.item_key==='vehicle'?null:<article className={Object.keys(guidance).some(id=>id.startsWith('gear-')&&id.endsWith('-'+index))?'equipment-card equipment-card-needed':'equipment-card'} key={index}><header><span className="equipment-number">{String(equipment.slice(0,index).filter(row=>row.item_key!=='vehicle').length+1).padStart(2,'0')}</span><h3>{item.label||'未命名装备'}</h3><button type="button" className="text-button" aria-label={`移除装备 ${index+1}`} onClick={()=>removeEquipment(index)}>移除</button></header><div className="equipment-fields">
@@ -276,7 +301,7 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
           <div><label htmlFor={`gear-capacity-${index}`}>{item.item_key==='vehicle'?'每辆载客人数（含驾驶员）':item.item_key==='tent'?'每顶帐篷可住人数':'每件人数容量'}</label><input id={`gear-capacity-${index}`} aria-label={`装备 ${index+1} 每件人数容量`} type="number" min="1" step="1" value={item.capacity} aria-invalid={!!(issues[`gear-capacity-${index}`]||guidance[`gear-capacity-${index}`])} aria-describedby={`gear-capacity-hint-${index}`} placeholder="未知 / 不适用" onChange={event=>updateEquipment(index,{capacity:event.target.value})}/><FieldHint id={`gear-capacity-hint-${index}`} error={issues[`gear-capacity-${index}`]??guidance[`gear-capacity-${index}`]}>{item.item_key==='vehicle'?'包含驾驶员；例如 5 座车填 5。多辆车容量不同时请分行登记。':undefined}</FieldHint></div>
         </div><label className="checkbox-label equipment-confirmation"><input id={`gear-confirmed-${index}`} type="checkbox" aria-invalid={!!guidance[`gear-confirmed-${index}`]} aria-describedby={`gear-confirmed-hint-${index}`} checked={item.confirmed} aria-label={`装备 ${index+1} 已核实拥有`} onChange={event=>updateEquipment(index,{confirmed:event.target.checked})}/>已核实拥有</label><FieldHint id={`gear-confirmed-hint-${index}`} error={guidance[`gear-confirmed-${index}`]}/></article>)}
       </section>
-      <div className="profile-save-bar"><div><strong>{dirty?(returnPlan?'保存后，返回方案重新规划':'保存后，继续填写需求'):'准备下一步'}</strong><p id="profile-save-hint" role="status">{saveHint}</p>{problemIds.length>0&&dirty&&<button type="button" className="text-link focus-field" onClick={()=>document.getElementById(problemIds[0])?.focus()}>前往需要修改的字段 ↗</button>}</div><div className="form-actions">{returnPlan&&<button type="submit" name="save-and-return" className="primary-button" disabled={!dirty||problemIds.length>0} aria-describedby="profile-save-hint">{busy?'正在保存…':'保存并返回方案'} <span>↗</span></button>}<button className={returnPlan?"secondary-button":"primary-button"} disabled={!dirty||problemIds.length>0} aria-describedby="profile-save-hint">{busy?'正在保存…':'保存露营资料'} <span>✓</span></button><DiscardChanges sections={unsavedSections} busy={busy} onDiscard={()=>{discardReload.current=true;preparedContext.current='';setRefresh(value=>value+1);}}/>{!dirty&&revision>0&&<Link className="text-link" to={returnRequest??"/request"}>{returnRequest?returnLabel:"填写露营请求 ↗"}</Link>}</div></div>
+      <div className="profile-save-bar"><div><strong>{dirty?(returnRequest?'保存后，核对本次更新':'保存后，继续填写需求'):'准备下一步'}</strong><p id="profile-save-hint" role="status">{saveHint}</p>{problemIds.length>0&&dirty&&<button type="button" className="text-link focus-field" onClick={()=>document.getElementById(problemIds[0])?.focus()}>前往需要修改的字段 ↗</button>}</div><div className="form-actions">{returnRequest&&<button type="submit" name="save-and-return" className="primary-button" disabled={!dirty||problemIds.length>0} aria-describedby="profile-save-hint">{busy?'正在保存…':'保存并核对本次更新'} <span>↗</span></button>}<button className={returnRequest?"secondary-button":"primary-button"} disabled={!dirty||problemIds.length>0} aria-describedby="profile-save-hint">{busy?'正在保存…':returnRequest?'仅保存资料，暂不检查':'保存露营资料'} <span>✓</span></button><DiscardChanges sections={unsavedSections} busy={busy} onDiscard={()=>{discardReload.current=true;preparedContext.current='';setRefresh(value=>value+1);}}/>{!dirty&&revision>0&&<Link className="text-link" to={returnRequest??"/request"}>{returnRequest?returnLabel:"填写露营请求 ↗"}</Link>}</div></div>
     </fieldset></form>}
   </div>;
 }

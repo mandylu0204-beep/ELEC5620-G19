@@ -1,11 +1,12 @@
 import { needsMealChoice } from './logistics_guidance';
 import { Link } from 'react-router-dom';
 import type { PlanDetail } from './plans';
+import { tripUpdatePath } from './trip_update';
 
 // Navigation guidance only; all operations remain controlled by server flags.
 export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}) {
   const run=data.run;
-  if(!run?.is_active||['PENDING','RUNNING','FAILED'].includes(run.status))return null;
+  if(!run?.is_active||data.trip_series?.is_current===false||['PENDING','RUNNING','FAILED'].includes(run.status))return null;
   const reasons=new Set(data.eligibility?.blocking_reasons.map(item=>item.code));
   const review=data.reviews.at(-1);
   const safety=data.assessments.find(item=>item.kind==='SAFETY')?.result;
@@ -33,7 +34,7 @@ export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}
     title=upcomingWeather?'行程已生成，天气待临近出发时检查':'当前资料还不能支持完整的安全判断';
     description=upcomingWeather?`你可以先核对行程、装备和费用，方案会继续保留。建议在 ${upcomingWeather} 或之后重新检查；天气及其他安全条件仍以届时结果为准。`:'在安全页查看缺少的资料、日期范围或冲突。你可以调整日期或营地，也可以保留草稿，待资料更新后再检查。同一天重复检查不会延长天气预报范围。';
   }else if((data.logistics_issues??[]).length){
-    title='按具体待办完成检查';description='按上方待办补充并保存资料后，可点击“使用最新资料重新规划”。原来的日期、预算和偏好会保留。';
+    title='继续处理本次出行';description='按上方待办保存修改，再到“核对本次更新”查看资料差异与需求摘要；确认后启动新检查。原检查保留，不另建独立出行。';
   }else if(mealUnknown){
     title='先确认用餐方式';description='行程已保留。点击下方调整需求，选择即食餐食或自行烹饪，再重新确认。系统会据此计算餐食费用和所需装备；交通已确认时无需重复修改。';
   }else if(review?.decision==='REQUEST_REVISION'||review?.decision==='REJECT'){
@@ -47,6 +48,6 @@ export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}
       {data.reassessment_available&&onRecheck?<button className="secondary-button" onClick={onRecheck}>前往重新检查 ↓</button>:<p className="muted">当前暂不能启动检查，原行程已保留。</p>}
       <details className="source-details"><summary>查看系统详情</summary><p>{data.current_inputs_error}</p></details></>}
     {review&&<div className="clarifications"><strong>审核理由</strong><p>{review.reason}</p></div>}
-    <div className="plan-actions"><Link className="text-link" to={'/request?copy_from='+encodeURIComponent(data.plan.request_id)}>调整需求并重新确认 ↗</Link><Link className="text-link" to={'/profile?plan_id='+encodeURIComponent(data.plan.plan_id)+'&request_id='+encodeURIComponent(data.plan.request_id)}>修改露营资料 ↗</Link></div>
+    <div className="plan-actions"><Link className="text-link" to={tripUpdatePath(data.plan.plan_id)}>调整本次需求并核对 ↗</Link><Link className="text-link" to={'/profile?plan_id='+encodeURIComponent(data.plan.plan_id)+'&request_id='+encodeURIComponent(data.plan.request_id)}>修改露营资料 ↗</Link></div>
   </section>;
 }

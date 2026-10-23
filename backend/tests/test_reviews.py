@@ -69,14 +69,17 @@ def test_approval_never_overrides_blocker_or_required_revision(review_client,cas
     scope,_=create(app.state.repository,camper,case,case)
     path='/api/v1/review/'+scope.plan_id
     detail=client.get(path).json()
-    assert detail['review_available']
+    assert not detail['review_available'] and detail['review_scope']=='CORRECTION'
+    assert client.get('/api/v1/review-queue').json()=={'reviews':[]}
+    assert client.get('/api/v1/assistance-queue').json()['plans'][0]['plan_id']==scope.plan_id
     blocked=client.post(path,headers=headers,json=command(detail))
     assert blocked.status_code==409
     unchanged=client.get(path).json()
     assert unchanged==detail and not unchanged['eligibility']['eligible']
     revised=client.post(path,headers=headers,json=command(detail,'REQUEST_REVISION','revision'))
-    assert revised.status_code==200 and revised.json()['status']=='REVISION_REQUIRED'
-    assert not revised.json()['eligibility']['eligible']
+    assert revised.status_code==409
+    with app.state.database.transaction(write=False) as db:
+        assert db.execute('SELECT COUNT(*) FROM reviews').fetchone()[0]==0
 
 
 def test_roles_csrf_input_validation_and_incomplete_run(review_client):

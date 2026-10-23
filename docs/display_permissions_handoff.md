@@ -1,5 +1,7 @@
 # CampMate 展示、文案与读取权限交接
 
+> 后续进展（2026-10-22）：出行系列、资料采用及审核任务分离见 [流程一致性交接](workflow_consistency_handoff.md) 和 [接口实施契约](workflow_consistency_interface_proposal.md)。本文保留展示阶段的原始范围与验证记录；下文“待实现”描述的是该阶段状态。
+
 ## 基线与边界
 
 - 起点：`fix/display-issues`，`5649359`；开始时工作区干净。未切换分支、提交、推送或合并。

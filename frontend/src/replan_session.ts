@@ -22,7 +22,10 @@ export class ReplanSession {
   private createCommand:{source:string;key:string}|null=null;
   private api:Api;
   private newKey:()=>string;
-  constructor(api:Api,newKey:()=>string){this.api=api;this.newKey=newKey;}
+  private commandKey:(operation:string,revision:number)=>string;
+  constructor(api:Api,newKey:()=>string,commandKey?:(operation:string,revision:number)=>string){
+    this.api=api;this.newKey=newKey;this.commandKey=commandKey??(()=>newKey());
+  }
   private isStale(reason:unknown){
     const code=(reason as {envelope?:{error?:{code?:string}}}|null)?.envelope?.error?.code;
     return !!code&&['VERSION_CONFLICT','STALE_CONTEXT'].includes(code);
@@ -61,7 +64,7 @@ export class ReplanSession {
         }
       }
       if(this.confirmCommand?.revision!==this.record.revision)
-        this.confirmCommand={revision:this.record.revision,key:this.newKey()};
+        this.confirmCommand={revision:this.record.revision,key:this.commandKey('confirm',this.record.revision)};
       try{
         this.record=await this.api<ReplanRequest>('/requests/'+encodeURIComponent(this.record.request_id)+'/confirm',
           {expected_revision:this.record.revision,command_key:this.confirmCommand.key,acknowledged:true});
@@ -74,7 +77,7 @@ export class ReplanSession {
     }
     if(!this.record.planning_available)throw new Error('规划服务暂不可用，已保存确认的需求，请稍后重试。');
     if(this.planCommand?.revision!==this.record.revision)
-      this.planCommand={revision:this.record.revision,key:this.newKey()};
+      this.planCommand={revision:this.record.revision,key:this.commandKey('plan',this.record.revision)};
     try{
       return await this.api<{plan_id:string;run_id:string}>('/requests/'+encodeURIComponent(this.record.request_id)+'/plan',
         {expected_request_revision:this.record.revision,command_key:this.planCommand.key});

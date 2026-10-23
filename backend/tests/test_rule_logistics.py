@@ -153,6 +153,26 @@ def test_tent_capacity_and_sleeping_bag_duplicate_rules_merge_gaps_once(agent):
     assert any(item.code == 'ESSENTIAL_GEAR_MISSING' for item in result.mandatory_blockers)
 
 
+def test_three_people_two_differently_named_tents_use_actual_combined_capacity(agent):
+    profile=full_profile().model_copy(update={'group_size':3})
+    stock=[item for item in profile.equipment if item.item_key!='tent']
+    stock.extend([equipment('tent',1,capacity=1).model_copy(update={'label':'大帐篷（名称不是容量）'}),
+        equipment('tent',1,capacity=2).model_copy(update={'label':'备用小帐'})])
+    result=assess(agent,profile.model_copy(update={'equipment':stock}))
+    item=gear(result,'tent')
+    assert item.required_quantity==3 and item.available_quantity==3 and item.missing_quantity==0
+    assert len([row for row in result.gear_checklist if row.item_key=='tent'])==1
+
+
+@pytest.mark.parametrize('patch',[{'quantity':None},{'confirmed':False},{'capacity_persons':None}])
+def test_partial_mixed_capacity_does_not_infer_unknown_values_from_custom_names(agent,patch):
+    profile=full_profile().model_copy(update={'group_size':3})
+    stock=[item for item in profile.equipment if item.item_key!='tent']
+    stock.extend([equipment('tent',1,capacity=1),equipment('tent',1,capacity=2).model_copy(update={**patch,'label':'十人帐（仅名称）'})])
+    item=gear(assess(agent,profile.model_copy(update={'equipment':stock})),'tent')
+    assert item.available_quantity is None and item.missing_quantity is None
+
+
 @pytest.mark.parametrize('item', [equipment('tent', 1), equipment('tent', 1, capacity=2, confirmed=False), equipment('tent', 1, 'litre', capacity=2)])
 def test_unknown_unconfirmed_or_wrong_unit_tent_capacity_never_passes(agent, item):
     result = assess(agent, replace_stock(full_profile(), 'tent', item))

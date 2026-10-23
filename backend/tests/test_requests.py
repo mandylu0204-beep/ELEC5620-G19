@@ -208,6 +208,6 @@ def test_migration_preserves_version_one_data(tmp_path):
     db.initialize()
     assert db.ready()
     with db.transaction(write=False) as connection:
-        assert [row[0] for row in connection.execute('SELECT version FROM schema_migrations ORDER BY version')] == [1,2,3,4,5,6,7,8,9,10]
+        assert [row[0] for row in connection.execute('SELECT version FROM schema_migrations ORDER BY version')] == list(range(1,12))
         assert connection.execute('SELECT revision FROM profiles').fetchone()[0] == 1
         assert connection.execute('SELECT COUNT(*) FROM request_confirmations').fetchone()[0] == 0

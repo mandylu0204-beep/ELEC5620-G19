@@ -276,7 +276,7 @@ def test_upgrade_from_review_schema_keeps_existing_data(tmp_path):
     with db.transaction(write=False) as connection:
         assert [tuple(row) for row in connection.execute('SELECT * FROM assessments')]==before
         assert connection.execute('SELECT status FROM versions').fetchone()[0]=='ESCALATED'
-        assert connection.execute('SELECT COUNT(*) FROM schema_migrations').fetchone()[0]==10
+        assert connection.execute('SELECT COUNT(*) FROM schema_migrations').fetchone()[0]==11
 
 
 def test_fingerprint_is_recalculated_from_registered_input(final_client):

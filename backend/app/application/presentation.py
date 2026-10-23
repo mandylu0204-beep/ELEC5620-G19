@@ -50,6 +50,10 @@ _PUBLIC_ERROR_CONTEXT = {'plan_id', 'plan_version_id', 'run_id', 'stage', 'opera
 def request_response(value):
     """Confirmed-request reads must not become a runtime-configuration side door."""
     data = deepcopy(value)
+    from .cooking_preparation import outline
+    requirements = ((data.get('confirmed_context') or {}).get('requirements')
+        or (data.get('summary') or {}).get('extracted_requirements') or data.get('explicit_fields') or {})
+    data['cooking_preparation'] = outline(requirements, (data.get('confirmed_context') or {}).get('profile_snapshot') or data.get('profile_snapshot') or {})
     confirmed = data.get('confirmed_context')
     if confirmed and 'dataset_context' in confirmed:
         confirmed['dataset_context'] = {key: val for key, val in confirmed['dataset_context'].items()
@@ -59,6 +63,9 @@ def request_response(value):
 
 def _view(value, diagnostics_allowed):
     data = deepcopy(value)
+    from .cooking_preparation import outline
+    confirmed = data.get('confirmed_context') or {}
+    data['cooking_preparation'] = outline(confirmed.get('requirements') or {}, confirmed.get('profile_snapshot') or {})
     planning = data.pop('model_planning_trace', None)
     audits = data.get('model_assessment_audits') or {}
     diagnostics = {'planning': planning,

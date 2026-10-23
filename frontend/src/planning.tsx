@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ApiFailure } from './api';
 import type { PlanDetail } from './plans';
 import { privateApi, useSession } from './session';
+import { tripUpdatePath } from './trip_update';
 
 export function ChangePlanning({ data, refresh }: { data: PlanDetail; refresh: () => void }) {
   const { session, reload } = useSession();
@@ -57,9 +58,9 @@ export function RetryPlanning({ data, refresh }: { data: PlanDetail; refresh: ()
   const [error, setError] = useState('');
   const command = useRef<{ runId: string; revision: number; key: string } | null>(null);
   const run = data.run;
-  if (!run || run.status !== 'FAILED' || !run.is_active) return null;
+  if (!run || run.status !== 'FAILED' || !run.is_active || data.trip_series?.is_current===false) return null;
   const guidance=failureGuidance(data)!;
-  if (['INPUT_INVALID','REQUEST_NOT_CONFIRMED'].includes(run.error?.code??'')) return <><p>本次要求需要重新核对，直接继续不会更新已确认的资料。</p><Link className="text-link" to={'/request?copy_from='+encodeURIComponent(data.plan.request_id)}>调整需求并重新确认 ↗</Link></>;
+  if (['INPUT_INVALID','REQUEST_NOT_CONFIRMED'].includes(run.error?.code??'')) return <><p>本次要求需要重新核对，直接继续不会更新已确认的资料。</p><Link className="text-link" to={tripUpdatePath(data.plan.plan_id)}>调整本次需求并重新确认 ↗</Link></>;
   async function retry() {
     if (!run || !session || busy || !guidance.canRetry) return;
     if (command.current?.runId !== run.run_id || command.current.revision !== run.revision) {
