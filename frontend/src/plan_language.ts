@@ -34,7 +34,7 @@ export function planRowState(row:{run_status:string|null;stage:string|null;versi
   if(row.run_status==='FAILED')return '规划未完成';
   if(row.run_status==='CANCELLED')return '已取消规划';
   if(row.search_outcome==='NO_MATCH')return '未找到满足条件的营地';
-  const display:Record<string,string>={NEEDS_USER_INPUT:'需要用户补充',NEEDS_EVIDENCE:'需要补齐检查资料',NEEDS_REVISION:'需要修改方案',AWAITING_REVIEW:'等待人工审核',CANNOT_RELEASE:'不能放行'};
+  const display:Record<string,string>={NEEDS_USER_INPUT:'需要用户补充',NEEDS_EVIDENCE:'需要补齐检查资料',NEEDS_REVISION:'需要修改方案',AWAITING_REVIEW:'等待人工审核',CANNOT_RELEASE:'需要调整方案'};
   if(row.display_status&&display[row.display_status])return display[row.display_status];
   return ({FINALISED:'最终方案已保存',BLOCKED:'方案有待完善',REVISION_REQUIRED:'需要调整方案',
     ESCALATED:'等待审核员处理',ELIGIBLE_FOR_FINALISATION:'方案已生成，待确认保存',ASSESSING:'正在检查方案',

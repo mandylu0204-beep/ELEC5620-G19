@@ -281,7 +281,7 @@ test('weather shows missing dates, actions, next recheck and never claims overal
 test('new pending checks override old successful display and completed issues have distinct labels',()=>{
   const row={run_status:'RUNNING',stage:'ASSESSING_SAFETY',version_status:'FINALISED',display_status:'FINALISED'};
   assert.equal(planRowState(row),'正在准备方案');
-  for(const [key,label] of Object.entries({NEEDS_USER_INPUT:'需要用户补充',NEEDS_REVISION:'需要修改方案',AWAITING_REVIEW:'等待人工审核',CANNOT_RELEASE:'不能放行'}))
+  for(const [key,label] of Object.entries({NEEDS_USER_INPUT:'需要用户补充',NEEDS_REVISION:'需要修改方案',AWAITING_REVIEW:'等待人工审核',CANNOT_RELEASE:'需要调整方案'}))
     assert.equal(planRowState({...row,run_status:'SUCCEEDED',display_status:key}),label);
 });
 
@@ -335,4 +335,34 @@ test('finalised current read keeps its saved approval but never authorises a new
   }
   const newer=structuredClone(value);newer.run.status='RUNNING';
   assert.doesNotMatch(renderPlan(newer),/审核已批准/);
+});
+
+
+function reviewedFixture(){
+  const v=planFixture();v.run.is_active=true;
+  v.assessments.push({assessment_id:'safety',kind:'SAFETY',version_context:v.version.version_context,result:{outcome:'REVIEW',requires_human_review:true,risk_level:'HIGH',confidence:'LOW',data_quality:{ROAD:'AVAILABLE'},evidence:[],hazards:[],recommended_actions:[],mandatory_blockers:[],unresolved_conflicts:[]}});
+  return v;
+}
+test('closed-road review route displays adjustment guidance without asking for approval',()=>{
+  const v=reviewedFixture();v.version.status='ESCALATED';v.display_status='CANNOT_RELEASE';
+  v.assessments[1].result.evidence=[{kind:'ROAD',road_state:'CLOSED',status:'AVAILABLE',source_refs:[]}];
+  v.eligibility={eligible:false,review_required:true,valid_review_id:null,blocking_reasons:[{code:'ROAD_UNAVAILABLE',message:'blocked'}]};
+  const html=renderPlan(v);
+  assert.match(html,/需要调整方案/);assert.match(html,/道路关闭，需要调整方案/);
+  assert.match(html,/请更换可通行的营地/);assert.doesNotMatch(html,/无法确认行程期间道路/);
+  assert.doesNotMatch(html,/等待审核员处理|等待人工审核|这份方案需要审核员核对风险/);
+  assert.equal(v.finalisation_available,false);
+});
+test('historical approval is labelled as past and never becomes current eligibility',()=>{
+  const v=reviewedFixture();v.version.status='FINALISED';v.trip_series={is_current:false,current_plan_id:'successor'};
+  v.reviews=[{review_id:'past',decision:'APPROVE',reason:'past reason',reviewer_user_id:'founder',version_context:{...v.version.version_context}}];
+  v.final_history=[{plan_id:'plan',final_id:'past-final',run_id:'run',plan_version_id:'version',is_current:false}];
+  let html=renderPlan(v);assert.match(html,/当时审核已批准/);assert.match(html,/旧审核不授权新结果/);
+  assert.doesNotMatch(html,/安全评估 需要审核/);assert.equal(v.eligibility,null);assert.equal(v.finalisation_available,false);
+  for(const change of [{run_id:'new-run'},{plan_version_id:'new-version'},{input_fingerprint:'new-input'}]){
+    const different=structuredClone(v);Object.assign(different.reviews[0].version_context,change);
+    assert.doesNotMatch(renderPlan(different),/当时审核已批准/);
+  }
+  const newer=structuredClone(v);newer.version.status='ESCALATED';newer.run.operation='REASSESS';
+  assert.doesNotMatch(renderPlan(newer),/当时审核已批准/);
 });
