@@ -1,0 +1,407 @@
+{
+  "application_source": "1450631ad95fed13997f5410f14078a873c0481b",
+  "control_source": "b5e6b4a678c8e09ad151487b477f24ccfac4d1eb",
+  "result": {
+    "source": "1450631ad95fed13997f5410f14078a873c0481b",
+    "limit": 8,
+    "safety_limit": 4,
+    "campus_call_scope": "new PLAN: all three roles",
+    "input": "Explicit synthetic acceptance profile, two people, two nights, ready-to-eat meals, AUD1000",
+    "public_model_identity": {
+      "base_url": "http://10.167.60.148:8000/v1",
+      "model": "campus-qwen",
+      "timeout_seconds": 45,
+      "max_completion_tokens": 4096,
+      "max_attempts": 2,
+      "max_turns": 4,
+      "reasoning_effort": "low"
+    },
+    "result": "PASSED",
+    "run_id": "7bd0b20963a843dabc8b8d5a7e49bd49",
+    "plan_id": "6d53078a0e2545f4811230f85bbf4698",
+    "run_status": "SUCCEEDED",
+    "safety_tool_version": "safety-read-only-tools-3",
+    "safety_audit_saved": true,
+    "safety_assessment_id": "6a1939ce78e74c64a9c30c4b55138be5",
+    "safety_trace_turns": 3,
+    "finalisation_available": true,
+    "safety_receipts": 1,
+    "restart_audit_unchanged": true,
+    "other_user_denied": true,
+    "browser_acceptance": "PENDING_SEPARATE_LOCAL_READ_ONLY_CHECK",
+    "final_saved": false,
+    "requests": 8
+  },
+  "counts_by_role": {
+    "PLANNING": 2,
+    "LOGISTICS": 3,
+    "SAFETY": 3
+  },
+  "requests": [
+    {
+      "number": 1,
+      "role": "PLANNING",
+      "started_utc": "2026-10-23T06:17:49.350883+00:00",
+      "body_bytes": 8508,
+      "body_sha256": "c56e7860b98f37230b1d7ad58dffbc100dd0bf5ff9ea5b97659ef1b374e63334",
+      "status": 200,
+      "headers_ms": 2484.616,
+      "correlation_ids": {
+        "x-request-id": "req_f7dd431b0f474fbfb3c578137cb8083a"
+      },
+      "first_body_ms": 2486.234,
+      "response_bytes": 1260,
+      "complete_ms": 2486.741,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 1745,
+        "total_tokens": 1906,
+        "completion_tokens": 161
+      },
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9",
+      "client_completion_accepted": true,
+      "started_australia_sydney": "2026-10-23T17:17:49.350883+11:00",
+      "ended_utc": null,
+      "end_time_status": "NOT_CAPTURED"
+    },
+    {
+      "number": 2,
+      "role": "PLANNING",
+      "started_utc": "2026-10-23T06:17:51.840713+00:00",
+      "body_bytes": 17023,
+      "body_sha256": "19a0d5899c9a03b828b1c3cf4bd3db92e3ac1e0ad2c6803ee76f8311a49916c9",
+      "status": 200,
+      "headers_ms": 16015.369,
+      "correlation_ids": {
+        "x-request-id": "req_b1427c963e254295913dde90d5ed7d42"
+      },
+      "first_body_ms": 16016.839,
+      "response_bytes": 5205,
+      "complete_ms": 16018.876,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 3720,
+        "total_tokens": 4965,
+        "completion_tokens": 1245
+      },
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9",
+      "client_completion_accepted": true,
+      "started_australia_sydney": "2026-10-23T17:17:51.840713+11:00",
+      "ended_utc": null,
+      "end_time_status": "NOT_CAPTURED"
+    },
+    {
+      "number": 3,
+      "role": "LOGISTICS",
+      "started_utc": "2026-10-23T06:18:08.091247+00:00",
+      "body_bytes": 8989,
+      "body_sha256": "3c5f583a485b083cbf9ffe89a1cde9fb77470a8aa1629c28e163243f9033bfe3",
+      "status": 200,
+      "headers_ms": 967.174,
+      "correlation_ids": {
+        "x-request-id": "req_205c326c81864d60b47200cc40373202"
+      },
+      "first_body_ms": 968.374,
+      "response_bytes": 930,
+      "complete_ms": 968.43,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 1907,
+        "total_tokens": 1955,
+        "completion_tokens": 48
+      },
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9",
+      "client_completion_accepted": true,
+      "started_australia_sydney": "2026-10-23T17:18:08.091247+11:00",
+      "ended_utc": null,
+      "end_time_status": "NOT_CAPTURED"
+    },
+    {
+      "number": 4,
+      "role": "LOGISTICS",
+      "started_utc": "2026-10-23T06:18:09.070925+00:00",
+      "body_bytes": 23485,
+      "body_sha256": "d7f8ebdfa982c555d4bca128c9105f320d6e4fa7de56ce604ec822cef5e08593",
+      "status": 200,
+      "headers_ms": 13194.535,
+      "correlation_ids": {
+        "x-request-id": "req_9b926c36cd9a4ca3b8a331885df7a43b"
+      },
+      "first_body_ms": 13195.693,
+      "response_bytes": 4610,
+      "complete_ms": 13196.42,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 5594,
+        "total_tokens": 6622,
+        "completion_tokens": 1028
+      },
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9",
+      "client_completion_accepted": true,
+      "started_australia_sydney": "2026-10-23T17:18:09.070925+11:00",
+      "ended_utc": null,
+      "end_time_status": "NOT_CAPTURED"
+    },
+    {
+      "number": 5,
+      "role": "LOGISTICS",
+      "started_utc": "2026-10-23T06:18:22.278648+00:00",
+      "body_bytes": 34269,
+      "body_sha256": "0414d5342cc8bb0b68a04ae3f512e86308e5f7ab707872bb1cd50c506af6b51e",
+      "status": 200,
+      "headers_ms": 4838.111,
+      "correlation_ids": {
+        "x-request-id": "req_3b4c4e67fd154e71a56263f1868a9cf0"
+      },
+      "first_body_ms": 4839.746,
+      "response_bytes": 2291,
+      "complete_ms": 4839.809,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 8108,
+        "total_tokens": 8453,
+        "completion_tokens": 345
+      },
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9",
+      "client_completion_accepted": true,
+      "started_australia_sydney": "2026-10-23T17:18:22.278648+11:00",
+      "ended_utc": null,
+      "end_time_status": "NOT_CAPTURED"
+    },
+    {
+      "number": 6,
+      "role": "SAFETY",
+      "started_utc": "2026-10-23T06:18:27.351882+00:00",
+      "body_bytes": 6636,
+      "body_sha256": "80e33b47ba7cd619c00ea166745c83735fa5528d14c36a2a6c65ab86e08526d2",
+      "status": 200,
+      "headers_ms": 987.826,
+      "correlation_ids": {
+        "x-request-id": "req_638ba2b07fca48e2b46f8746ce11dbbc"
+      },
+      "first_body_ms": 989.345,
+      "response_bytes": 875,
+      "complete_ms": 989.404,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 1546,
+        "total_tokens": 1584,
+        "completion_tokens": 38
+      },
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9",
+      "client_completion_accepted": true,
+      "started_australia_sydney": "2026-10-23T17:18:27.351882+11:00",
+      "ended_utc": null,
+      "end_time_status": "NOT_CAPTURED"
+    },
+    {
+      "number": 7,
+      "role": "SAFETY",
+      "started_utc": "2026-10-23T06:18:28.347444+00:00",
+      "body_bytes": 17631,
+      "body_sha256": "39b3c30db97143575aba03aa002eed4fe22ce22017021e3842110040ae5de91c",
+      "status": 200,
+      "headers_ms": 24054.978,
+      "correlation_ids": {
+        "x-request-id": "req_d1ac8b2a86064e9a9f763ac73cf1cc8f"
+      },
+      "first_body_ms": 24055.278,
+      "response_bytes": 7117,
+      "complete_ms": 24056.524,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 4943,
+        "total_tokens": 7135,
+        "completion_tokens": 2192
+      },
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9",
+      "client_completion_accepted": true,
+      "started_australia_sydney": "2026-10-23T17:18:28.347444+11:00",
+      "ended_utc": null,
+      "end_time_status": "NOT_CAPTURED"
+    },
+    {
+      "number": 8,
+      "role": "SAFETY",
+      "started_utc": "2026-10-23T06:18:52.407824+00:00",
+      "body_bytes": 22675,
+      "body_sha256": "baa3b3fd687a24f51056f401c71ea96ba15bce0fc1054f29ea3b5c8a6683134f",
+      "status": 200,
+      "headers_ms": 12034.508,
+      "correlation_ids": {
+        "x-request-id": "req_dfde1d8dc385431885a22852c7f7a7a2"
+      },
+      "first_body_ms": 12036.024,
+      "response_bytes": 3262,
+      "complete_ms": 12036.363,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 6976,
+        "total_tokens": 7994,
+        "completion_tokens": 1018
+      },
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9",
+      "client_completion_accepted": true,
+      "started_australia_sydney": "2026-10-23T17:18:52.407824+11:00",
+      "ended_utc": null,
+      "end_time_status": "NOT_CAPTURED"
+    }
+  ],
+  "transport_stopped": true,
+  "all_http_200": true,
+  "all_finish_reason_stop": true,
+  "all_client_completions_accepted": true,
+  "usage_sum": {
+    "prompt_tokens": 34539,
+    "completion_tokens": 6075,
+    "total_tokens": 40614
+  },
+  "browser_runtime_counters": {
+    "model_completion_attempts": 0,
+    "outbound_transport_attempts": 0,
+    "blocked_business_mutations": 0,
+    "allowed_login_requests": 4
+  },
+  "artifacts": {
+    "assessments": {
+      "count": 2,
+      "sha256_before_browser": "77ced5262f7efb3cb67ed78b5826156a18b367bdcd53b74656aaf271f72e3249",
+      "sha256_after_browser": "77ced5262f7efb3cb67ed78b5826156a18b367bdcd53b74656aaf271f72e3249",
+      "unchanged": true
+    },
+    "final_records": {
+      "count": 0,
+      "sha256_before_browser": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "sha256_after_browser": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "unchanged": true
+    },
+    "gear_checklists": {
+      "count": 1,
+      "sha256_before_browser": "dbe94bda14f399ca2c107a7638227437adc6762fe3206f9432563ec01b4d79e3",
+      "sha256_after_browser": "dbe94bda14f399ca2c107a7638227437adc6762fe3206f9432563ec01b4d79e3",
+      "unchanged": true
+    },
+    "model_logistics_audits": {
+      "count": 1,
+      "sha256_before_browser": "fa9b447cacc76b222a8a59e5b550273152f26975d997975b8bb700771b6fe35d",
+      "sha256_after_browser": "fa9b447cacc76b222a8a59e5b550273152f26975d997975b8bb700771b6fe35d",
+      "unchanged": true
+    },
+    "model_planning_traces": {
+      "count": 1,
+      "sha256_before_browser": "1a70611a5aa0ad6bf11926dc1c34f85e254f965514e5c40baebcbd4f9e255d6d",
+      "sha256_after_browser": "1a70611a5aa0ad6bf11926dc1c34f85e254f965514e5c40baebcbd4f9e255d6d",
+      "unchanged": true
+    },
+    "model_safety_audits": {
+      "count": 1,
+      "sha256_before_browser": "dfd853d3685b311c0ff71e6a1ad85ad85bf52879d4f9f48e1d29a14547a7b87d",
+      "sha256_after_browser": "dfd853d3685b311c0ff71e6a1ad85ad85bf52879d4f9f48e1d29a14547a7b87d",
+      "unchanged": true
+    },
+    "plans": {
+      "count": 1,
+      "sha256_before_browser": "09bf54f1a72c1e6c7298c8ab7796d52bf85e1fbc1e748c0ce4a3a025d3be919a",
+      "sha256_after_browser": "09bf54f1a72c1e6c7298c8ab7796d52bf85e1fbc1e748c0ce4a3a025d3be919a",
+      "unchanged": true
+    },
+    "recommendations": {
+      "count": 1,
+      "sha256_before_browser": "2aaeb860e907fcb7d210390badca6d790ec0627a1b0af97c6a8624afbbb24fec",
+      "sha256_after_browser": "2aaeb860e907fcb7d210390badca6d790ec0627a1b0af97c6a8624afbbb24fec",
+      "unchanged": true
+    },
+    "run_versions": {
+      "count": 1,
+      "sha256_before_browser": "5cf5bc138705353c4e9dd23beab31bfde1a1a974302915cb5be43e6f9786d27f",
+      "sha256_after_browser": "5cf5bc138705353c4e9dd23beab31bfde1a1a974302915cb5be43e6f9786d27f",
+      "unchanged": true
+    },
+    "runs": {
+      "count": 1,
+      "sha256_before_browser": "bcabeab4a3cf6bda2bd060a13d688152cf34f3a04c3e06b7814d65c053591f3f",
+      "sha256_after_browser": "bcabeab4a3cf6bda2bd060a13d688152cf34f3a04c3e06b7814d65c053591f3f",
+      "unchanged": true
+    },
+    "versions": {
+      "count": 1,
+      "sha256_before_browser": "a4aedc53d05e3df1ea8d00c3fccfb892112e5137fabc84ea2aaaff3f53cff5cb",
+      "sha256_after_browser": "a4aedc53d05e3df1ea8d00c3fccfb892112e5137fabc84ea2aaaff3f53cff5cb",
+      "unchanged": true
+    },
+    "write_receipts": {
+      "count": 5,
+      "sha256_before_browser": "ab3191c9b289d4fc8c064258d1b8e3bc9e4f3ad7b6207e99d3bd0b934636fec3",
+      "sha256_after_browser": "ab3191c9b289d4fc8c064258d1b8e3bc9e4f3ad7b6207e99d3bd0b934636fec3",
+      "unchanged": true
+    }
+  },
+  "receipts_by_operation": {
+    "logistics": 1,
+    "recommendations": 1,
+    "route": 1,
+    "safety": 1,
+    "version": 1
+  },
+  "safety_audit_association": {
+    "run_matches": true,
+    "version_matches": true,
+    "assessment_matches": true,
+    "dependency_matches": true
+  },
+  "transport_report_unchanged_after_browser": true,
+  "control_sha256": {
+    "guard.py": "8b294af557734e41f0f9d5207b27613a466df33d4198fcf1e0ec251e161e2900",
+    "run.py": "4f4561ec372ffb7bc99d9321c1a9de7c039342902735193f399c68a6c9058b26",
+    "test_control.py": "a7e7b0500eedae38892c39f56255b9cab1ed6a9d8f58e70398435893c147f872"
+  },
+  "final_acceptance_result": "PASSED_WITH_STATED_SCOPE",
+  "new_round_authorization": {
+    "configuration_change_only": {
+      "max_completion_tokens": 4096,
+      "reasoning_effort": "low"
+    },
+    "total_actual_request_limit": 8,
+    "safety_request_limit": 4,
+    "prior_failed_round_recovered": false,
+    "additional_probes": 0,
+    "manual_live_retries": 0,
+    "personal_environment_file_modified": false
+  },
+  "browser_acceptance": {
+    "result": "PASSED",
+    "read_only": true,
+    "application_process_restarted_for_display": true,
+    "model_complete_disabled": true,
+    "outbound_http_transport_disabled": true,
+    "business_mutations_disabled": true,
+    "ai_safety_advice_visible": true,
+    "unverified_reference_notice_visible": true,
+    "formal_safety_information_separate": true,
+    "original_saved_advice_controls_visible": true,
+    "no_human_approval_claim": true,
+    "no_final_save_claim": true,
+    "history_visible": true,
+    "other_user_empty_plan_list": true,
+    "other_user_direct_plan_denied": true,
+    "other_user_advice_not_disclosed": true,
+    "campus_requests_added": 0,
+    "original_plan_and_audits_unchanged": true,
+    "local_auth_note": "One local login failed after text appended to retained fields; replacing both fields succeeded. No model request or business mutation was triggered.",
+    "services_stopped": true
+  },
+  "scope_limits": {
+    "new_plan_normal_scenario_only": true,
+    "revise_tested": false,
+    "reassess_tested": false,
+    "final_save_performed": false,
+    "failed_run_recovery_tested": false,
+    "full_offline_suite_rerun": false,
+    "cloud_ci_run": false,
+    "main_merged": false,
+    "commit_or_push": false,
+    "quota_remaining_verified": false,
+    "end_wall_timestamps": "NOT_CAPTURED; per-request monotonic durations and exact starts only",
+    "privacy": "No key, Authorization, Cookie, prompt, raw model reply, or private reasoning in this shared report"
+  }
+}
