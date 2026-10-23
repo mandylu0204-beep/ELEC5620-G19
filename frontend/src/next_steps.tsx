@@ -10,6 +10,7 @@ export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}
   const reasons=new Set(data.eligibility?.blocking_reasons.map(item=>item.code));
   const review=data.reviews.at(-1);
   const safety=data.assessments.find(item=>item.kind==='SAFETY')?.result;
+  const roadClosed=!!safety&&'evidence' in safety&&safety.evidence.some(item=>item.kind==='ROAD'&&item.road_state==='CLOSED');
   const quality=safety&&'data_quality' in safety?Object.values(safety.data_quality):[];
   const logistics=data.assessments.find(item=>item.kind==='LOGISTICS')?.result;
   const mealUnknown=!!logistics&&'clarifications' in logistics&&needsMealChoice(logistics.clarifications);
@@ -26,8 +27,8 @@ export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}
   else if(data.finalisation_available&&data.eligibility?.eligible){
     title=review?.decision==='APPROVE'?'审核已通过，待你确认保存':'方案已生成，待你确认保存';
     description='核对行程、费用、装备和安全信息，在页面下方勾选确认后保存最终方案。';
-  }else if(reasons.has('ROAD_CLOSED')||reasons.has('CAMPSITE_CLOSED')||reasons.has('FIRE_PROHIBITED')){
-    title=reasons.has('ROAD_CLOSED')?'请更换可通行的营地':reasons.has('CAMPSITE_CLOSED')?'请更换开放的营地':'请调整营火安排';
+  }else if(roadClosed||reasons.has('ROAD_CLOSED')||reasons.has('CAMPSITE_CLOSED')||reasons.has('FIRE_PROHIBITED')){
+    title=roadClosed||reasons.has('ROAD_CLOSED')?'请更换可通行的营地':reasons.has('CAMPSITE_CLOSED')?'请更换开放的营地':'请调整营火安排';
     description='按列出的出行限制调整安排，再检查新方案。审核员不能解除道路、营地关闭或禁火规定。';
   }else if(quality.some(value=>['MISSING','STALE','CONFLICTING'].includes(value))){
     const upcomingWeather=data.trip_evidence_coverage?.next_weather_check_on;

@@ -151,3 +151,14 @@ def test_founder_review_sees_separate_diagnostics_and_cannot_bypass_final_owners
         assert review['model_assessment_audits']['LOGISTICS']['plan'] == detail['model_assessment_audits']['LOGISTICS']['plan']
         assert client.get('/api/v1/plans/'+detail['plan']['plan_id']).status_code == 403
         assert len(requests) == calls
+
+
+@pytest.mark.parametrize('state,expected', [('CLOSED','CANNOT_RELEASE'),('OPEN','AWAITING_REVIEW'),('UNKNOWN','AWAITING_REVIEW')])
+def test_explicit_road_fact_wins_over_review_route_without_mutating_assessment(state,expected):
+    safety={'requires_human_review':True,'mandatory_blockers':[],
+        'evidence':[{'kind':'ROAD','road_state':state}]}
+    before=deepcopy(safety)
+    assert display_status('SUCCEEDED','ESCALATED',safety=safety)==expected
+    assert safety==before
+    assert display_status('RUNNING','ESCALATED',safety=safety)=='RUNNING'
+    assert display_status('SUCCEEDED','FINALISED',safety=safety)=='FINALISED'

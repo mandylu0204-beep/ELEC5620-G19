@@ -1,0 +1,47 @@
+{
+  "task": "A90 review status presentation",
+  "base": "fee6bb7",
+  "changes": [
+    "explicit saved CLOSED road fact precedes review display route",
+    "closed road guidance says adjust plan/change campground rather than wait for approval",
+    "historical final approval labelled as past only with matching plan/run/version/input and final history",
+    "current approval and server action guards unchanged"
+  ],
+  "backend": {
+    "passed": 50,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "modules": [
+      "test_display_projection",
+      "test_reviews",
+      "test_finalisation"
+    ]
+  },
+  "frontend": {
+    "passed": 110,
+    "failed": 0,
+    "skipped": 0,
+    "types": "passed",
+    "build": "passed",
+    "warning": "existing chunk >500kB"
+  },
+  "schema": "passed",
+  "browser": {
+    "database": "fresh backup of isolated A88 fixtures",
+    "closed_road_adjustment": true,
+    "historical_approval_label": true,
+    "successor_still_waits_for_review": true,
+    "successor_save_disabled": true
+  },
+  "screenshots_sha256": {
+    "historical-approved.png": "5883269a64101beabb8ccb183435f9806580c8508fb6e0e67765c5a15f53f1b8",
+    "road-closed.png": "6a4af86cd1dc1ca5195d79faf35a1851a3d4fb554f85db29790cc77db1c769a1"
+  },
+  "full_suite": false,
+  "campus_calls": 0,
+  "cloud_tests": 0,
+  "production_permission_changes": false,
+  "personal_database_changes": false,
+  "main_merged": false
+}

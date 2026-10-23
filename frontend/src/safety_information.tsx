@@ -9,6 +9,7 @@ export function SafetyInformation({value,requirements,summary,approved,review,ou
   blockers:ReactNode;notes:ReactNode;rawWarnings:{code:string;message:string}[];sources:(refs:Source[])=>ReactNode;label:(value:string)=>string;
   coverage?:TripCoverage|null;requestId?:string;planId?:string;readOnly?:boolean;advisory?:ReactNode}){
   if(!value)return <section className="panel"><h2>出行安全信息</h2><p>规划完成后，会在这里显示安全检查。</p></section>;
+  const roadClosed=value.evidence.some(item=>item.kind==='ROAD'&&item.road_state==='CLOSED');
   const issues=Object.values(value.data_quality).some(status=>status!=='AVAILABLE');
   return <section className="panel"><div className="section-title"><span className="eyebrow">出发前核对</span><h2>出行安全信息</h2></div>
     <div className="safety-summary"><strong>{summary}</strong><span>{value.risk_level==='UNKNOWN'?'目前信息不足，无法判断风险。':'风险：'+label(value.risk_level)}</span>{review&&<span>判断依据完整度：{label(value.confidence)}</span>}</div>
@@ -17,7 +18,7 @@ export function SafetyInformation({value,requirements,summary,approved,review,ou
     <div className="safety-quality">{Object.entries(value.data_quality).map(([kind,status])=>{const state=checkState(kind,status,value.evidence,requirements);return <div className={status==='AVAILABLE'&&state.title==='资料覆盖本次日期'?'quality-available':'quality-issue'} key={kind}><span>{checkNames[kind]??'安全信息'}</span><strong>{state.title}</strong></div>;})}</div>
     <p className="muted">资料覆盖本次日期不等于整个方案安全通过；最终资格仍以保存的评估和审核结果为准。</p>{blockers}<h3>接下来可以怎么做</h3><ul>
       {issues&&<li>核对下方资料的适用日期，可调整出行日期或营地，也可以保留草稿，待适用资料更新后再检查。</li>}
-      {value.requires_human_review&&!issues&&!approved&&!value.mandatory_blockers.length&&<li>这份方案需要审核员核对风险，审核完成后再确认保存。</li>}
+      {value.requires_human_review&&!roadClosed&&!issues&&!approved&&!value.mandatory_blockers.length&&<li>这份方案需要审核员核对风险，审核完成后再确认保存。</li>}
       {value.hazards.length>0&&<li>资料记录了天气、活动或通行风险，请查看下方的完整检查说明。</li>}
       {value.mandatory_blockers.length>0&&<li>先处理已列出的装备或安全条件；人工审核不能替代缺少的资料或解除关闭、禁火限制。</li>}
       {!issues&&!value.requires_human_review&&!value.mandatory_blockers.length&&<li>阅读行程与适用规定，按页面提示确认方案。</li>}

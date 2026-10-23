@@ -34,7 +34,9 @@ def display_status(run_status, version_status, logistics=None, safety=None, issu
     if version_status == 'FINALISED':
         return 'FINALISED'
     physical = {'ROAD_CLOSED', 'CAMPSITE_CLOSED', 'FIRE_PROHIBITED', 'HARD_CONSTRAINT'}
-    if any(v['code'] in physical for result in (logistics, safety) if result for v in result.get('mandatory_blockers', [])):
+    road_closed = safety and any(v.get('kind') == 'ROAD' and v.get('road_state') == 'CLOSED'
+        for v in safety.get('evidence', []))
+    if road_closed or any(v['code'] in physical for result in (logistics, safety) if result for v in result.get('mandatory_blockers', [])):
         return 'CANNOT_RELEASE'
     if any(v['category'] == 'USER_INPUT' and v['code'] != 'OVER_BUDGET' for v in issues):
         return 'NEEDS_USER_INPUT'
