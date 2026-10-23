@@ -64,6 +64,9 @@ role acceptance. This launcher intentionally does not enable model safety.
   they are not rewritten as a comprehensive ban on all gas/electric cooking.
 - The visible location-information panel is restricted to the matching 2.2
   source-catalogue digest; it is not projected into an unrelated saved snapshot.
+  The role-scoped server view emits only a public `campsite_catalogue_id` after
+  matching the registered version and seal. Internal digests and configuration
+  remain hidden from ordinary users.
 
 ## Local verification
 
@@ -83,3 +86,25 @@ The 750-metre walking access, lack of drinking-water supply, toilets and absence
 of showers were displayed along with the official link. Normal visible final
 page text contained no Demo/Synthetic labels. Private browser DB, snapshot,
 session, raw JUnit and screenshots remain in ignored `var/sydney-review/`.
+
+## Integration with main 49035a6
+
+The integration candidate combines Sydney source dd04109 with main 49035a6.
+Main's trip-series updates, profile adoption/diff, permission-scoped presentation,
+cooking preparation and database migration 11 are retained. Lightweight progress
+polling and validated parsed-snapshot reuse are retained from the Sydney parent.
+The SQLite migration was exercised on a backup of the prior isolated browser DB;
+no personal database or environment file was changed.
+
+Local integration verification: 96 targeted backend tests, 107 frontend tests,
+types, build, shared schemas and deterministic 12-file package comparison pass.
+This is not a complete backend regression or cloud CI result. The frontend build
+still reports the existing >500 kB chunk warning.
+
+The browser check reused the saved Little Beach request (25–27 October, two
+people, AUD 1000), changed registered water from 16 to 18 litres, displayed the
+exact profile difference, and explicitly confirmed a new check. The request did
+not need retyping. The new AUD 261 plan was finalised, while the previous final
+remained linked as same-trip history. No model service was called. The private
+SQLite copy, snapshots, JUnit and screenshots stay under ignored
+`var/sydney-main-review/` and `var/sydney-main-*.xml`.

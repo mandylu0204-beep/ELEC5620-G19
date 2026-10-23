@@ -38,6 +38,10 @@ class SqlitePersistencePort:
         if run['scope'] != encode(self.scope) or plan['active_run_id'] != self.scope.run_id:
             fail(ErrorCode.STALE_CONTEXT, '运行已被新任务取代，请刷新。')
         if writing or execution:
+            from .trip_series import require_current
+            require_current(connection, plan)
+            if plan['deleted_at']:
+                fail(ErrorCode.NOT_FOUND, '方案不存在。')
             lease = connection.execute('SELECT * FROM run_leases WHERE run_id=?', (self.scope.run_id,)).fetchone()
             if (self.attempt_id is not None and lease is None) or (lease and (lease['attempt_id'] != self.attempt_id or lease['expires_at'] <= self.clock())):
                 fail(ErrorCode.STALE_CONTEXT, '执行尝试已失效，迟到任务不能继续读写。')

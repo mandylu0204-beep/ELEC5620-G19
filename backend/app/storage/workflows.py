@@ -123,6 +123,8 @@ class WorkflowService:
         if not row:
             fail(ErrorCode.NOT_FOUND, '运行不存在。')
         plan = self.repository.own_plan(connection, user, row['plan_id'])
+        from .trip_series import require_current
+        require_current(connection, plan)
         if plan['active_run_id'] != run_id:
             fail(ErrorCode.STALE_CONTEXT, '运行已被新任务取代。')
         return plan, row, RunScope.model_validate_json(row['scope'])

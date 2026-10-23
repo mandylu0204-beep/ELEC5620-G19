@@ -19,6 +19,14 @@ from test_rule_orchestration import FailOnce
 KEY = (ExecutionMode.AGENT, 'CampMate Synthetic Demo Dataset v2')
 
 
+from audit_test_reads import internal_audit_reads, json_with_internal_audits
+
+# These tests verify private persistence; public role-scoped reads are tested separately.
+wait_run = internal_audit_reads(wait_run)
+launch = internal_audit_reads(launch)
+finalise = internal_audit_reads(finalise)
+
+
 def counts(app):
     with app.state.database.transaction(write=False) as db:
         return {name:db.execute('SELECT COUNT(*) FROM '+name).fetchone()[0] for name in
@@ -29,7 +37,7 @@ def test_actual_campus_components_through_http_save_trace_and_immutable_final(tm
     requests, _ = mock_campus(monkeypatch)
     app = application(tmp_path)
     with TestClient(app) as client:
-        meta = client.get('/api/v1/meta').json()
+        meta = json_with_internal_audits(client, client.get('/api/v1/meta'))
         assert meta['supported_operations'] == ['PLAN', 'REASSESS', 'REVISE'] and meta['features']['model_planning']
         assert meta['planning_stages']['itinerary']=='model' and meta['planning_stages']['safety']=='rules'
         assert requests == []  # readiness/meta must never probe the model
@@ -65,7 +73,7 @@ def test_atomic_trace_insert_failure_rolls_back_version_then_retry_generates_aga
         request=confirmed_request(client,headers)
         begun=start(client,headers,request_id=request['request_id'],revision=request['revision'])
         assert begun.status_code==202
-        failed=wait_run(client,begun.json()['run_id'],'FAILED')
+        failed=wait_run(client,json_with_internal_audits(client, begun)['run_id'],'FAILED')
         assert failed['retry_available'] and len(requests)==2
         assert counts(app)['versions']==counts(app)['model_planning_traces']==0
         with app.state.database.transaction() as db:
@@ -81,7 +89,7 @@ def confirmed_request(client,headers,case='normal'):
     assert client.put('/api/v1/profile',headers=headers,json={'expected_revision':0,'profile':INPUTS['profile']}).status_code==200
     saved=client.post('/api/v1/requests',headers=headers,json=CASES[case]['request'])
     assert saved.status_code==201,saved.text
-    return confirm_saved(client,headers,saved.json(),'a16-confirm-request-123456')
+    return confirm_saved(client,headers,json_with_internal_audits(client, saved),'a16-confirm-request-123456')
 
 
 def test_lost_model_save_receipt_restarts_without_regenerating_or_replacing_trace(tmp_path,monkeypatch):
@@ -105,13 +113,13 @@ def test_lost_model_save_receipt_restarts_without_regenerating_or_replacing_trac
         headers=sign_in(client)
         request=confirmed_request(client,headers)
         begun=start(client,headers,request_id=request['request_id'],revision=request['revision'])
-        failed=wait_run(client,begun.json()['run_id'],'FAILED')
+        failed=wait_run(client,json_with_internal_audits(client, begun)['run_id'],'FAILED')
         trace=failed['model_planning_trace'];content=failed['version']['content']
         assert trace and len(requests)==2
     # Same database/new supervisor, not an in-memory replay of a model result.
     with TestClient(application(tmp_path)) as client:
         headers=sign_in(client)
-        failed=client.get('/api/v1/runs/'+failed['run']['run_id']).json()
+        failed=json_with_internal_audits(client, client.get('/api/v1/runs/'+failed['run']['run_id']))
         assert retry(client,headers,failed).status_code==202
         saved=wait_run(client,failed['run']['run_id'],'SUCCEEDED')
         assert len(requests)==2 and saved['version']['content']==content
@@ -124,7 +132,7 @@ def test_no_match_does_not_invent_a_model_call_or_trace(tmp_path,monkeypatch):
     with TestClient(application(tmp_path,'no_match')) as client:
         headers=sign_in(client);request=confirmed_request(client,headers,'no_match')
         begun=start(client,headers,request_id=request['request_id'],revision=request['revision'])
-        result=wait_run(client,begun.json()['run_id'],'SUCCEEDED')
+        result=wait_run(client,json_with_internal_audits(client, begun)['run_id'],'SUCCEEDED')
         assert result['recommendations']['result']['search_outcome']=='NO_MATCH'
         assert requests==[] and result['version'] is None and not result.get('model_planning_trace')
 
@@ -145,10 +153,10 @@ def test_changed_model_configuration_blocks_old_finalisation_without_live_probe(
     with TestClient(application(tmp_path)) as client:
         headers=sign_in(client);saved=launch(client,headers,'normal')
         monkeypatch.setattr(config,'CampusModelSettings',lambda:settings.model_copy(update={'timeout_seconds':6}))
-        current=client.get('/api/v1/plans/'+saved['plan']['plan_id']).json()
+        current=json_with_internal_audits(client, client.get('/api/v1/plans/'+saved['plan']['plan_id']))
         assert current['current_inputs_error'] and not current['finalisation_available']
         response=client.post('/api/v1/plans/'+saved['plan']['plan_id']+'/finalise',headers=headers,json=final_command(saved))
-        assert response.status_code==409 and response.json()['error']['code']=='STALE_CONTEXT'
+        assert response.status_code==409 and json_with_internal_audits(client, response)['error']['code']=='STALE_CONTEXT'
         assert len(requests)==2
 
 
@@ -159,7 +167,7 @@ def test_missing_model_key_is_not_ready_and_never_registers_a_run(tmp_path,monke
     app=application(tmp_path)
     with TestClient(app) as client:
         assert client.get('/api/v1/health/ready').status_code==503
-        assert not client.get('/api/v1/meta').json()['features']['planning']
+        assert not json_with_internal_audits(client, client.get('/api/v1/meta'))['features']['planning']
         headers=sign_in(client)
         response=start(client,headers,request_id='missing-request')
         assert response.status_code==404  # owner/existence guard still runs first
@@ -174,7 +182,7 @@ def test_more_than_thirty_nights_is_rejected_before_a_model_run(tmp_path,monkeyp
         body={'raw_text':'Two people in CampMate Demo Region from 2026-11-06 for 31 nights, AUD 5000. We want ready-to-eat meals.',
             'explicit_fields':{'destination':'CampMate Demo Region','start_date':'2026-11-06','duration_nights':31,'budget_cents':500000,'preferences':['ready-to-eat meals']}}
         saved=client.post('/api/v1/requests',headers=headers,json=body)
-        request=confirm_saved(client,headers,saved.json(),'a16-long-confirm-123456')
+        request=confirm_saved(client,headers,json_with_internal_audits(client, saved),'a16-long-confirm-123456')
         response=start(client,headers,request_id=request['request_id'],revision=request['revision'])
         assert response.status_code==422 and counts(client.app)['runs']==0 and requests==[]
 
@@ -239,7 +247,7 @@ def test_invalid_trace_never_creates_a_model_version(tmp_path,monkeypatch,patch,
     with TestClient(app) as client:
         headers=sign_in(client);request=confirmed_request(client,headers)
         begun=start(client,headers,request_id=request['request_id'],revision=request['revision'])
-        failed=wait_run(client,begun.json()['run_id'],'FAILED')
+        failed=wait_run(client,json_with_internal_audits(client, begun)['run_id'],'FAILED')
         assert failed['run']['error']['code']==code
         assert counts(app)['versions']==counts(app)['model_planning_traces']==0
 
@@ -270,5 +278,5 @@ def test_upgrade_from_schema_five_preserves_existing_profiles_and_adds_empty_aud
     with db.transaction(write=False) as connection:
         assert connection.execute('SELECT payload FROM profiles').fetchone()[0]=='{"group_size":2}'
         assert connection.execute('SELECT COUNT(*) FROM model_planning_traces').fetchone()[0]==0
-        assert connection.execute('SELECT COUNT(*) FROM schema_migrations').fetchone()[0]==10
+        assert connection.execute('SELECT COUNT(*) FROM schema_migrations').fetchone()[0]==11
     assert db.ready()

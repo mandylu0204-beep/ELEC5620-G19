@@ -9,8 +9,31 @@ from .contracts.enums import ErrorCode
 from .http_accounts import current_user, writing_user
 from .storage.finalisation import FinaliseInput
 from .storage.repository import Repository
+from .application.presentation import plan_response, request_response
+from .storage.trip_series import TripSeriesService, SuccessorInput, DeleteSeriesInput
 
 router = APIRouter(prefix='/api/v1')
+
+
+@router.get('/trip-series')
+def list_series(request: Request, user: User = Depends(current_user)):
+    return TripSeriesService(request.app.state.database).list(user)
+
+
+@router.get('/trip-series/{series_id}')
+def read_series(series_id: str, request: Request, user: User = Depends(current_user)):
+    return TripSeriesService(request.app.state.database).detail(user, series_id)
+
+
+@router.post('/trip-series/{series_id}/delete', status_code=204)
+def delete_series(series_id: str, body: DeleteSeriesInput, request: Request, user: User = Depends(writing_user)):
+    TripSeriesService(request.app.state.database).delete(user, series_id, body)
+    return Response(status_code=204)
+
+
+@router.post('/plans/{plan_id}/successor-requests', status_code=201)
+def successor_request(plan_id: str, body: SuccessorInput, request: Request, user: User = Depends(writing_user)):
+    return request_response(TripSeriesService(request.app.state.database).create_successor(user, plan_id, body))
 
 
 @router.delete('/plans/{plan_id}', status_code=204)
@@ -175,6 +198,8 @@ def retry_fields(request, user, data):
         except ContractFailure:
             note = '当前来源或运行配置已变化，仅根据本次保存的排除理由比较；原报价、容量和设施值无法核对，保持未知。'
         data['recommendation_guidance'] = guidance(data, dataset, metadata_note=note)
+    if data.get('trip_series') and not data['trip_series']['is_current']:
+        data['retry_available'] = data['revision_available'] = data['reassessment_available'] = data['finalisation_available'] = False
     return data
 
 
@@ -185,17 +210,17 @@ def finalise(plan_id: str, body: FinaliseInput, request: Request, user: User = D
 
 @router.get('/plans/{plan_id}/finals/{final_id}')
 def final_snapshot(plan_id: str, final_id: str, request: Request, user: User = Depends(current_user)):
-    return request.app.state.finalisation.detail(user, plan_id, final_id)
+    return plan_response(request.app.state.finalisation.detail(user, plan_id, final_id), user)
 
 
 @router.get('/plans/{plan_id}')
 def plan_detail(plan_id: str, request: Request, run_id: str | None = None, user: User = Depends(current_user)):
-    return retry_fields(request, user, request.app.state.plan_queries.detail(user, plan_id, run_id))
+    return plan_response(retry_fields(request, user, request.app.state.plan_queries.detail(user, plan_id, run_id)), user)
 
 
 @router.get('/runs/{run_id}')
 def run_detail(run_id: str, request: Request, user: User = Depends(current_user)):
-    return retry_fields(request, user, request.app.state.plan_queries.run(user, run_id))
+    return plan_response(retry_fields(request, user, request.app.state.plan_queries.run(user, run_id)), user)
 
 
 @router.get('/runs/{run_id}/progress')

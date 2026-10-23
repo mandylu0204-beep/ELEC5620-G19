@@ -10,6 +10,18 @@ const issue=(field,code='EQUIPMENT_DETAILS',extra={})=>({issue_id:field,code,cat
 const draft=(equipment=[],extra={})=>({equipment,transport:'CAR',vehicles:'1',km:'100',children:'no',childrenCount:'0',experience:'BEGINNER',...extra});
 const tent={item_key:'tent',label:'帐篷',quantity:'1',unit:'item',capacity:'',confirmed:true};
 
+test('conditional cooking preparation creates two blank rows together without confirmation, duplication or fake blockers',()=>{
+  const cookingCatalog=[...catalog,['fuel_canister','燃料罐','item']];
+  const root=issue('cooking_method','COOKING_ARRANGEMENT',{target:'REQUEST',related_equipment:['camping_stove','fuel_canister']});
+  const prepared=prepareMissingEquipment([], [root], '',cookingCatalog);
+  assert.deepEqual(prepared.map(row=>row.item_key),['camping_stove','fuel_canister']);
+  for(const row of prepared)assert.deepEqual([row.quantity,row.capacity,row.confirmed],['','',false]);
+  assert.deepEqual(profileGuidance(draft(prepared),[root]),{});
+  assert.equal(prepareMissingEquipment(prepared,[root],'',cookingCatalog),prepared);
+  assert.equal(prepareMissingEquipment([],[],'',cookingCatalog,['camping_stove','fuel_canister']).length,2);
+  assert.deepEqual(prepareMissingEquipment([],[{...root,code:'PRICE_DATA',category:'DATA_GAP'}],'',cookingCatalog),[]);
+});
+
 test('one visit prepares every known missing item without filling inventory facts or altering existing input',()=>{
   const original=[{...tent}];
   const result=prepareMissingEquipment(original,[issue('equipment.tent.capacity'),issue('equipment.vehicle.capacity'),

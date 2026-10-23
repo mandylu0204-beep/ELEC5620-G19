@@ -16,6 +16,7 @@ from .http_accounts import router as accounts_router
 from .http_requests import router as requests_router
 from .http_plans import router as plans_router
 from .http_reviews import router as reviews_router
+from .http_preparation import router as preparation_router
 from .storage.reviews import ReviewService
 from .storage.finalisation import FinalisationService
 from .storage.workflows import WorkflowService
@@ -71,6 +72,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.include_router(requests_router)
     application.include_router(plans_router)
     application.include_router(reviews_router)
+    application.include_router(preparation_router)
 
     @application.middleware('http')
     async def trace_request(request: Request, call_next):

@@ -15,7 +15,7 @@ export function evidenceState(item:CheckEvidence,dates?:Dates|null){
   if(item.status==='MISSING')return {title:item.summary||item.source_refs.length?'资料待核实':'暂无适用资料',
     detail:item.summary||item.source_refs.length?'已有资料，但适用范围、发布时间或内容尚不能支持此次行程的判断。':'暂时没有适用于此次行程的资料，无法完成这项检查。'};
   if(item.road_state==='CLOSED')return {title:'道路关闭',detail:'资料明确显示通往营地的道路关闭，需要更换可通行的营地。'};
-  if(item.status==='AVAILABLE')return {title:'资料适用',detail:'已提供适用于此次行程的资料。'};
+  if(item.status==='AVAILABLE')return {title:'资料覆盖本次日期',detail:'资料覆盖本次日期；是否存在关闭、禁火或其他限制，仍须查看具体检查结果。'};
   return {title:'信息待确认',detail:'目前无法确认这项信息。'};
 }
 
@@ -28,12 +28,14 @@ export function checkState(kind:string,status:string,evidence:CheckEvidence[],da
   return matching.length?evidenceState(matching[0],dates):{title:'暂无适用资料',detail:'未提供可核对的资料。'};
 }
 
-export function planRowState(row:{run_status:string|null;stage:string|null;version_status:string|null;search_outcome?:string|null}){
+export function planRowState(row:{run_status:string|null;stage:string|null;version_status:string|null;search_outcome?:string|null;display_status?:string|null}){
   if(row.run_status==='PENDING')return '等待开始规划';
   if(row.run_status==='RUNNING')return '正在准备方案';
   if(row.run_status==='FAILED')return '规划未完成';
   if(row.run_status==='CANCELLED')return '已取消规划';
   if(row.search_outcome==='NO_MATCH')return '未找到满足条件的营地';
+  const display:Record<string,string>={NEEDS_USER_INPUT:'需要用户补充',NEEDS_EVIDENCE:'需要补齐检查资料',NEEDS_REVISION:'需要修改方案',AWAITING_REVIEW:'等待人工审核',CANNOT_RELEASE:'不能放行'};
+  if(row.display_status&&display[row.display_status])return display[row.display_status];
   return ({FINALISED:'最终方案已保存',BLOCKED:'方案有待完善',REVISION_REQUIRED:'需要调整方案',
     ESCALATED:'等待审核员处理',ELIGIBLE_FOR_FINALISATION:'方案已生成，待确认保存',ASSESSING:'正在检查方案',
     REJECTED:'审核未通过',DRAFT:'方案草稿'} as Record<string,string>)[row.version_status??'']??'本次尚未生成行程';

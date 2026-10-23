@@ -1,5 +1,4 @@
 import catalogue from '../../data/sydney_surrounds_v2_2/data/source_catalogue.json';
-import manifest from '../../data/sydney_surrounds_v2_2/manifest.json';
 
 type Place = {
   source_urls: string[];
@@ -8,10 +7,9 @@ type Place = {
   fields: Record<string, {value: unknown; status: string}>;
 };
 
-export function CampsiteDetails({id,source}:{id:string;source?:{dataset_version:string;file_digests?:Record<string,string>}}) {
+export function CampsiteDetails({id,catalogueId}:{id:string;catalogueId?:string}) {
   // Never project today's compiled place facts into a different saved source.
-  if(source?.dataset_version!==catalogue.dataset_version ||
-     source.file_digests?.['source_catalogue.json']!==manifest.files_sha256['data/source_catalogue.json'])return null;
+  if(catalogueId!=='sydney-surrounds-2.2-2026-10-23')return null;
   const places:Record<string,Place> = catalogue.campsites;
   const place=places[id];
   if(!place)return null; // Historical fictional IDs retain their original data.

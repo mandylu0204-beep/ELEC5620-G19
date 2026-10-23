@@ -7,10 +7,12 @@ export type ProfileDraft={equipment:DraftEquipment[];transport:string;vehicles:s
 
 function equipmentKey(field:string){return /^equipment\.([a-z_]+)(?:\.(quantity|capacity))?$/.exec(field)?.[1]??null;}
 
-export function prepareMissingEquipment(items:DraftEquipment[],issues:LogisticsIssue[],focus:string,catalog:Catalog){
+export function prepareMissingEquipment(items:DraftEquipment[],issues:LogisticsIssue[],focus:string,catalog:Catalog,preparationKeys:string[]=[]){
   const keys=new Set(issues.filter(issue=>issue.target==='PROFILE'&&issue.category!=='DATA_GAP')
     .map(issue=>equipmentKey(issue.field)).filter((key):key is string=>!!key));
   const focused=equipmentKey(focus);if(focused)keys.add(focused);
+  for(const key of preparationKeys)keys.add(key);
+  for(const issue of issues.filter(item=>item.code==='COOKING_ARRANGEMENT'))for(const key of issue.related_equipment??[])keys.add(key);
   const added:DraftEquipment[]=[];
   for(const key of keys){
     const type=catalog.find(([name])=>name===key);

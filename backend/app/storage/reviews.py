@@ -13,6 +13,7 @@ from .plan_queries import PlanQueries
 from .port import SqlitePersistencePort
 from .repository import Repository, encode, fingerprint, now
 from ..application.assessment_audits import load_audits
+from ..application.review_policy import approval_required, REVIEW_POLICY_VERSION
 
 
 class ReviewInput(ContractModel):
@@ -36,7 +37,7 @@ class ReviewService:
     def __init__(self, database, *, context_guard=None):
         self.db, self.context_guard = database, context_guard
 
-    def queue(self, user):
+    def queue(self, user, *, assistance=False):
         require_role(user, 'FOUNDER')
         with self.db.transaction(write=False) as connection:
             rows = connection.execute('''SELECT p.id AS plan_id,
@@ -47,6 +48,8 @@ class ReviewService:
                 JOIN run_versions rv ON rv.run_id=r.id AND rv.version_id=v.id
                 JOIN users u ON u.id=p.owner_id
                 WHERE p.deleted_at IS NULL AND v.status IN ('ESCALATED','BLOCKED','REVISION_REQUIRED') AND r.status='SUCCEEDED'
+                AND NOT EXISTS (SELECT 1 FROM plan_series_members m JOIN trip_series s ON s.id=m.series_id
+                    WHERE m.plan_id=p.id AND (s.deleted_at IS NOT NULL OR s.current_plan_id IS NOT p.id))
                 AND NOT EXISTS (SELECT 1 FROM reviews h WHERE h.run_id=r.id AND h.version_id=v.id)
                 ORDER BY v.created_at,p.id''').fetchall()
             result = []
@@ -63,6 +66,13 @@ class ReviewService:
                         'SELECT kind,payload FROM assessments WHERE run_id=? AND version_id=?',
                         (item['run_id'], item['plan_version_id']))}
                 logistics, safety = assessments.get('LOGISTICS', {}), assessments.get('SAFETY', {})
+                version = Repository.stored_version(connection, scope)
+                current_eligibility = SqlitePersistencePort(self.db, scope_owner(connection, item['plan_id']), scope).decision(connection, version.version_context)[1].model_dump(mode='json')
+                approval = approval_required([{'kind': key, 'result': value} for key, value in assessments.items()], current_eligibility)
+                if approval == assistance:
+                    continue
+                item['task_kind'] = 'ASSISTANCE' if assistance else 'RISK_APPROVAL'
+                item['review_policy_version'] = REVIEW_POLICY_VERSION
                 route = connection.execute(
                     "SELECT result FROM write_receipts WHERE run_id=? AND operation='route'",
                     (item['run_id'],)).fetchone()
@@ -94,7 +104,9 @@ class ReviewService:
             fail(ErrorCode.INVALID_STATE, '当前运行尚未完成评估和路由，请等待。')
         if data['version']['status'] not in {'ESCALATED','BLOCKED','REVISION_REQUIRED'} and not data['reviews']:
             fail(ErrorCode.FORBIDDEN, '此方案不属于人工审核范围。')
-        data['review_available'] = (not data['reviews'] and data['version']['status'] in {'ESCALATED','BLOCKED','REVISION_REQUIRED'})
+        data['review_available'] = not data['reviews'] and approval_required(data['assessments'], data['eligibility'])
+        data['review_policy_version'] = REVIEW_POLICY_VERSION
+        data['review_scope'] = 'HISTORY' if data.get('trip_series') and not data['trip_series']['is_current'] else 'APPROVAL' if data['review_available'] else 'CORRECTION'
         if self.context_guard is not None:
             with self.db.transaction(write=False) as connection:
                 run = connection.execute('SELECT scope FROM runs WHERE id=?', (data['run']['run_id'],)).fetchone()
@@ -111,6 +123,8 @@ class ReviewService:
             plan = connection.execute('SELECT * FROM plans WHERE id=? AND deleted_at IS NULL', (plan_id,)).fetchone()
             if not plan:
                 fail(ErrorCode.NOT_FOUND, '方案不存在。')
+            from .trip_series import require_current
+            require_current(connection, plan)
             run = connection.execute('SELECT * FROM runs WHERE id=?', (plan['active_run_id'],)).fetchone()
             if not run or body.version_context.plan_id != plan_id:
                 fail(ErrorCode.STALE_CONTEXT, '审核上下文已变化，请刷新。')
@@ -135,6 +149,9 @@ class ReviewService:
                 fail(ErrorCode.INVALID_STATE, '当前版本不再接受审核，请刷新。')
             if not connection.execute("SELECT 1 FROM write_receipts WHERE run_id=? AND operation='route'", (scope.run_id,)).fetchone():
                 fail(ErrorCode.INVALID_STATE, '当前运行尚未保存路由。')
+            eligibility_before = port.decision(connection, body.version_context)[1].model_dump(mode='json')
+            if not approval_required([item.model_dump(mode='json') for item in assessments], eligibility_before):
+                fail(ErrorCode.INVALID_STATE, '当前结果需要补充或修正，不属于风险审批任务；审批不能解除硬性缺口。')
             review = ValidReview(review_id=uuid4().hex, version_context=body.version_context,
                 assessment_ids=actual, reviewer_user_id=user.id, decision=body.decision, reason=body.reason)
             connection.execute('INSERT INTO reviews VALUES(?,?,?,?,?,?)', (review.review_id, scope.run_id, body.version_context.plan_version_id, user.id, encode(review), now()))
@@ -152,3 +169,7 @@ class ReviewService:
                 'revision_execution_available': False, 'finalisation_available': False}
             connection.execute('INSERT INTO review_commands VALUES(?,?,?,?,?)', (user.id, body.command_key, review.review_id, input_hash, encode(result)))
             return result
+
+
+def scope_owner(connection, plan_id):
+    return connection.execute('SELECT owner_id FROM plans WHERE id=?', (plan_id,)).fetchone()['owner_id']

@@ -1,14 +1,15 @@
 import { Link } from 'react-router-dom';
+import { tripUpdatePath } from './trip_update';
 
 type Issue={field:string;title:string;status:'MISMATCH'|'UNVERIFIED';expected:string|null;actual:string|null;detail:string;suggestion:string;original_reason:string};
 type NearMatch={campsite_id:string;name:string;region:string|null;rank:number;mismatch_count:number;unverified_count:number;issues:Issue[];matched_preferences:string[];uncertainties:string[];nightly_fee_cents:number|null;campsite_subtotal_cents:number|null;budget_excess_cents:number|null;source_ref:{provenance:{source_date:string}}|null};
 export type RecommendationGuidance={near_matches:NearMatch[];excluded_count:number;ranking:string;metadata_note:string|null;scope:string};
 const amount=(cents:number|null)=>cents===null?'未知':new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',currencyDisplay:'code'}).format(cents/100);
 
-export function NearMatches({value,requestId}:{value:RecommendationGuidance|null|undefined;requestId:string}){
+export function NearMatches({value,planId,readOnly=false}:{value:RecommendationGuidance|null|undefined;requestId?:string;planId?:string;readOnly?:boolean}){
   if(!value)return null;
   return <section className="panel near-matches" aria-label="最接近的营地比较">
-    <span className="eyebrow">COMPARE & ADJUST</span><h2>最接近的营地</h2>
+    <span className="eyebrow">比较与调整</span><h2>最接近的营地</h2>
     <p>这 {value.near_matches.length} 个营地最接近你的需求，仍有以下条件需要调整或核实。</p>
     <p className="muted">以下价格仅含营地费。</p>
     {value.metadata_note&&<p className="clarifications">{value.metadata_note}</p>}
@@ -25,7 +26,7 @@ export function NearMatches({value,requestId}:{value:RecommendationGuidance|null
       {item.matched_preferences.length>0&&<p>已知符合的偏好：{item.matched_preferences.join('、')}</p>}
       {item.uncertainties.map((text,index)=><p className="muted" key={index}>{text}</p>)}
       {item.source_ref&&<p className="muted">资料日期：{item.source_ref.provenance.source_date}</p>}
-      <Link className="text-link" to={'/request?copy_from='+encodeURIComponent(requestId)}>参考差异，调整需求 ↗</Link>
+      {planId&&!readOnly&&<Link className="text-link" to={tripUpdatePath(planId)}>参考差异，调整本次需求 ↗</Link>}
     </article>)}</div>
     {!value.near_matches.length&&<p>当前保存结果没有可比较的营地记录；请核对地区与数据来源。</p>}
   </section>;

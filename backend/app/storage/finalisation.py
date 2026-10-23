@@ -33,7 +33,7 @@ class FinaliseInput(ContractModel):
 
 def final_index(row, plan):
     value = json.loads(row['payload'])
-    return {'final_id': row['id'], 'plan_version_id': row['version_id'], 'run_id': row['run_id'],
+    return {'plan_id': row['plan_id'], 'final_id': row['id'], 'plan_version_id': row['version_id'], 'run_id': row['run_id'],
         'version_number': value['version_number'], 'finalised_at': row['created_at'],
         'is_current': plan['current_version_id'] == row['version_id'] and plan['active_run_id'] == row['run_id']
             and plan['final_version_id'] == row['version_id']}
@@ -56,13 +56,20 @@ class FinalisationService:
             if snapshot.get('model_assessment_audits', {}) != audits:
                 from ..application.logistics_audit import integrity
                 integrity()
-            return {'final_record': snapshot, **final_index(row, plan)}
+            index = final_index(row, plan)
+            from .trip_series import plan_series_view
+            series = plan_series_view(connection, plan_id)
+            if series and not series['is_current']:
+                index['is_current'] = False
+            return {'final_record': snapshot, **index}
 
     def submit(self, user, plan_id, body: FinaliseInput):
         require_role(user, 'CAMPER')
         with self.db.transaction() as connection:
             plan = Repository.own_plan(connection, user, plan_id)
             run = connection.execute('SELECT * FROM runs WHERE id=?', (plan['active_run_id'],)).fetchone()
+            from .trip_series import require_current
+            require_current(connection, plan)
             if not run or body.version_context.plan_id != plan_id:
                 fail(ErrorCode.STALE_CONTEXT, '最终化上下文已变化，请刷新。')
             scope = RunScope.model_validate_json(run['scope'])

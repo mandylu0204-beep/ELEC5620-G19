@@ -26,7 +26,7 @@ class RequestRepository:
 
     def result(self, connection, row):
         summary = connection.execute('SELECT * FROM request_summaries WHERE request_id=?', (row['id'],)).fetchone()
-        return {
+        result = {
             'request_id': row['id'], 'raw_text': row['raw_text'], 'explicit_fields': json.loads(row['payload']),
             'status': row['status'], 'revision': row['revision'], 'created_at': row['created_at'],
             'summary': json.loads(summary['result']) if summary and summary['result'] else None,
@@ -36,6 +36,24 @@ class RequestRepository:
             'confirmed_context': json.loads(row['confirmed_context']) if row['confirmed_context'] else None,
             'planning_available': False,
         }
+        origin = connection.execute('SELECT o.*,s.revision FROM successor_requests o JOIN trip_series s ON s.id=o.series_id WHERE o.request_id=? AND s.deleted_at IS NULL', (row['id'],)).fetchone()
+        if origin:
+            source = connection.execute('SELECT id FROM plans WHERE id=? AND deleted_at IS NULL', (origin['predecessor_plan_id'],)).fetchone()
+            result.update(trip_series_id=origin['series_id'], predecessor_plan_id=source['id'] if source else None,
+                series_revision=origin['revision'])
+            original = connection.execute('SELECT s.profile_revision FROM plans p JOIN request_summaries s ON s.request_id=p.request_id WHERE p.id=?', (origin['predecessor_plan_id'],)).fetchone()
+            result['source_profile_revision'] = original['profile_revision'] if original else None
+            if source:
+                # Read the immutable run named by the origin, not the latest
+                # personal profile or an accidentally newer source run.
+                context = json.loads(origin['source_context'])
+                pinned = connection.execute('SELECT confirmed_context FROM runs WHERE id=? AND plan_id=?',
+                    (context['expected_active_run_id'], origin['predecessor_plan_id'])).fetchone()
+                if pinned:
+                    snapshot = json.loads(pinned['confirmed_context'])
+                    result['source_profile_snapshot'] = snapshot['profile_snapshot']
+                    result['source_requirements'] = snapshot['requirements']
+        return result
 
     def create(self, user, raw_text, explicit):
         require_role(user, 'CAMPER')
@@ -51,7 +69,11 @@ class RequestRepository:
     def list(self, user):
         require_role(user, 'CAMPER')
         with self.db.transaction(write=False) as connection:
-            return [dict(row) for row in connection.execute('SELECT id AS request_id,status,revision,raw_text,created_at FROM requests WHERE owner_id=? AND NOT EXISTS (SELECT 1 FROM deleted_requests d WHERE d.request_id=requests.id) ORDER BY created_at DESC', (user.id,))]
+            return [dict(row) for row in connection.execute('''SELECT q.id AS request_id,q.status,q.revision,q.raw_text,q.created_at,
+                o.series_id AS trip_series_id,CASE WHEN o.request_id IS NULL THEN 0 ELSE 1 END AS is_trip_update
+                FROM requests q LEFT JOIN successor_requests o ON o.request_id=q.id
+                WHERE q.owner_id=? AND NOT EXISTS (SELECT 1 FROM deleted_requests d WHERE d.request_id=q.id)
+                ORDER BY q.created_at DESC''', (user.id,))]
 
     def delete(self, user, request_id):
         with self.db.transaction() as connection:
@@ -64,6 +86,8 @@ class RequestRepository:
     def edit(self, user, request_id, expected_revision, raw_text, explicit):
         with self.db.transaction() as connection:
             row = self.own(connection, user, request_id)
+            from .trip_series import validate_successor
+            validate_successor(connection, user, request_id)
             self.check_revision(row, expected_revision)
             if row['status'] == 'CONFIRMED':
                 fail(ErrorCode.INVALID_STATE, '已确认需求不能原地修改，请新建请求。')
@@ -74,6 +98,8 @@ class RequestRepository:
     def begin_analysis(self, user, request_id, expected_revision, demo, dataset):
         with self.db.transaction() as connection:
             row = self.own(connection, user, request_id)
+            from .trip_series import validate_successor
+            validate_successor(connection, user, request_id)
             self.check_revision(row, expected_revision)
             if row['status'] in {'CONFIRMED','ANALYSING'}:
                 fail(ErrorCode.INVALID_STATE, '此请求已确认或正在处理。')
@@ -110,6 +136,8 @@ class RequestRepository:
                 if receipt['request_id'] != request_id or receipt['input_hash'] != input_hash:
                     fail(ErrorCode.IDEMPOTENCY_CONFLICT, '同一确认 key 不能提交不同请求或摘要。')
                 return self.result(connection, row)
+            from .trip_series import validate_successor
+            validate_successor(connection, user, request_id)
             self.check_revision(row, expected_revision)
             if row['status'] != 'AWAITING_CONFIRMATION':
                 fail(ErrorCode.INVALID_STATE, '请先完成澄清并查看最新摘要。')

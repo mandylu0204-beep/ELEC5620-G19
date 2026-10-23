@@ -8,7 +8,8 @@ from fastapi.testclient import TestClient
 from app.contracts.dto import ConfirmedContext
 from test_plan_changes import change
 from test_requests import sign_in
-from test_trip_evidence_http import PACKAGE, app, launch, wait_run
+from test_trip_evidence_http import PACKAGE, app, launch
+from safety_runtime_fixtures import wait_run  # Keep these assertions on public reads.
 
 
 def counts(application):
@@ -65,7 +66,8 @@ def test_optional_dates_are_individually_queried_and_never_saved_as_user_require
         coverage = detail['trip_evidence_coverage']
         assert any(item['code'] == 'NOT_YET_OBSERVED' for item in coverage['issues'])
         assert 0 < len(coverage['alternative_dates']) <= 3
-        confirmed = ConfirmedContext.model_validate(detail['confirmed_context'])
+        from audit_test_reads import CAMPER
+        confirmed = ConfirmedContext.model_validate(application.state.plan_queries.detail(CAMPER, detail['plan']['plan_id'])['confirmed_context'])
         snapshot = application.state.runtime.resolve()
         for candidate in coverage['alternative_dates']:
             raw = confirmed.requirements.model_dump()
@@ -101,7 +103,8 @@ def test_alternative_campsites_are_verified_without_switching_current_plan(tmp_p
         assert detail['version']['content']['selected_campsite_ids'] == ['demo-wattle-rest']
         alternatives = detail['trip_evidence_coverage']['alternative_campsites']
         assert 0 < len(alternatives) <= 3 and not detail['finalisation_available']
-        confirmed = ConfirmedContext.model_validate(detail['confirmed_context'])
+        from audit_test_reads import CAMPER
+        confirmed = ConfirmedContext.model_validate(application.state.plan_queries.detail(CAMPER, detail['plan']['plan_id'])['confirmed_context'])
         snapshot = application.state.runtime.resolve()
         for candidate in alternatives:
             assert candidate['campsite_id'] != 'demo-wattle-rest'

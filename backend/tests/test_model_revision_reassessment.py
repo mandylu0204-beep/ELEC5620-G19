@@ -25,6 +25,14 @@ from test_rule_orchestration import FailOnce
 from test_v2_http_demo import launch, assessment, finalise
 
 
+from audit_test_reads import internal_audit_reads, json_with_internal_audits
+
+# These tests verify private persistence; public role-scoped reads are tested separately.
+wait_run = internal_audit_reads(wait_run)
+launch = internal_audit_reads(launch)
+finalise = internal_audit_reads(finalise)
+
+
 def mock_revision_model(monkeypatch):
     from app.llm import config, client
     requests, control = [], {}
@@ -117,7 +125,7 @@ def test_http_budget_revision_then_reassessment_preserves_original_trace_and_his
         body = command(old, feedback='cheaper campsite')
         response = change(client, headers, old, 'revise', feedback='cheaper campsite')
         assert response.status_code == 202, response.text
-        current = wait_run(client, response.json()['run_id'], 'SUCCEEDED')
+        current = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'SUCCEEDED')
         assert len(requests) == 4 and current['version']['version_number'] == 2
         assert current['version']['content']['selected_campsite_ids'] == ['demo-moonlit-field']
         assert assessment(current, 'LOGISTICS')['result']['total_cents'] == 23100
@@ -126,15 +134,15 @@ def test_http_budget_revision_then_reassessment_preserves_original_trace_and_his
         assert selection['a_revision_feedback'] == selection['revision_feedback'] == 'cheaper campsite'
         assert current['confirmed_context']['requirements'] == old['confirmed_context']['requirements']
         assert current['confirmed_context']['profile_snapshot'] == old['confirmed_context']['profile_snapshot']
-        assert client.post('/api/v1/plans/' + old['plan']['plan_id'] + '/revise', headers=headers, json=body).json() == response.json()
+        assert json_with_internal_audits(client, client.post('/api/v1/plans/' + old['plan']['plan_id'] + '/revise', headers=headers, json=body)) == json_with_internal_audits(client, response)
         conflict = client.post('/api/v1/plans/' + old['plan']['plan_id'] + '/revise', headers=headers, json={**body, 'feedback': 'change campsite'})
         assert conflict.status_code == 409
-        assert client.get('/api/v1/runs/' + old['run']['run_id']).json()['version']['content'] == old['version']['content']
+        assert json_with_internal_audits(client, client.get('/api/v1/runs/' + old['run']['run_id']))['version']['content'] == old['version']['content']
         path, snapshot = finalise(client, headers, current)
-        saved = client.get('/api/v1/plans/' + current['plan']['plan_id']).json()
+        saved = json_with_internal_audits(client, client.get('/api/v1/plans/' + current['plan']['plan_id']))
         response = change(client, headers, saved, key='reassess-model-version-123456')
         assert response.status_code == 202, response.text
-        reassessed = wait_run(client, response.json()['run_id'], 'SUCCEEDED')
+        reassessed = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'SUCCEEDED')
         assert len(requests) == 4  # No planning, recommendation, trace insert or synthetic usage.
         assert reassessed['version']['content'] == current['version']['content']
         assert reassessed['version']['version_context']['plan_version_id'] == current['version']['version_context']['plan_version_id']
@@ -146,11 +154,11 @@ def test_http_budget_revision_then_reassessment_preserves_original_trace_and_his
         choices = reassessed['confirmed_context']['dataset_context']['selection_config']
         assert choices['revision_feedback'] == '' and 'a_revision_feedback' not in choices
         assert not reassessed['last_final']['is_current'] and reassessed['finalisation_available']
-        assert client.get(path).json()['final_record'] == snapshot
+        assert json_with_internal_audits(client, client.get(path))['final_record'] == snapshot
         response = client.post('/api/v1/plans/' + current['plan']['plan_id'] + '/finalise', headers=headers,
             json=final_command(reassessed, key='final-after-model-reassessment'))
         assert response.status_code == 200, response.text
-        newest = client.get('/api/v1/plans/' + current['plan']['plan_id'] + '/finals/' + response.json()['final_id']).json()['final_record']
+        newest = json_with_internal_audits(client, client.get('/api/v1/plans/' + current['plan']['plan_id'] + '/finals/' + response.json()['final_id']))['final_record']
         assert newest['model_planning_trace'] == current['model_planning_trace']
         assert counts(app)['versions'] == counts(app)['model_planning_traces'] == 2
 
@@ -162,7 +170,7 @@ def test_http_revision_to_missing_evidence_keeps_real_blockers(tmp_path, monkeyp
         old = launch(client, headers, 'normal')
         response = change(client, headers, old, 'revise', feedback='change campsite')
         assert response.status_code == 202
-        current = wait_run(client, response.json()['run_id'], 'SUCCEEDED')
+        current = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'SUCCEEDED')
         assert len(requests) == 4 and not current['finalisation_available']
         assert assessment(current, 'SAFETY')['result']['data_quality']['WEATHER'] == 'MISSING'
         assert client.post('/api/v1/plans/' + old['plan']['plan_id'] + '/finalise', headers=headers, json=final_command(current)).status_code == 409
@@ -177,7 +185,7 @@ def test_http_failed_revision_never_modifies_confirmed_input_or_saves_version(tm
         control[failure] = True
         response = change(client, headers, old, 'revise', feedback='increase budget to 999 AUD')
         assert response.status_code == 202
-        failed = wait_run(client, response.json()['run_id'], 'FAILED')
+        failed = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'FAILED')
         assert failed['run']['error']['code'] == ('REQUEST_NOT_CONFIRMED' if failure == 'requirements_change' else 'CONTRACT_INVALID')
         if failure == 'requirements_change':
             assert failed['run']['error']['allowed_actions'] == ['EDIT_INPUT'] and not failed['retry_available']
@@ -188,7 +196,7 @@ def test_http_failed_revision_never_modifies_confirmed_input_or_saves_version(tm
         control.clear()
         response = change(client, headers, failed, key='recover-by-reassessment-123456')
         assert response.status_code == 202
-        restored = wait_run(client, response.json()['run_id'], 'SUCCEEDED')
+        restored = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'SUCCEEDED')
         assert restored['version']['content'] == old['version']['content']
         assert restored['model_planning_trace'] == old['model_planning_trace'] and len(requests) == 4
 
@@ -219,12 +227,12 @@ def test_http_revision_and_reassessment_recovery_survive_restart(tmp_path, monke
         response = change(client, headers, old, 'revise' if operation == 'REVISE' else 'reassess',
             feedback='cheaper campsite' if operation == 'REVISE' else None)
         assert response.status_code == 202
-        failed = wait_run(client, response.json()['run_id'], 'FAILED')
+        failed = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'FAILED')
         previous_trace = failed.get('model_planning_trace')
         previous_content = failed['version']['content'] if failed['version'] else None
     with TestClient(application(tmp_path, 'budget_revision')) as client:
         headers = sign_in(client)
-        failed = client.get('/api/v1/runs/' + failed['run']['run_id']).json()
+        failed = json_with_internal_audits(client, client.get('/api/v1/runs/' + failed['run']['run_id']))
         assert retry(client, headers, failed).status_code == 202
         restored = wait_run(client, failed['run']['run_id'], 'SUCCEEDED')
         assert restored['model_planning_trace']
@@ -240,10 +248,10 @@ def test_reassessment_of_reassessment_keeps_generation_audit_identity(tmp_path, 
         headers = sign_in(client)
         old = launch(client, headers, 'normal')
         for i in range(2):
-            current = client.get('/api/v1/plans/' + old['plan']['plan_id']).json()
+            current = json_with_internal_audits(client, client.get('/api/v1/plans/' + old['plan']['plan_id']))
             response = change(client, headers, current, key=f'chain-reassessment-{i}-123456')
             assert response.status_code == 202
-            saved = wait_run(client, response.json()['run_id'], 'SUCCEEDED')
+            saved = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'SUCCEEDED')
             assert saved['model_planning_trace'] == old['model_planning_trace']
             assert saved['version']['content'] == old['version']['content']
         assert len(requests) == 2 and counts(client.app)['model_planning_traces'] == 1
@@ -257,10 +265,10 @@ def test_model_config_change_allows_new_reassessment_but_rejects_old_finalisatio
         old = launch(client, headers, 'normal')
         monkeypatch.setattr(config, 'CampusModelSettings', lambda: model_settings(timeout_seconds=6))
         assert client.post('/api/v1/plans/' + old['plan']['plan_id'] + '/finalise', headers=headers, json=final_command(old)).status_code == 409
-        current = client.get('/api/v1/plans/' + old['plan']['plan_id']).json()
+        current = json_with_internal_audits(client, client.get('/api/v1/plans/' + old['plan']['plan_id']))
         response = change(client, headers, current)
         assert response.status_code == 202
-        saved = wait_run(client, response.json()['run_id'], 'SUCCEEDED')
+        saved = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'SUCCEEDED')
         assert saved['model_planning_trace'] == old['model_planning_trace']
         assert saved['finalisation_available'] and len(requests) == 2
 
@@ -286,7 +294,7 @@ def test_reassessment_origin_audit_integrity_cannot_be_bypassed(tmp_path, monkey
         old = launch(client, headers, 'normal')
         response = change(client, headers, old)
         assert response.status_code == 202
-        saved = wait_run(client, response.json()['run_id'], 'SUCCEEDED')
+        saved = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'SUCCEEDED')
         with client.app.state.database.transaction() as db:
             scope = RunScope.model_validate_json(db.execute('SELECT scope FROM runs WHERE id=?', (saved['run']['run_id'],)).fetchone()[0])
             version = Repository.stored_version(db, scope)

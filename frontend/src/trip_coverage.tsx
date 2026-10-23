@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { tripUpdatePath } from './trip_update';
 import { campName } from './plans';
 import { checkNames } from './plan_language';
 
@@ -14,7 +15,7 @@ const explanation:Record<string,string>={MISSING:'没有找到适用于此次行
   ROAD_STATE_UNKNOWN:'现有资料无法确认道路是否开放。'};
 const range=(item:Range)=>`${item.start} 至 ${item.end}`;
 
-export function TripCoveragePanel({value,requestId}:{value:TripCoverage|null|undefined;requestId:string}){
+export function TripCoveragePanel({value,planId,readOnly=false}:{value:TripCoverage|null|undefined;requestId?:string;planId?:string;readOnly?:boolean}){
   if(!value)return null;
   if(!value.issues.length)return <p className="coverage-complete">已找到覆盖此次行程的四类安全资料，具体出行限制见下方检查结果。</p>;
   return <section className="trip-coverage" aria-label="资料覆盖与可选调整"><h3>哪些资料还不能支持这次行程？</h3>
@@ -26,6 +27,9 @@ export function TripCoveragePanel({value,requestId}:{value:TripCoverage|null|und
         ?`尚未覆盖：${issue.uncovered_ranges.map(range).join('；')}。`
         :'现有资料分布于多个有效区间，尚没有一份资料能独立覆盖整段行程。'
         :explanation[issue.code]??'当前资料尚不能支持此次行程的判断。'}</p>
+      {issue.code!=='OUTSIDE_VALIDITY'&&issue.uncovered_ranges.length>0&&<p>缺少日期：{issue.uncovered_ranges.map(range).join('；')}。</p>}
+      <p>影响：本项检查尚未完成，不能据此确认整段行程安全。处理：调整日期或营地，或保留草稿等待适用资料更新后重新检查。</p>
+      {issue.kind==='WEATHER'&&<p>建议重查：{value.next_weather_check_on?`${value.next_weather_check_on} 或之后`:'临近出发、预报覆盖所缺日期后'}{value.weather_requires_staged_checks?'，并在途中分段复查':''}；届时仍以实际资料为准。</p>}
       {issue.available_ranges.length>0&&<details><summary>查看已发布资料的日期</summary><ul>{issue.available_ranges.map((item,i)=><li key={i}>{range(item)}</li>)}</ul></details>}
     </li>)}</ul>
     {(value.alternative_campsites.length>0||value.alternative_dates.length>0)&&<div className="coverage-options"><h3>可以参考的调整</h3>
@@ -33,6 +37,6 @@ export function TripCoveragePanel({value,requestId}:{value:TripCoverage|null|und
       {value.alternative_dates.length>0&&<><p>保留当前营地和晚数，可参考这些有完整资料的日期：</p><ul>{value.alternative_dates.map(item=><li key={item.start_date}>{item.start_date} 至 {item.end_date}</li>)}</ul></>}
       <p className="muted">这些选项已核对资料覆盖和营地基本条件；完整费用、装备和安全仍需重新评估，由你决定是否调整。</p></div>}
     {!value.alternative_campsites.length&&!value.alternative_dates.length&&<p>当前资料中未找到保留现有条件且覆盖完整的替代选项。可调整出行日期、晚数或营地，或保留草稿等待资料更新。</p>}
-    <Link className="text-link" to={'/request?copy_from='+encodeURIComponent(requestId)}>调整需求并重新确认 ↗</Link>
+    {planId&&!readOnly&&<Link className="text-link" to={tripUpdatePath(planId)}>调整本次需求并重新确认 ↗</Link>}
   </section>;
 }

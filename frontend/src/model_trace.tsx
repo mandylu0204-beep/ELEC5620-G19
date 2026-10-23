@@ -3,13 +3,13 @@ export type ModelTrace = {id:string;run_id:string;version_id:string;attempt_id:s
     turns:number;http_attempts:number;elapsed_ms:number;candidate_ids:string[];selected_campsite_id:string;decision_summary:string;
     usage:Record<string,number>;validation_passed:boolean}};
 
-export function ModelTracePanel({value,currentRunId,logisticsModel=false}:{value:ModelTrace|null|undefined;currentRunId?:string;logisticsModel?:boolean}) {
+export function ModelTracePanel({value,currentRunId,logisticsModel=false,safetyModel=false}:{value:ModelTrace|null|undefined;currentRunId?:string;logisticsModel?:boolean;safetyModel?:boolean}) {
   if(!value)return null;
   const trace=value.trace;
   const reused=!!currentRunId&&currentRunId!==value.run_id;
   return <section className="panel"><details className="planning-details"><summary>AI 规划说明</summary><h2>模型规划调用记录</h2>{reused&&<p className="mode-notice">本次重评复用原行程，未调用规划模型。以下是原版本生成时的记录，Token usage不是本次重评的消耗。</p>}{trace.served_models.includes('offline-test-only')
     ? <p className="mode-notice">离线接线测试：本次使用模拟模型响应，未调用校园模型。</p>
-    : <p>{reused?'原版本行程选择':'本次行程选择'}由校园模型完成。{logisticsModel?'本次装备与预算建议另有物流模型评估记录。':'装备费用由规则评估。'}需求解释、营地筛选和安全评估由规则执行。</p>}
+    : <p>{reused?'原版本行程选择':'本次行程选择'}由校园模型完成。{logisticsModel?'本次装备与预算建议另有物流模型评估记录。':'装备费用由规则评估。'}需求解释和营地筛选采用规则；{safetyModel?'安全建议由模型辅助，安全规则仍由确定性程序校验。':'安全评估采用规则。'}</p>}
     <dl className="summary-list"><div><dt>请求模型</dt><dd>{trace.requested_model}</dd></div>
       <div><dt>服务返回模型</dt><dd>{trace.served_models.join('、')||'未提供'}</dd></div>
       <div><dt>工具轮数 / HTTP尝试</dt><dd>{trace.turns} / {trace.http_attempts}</dd></div>

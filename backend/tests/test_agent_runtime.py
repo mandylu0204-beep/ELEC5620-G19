@@ -79,7 +79,8 @@ def test_real_rule_http_flow_preserves_full_context_and_finalisation(dataset, tm
     with TestClient(app) as client:
         headers = sign_in(client)
         request = confirmed(client, headers)
-        context = request['confirmed_context']['dataset_context']
+        from audit_test_reads import CAMPER
+        context = app.state.requests.get(CAMPER,request['request_id'])['confirmed_context']['dataset_context']
         assert 'manifest.json' in context['file_digests']
         assert 'data/scenarios/rule-integration.json' in context['fixture_digests']
         assert 'b03-explicit-scenarios.canonical.json' in context['fixture_digests']

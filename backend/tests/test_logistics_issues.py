@@ -102,15 +102,65 @@ def test_dependent_groundsheet_need_collapses_to_tent_capacity_but_real_price_do
     assert issue['item_key'] == 'tent' and issue['affects'] == ['equipment.groundsheet']
     r['gear_checklist'][0].update(required_quantity='2', missing_quantity='1', arrangement_status='MISSING')
     r['cost_breakdown'][0]['quantity'] = '1'
-    assert {'EQUIPMENT_SHORTAGE', 'PRICE_DATA'} <= {i['code'] for i in project(data)}
+    gear, = [i for i in project(data) if i['item_key'] == 'groundsheet']
+    assert gear['code'] == 'EQUIPMENT_SHORTAGE'
+    assert gear['cost_impacts'] == [{'code':'PRICE_DATA','item_key':'groundsheet','category':'ADDITIONAL_GEAR','unit_price_cents':None}]
+    assert not any(i['code'] == 'PRICE_DATA' for i in project(data))
 
 
 def test_self_catered_has_both_gear_and_meal_correction_paths():
-    data = saved(); result(data)['clarifications'] = [question('cooking_method')]
+    data = saved(); data['plan']['plan_id'] = 'owned-plan'; result(data)['clarifications'] = [question('cooking_method')]
     issue, = project(data)
     assert issue['code'] == 'COOKING_ARRANGEMENT'
-    assert issue['action_url'].startswith('/request?')
+    assert issue['action_url'] == '/plans/owned-plan/update?focus=request-meal'
     assert 'equipment.camping_stove' in issue['alternate_action_url']
+
+
+def test_fuel_gap_and_missing_price_share_one_named_task_and_preserve_saved_cost():
+    data = saved(); data['plan']['plan_id']='owned-plan'; r=result(data)
+    r['gear_checklist']=[dict(item_key='fuel_canister',essential=True,required_quantity='3',available_quantity='0',missing_quantity='3',arrangement_status='MISSING',unit='item')]
+    r['cost_breakdown']=[dict(item_key='fuel_canister',category='ADDITIONAL_GEAR',quantity='3',subtotal_cents=None,unit_price_cents=None)]
+    before=deepcopy(data)
+    issue,=project(data)
+    assert issue['item_key']=='fuel_canister' and issue['code']=='EQUIPMENT_SHORTAGE'
+    assert issue['cost_impacts'][0]['item_key']=='fuel_canister'
+    assert issue['arrangement_action_url']=='/plans/owned-plan/update?focus=request-meal'
+    assert 'plan_id=owned-plan' in issue['action_url']
+    assert data==before
+    # Only an actual new saved assessment can remove this gap, not a form edit.
+    data['confirmed_context']['profile_snapshot']['equipment'].append(dict(item_key='fuel_canister',quantity=3,unit='item',confirmed=True,capacity_persons=None))
+    assert project(data)[0]['required']['missing_quantity']=='3'
+    r['gear_checklist'][0].update(available_quantity='3',missing_quantity='0',arrangement_status='OWNED')
+    r.update(cost_breakdown=[],outcome='PASSED',total_cents=10000)
+    assert project(data)==[]
+
+
+def test_independent_price_problem_names_gear_without_a_fake_profile_price_editor():
+    data=saved();r=result(data)
+    r['gear_checklist']=[dict(item_key='fuel_canister',essential=False,required_quantity=None,available_quantity=None,missing_quantity=None,arrangement_status='UNCONFIRMED',unit='item')]
+    r['cost_breakdown']=[dict(item_key='fuel_canister',category='ADDITIONAL_GEAR',subtotal_cents=None,unit_price_cents=None)]
+    issue,=project(data)
+    assert issue['item_key']=='fuel_canister' and issue['code']=='PRICE_DATA'
+    assert issue['target']=='OPERATOR' and issue['action_url'] is None
+
+
+def test_unknown_upstream_input_exposes_dependent_check_without_guessing_quantity():
+    data=saved();r=result(data)
+    r['clarifications']=[question('equipment.camping_stove'),question('gear_rule_input.stove_count'),
+        dict(field='equipment.fuel_canister',question='Confirm stock',reason='Missing v2 rule inputs: stove_count.')]
+    r['gear_checklist']=[dict(item_key='fuel_canister',essential=True,required_quantity=None,available_quantity='0',missing_quantity=None,arrangement_status='UNCONFIRMED',unit='item')]
+    issue,=project(data)
+    assert issue['item_key']=='camping_stove'
+    assert issue['pending_checks']==[{'item_key':'fuel_canister','status':'WAITING_FOR_INPUT'}]
+
+
+def test_budget_and_meal_actions_keep_explicit_plan_not_copy_from():
+    data=saved();data['plan']['plan_id']='owned-plan';r=result(data)
+    r.update(clarifications=[question('meal_mode')],total_cents=110000,budget_difference_cents=10000)
+    issues=project(data)
+    assert next(i for i in issues if i['code']=='MEAL_CHOICE')['action_url']=='/plans/owned-plan/update?focus=request-meal'
+    assert next(i for i in issues if i['code']=='OVER_BUDGET')['action_url']=='/plans/owned-plan/update?focus=request-budget'
+    assert 'copy_from' not in str(issues)
 
 
 def test_unexplained_eligibility_issue_does_not_fall_back_to_edit_profile():
