@@ -1,7 +1,7 @@
-"""Pre-adaptation boundaries only: Sydney model safety remains disabled.
+"""Frozen-v2 and incomplete-v3 registration boundaries, with no model calls.
 
 No private env, HTTP service, database, real client or model invocation. These
-characterise the current frozen contract, not acceptance of a future v3 role.
+characterise fail-closed boundaries, not live acceptance of the v3 role.
 """
 from datetime import date
 import importlib.util
@@ -54,7 +54,8 @@ def sydney_settings(request, tmp_path):
 
 
 @pytest.mark.parametrize('logistics_mode', ['rules', 'model'])
-def test_v22_model_safety_factory_stops_before_client_creation(sydney_settings, logistics_mode):
+def test_v22_incomplete_audit_factory_stops_before_client_creation(sydney_settings, logistics_mode, monkeypatch):
+    monkeypatch.setattr('app.workflow.orchestration.Orchestrator.safety_audit_contract', None)
     config = sydney_settings.model_copy(update={'logistics_execution': logistics_mode})
     with pytest.raises(ContractFailure) as failure:
         build_v2_hybrid_binding(config, inspect_dataset(config))

@@ -207,11 +207,12 @@ def test_wood_fire_ban_remains_a_hard_constraint_without_inventing_a_total_ban(t
     assert 'gas/electric barbecues' in camp.facilities
 
 
-def test_new_catalogue_does_not_silently_expand_frozen_model_safety_support(tmp_path, monkeypatch):
+def test_new_catalogue_does_not_silently_enable_incomplete_model_safety(tmp_path, monkeypatch):
     from app.application.agent_runtime import build_v2_hybrid_binding
     def no_client(*args, **kwargs):
         pytest.fail('Unsupported model safety must be rejected before creating a model client')
     monkeypatch.setattr('app.llm.client.CampusModelClient', no_client)
+    monkeypatch.setattr('app.workflow.orchestration.Orchestrator.safety_audit_contract', None)
     config = settings(tmp_path, execution_mode='agent', safety_execution='model')
     with pytest.raises(ContractFailure) as error:
         build_v2_hybrid_binding(config, inspect_dataset(config))

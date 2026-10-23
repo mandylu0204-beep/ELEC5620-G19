@@ -112,12 +112,13 @@ def build_v2_hybrid_binding(settings, descriptor, *, parsed_snapshots=None, snap
                 message=f'Rule {role} configuration cannot carry model registration markers.'))
     if settings.safety_execution == 'model':
         from ..workflow.orchestration import Orchestrator
-        if (descriptor.context.dataset_version != '2.1.0'
+        from ..llm.safety_support import SAFETY_PROTOCOLS
+        if (descriptor.context.dataset_version not in SAFETY_PROTOCOLS
                 or getattr(HybridPlanningAgent,'safety_audit_contract',None) != '1.0'
                 or not callable(getattr(HybridPlanningAgent,'assess_safety_with_trace',None))
                 or getattr(Orchestrator,'safety_audit_contract',None) != '1.0'):
             raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE,
-                message='Model safety requires dataset 2.1 and complete Hybrid/Orchestrator audit integration.'))
+                message='Model safety requires a supported dataset and complete Hybrid/Orchestrator audit integration.'))
     try:
         client = CampusModelClient(CampusModelSettings())
     except (ValidationError, ValueError):
@@ -153,7 +154,10 @@ def build_v2_hybrid_binding(settings, descriptor, *, parsed_snapshots=None, snap
             constructors['logistics'] = LogisticsAgent
             seeds['logistics'] = identity_seed(LogisticsAgent(dataset,client,workflow_configuration=temporary))
         if settings.safety_execution == 'model':
-            from ..llm.safety_agent import SafetyAgent
+            if dataset.context.dataset_version == '2.2.0':
+                from ..llm.safety_v3 import SafetyAgent
+            else:
+                from ..llm.safety_agent import SafetyAgent
             constructors['safety'] = SafetyAgent
             seeds['safety'] = SafetyAgent(dataset,client,workflow_configuration=temporary).identity_seed
     # Collect every seed before binding any component to the final context.
@@ -302,7 +306,14 @@ class AgentRuntime:
             raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='当前运行未登记完整物流模型能力。'))
         if settings.safety_execution == 'model':
             from ..workflow.orchestration import Orchestrator
-            if (context.dataset_version != '2.1.0' or context.selection_config.get('a_safety_audit_required') != '1'
+            from ..llm.safety_support import matches_live_protocol
+            from .logistics_audit import decode
+            try:
+                protocol_matches = matches_live_protocol(context.dataset_version,
+                    decode(context.selection_config['a_safety_identity_seed']))
+            except (ValueError, TypeError, KeyError, AttributeError):
+                protocol_matches = False
+            if (not protocol_matches or context.selection_config.get('a_safety_audit_required') != '1'
                     or context.selection_config.get('a_safety_audit_contract') != '1.0'
                     or context.selection_config.get('a_safety_mode') != 'model'
                     or getattr(agent,'safety_audit_contract',None) != '1.0'

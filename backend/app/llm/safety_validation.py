@@ -59,9 +59,15 @@ def validate_safety_payload(input, baseline, result, raw_plan, raw_trace, *, ide
 from .safety_v1.safety_validation import validate_safety_payload as validate_safety_payload_v1
 
 
+def _validate_v3(*args, **kwargs):
+    from .safety_v3 import validate_safety_payload as validate_v3
+    return validate_v3(*args, **kwargs)
+
+
 SAFETY_VALIDATORS = MappingProxyType({
     'safety-advisory-validation-1': validate_safety_payload_v1,
     SAFETY_VALIDATION_VERSION: validate_safety_payload,
+    'safety-advisory-validation-3': _validate_v3,
 })
 
 

@@ -39,11 +39,14 @@ def registered_identity(scope, *, new_write=False):
     versions = {
         'safety-advisory-validation-1': ('campus-safety-advisory-agent-1','safety-read-only-tools-1'),
         'safety-advisory-validation-2': ('campus-safety-advisory-agent-2','safety-read-only-tools-2'),
+        'safety-advisory-validation-3': ('campus-safety-advisory-agent-3','safety-read-only-tools-3'),
     }
+    from ..llm.safety_support import matches_live_protocol
     expected = versions.get(seed['validation_version'])
     if (expected is None or (seed['agent_version'],seed['tool_version']) != expected
             or seed['kernel_version'] not in SUPPORTED_RULES_VERSIONS
-            or (new_write and (seed['validation_version'] != 'safety-advisory-validation-2'
+            or scope.dataset_context.dataset_version != ('2.2.0' if seed['validation_version'] == 'safety-advisory-validation-3' else '2.1.0')
+            or (new_write and (not matches_live_protocol(scope.dataset_context.dataset_version, seed)
                                or seed['kernel_version'] != RULES_VERSION))):
         raise ValueError('Unsupported or downgraded safety registration')
     context = scope.dataset_context.model_dump(mode='json')
