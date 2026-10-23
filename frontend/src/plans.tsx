@@ -180,8 +180,12 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       assessmentId:safetyAssessment.assessment_id,logisticsId:logisticsAssessment.assessment_id,
       inputFingerprint:version.version_context.input_fingerprint}:null;
 
+  const savedApprovalScope = version?.status==='FINALISED'&&run?.status==='SUCCEEDED'
+    &&data.last_final?.is_current===true
+    &&data.last_final.run_id===version.version_context.run_id
+    &&data.last_final.plan_version_id===version.version_context.plan_version_id;
   const validApproval = !data.current_inputs_error&&data.reviews.some(item=>item.decision==='APPROVE'&&(
-    item.review_id===data.eligibility?.valid_review_id||(snapshot&&version?.status==='FINALISED')));
+    item.review_id===data.eligibility?.valid_review_id||(snapshot&&version?.status==='FINALISED')||savedApprovalScope));
   const requirements = confirmed?.requirements;
   const title = version?.content.selected_campsite_ids.map(campName).join(' / ') || requirements?.destination || '我的露营方案';
   const stepSaved = [!!recommendation,!!version,!!version,!!logistics,!!safety,!!data.route,run?.status==='SUCCEEDED'];

@@ -321,3 +321,18 @@ test('review component alone renders authorised diagnostic payload separate from
   value.can_view_model_diagnostics=false;
   assert.doesNotMatch(renderPlan(value),/reviewer-private-model|模型运行诊断/);
 });
+
+
+test('finalised current read keeps its saved approval but never authorises a new run or version',()=>{
+  const value=planFixture();value.run.is_active=true;value.version.status='FINALISED';
+  value.reviews=[{review_id:'approved-review',decision:'APPROVE',reason:'saved review',reviewer_user_id:'founder'}];
+  value.last_final={plan_id:'plan',final_id:'final',is_current:true,run_id:'run',plan_version_id:'version'};
+  value.assessments.push({assessment_id:'safety',kind:'SAFETY',version_context:value.version.version_context,result:{outcome:'REVIEW',requires_human_review:true,risk_level:'HIGH',confidence:'LOW',data_quality:{},evidence:[],hazards:[],recommended_actions:[],mandatory_blockers:[],unresolved_conflicts:[]}});
+  assert.match(renderPlan(value),/审核已批准/);
+  for(const patch of [{run_id:'older-run'},{plan_version_id:'older-version'},{is_current:false}]){
+    const changed=structuredClone(value);Object.assign(changed.last_final,patch);
+    assert.doesNotMatch(renderPlan(changed),/审核已批准/);
+  }
+  const newer=structuredClone(value);newer.run.status='RUNNING';
+  assert.doesNotMatch(renderPlan(newer),/审核已批准/);
+});
