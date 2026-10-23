@@ -160,7 +160,9 @@ def retry_fields(request, user, data):
                 reason = exc.error.message
         data['retry_unavailable_reason'] = None if data['retry_available'] else reason
     can_change = bool(available and data['current_version_revision'] is not None and run and run['is_active'] and run['status'] not in {'PENDING','RUNNING'})
-    operations = state.runtime.resolve().supported_operations if available else frozenset()
+    # No operation can be offered while this record cannot be changed. Current
+    # availability and scope validation below still run independently.
+    operations = state.runtime.resolve().supported_operations if can_change else frozenset()
     data['revision_available'] = can_change and 'REVISE' in operations
     data['reassessment_available'] = can_change and 'REASSESS' in operations
     data['current_inputs_error'] = None
@@ -219,3 +221,16 @@ def plan_detail(plan_id: str, request: Request, run_id: str | None = None, user:
 @router.get('/runs/{run_id}')
 def run_detail(run_id: str, request: Request, user: User = Depends(current_user)):
     return plan_response(retry_fields(request, user, request.app.state.plan_queries.run(user, run_id)), user)
+
+
+@router.get('/runs/{run_id}/progress')
+def run_progress(run_id: str, request: Request, response: Response, user: User = Depends(current_user)):
+    response.headers['Cache-Control'] = 'no-store'
+    state = request.app.state
+    data = state.plan_queries.progress(user, run_id)  # Authorize before lease access.
+    if data['run']['is_active'] and data['run']['status'] == 'RUNNING':
+        # Keep the existing expired-worker lease guard. No runtime/data/model
+        # resolution or business eligibility is needed to report persisted state.
+        state.dispatcher.expire_if_needed(user, run_id)
+        data = state.plan_queries.progress(user, run_id)
+    return data

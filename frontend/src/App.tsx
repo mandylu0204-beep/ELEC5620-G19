@@ -10,7 +10,6 @@ import { PlansPage, PlanPage } from './plans';
 import { RegisterPage } from './register';
 import { TripUpdateEntry } from './replan';
 
-const DISCLAIMER = '本项目使用模拟数据，仅供演示，请勿据此安排真实出行。';
 type Status = { meta: Meta; ready: Ready };
 
 function Mountain({ small = false }: { small?: boolean }) {
@@ -64,7 +63,7 @@ function AppContent() {
           <Route path="/dev/request-preview" element={<RequestPreview enabled={status?.meta.features.request_preview === true && status.ready.status === 'ready'} />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/profile" element={<Protected role="CAMPER"><ProfilePage demoAvailable={['deterministic_demo','agent'].includes(status?.meta.execution_mode ?? '') && ['2.0.0','2.1.0'].includes(status?.meta.dataset_version ?? '')} datasetVersion={status?.meta.dataset_version} /></Protected>} />
+          <Route path="/profile" element={<Protected role="CAMPER"><ProfilePage demoAvailable={['deterministic_demo','agent'].includes(status?.meta.execution_mode ?? '') && ['2.0.0','2.1.0','2.2.0'].includes(status?.meta.dataset_version ?? '')} datasetVersion={status?.meta.dataset_version} /></Protected>} />
           <Route path="/plans" element={<Protected role="CAMPER"><PlansPage /></Protected>} />
           <Route path="/plans/:planId/update" element={<Protected role="CAMPER"><TripUpdateEntry /></Protected>} />
           <Route path="/plans/:planId/finals/:finalId" element={<Protected role="CAMPER"><FinalPage /></Protected>} />
@@ -74,7 +73,7 @@ function AppContent() {
           <Route path="*" element={<Upcoming title="页面不存在" description="请使用左侧导航返回首页。" />} />
         </Routes>
       </main>
-      <footer><span className="tag">演示数据</span><p>{DISCLAIMER}</p><span>CampMate AI · ELEC5620</span></footer>
+      <footer><p>规划下一次出发，保留每一份好安排。</p><span>CampMate AI · ELEC5620</span></footer>
     </div>
   </div>;
 }

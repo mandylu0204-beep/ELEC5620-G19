@@ -1,6 +1,11 @@
 """Role-scoped HTTP views only. Never used by storage, replay or eligibility."""
 from copy import deepcopy
 
+# Public location-display identity only. This is not a model/runtime capability
+# and never exposes the registered configuration or its file-digest mapping.
+SYDNEY_CATALOGUE_ID = 'sydney-surrounds-2.2-2026-10-23'
+SYDNEY_CATALOGUE_DIGEST = '6eea5205281d41e308e5a0cc8f2c0225b6a3b685ad990579ab6f20c7ae04b8fe'
+
 
 def tent_capacity(profile, logistics):
     """Display the saved records alongside the authoritative person-space gap."""
@@ -65,6 +70,12 @@ def _view(value, diagnostics_allowed):
     data = deepcopy(value)
     from .cooking_preparation import outline
     confirmed = data.get('confirmed_context') or {}
+    source = confirmed.get('dataset_context') or {}
+    if (source.get('dataset_version') == '2.2.0' and
+            source.get('file_digests', {}).get('source_catalogue.json') == SYDNEY_CATALOGUE_DIGEST):
+        data['campsite_catalogue_id'] = SYDNEY_CATALOGUE_ID
+    else:
+        data.pop('campsite_catalogue_id', None)
     data['cooking_preparation'] = outline(confirmed.get('requirements') or {}, confirmed.get('profile_snapshot') or {})
     planning = data.pop('model_planning_trace', None)
     audits = data.get('model_assessment_audits') or {}

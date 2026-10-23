@@ -40,13 +40,15 @@ class ParsedSnapshots:
     def get(self, key):
         with self._lock:
             value = self._entries.get(key)
-        # Every caller receives its own object graph, including public dicts.
+        # Dataset/selector wrappers and all exported mutable values stay detached.
+        # Only owned immutable safety archives may return themselves on deepcopy.
         return deepcopy(value) if value is not None else None
 
     def stage(self, key, dataset):
         pending = self._pending.get()
         if pending is None:
             raise RuntimeError('Parsed snapshots require a registration transaction')
-        pending[key] = deepcopy(dataset)
+        from ..adapters.snapshot_archive import compact_owned_dataset
+        pending[key] = compact_owned_dataset(deepcopy(dataset))
         while len(pending) > self.capacity:
             pending.popitem(last=False)

@@ -25,13 +25,13 @@ export function discardMessage(sections:string[]):string {
 // a translation or infer safety facts from an English sentence.
 export function chineseProse(text:string|undefined):string|null {
   const known:Record<string,string>={
-    'Registered synthetic region, capacity and known hard constraints match.':'演示资料中的地区、人数容量和已知必须条件与本次需求相符。',
-    'Synthetic quiet-environment attribute matches; it is not a real-world guarantee.':'演示资料标注为安静环境，符合安静偏好，但不保证现场实际安静。',
+    'Registered synthetic region, capacity and known hard constraints match.':'已登记的地区、人数容量和已知必须条件与本次需求相符。',
+    'Synthetic quiet-environment attribute matches; it is not a real-world guarantee.':'资料标注为安静环境，符合安静偏好，但不保证现场实际安静。',
     'Source lists a quiet-hours policy, not a quietness guarantee.':'来源规定了安静时段，但不保证现场实际安静。',
     'Actual quietness is not supplied.':'资料没有提供现场实际安静程度。',
     'Campsite fee is unknown.':'营地费用未知，需要核实。',
     'Transport type is not confirmed.':'交通方式尚未确认。',
-    'Recommendation is not booking availability or safety clearance.':'推荐不代表营位可订，也不代表安全放行。',
+    'Recommendation is not booking availability or safety clearance.':'推荐不代表营位可订，出发前仍需核实安全信息。',
   };
   if(!text)return null;
   return known[text]??(/[\u3400-\u9fff]/u.test(text)?text:null);

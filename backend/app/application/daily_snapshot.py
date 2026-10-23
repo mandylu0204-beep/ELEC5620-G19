@@ -16,6 +16,7 @@ from ..contracts.errors import ContractError, ContractFailure
 from ..dataset_paths import data_file_path, manifest_file_path
 from .datasets import inspect_dataset
 from .synthetic_generation import build
+from ..adapters.catalogue_identity import TRIP_DATASET_VERSIONS
 
 POLICY = 'synthetic-daily-v1'
 _lock = RLock()
@@ -37,12 +38,12 @@ def _effective_settings(settings, today, *, base=None):
     base = base or inspect_dataset(settings)
     rolling = settings.synthetic_evidence_mode == 'rolling' or (
         settings.synthetic_evidence_mode == 'auto' and settings.clock_mode == 'current'
-        and base.context.dataset_version == '2.1.0')
+        and base.context.dataset_version in TRIP_DATASET_VERSIONS)
     if not rolling:
         return settings
-    if (base.context.dataset_version != '2.1.0' or settings.dataset_scenario_files
+    if (base.context.dataset_version not in TRIP_DATASET_VERSIONS or settings.dataset_scenario_files
             or settings.workflow_safety_case_ids or settings.dataset_selection):
-        raise failure('每日模拟资料需要 v2.1 基础包和自动资料选择；固定场景请使用 sealed 模式。')
+        raise failure('每日资料需要受支持的行程数据包和自动资料选择；固定场景请使用 sealed 模式。')
     identity = hashlib.sha256(json.dumps({
         'base':base.context.model_dump(mode='json'), 'date':today.isoformat(), 'policy':POLICY,
     },sort_keys=True).encode()).hexdigest()

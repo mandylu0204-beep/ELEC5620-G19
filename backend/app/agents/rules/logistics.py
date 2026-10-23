@@ -5,7 +5,7 @@ from functools import reduce
 from ...contracts.dto import Blocker, Clarification, CostLine, GearItem, LogisticsResult
 from ...contracts.enums import AssessmentOutcome, ExecutionMode
 from .common import artifact, ensure_execution_mode, input_failure, meal_mode, rule_failure, validate_itinerary
-from .planning import validate_constraints, violations
+from .planning import validate_constraints, violations, vehicle_arrival_supported
 
 ITEMS = {
     'Tent': ('tent', 'person_space'), 'Groundsheet': ('groundsheet', 'item'),
@@ -358,7 +358,7 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
     transport = profile.transport
     transport_feasible = None
     if transport.transport_type == 'CAR':
-        if any(campsite.vehicle_access is not True for campsite in campsites):
+        if any(not vehicle_arrival_supported(campsite) for campsite in campsites):
             transport_feasible = False
         else:
             vehicles = [item for item in profile.equipment if item.item_key == 'vehicle']

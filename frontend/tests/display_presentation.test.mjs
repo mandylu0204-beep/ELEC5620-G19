@@ -262,7 +262,7 @@ test('selected model explanation is visible and original provenance stays distin
     value:{source_run_id:'old',selected_campsite_id:'demo-river-flat',decision_summary_unverified:'此营地满足安静与交通需求。'},
     reasons:['Registered synthetic region, capacity and known hard constraints match.'],uncertainties:['Recommendation is not booking availability or safety clearance.']});
   assert.match(text,/此营地满足安静与交通需求/);assert.match(text,/原版本生成时/);
-  assert.match(text,/已知必须条件/);assert.match(text,/不代表安全放行/);
+  assert.match(text,/已知必须条件/);assert.match(text,/出发前仍需核实安全信息/);
   assert.equal(chineseProse('unknown English explanation'),null); // No invented translation.
 });
 test('safety reuses structured equipment issue and routes back to equipment without duplicate raw quantities',()=>{
@@ -320,4 +320,19 @@ test('review component alone renders authorised diagnostic payload separate from
   const html=renderPlan(value,{review:true});assert.match(html,/模型运行诊断/);assert.match(html,/reviewer-private-model/);
   value.can_view_model_diagnostics=false;
   assert.doesNotMatch(renderPlan(value),/reviewer-private-model|模型运行诊断/);
+});
+
+
+test('finalised current read keeps its saved approval but never authorises a new run or version',()=>{
+  const value=planFixture();value.run.is_active=true;value.version.status='FINALISED';
+  value.reviews=[{review_id:'approved-review',decision:'APPROVE',reason:'saved review',reviewer_user_id:'founder'}];
+  value.last_final={plan_id:'plan',final_id:'final',is_current:true,run_id:'run',plan_version_id:'version'};
+  value.assessments.push({assessment_id:'safety',kind:'SAFETY',version_context:value.version.version_context,result:{outcome:'REVIEW',requires_human_review:true,risk_level:'HIGH',confidence:'LOW',data_quality:{},evidence:[],hazards:[],recommended_actions:[],mandatory_blockers:[],unresolved_conflicts:[]}});
+  assert.match(renderPlan(value),/审核已批准/);
+  for(const patch of [{run_id:'older-run'},{plan_version_id:'older-version'},{is_current:false}]){
+    const changed=structuredClone(value);Object.assign(changed.last_final,patch);
+    assert.doesNotMatch(renderPlan(changed),/审核已批准/);
+  }
+  const newer=structuredClone(value);newer.run.status='RUNNING';
+  assert.doesNotMatch(renderPlan(newer),/审核已批准/);
 });

@@ -31,6 +31,14 @@ def validate_constraints(requirements):
         raise input_failure('Mandatory fire and no-fire requirements conflict.', 'mandatory_constraints')
 
 
+def vehicle_arrival_supported(campsite):
+    # A road-accessible carpark with a documented walk is not a drive-in
+    # campsite. Explicit vehicle_access hard constraints still require True.
+    return campsite.vehicle_access is True or (
+        campsite.walk_in_only is True
+        and 'carpark with signed walking access to campsites' in campsite.facilities)
+
+
 def violations(campsite, requirements, profile, *, include_budget=True):
     reasons = []
     if campsite.region != requirements.destination:
@@ -42,7 +50,7 @@ def violations(campsite, requirements, profile, *, include_budget=True):
     seasons = {_season(requirements.start_date + timedelta(days=offset)) for offset in range(requirements.duration_nights)}
     if 'all' not in campsite.supported_seasons and not seasons.issubset(campsite.supported_seasons):
         reasons.append('Trip season is unsupported or unknown.')
-    if profile.transport.transport_type == 'CAR' and campsite.vehicle_access is not True:
+    if profile.transport.transport_type == 'CAR' and not vehicle_arrival_supported(campsite):
         reasons.append('Vehicle access is unavailable or unknown.')
     if profile.transport.transport_type == 'PUBLIC_TRANSPORT' and campsite.public_transport_access is not True:
         reasons.append('Public transport access is unavailable or unknown.')

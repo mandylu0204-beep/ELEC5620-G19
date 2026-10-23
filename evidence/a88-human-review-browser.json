@@ -1,0 +1,51 @@
+{
+  "task": "A88 local human-review browser acceptance",
+  "base_source": "0c7dbbd",
+  "documentation_parent": "81e7825",
+  "mode": "deterministic_demo",
+  "safety": "rules",
+  "dataset": "2.2.0",
+  "database": "independent SQLite backup only",
+  "fixtures": "Explicit high-risk and closed-road assessment fixtures saved through original persistence ports, using copied source context; not model outputs or a validation of real hazard judgement. Successor was created and confirmed through browser; its high-risk reassessment was explicitly prepared through the original port.",
+  "browser_checks": {
+    "founder_queue_and_approval_with_reason": true,
+    "camper_reads_approval_and_reason": true,
+    "camper_final_save": true,
+    "hard_block_correction_only_no_approval_controls": true,
+    "successor_requires_new_review": true,
+    "old_final_preserved": true,
+    "finalised_current_approval_label_after_fix": true
+  },
+  "negative_http": {
+    "hard_block_approval_status": 409,
+    "hard_block_code": "INVALID_STATE",
+    "successor_final_status": 409,
+    "successor_error_code": "STALE_CONTEXT",
+    "successor_reviews": 0,
+    "successor_valid_review_id": null
+  },
+  "fix": "Display only: recognise approval on a succeeded finalised current read only with exact matching final run/version. No server permission, eligibility or persistence changes.",
+  "frontend": {
+    "passed": 108,
+    "failed": 0,
+    "skipped": 0,
+    "typecheck": "passed",
+    "build": "passed",
+    "warning": "chunk exceeds 500 kB"
+  },
+  "screenshots_sha256": {
+    "approved-final.png": "e09f769a0169d479af9b3efca8bc7d2b631412c1620feb7080d51fa7ca3291f0",
+    "current-approved-fixed.png": "12b47dc9853c6bcf10739cdabe8132fae1a1ccacc4e7752466c7f6712d423a6b",
+    "successor-needs-review.png": "9a2ec934e6d24dfc30465b1ad8472a92451643b5e7d1d11b0a8a0a683a822b74"
+  },
+  "full_backend_suite": "not run",
+  "cloud_calls": 0,
+  "campus_calls": 0,
+  "main_merge": false,
+  "limitations": [
+    "browser checks use explicit isolated fixtures, not real campus model results",
+    "raw private DB, sessions and screenshots are not shared",
+    "closed-road fixture inherited REVIEW route; top badge still says waiting for review while decision panel correctly denies approval; no access guard was bypassed",
+    "historical plan detail may show original assessment review requirement; immutable final snapshot retains approval and historical notice disclaims new authorisation"
+  ]
+}

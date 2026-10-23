@@ -14,6 +14,7 @@ from ..dataset_paths import data_file_path, manifest_file_path
 from .dataset_mapping import COST_CATEGORIES, aud_to_cents, csv_boolean, csv_list, decimal_value, optional_integer, optional_text, required_text, source_date, string_list
 from .models import CampsiteRecord, CostReferenceRecord, GearRuleRecord, ProfileRecord, RequestRecord, SafetyRecord
 from .synthetic_dataset import SyntheticDataset, _index, _unique_object
+from .catalogue_identity import CATALOGUE_FILE, SYDNEY_VERSION, TRIP_DATASET_VERSIONS, read_catalogue
 
 SOURCE_NAME = 'CampMate Synthetic Demo Dataset v2'
 ADAPTER_VERSION_V2 = 'b01-v2-adapter-2'
@@ -180,11 +181,14 @@ class SyntheticDatasetV2Adapter:
             filename = 'manifest.json'
             manifest = manifest_file_path(root).read_bytes()
             actual = {name: hashlib.sha256(data).hexdigest() for name, data in payloads.items()}
+            if _json(manifest).get('dataset_version') == SYDNEY_VERSION:
+                actual[CATALOGUE_FILE] = hashlib.sha256(read_catalogue(root, _json(manifest))).hexdigest()
             actual['manifest.json'] = hashlib.sha256(manifest).hexdigest()
             if expected_context is not None and any(expected_context.file_digests.get(name) != value for name, value in actual.items()):
                 raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='v2 Adapter 消费的原始字节与应用登记摘要不一致。'))
             from ..agents.rules.trip_evidence import POLICY_VERSION, TripEvidenceSelector
-            cache_key = (snapshot_key, str(root), type(self), type(self)._parse,
+            from .snapshot_archive import FORMAT_VERSION
+            cache_key = (FORMAT_VERSION, snapshot_key, str(root), type(self), type(self)._parse,
                 ADAPTER_VERSION_V2, V2_RULES_VERSION, POLICY_VERSION, TripEvidenceSelector,
                 tuple(sorted(actual.items())),
                 expected_context.model_dump_json() if expected_context is not None else None)
@@ -208,7 +212,7 @@ class SyntheticDatasetV2Adapter:
                 _source(row, '', required_text(row.get('request_id') or row.get('safety_case_id') or row.get('profile_id') or row.get('campsite_id') or row.get('gear_rule_id') or row.get('cost_id')))
         manifest_value = _json(manifest)
         version = manifest_value.get('dataset_version')
-        if version not in {'2.0.0', '2.1.0'} or any(manifest_value.get('files_sha256', {}).get('data/' + name) != value for name, value in actual.items() if name != 'manifest.json'):
+        if version not in {'2.0.0', *TRIP_DATASET_VERSIONS} or any(manifest_value.get('files_sha256', {}).get('data/' + name) != value for name, value in actual.items() if name != 'manifest.json'):
             raise ValueError('v2 package seal does not match consumed bytes')
         if len({row.get('source_name') for name, rows in parsed.items() for row in rows}) != 1 or next(iter({row.get('source_name') for name, rows in parsed.items() for row in rows})) != SOURCE_NAME:
             raise ValueError('Mixed source names')
@@ -250,7 +254,7 @@ class SyntheticDatasetV2Adapter:
             runtime_profiles=runtime_profiles)
         dataset.adapter_version = ADAPTER_VERSION_V2
         dataset.rules_version = V2_RULES_VERSION
-        if version == '2.1.0':
+        if version in TRIP_DATASET_VERSIONS:
             from ..agents.rules.trip_evidence import POLICY_VERSION, TripEvidenceSelector
             if manifest_value.get('evidence_selection_policy') != POLICY_VERSION:
                 raise ValueError('Unregistered trip evidence policy')

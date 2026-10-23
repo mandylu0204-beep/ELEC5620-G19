@@ -1,0 +1,73 @@
+{
+  "task": "A87 Sydney/main integration",
+  "parents": {
+    "sydney": "dd04109",
+    "main": "49035a64f58c3fa53d94ae078996aef9b7b35abf"
+  },
+  "local_only": true,
+  "backend": {
+    "passed": 96,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "batches": [
+      {
+        "passed": 58,
+        "modules": [
+          "test_sydney_catalogue",
+          "test_sydney_main_projection",
+          "test_trip_series",
+          "test_cooking_preparation",
+          "test_display_projection",
+          "test_run_progress"
+        ]
+      },
+      {
+        "passed": 2,
+        "scope": "original HTTP revision/recheck and saved-byte retry paths"
+      },
+      {
+        "passed": 36,
+        "modules": [
+          "test_snapshot_archive",
+          "test_full_detail_runtime_calls"
+        ]
+      }
+    ]
+  },
+  "frontend": {
+    "passed": 107,
+    "failed": 0,
+    "skipped": 0,
+    "typecheck": "passed",
+    "build": "passed",
+    "warning": "minified chunk exceeds 500 kB"
+  },
+  "schema": "passed",
+  "dataset_comparison": {
+    "files": 12,
+    "result": "passed",
+    "writes": 0
+  },
+  "browser": {
+    "database": "independent SQLite backup; migration 11 applied",
+    "campground": "Little Beach campground",
+    "dates": [
+      "2026-10-25",
+      "2026-10-27"
+    ],
+    "people": 2,
+    "budget_aud": 1000,
+    "profile_change": "water 16 to 18 litres",
+    "request_preserved": true,
+    "profile_difference_visible": true,
+    "explicit_confirmation_required": true,
+    "new_plan_saved": true,
+    "previous_final_preserved_as_trip_history": true,
+    "estimated_cost_aud": 261
+  },
+  "cloud_test_runs": 0,
+  "campus_requests": 0,
+  "full_backend_suite": "not run",
+  "main_merged": false
+}
