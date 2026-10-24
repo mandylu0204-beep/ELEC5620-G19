@@ -17,7 +17,7 @@ def main():
     parser.add_argument('--backend-port', type=int, default=8000)
     parser.add_argument('--frontend-port', type=int, default=5173)
     parser.add_argument('--mode', choices=('rules', 'agent'), default='rules',
-                        help='agent explicitly opts into the campus planning model')
+                        help='agent opts into campus request interpretation and planning')
     parser.add_argument('--logistics', choices=('rules', 'model'), default='rules')
     parser.add_argument('--safety', choices=('rules', 'model'), default='rules',
                         help='model explicitly opts into the 2.2/v3 safety adviser')

@@ -57,6 +57,8 @@ _PUBLIC_ERROR_CONTEXT = {'plan_id', 'plan_version_id', 'run_id', 'stage', 'opera
 def request_response(value):
     """Confirmed-request reads must not become a runtime-configuration side door."""
     data = deepcopy(value)
+    if isinstance(data.get('summary'), dict):
+        data['summary'].pop('interpretation_metadata', None)
     from .cooking_preparation import outline
     requirements = ((data.get('confirmed_context') or {}).get('requirements')
         or (data.get('summary') or {}).get('extracted_requirements') or data.get('explicit_fields') or {})

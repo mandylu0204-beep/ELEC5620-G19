@@ -1,10 +1,59 @@
 import json
+from typing import Annotated, Literal
 from uuid import uuid4
 
+from pydantic import Field, StrictInt, ValidationError
+
 from ..auth import fail, require_role
+from ..contracts.base import ContractModel
 from ..contracts.dto import ConfirmedContext, ConfirmedRequirements, DemoContext, InterpretRequestInput, ProfileSnapshot, TripRequirements
 from ..contracts.enums import ErrorCode
 from .repository import encode, fingerprint, now
+
+
+_Sha256 = Annotated[str, Field(pattern=r'^[0-9a-f]{64}$')]
+_Version = Annotated[str, Field(min_length=1, max_length=120, pattern=r'^[A-Za-z0-9_.-]+$')]
+_TokenCount = Annotated[StrictInt, Field(ge=0)]
+
+
+class RequestInterpretationIdentity(ContractModel):
+    """Summary-only registration; never part of a saved workflow identity."""
+    component_version: _Version
+    prompt_sha256: _Sha256
+    schema_version: _Version
+    configuration_fingerprint: _Sha256
+    requested_model: Literal['campus-qwen']
+
+
+class RequestInterpretationObservation(ContractModel):
+    identity: RequestInterpretationIdentity
+    usage: dict[Literal['prompt_tokens', 'completion_tokens', 'total_tokens'], _TokenCount]
+    attempts: Annotated[StrictInt, Field(ge=1, le=3)]
+
+
+class RequestInterpretationMetadata(RequestInterpretationObservation):
+    metadata_version: Literal['1.0'] = '1.0'
+    analysis_revision: Annotated[StrictInt, Field(ge=1)]
+    input_sha256: _Sha256
+
+
+def request_input_fingerprint(input: InterpretRequestInput):
+    # Preserve omitted versus explicitly supplied empty/null request fields.
+    # Profile defaults are saved in full by begin_analysis, so use the same
+    # full shape here and during confirmation after a process restart.
+    return fingerprint({
+        'raw_text': input.raw_text,
+        'explicit_fields': input.explicit_fields.model_dump(mode='json', exclude_unset=True),
+        'profile_snapshot': input.profile_snapshot.model_dump(mode='json') if input.profile_snapshot else None,
+        'demo_context': input.demo_context.model_dump(mode='json'),
+    })
+
+
+def _saved_interpretation_input(row, summary):
+    return InterpretRequestInput(raw_text=row['raw_text'],
+        explicit_fields=TripRequirements.model_validate_json(row['payload']),
+        profile_snapshot=ProfileSnapshot.model_validate_json(summary['profile_snapshot']),
+        demo_context=DemoContext.model_validate_json(summary['demo_context']))
 
 
 class RequestRepository:
@@ -111,12 +160,21 @@ class RequestRepository:
             connection.execute('INSERT INTO request_summaries VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(request_id) DO UPDATE SET analysis_revision=excluded.analysis_revision,profile_revision=excluded.profile_revision,profile_snapshot=excluded.profile_snapshot,demo_context=excluded.demo_context,dataset_context=excluded.dataset_context,result=NULL,error=NULL', (request_id, revision, profile_revision, encode(profile), encode(demo), encode(dataset), None, None))
             return revision, InterpretRequestInput(raw_text=row['raw_text'], explicit_fields=TripRequirements.model_validate_json(row['payload']), profile_snapshot=profile, demo_context=demo)
 
-    def finish_analysis(self, user, request_id, analysis_revision, result, status):
+    def finish_analysis(self, user, request_id, analysis_revision, result, status, *, interpretation_metadata=None):
         with self.db.transaction() as connection:
             row = self.own(connection, user, request_id)
             if row['revision'] != analysis_revision or row['status'] != 'ANALYSING':
                 fail(ErrorCode.STALE_CONTEXT, '较旧的分析结果未应用；请求已修改。')
-            connection.execute('UPDATE request_summaries SET result=?,error=NULL WHERE request_id=?', (encode(result), request_id))
+            saved = result.model_dump(mode='json')
+            if interpretation_metadata is not None:
+                metadata = RequestInterpretationMetadata.model_validate(interpretation_metadata)
+                summary = connection.execute('SELECT * FROM request_summaries WHERE request_id=?', (request_id,)).fetchone()
+                if (not summary or summary['analysis_revision'] != analysis_revision
+                        or metadata.analysis_revision != analysis_revision
+                        or metadata.input_sha256 != request_input_fingerprint(_saved_interpretation_input(row, summary))):
+                    fail(ErrorCode.STALE_CONTEXT, '摘要与本次需求资料不一致，请重新生成。')
+                saved['interpretation_metadata'] = metadata.model_dump(mode='json')
+            connection.execute('UPDATE request_summaries SET result=?,error=NULL WHERE request_id=?', (encode(saved), request_id))
             connection.execute('UPDATE requests SET status=?,revision=revision+1 WHERE id=?', (status.value, request_id))
             return self.result(connection, self.own(connection, user, request_id))
 
@@ -127,7 +185,7 @@ class RequestRepository:
                 connection.execute('UPDATE request_summaries SET error=? WHERE request_id=?', (encode(error), request_id))
                 connection.execute("UPDATE requests SET status='DRAFT',revision=revision+1 WHERE id=?", (request_id,))
 
-    def confirm(self, user, request_id, expected_revision, command_key, demo, dataset):
+    def confirm(self, user, request_id, expected_revision, command_key, demo, dataset, *, interpretation_identity=None):
         input_hash = fingerprint({'request_id': request_id, 'expected_revision': expected_revision, 'acknowledged': True})
         with self.db.transaction() as connection:
             row = self.own(connection, user, request_id)
@@ -147,7 +205,19 @@ class RequestRepository:
                 fail(ErrorCode.VERSION_CONFLICT, '露营资料已修改，请重新生成摘要后确认。')
             if summary['dataset_context'] != encode(dataset) or summary['demo_context'] != encode(demo):
                 fail(ErrorCode.STALE_CONTEXT, '数据或演示上下文已变化，请重新生成摘要。')
-            context = ConfirmedContext(request_id=request_id, confirmed_at=now(), requirements=ConfirmedRequirements.model_validate(json.loads(summary['result'])['extracted_requirements']), profile_snapshot=ProfileSnapshot.model_validate_json(summary['profile_snapshot']), demo_context=demo, dataset_context=dataset)
+            result = json.loads(summary['result'])
+            if 'interpretation_metadata' in result:
+                try:
+                    metadata = RequestInterpretationMetadata.model_validate(result['interpretation_metadata'])
+                    current_identity = RequestInterpretationIdentity.model_validate(interpretation_identity)
+                    matches = (metadata.identity == current_identity
+                        and metadata.analysis_revision == summary['analysis_revision']
+                        and metadata.input_sha256 == request_input_fingerprint(_saved_interpretation_input(row, summary)))
+                except (ValidationError, ValueError, TypeError):
+                    matches = False
+                if not matches:
+                    fail(ErrorCode.STALE_CONTEXT, '需求理解结果或配置已变化，请重新生成摘要。')
+            context = ConfirmedContext(request_id=request_id, confirmed_at=now(), requirements=ConfirmedRequirements.model_validate(result['extracted_requirements']), profile_snapshot=ProfileSnapshot.model_validate_json(summary['profile_snapshot']), demo_context=demo, dataset_context=dataset)
             connection.execute('INSERT INTO request_confirmations VALUES(?,?,?,?,?)', (request_id, user.id, command_key, input_hash, context.confirmed_at.isoformat()))
             connection.execute("UPDATE requests SET status='CONFIRMED',revision=revision+1,confirmed_context=? WHERE id=?", (encode(context), request_id))
             return self.result(connection, self.own(connection, user, request_id))

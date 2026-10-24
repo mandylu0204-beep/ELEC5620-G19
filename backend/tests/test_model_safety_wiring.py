@@ -69,6 +69,7 @@ def test_actual_http_factory_all_four_role_combinations(tmp_path,monkeypatch,log
         detail = launch(client,headers,'normal')
         assert role_counts(requests) == {'PLANNING':2,'LOGISTICS':3 if logistics_mode=='model' else 0,
             'SAFETY':3 if safety_mode=='model' else 0}
+        assert sum(item['role']=='INTERPRETATION' for item in requests) == 1
         expected = {name for name,mode in (('LOGISTICS',logistics_mode),('SAFETY',safety_mode)) if mode=='model'}
         assert set(detail['model_assessment_audits']) == expected
         if safety_mode == 'model':
@@ -115,7 +116,8 @@ def test_no_match_never_calls_downstream_models_or_requires_audits(tmp_path,monk
         begun = start(client,headers,request_id=confirmed['request_id'],revision=confirmed['revision'])
         detail = wait_run(client,json_with_internal_audits(client, begun)['run_id'],'SUCCEEDED')
         assert detail['version'] is None and detail['assessments'] == []
-        assert detail.get('model_assessment_audits',{}) == {} and requests == []
+        assert detail.get('model_assessment_audits',{}) == {}
+        assert [item['role'] for item in requests] == ['INTERPRETATION']
         assert all(value == 0 for value in db_counts(client.app).values())
 
 
@@ -233,7 +235,8 @@ def test_missing_safety_save_capability_fails_before_any_model_or_business_write
         confirmed = confirmed_request(client,headers)
         begun = start(client,headers,request_id=confirmed['request_id'],revision=confirmed['revision'])
         failed = wait_run(client,json_with_internal_audits(client, begun)['run_id'],'FAILED')
-        assert failed['run']['error']['code'] == 'CONTRACT_INVALID' and not requests
+        assert failed['run']['error']['code'] == 'CONTRACT_INVALID'
+        assert [item['role'] for item in requests] == ['INTERPRETATION']
         assert all(value == 0 for value in db_counts(client.app).values())
 
 

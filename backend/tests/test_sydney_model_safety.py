@@ -251,6 +251,7 @@ def test_http_plan_revision_reassessment_final_and_restart(tmp_path, monkeypatch
         assert audit['plan_version_id'] == revised_audit['plan_version_id']
         assert reassessed['model_planning_trace'] == revised['model_planning_trace']
         assert role_counts(requests) == {'PLANNING': 4, 'LOGISTICS': 9 if logistics_mode == 'model' else 0, 'SAFETY': 9}
+        assert sum(item['role'] == 'INTERPRETATION' for item in requests) == 1
     before = len(requests)
     with TestClient(create_app(config)) as client:
         sign_in(client)

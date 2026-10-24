@@ -65,7 +65,8 @@ class HybridPlanningAgent:
     safety_audit_contract = '1.0'
 
     def __init__(self, dataset, coordinator: PlanningCoordinator, *, workflow_configuration=None,
-                 heartbeat_interval=20, logistics_agent=None, safety_agent=None):
+                 heartbeat_interval=20, logistics_agent=None, safety_agent=None,
+                 request_interpretation=False):
         if coordinator.dataset is not dataset:
             raise failure(ErrorCode.STALE_CONTEXT, 'Coordinator must consume the same loaded dataset object.')
         self.dataset, self.coordinator = dataset, coordinator
@@ -73,7 +74,16 @@ class HybridPlanningAgent:
         self.logistics_agent = logistics_agent
         self.safety_agent = safety_agent
         self.heartbeat_interval = heartbeat_interval
+        self._request_interpretation = request_interpretation is True
         self._check_configuration()
+
+    @property
+    def model_request_terms(self):
+        return self._request_interpretation
+
+    @property
+    def request_interpretation_identity(self):
+        return self.coordinator.interpreter_identity if self._request_interpretation else None
 
     def _check_configuration(self):
         context = self.workflow_configuration.context
@@ -147,7 +157,22 @@ class HybridPlanningAgent:
             f'HybridPlanningAgent: {capability} uses deterministic rules, not an LLM.']})
 
     async def interpret_request(self, input: InterpretRequestInput) -> InterpretRequestResult:
+        if self._request_interpretation:
+            return (await self.interpret_request_with_observation(input)).result
         return self._rule_result(interpretation.interpret(self.dataset, self._input(InterpretRequestInput, input)), 'request interpretation')
+
+    async def interpret_request_with_observation(self, input: InterpretRequestInput):
+        if not self._request_interpretation:
+            raise failure(ErrorCode.CONTRACT_INVALID, 'Model request interpretation was not enabled.')
+        validated = self._input(InterpretRequestInput, input)
+        identity = self.request_interpretation_identity
+        outcome = await self.coordinator.interpret_request_with_observation(validated)
+        self._check_configuration()
+        if (self.request_interpretation_identity != identity
+                or outcome.observation.get('identity') != identity
+                or outcome.result.execution_mode != ExecutionMode.AGENT):
+            raise failure(ErrorCode.STALE_CONTEXT, 'Request interpretation identity changed; regenerate the summary.')
+        return outcome
 
     async def recommend_campsites(self, input: RecommendCampsitesInput) -> RecommendCampsitesResult:
         return self._rule_result(planning.recommend(self.dataset, self._input(RecommendCampsitesInput, input)), 'campsite filtering')

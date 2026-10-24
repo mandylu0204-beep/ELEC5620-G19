@@ -23,6 +23,7 @@ from app.llm.logistics_validation import validate_logistics_payload
 from app.main import create_app
 from app.workflow.configuration import failure
 from llm_fixtures import completion, final_action, model_settings, tool_action
+from request_semantics_fixtures import interpretation_proposal
 from test_campus_http import KEY, confirmed_request
 from test_llm_logistics_agent import agent_fixture, baseline, input_fixture, proposal_from_facts
 from test_plan_changes import change
@@ -46,6 +47,11 @@ def mock_roles(monkeypatch, *, settings=None):
     async def respond(request):
         payload = json.loads(request.content)
         messages = payload['messages']
+        first_input = json.loads(messages[1]['content']) if messages[1]['content'].startswith('{') else {}
+        if first_input.get('operation') == 'INTERPRET_REQUEST':
+            requests.append({'role': 'INTERPRETATION', 'body': payload})
+            return httpx.Response(200, json=completion(interpretation_proposal(first_input),
+                model='offline-request-interpretation'))
         role = 'LOGISTICS' if 'LogisticsAgent' in messages[0]['content'] else 'PLANNING'
         requests.append({'role': role, 'body': payload})
         if control.get('on_request'):
@@ -90,6 +96,7 @@ def application(tmp_path, case='normal'):
 
 
 def role_counts(requests):
+    # Do not include the independently recorded summary interpretation call.
     return {role: sum(item['role'] == role for item in requests) for role in ('PLANNING', 'LOGISTICS')}
 
 
@@ -132,6 +139,7 @@ def test_four_http_scenarios_use_both_registered_roles(tmp_path, monkeypatch, ca
         detail = launch(client, headers, case)
         audit = assert_audit(detail)
         assert role_counts(requests) == {'PLANNING': 2, 'LOGISTICS': 3}
+        assert sum(item['role'] == 'INTERPRETATION' for item in requests) == 1
         assert assessment(detail, 'SAFETY')['result']['outcome'] == safety_outcome
         assert detail['finalisation_available'] is eligible
         assert audit['trace']['served_models'] == ['offline-two-role-test']
@@ -266,7 +274,8 @@ def test_no_match_skips_both_models_and_audits(tmp_path, monkeypatch):
         begun = start(client, headers, request_id=confirmed['request_id'], revision=confirmed['revision'])
         result = wait_run(client, json_with_internal_audits(client, begun)['run_id'], 'SUCCEEDED')
         assert result['recommendations']['result']['search_outcome'] == 'NO_MATCH'
-        assert result.get('model_assessment_audits', {}) == {} and result['version'] is None and requests == []
+        assert result.get('model_assessment_audits', {}) == {} and result['version'] is None
+        assert [item['role'] for item in requests] == ['INTERPRETATION']
         assert db_counts(client.app)['model_logistics_audits'] == 0
 
 
@@ -347,7 +356,8 @@ def test_missing_model_save_capability_fails_before_model_or_business_writes(tmp
         confirmed = confirmed_request(client, headers)
         begun = start(client, headers, request_id=confirmed['request_id'], revision=confirmed['revision'])
         failed = wait_run(client, json_with_internal_audits(client, begun)['run_id'], 'FAILED')
-        assert failed['run']['error']['code'] == 'CONTRACT_INVALID' and requests == []
+        assert failed['run']['error']['code'] == 'CONTRACT_INVALID'
+        assert [item['role'] for item in requests] == ['INTERPRETATION']
         assert db_counts(client.app)['versions'] == db_counts(client.app)['assessments'] == 0
 
 

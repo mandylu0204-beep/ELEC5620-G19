@@ -9,6 +9,7 @@ from app.application.agent_runtime import DATASET_AGENT_FACTORIES
 from app.contracts.errors import ContractFailure
 from app.contracts.enums import ExecutionMode
 from campus_http_fixtures import mock_campus, application
+from request_semantics_fixtures import role_requests
 from test_v2_http_demo import launch, assessment, finalise, INPUTS, CASES
 from test_extended_demo import confirm_saved
 from test_requests import sign_in
@@ -43,7 +44,7 @@ def test_actual_campus_components_through_http_save_trace_and_immutable_final(tm
         assert requests == []  # readiness/meta must never probe the model
         headers=sign_in(client)
         detail=launch(client,headers,'normal')
-        assert len(requests)==2
+        assert len(role_requests(requests,'PLANNING'))==2 and len(role_requests(requests,'INTERPRETATION'))==1
         trace=detail['model_planning_trace']
         assert trace['run_id']==detail['run']['run_id']
         assert trace['version_id']==detail['version']['version_context']['plan_version_id']
@@ -74,7 +75,7 @@ def test_atomic_trace_insert_failure_rolls_back_version_then_retry_generates_aga
         begun=start(client,headers,request_id=request['request_id'],revision=request['revision'])
         assert begun.status_code==202
         failed=wait_run(client,json_with_internal_audits(client, begun)['run_id'],'FAILED')
-        assert failed['retry_available'] and len(requests)==2
+        assert failed['retry_available'] and len(role_requests(requests,'PLANNING'))==2 and len(role_requests(requests,'INTERPRETATION'))==1
         assert counts(app)['versions']==counts(app)['model_planning_traces']==0
         with app.state.database.transaction() as db:
             assert db.execute("SELECT COUNT(*) FROM write_receipts WHERE operation='version'").fetchone()[0]==0
@@ -82,7 +83,7 @@ def test_atomic_trace_insert_failure_rolls_back_version_then_retry_generates_aga
             db.execute('DROP TRIGGER test_trace_failure')
         assert retry(client,headers,failed).status_code==202
         saved=wait_run(client,failed['run']['run_id'],'SUCCEEDED')
-        assert len(requests)==4 and saved['model_planning_trace'] and saved['finalisation_available']
+        assert len(role_requests(requests,'PLANNING'))==4 and len(role_requests(requests,'INTERPRETATION'))==1 and saved['model_planning_trace'] and saved['finalisation_available']
 
 
 def confirmed_request(client,headers,case='normal'):
@@ -90,6 +91,26 @@ def confirmed_request(client,headers,case='normal'):
     saved=client.post('/api/v1/requests',headers=headers,json=CASES[case]['request'])
     assert saved.status_code==201,saved.text
     return confirm_saved(client,headers,json_with_internal_audits(client, saved),'a16-confirm-request-123456')
+
+
+def test_each_summary_analysis_calls_interpretation_once_without_planning(tmp_path, monkeypatch):
+    requests, _ = mock_campus(monkeypatch)
+    with TestClient(application(tmp_path)) as client:
+        headers = sign_in(client)
+        assert client.put('/api/v1/profile', headers=headers,
+            json={'expected_revision': 0, 'profile': INPUTS['profile']}).status_code == 200
+        saved = client.post('/api/v1/requests', headers=headers, json=CASES['normal']['request'])
+        assert saved.status_code == 201
+        current = saved.json()
+        for expected_calls in (1, 2):
+            analysed = client.post('/api/v1/requests/' + current['request_id'] + '/interpret',
+                headers=headers, json={'expected_revision': current['revision']})
+            assert analysed.status_code == 200, analysed.text
+            current = analysed.json()
+            assert current['status'] == 'AWAITING_CONFIRMATION'
+            assert len(role_requests(requests, 'INTERPRETATION')) == expected_calls
+            assert not role_requests(requests, 'PLANNING')
+        assert counts(client.app)['runs'] == counts(client.app)['model_planning_traces'] == 0
 
 
 def test_lost_model_save_receipt_restarts_without_regenerating_or_replacing_trace(tmp_path,monkeypatch):
@@ -115,14 +136,14 @@ def test_lost_model_save_receipt_restarts_without_regenerating_or_replacing_trac
         begun=start(client,headers,request_id=request['request_id'],revision=request['revision'])
         failed=wait_run(client,json_with_internal_audits(client, begun)['run_id'],'FAILED')
         trace=failed['model_planning_trace'];content=failed['version']['content']
-        assert trace and len(requests)==2
+        assert trace and len(role_requests(requests,'PLANNING'))==2 and len(role_requests(requests,'INTERPRETATION'))==1
     # Same database/new supervisor, not an in-memory replay of a model result.
     with TestClient(application(tmp_path)) as client:
         headers=sign_in(client)
         failed=json_with_internal_audits(client, client.get('/api/v1/runs/'+failed['run']['run_id']))
         assert retry(client,headers,failed).status_code==202
         saved=wait_run(client,failed['run']['run_id'],'SUCCEEDED')
-        assert len(requests)==2 and saved['version']['content']==content
+        assert len(role_requests(requests,'PLANNING'))==2 and len(role_requests(requests,'INTERPRETATION'))==1 and saved['version']['content']==content
         assert saved['model_planning_trace']==trace
         assert counts(client.app)['versions']==counts(client.app)['model_planning_traces']==1
 
@@ -134,7 +155,7 @@ def test_no_match_does_not_invent_a_model_call_or_trace(tmp_path,monkeypatch):
         begun=start(client,headers,request_id=request['request_id'],revision=request['revision'])
         result=wait_run(client,json_with_internal_audits(client, begun)['run_id'],'SUCCEEDED')
         assert result['recommendations']['result']['search_outcome']=='NO_MATCH'
-        assert requests==[] and result['version'] is None and not result.get('model_planning_trace')
+        assert len(role_requests(requests,'INTERPRETATION'))==1 and not role_requests(requests,'PLANNING') and result['version'] is None and not result.get('model_planning_trace')
 
 
 def test_model_may_select_another_valid_candidate_but_cannot_clear_missing_evidence(tmp_path,monkeypatch):
@@ -157,7 +178,7 @@ def test_changed_model_configuration_blocks_old_finalisation_without_live_probe(
         assert current['current_inputs_error'] and not current['finalisation_available']
         response=client.post('/api/v1/plans/'+saved['plan']['plan_id']+'/finalise',headers=headers,json=final_command(saved))
         assert response.status_code==409 and json_with_internal_audits(client, response)['error']['code']=='STALE_CONTEXT'
-        assert len(requests)==2
+        assert len(role_requests(requests,'PLANNING'))==2 and len(role_requests(requests,'INTERPRETATION'))==1
 
 
 def test_missing_model_key_is_not_ready_and_never_registers_a_run(tmp_path,monkeypatch):
@@ -184,7 +205,8 @@ def test_more_than_thirty_nights_is_rejected_before_a_model_run(tmp_path,monkeyp
         saved=client.post('/api/v1/requests',headers=headers,json=body)
         request=confirm_saved(client,headers,json_with_internal_audits(client, saved),'a16-long-confirm-123456')
         response=start(client,headers,request_id=request['request_id'],revision=request['revision'])
-        assert response.status_code==422 and counts(client.app)['runs']==0 and requests==[]
+        assert response.status_code==422 and counts(client.app)['runs']==0
+        assert len(role_requests(requests,'INTERPRETATION'))==1 and not role_requests(requests,'PLANNING')
 
 
 def test_model_save_receipt_is_idempotent_and_trace_changes_are_rejected(tmp_path,monkeypatch):

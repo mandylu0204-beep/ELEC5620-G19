@@ -15,6 +15,7 @@ from app.contracts.errors import ContractFailure
 from app.llm.client import CampusModelClient
 from campus_http_fixtures import application
 from llm_fixtures import completion, final_action, model_input, model_settings, tool_action
+from request_semantics_fixtures import interpretation_proposal, model_operation, role_requests
 from test_campus_http import confirmed_request, counts, KEY
 from test_finalisation import command as final_command
 from test_model_planning import coordinator
@@ -38,9 +39,12 @@ def mock_revision_model(monkeypatch):
     requests, control = [], {}
     async def respond(request):
         value = json.loads(request.content)
-        requests.append(value)
+        role = 'INTERPRETATION' if model_operation(value) == 'INTERPRET_REQUEST' else 'PLANNING'
+        requests.append({'role': role, 'body': value})
         messages = value['messages']
         input = json.loads(messages[1]['content'])
+        if role == 'INTERPRETATION':
+            return httpx.Response(200, json=completion(interpretation_proposal(input), model='offline-test-only'))
         if not messages[-1]['content'].startswith('TOOL_RESULT='):
             action = tool_action()
         elif control.get('requirements_change'):
@@ -126,7 +130,7 @@ def test_http_budget_revision_then_reassessment_preserves_original_trace_and_his
         response = change(client, headers, old, 'revise', feedback='cheaper campsite')
         assert response.status_code == 202, response.text
         current = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'SUCCEEDED')
-        assert len(requests) == 4 and current['version']['version_number'] == 2
+        assert len(role_requests(requests, 'PLANNING')) == 4 and len(role_requests(requests, 'INTERPRETATION')) == 1 and current['version']['version_number'] == 2
         assert current['version']['content']['selected_campsite_ids'] == ['demo-moonlit-field']
         assert assessment(current, 'LOGISTICS')['result']['total_cents'] == 23100
         assert current['finalisation_available'] and current['model_planning_trace']['run_id'] == current['run']['run_id']
@@ -143,7 +147,7 @@ def test_http_budget_revision_then_reassessment_preserves_original_trace_and_his
         response = change(client, headers, saved, key='reassess-model-version-123456')
         assert response.status_code == 202, response.text
         reassessed = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'SUCCEEDED')
-        assert len(requests) == 4  # No planning, recommendation, trace insert or synthetic usage.
+        assert len(role_requests(requests, 'PLANNING')) == 4 and len(role_requests(requests, 'INTERPRETATION')) == 1  # No planning, recommendation, trace insert or synthetic usage.
         assert reassessed['version']['content'] == current['version']['content']
         assert reassessed['version']['version_context']['plan_version_id'] == current['version']['version_context']['plan_version_id']
         assert reassessed['model_planning_trace'] == current['model_planning_trace']
@@ -171,7 +175,7 @@ def test_http_revision_to_missing_evidence_keeps_real_blockers(tmp_path, monkeyp
         response = change(client, headers, old, 'revise', feedback='change campsite')
         assert response.status_code == 202
         current = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'SUCCEEDED')
-        assert len(requests) == 4 and not current['finalisation_available']
+        assert len(role_requests(requests, 'PLANNING')) == 4 and len(role_requests(requests, 'INTERPRETATION')) == 1 and not current['finalisation_available']
         assert assessment(current, 'SAFETY')['result']['data_quality']['WEATHER'] == 'MISSING'
         assert client.post('/api/v1/plans/' + old['plan']['plan_id'] + '/finalise', headers=headers, json=final_command(current)).status_code == 409
 
@@ -198,7 +202,7 @@ def test_http_failed_revision_never_modifies_confirmed_input_or_saves_version(tm
         assert response.status_code == 202
         restored = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'SUCCEEDED')
         assert restored['version']['content'] == old['version']['content']
-        assert restored['model_planning_trace'] == old['model_planning_trace'] and len(requests) == 4
+        assert restored['model_planning_trace'] == old['model_planning_trace'] and len(role_requests(requests, 'PLANNING')) == 4 and len(role_requests(requests, 'INTERPRETATION')) == 1
 
 
 @pytest.mark.parametrize('operation,method,after', [
@@ -238,7 +242,8 @@ def test_http_revision_and_reassessment_recovery_survive_restart(tmp_path, monke
         assert restored['model_planning_trace']
         if previous_trace:
             assert restored['model_planning_trace'] == previous_trace and restored['version']['content'] == previous_content
-        assert len(requests) == (6 if operation == 'REVISE' and not after else 4 if operation == 'REVISE' else 2)
+        assert len(role_requests(requests, 'PLANNING')) == (6 if operation == 'REVISE' and not after else 4 if operation == 'REVISE' else 2)
+        assert len(role_requests(requests, 'INTERPRETATION')) == 1
         assert counts(client.app)['versions'] == counts(client.app)['model_planning_traces'] == (2 if operation == 'REVISE' else 1)
 
 
@@ -254,7 +259,7 @@ def test_reassessment_of_reassessment_keeps_generation_audit_identity(tmp_path, 
             saved = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'SUCCEEDED')
             assert saved['model_planning_trace'] == old['model_planning_trace']
             assert saved['version']['content'] == old['version']['content']
-        assert len(requests) == 2 and counts(client.app)['model_planning_traces'] == 1
+        assert len(role_requests(requests, 'PLANNING')) == 2 and len(role_requests(requests, 'INTERPRETATION')) == 1 and counts(client.app)['model_planning_traces'] == 1
 
 
 def test_model_config_change_allows_new_reassessment_but_rejects_old_finalisation(tmp_path, monkeypatch):
@@ -270,7 +275,7 @@ def test_model_config_change_allows_new_reassessment_but_rejects_old_finalisatio
         assert response.status_code == 202
         saved = wait_run(client, json_with_internal_audits(client, response)['run_id'], 'SUCCEEDED')
         assert saved['model_planning_trace'] == old['model_planning_trace']
-        assert saved['finalisation_available'] and len(requests) == 2
+        assert saved['finalisation_available'] and len(role_requests(requests, 'PLANNING')) == 2 and len(role_requests(requests, 'INTERPRETATION')) == 1
 
 
 def test_cross_owner_revision_and_reassessment_cannot_create_runs(tmp_path, monkeypatch):
@@ -281,7 +286,7 @@ def test_cross_owner_revision_and_reassessment_cannot_create_runs(tmp_path, monk
         before = counts(client.app)
         for operation in ['revise', 'reassess']:
             assert change(client, headers, old, operation, feedback='cheaper campsite' if operation == 'revise' else None).status_code == 404
-        assert counts(client.app) == before and len(requests) == 2
+        assert counts(client.app) == before and len(role_requests(requests, 'PLANNING')) == 2 and len(role_requests(requests, 'INTERPRETATION')) == 1
 
 
 @pytest.mark.parametrize('corruption', ['missing', 'owner', 'fingerprint', 'hash', 'duplicate'])
@@ -314,4 +319,4 @@ def test_reassessment_origin_audit_integrity_cannot_be_bypassed(tmp_path, monkey
                     (scope.run_id, version.version_context.input_fingerprint))
             with pytest.raises(ContractFailure):
                 load_model_trace(db, scope, version)
-        assert len(requests) == 2
+        assert len(role_requests(requests, 'PLANNING')) == 2 and len(role_requests(requests, 'INTERPRETATION')) == 1

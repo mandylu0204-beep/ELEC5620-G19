@@ -5,12 +5,18 @@ from ...adapters.dataset_mapping import aud_to_cents
 from ...contracts.dto import Clarification, InterpretRequestResult, TripRequirements
 from ...contracts.enums import FieldErrorCode
 from ...contracts.errors import FieldError
-from .common import artifact, meal_mode
+from .common import artifact
+from .request_terms import canonical_term, merge_explicit_terms, term_issues
 
 NUMBERS = {'zero': 0, 'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5, 'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10}
 NUMBER = r'(?:zero|one|two|three|four|five|six|seven|eight|nine|ten|[+-]?(?:\d+(?:\.\d+)?|\.\d+))'
 NUMBER_BOUNDARY = r'(?<![\w.])'
 NO_FIRE_PATTERN = r"\b(?:no fires|no campfires?|without campfires?|avoid campfires?|(?:do not|don't|must not)\s+(?:use|light|have|build|start)\s+(?:a\s+)?campfires?)\b"
+
+
+def _negated_before(text, start):
+    prefix = re.split(r'[,，.;。；!?！？]', text[:start])[-1]
+    return bool(re.search(r"(?:\b(?:no|not|without|avoid|do not want|don't want|do not|don't)\s+(?:need\s+|require\s+|want\s+|an?\s+|any\s+)?|不需要|不想要|不想|无需|不用|不要|不)\s*$", prefix))
 
 
 def _positive_integer_tokens(tokens: list[str]) -> tuple[list[int], bool]:
@@ -91,15 +97,16 @@ def interpret(dataset, input) -> InterpretRequestResult:
 
     preferences = []
     phrases = (
-        ('quiet', r'\bquiet\b'), ('toilets', r'\btoilets?\b'),
-        ('public transport', r'\bpublic transport\b'),
-        ('wheelchair accessible', r'\b(?:accessible|wheelchair)\b'),
-        ('ready-to-eat meals', r'\bready[- ]to[- ]eat\b'),
-        ('self-catered meals', r'\bself[- ]catered\b'),
+        ('quiet', r'\bquiet\b|安静|清静'), ('toilets', r'\btoilets?\b|厕所|卫生间'),
+        ('showers', r'\bshowers?\b|淋浴|洗澡'),
+        ('public transport', r'\bpublic transport\b|公共交通'),
+        ('wheelchair accessible', r'\b(?:accessible|wheelchair)\b|轮椅通行'),
+        ('ready-to-eat meals', r'\bready[- ]to[- ]eat\b|即食餐食|即食食品'),
+        ('self-catered meals', r'\bself[- ]catered\b|自行烹饪|自己做饭'),
     )
     for preference, pattern in phrases:
         matches = list(re.finditer(pattern, lowered))
-        if any(not re.search(r"\b(?:no|not|without|avoid|do not want|don't want)\s+(?:a\s+|any\s+)?$", lowered[:match.start()]) for match in matches):
+        if any(not _negated_before(lowered, match.start()) for match in matches):
             preferences.append(preference)
     no_fire = bool(re.search(NO_FIRE_PATTERN, lowered))
     if re.search(r'\bcampfire\b', lowered) and not no_fire and not re.search(r'\bremove\s+campfires?\b', lowered):
@@ -108,29 +115,37 @@ def interpret(dataset, input) -> InterpretRequestResult:
     constraints = []
     hard_phrases = {
         'toilets': r'\b(?:must have|require|requires|need)\s+(?:a\s+)?toilets?\b',
+        'showers': r'\b(?:must have|require|requires|need)\s+(?:a\s+)?showers?\b',
         'potable_water': r'\b(?:must have|require|requires|need)\s+potable water\b',
         'wheelchair_accessible': r'\b(?:must have|require|requires|need)\s+(?:an?\s+)?(?:wheelchair access|accessible)\b',
         'public_transport_access': r'\b(?:must have|require|requires|need|using|use)\s+public transport\b',
         'campfire': r'\b(?:must have|require|requires)\s+(?:a\s+)?campfire\b',
     }
     for constraint, pattern in hard_phrases.items():
-        if re.search(pattern, lowered):
+        if any(not _negated_before(lowered, match.start()) for match in re.finditer(pattern, lowered)):
             constraints.append(constraint)
     if no_fire:
         constraints.append('no_fires')
-    values['mandatory_constraints'] = constraints
-    if 'mandatory_constraints' not in explicit:
-        clauses = [match.group(0).split(',')[0].strip() for match in re.finditer(r'\b(?:must|requires?)\b[^.;]*', lowered)]
-        if any(not any(re.fullmatch(pattern, clause) for pattern in (*hard_phrases.values(), NO_FIRE_PATTERN)) for clause in clauses):
-            error('mandatory_constraints', FieldErrorCode.UNSUPPORTED, 'An unrecognised/compound mandatory clause needs explicit structured constraints.')
-    values.update(explicit)
-    if ({'ready-to-eat meals', 'ready_to_eat'} & set(values['preferences'])
-            and {'self-catered meals', 'self_catered'} & set(values['preferences'])):
-        error('preferences', FieldErrorCode.CONFLICTING, 'Choose one confirmed meal mode.')
-    elif meal_mode(TripRequirements.model_validate(values)) is None:
-        error('preferences', FieldErrorCode.MISSING, 'Choose ready-to-eat meals or self-catered meals before confirming the request.')
-    if 'no_fires' in values['mandatory_constraints'] and 'campfire' in values['mandatory_constraints']:
-        error('mandatory_constraints', FieldErrorCode.CONFLICTING, 'Mandatory campfire and no-fire clauses conflict.')
+    chinese_clauses = [match.group(0).strip() for match in re.finditer(r'(?:必须|需要|一定要)[^，,。；;.!！?？]*', text)
+                       if not _negated_before(text, match.start())]
+    for clause in chinese_clauses:
+        canonical = canonical_term(clause, 'constraint')
+        if canonical:
+            constraints.append(canonical)
+    if re.search(r'不生火|不使用营火|禁止营火|不要生火', text):
+        constraints.append('no_fires')
+    # An empty structured box does not waive an unknown mandatory prose clause.
+    clauses = [match.group(0).split(',')[0].strip() for match in re.finditer(r'\b(?:must|requires?|need)\b[^.;]*', lowered)
+               if not _negated_before(lowered, match.start())]
+    if (any(not any(re.fullmatch(pattern, clause) for pattern in (*hard_phrases.values(), NO_FIRE_PATTERN)) for clause in clauses)
+            or any(canonical_term(clause, 'constraint') is None for clause in chinese_clauses)):
+        error('mandatory_constraints', FieldErrorCode.UNSUPPORTED,
+              '部分必须条件的含义尚未明确，请拆分并说明具体需要的设施，再重新生成摘要。')
+    values.update({field: value for field, value in explicit.items() if field not in {'preferences', 'mandatory_constraints'}})
+    values['preferences'], values['mandatory_constraints'] = merge_explicit_terms(preferences, constraints, input.explicit_fields)
+    term_errors, term_questions = term_issues(values['preferences'], values['mandatory_constraints'])
+    errors.extend(item for item in term_errors if item not in errors)
+    clarifications.extend(term_questions)
 
     start, nights = values.get('start_date'), values.get('duration_nights')
     if start and nights:
@@ -181,5 +196,5 @@ def interpret(dataset, input) -> InterpretRequestResult:
     return InterpretRequestResult(
         extracted_requirements=TripRequirements.model_validate(values),
         field_errors=errors, clarifications=clarifications,
-        **artifact(input.demo_context, assumptions=['Limited English demo parser; explicit fields take precedence.'], uncertainties=['This output is not a confirmation event.']),
+        **artifact(input.demo_context, assumptions=['Limited deterministic parser; scalar controls take precedence and text conditions are merged.'], uncertainties=['This output is not a confirmation event.']),
     )

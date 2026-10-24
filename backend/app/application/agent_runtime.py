@@ -180,10 +180,16 @@ def build_v2_hybrid_binding(settings, descriptor, *, parsed_snapshots=None, snap
                 message=f'{role} component identity differs from the final workflow context.'))
         components[f'{role}_agent'] = component
     try:
-        agent = HybridPlanningAgent(dataset,coordinator,workflow_configuration=configuration,**components)
+        agent = HybridPlanningAgent(dataset,coordinator,workflow_configuration=configuration,
+            request_interpretation=True,**components)
     except TypeError:
         raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE,
             message='Hybrid does not accept the registered model assessment components.')) from None
+    if (getattr(agent, 'model_request_terms', False) is not True
+            or not callable(getattr(agent, 'interpret_request_with_observation', None))
+            or not getattr(agent, 'request_interpretation_identity', None)):
+        raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE,
+            message='Hybrid did not bind the registered request interpretation capability.'))
     for name, component in components.items():
         if getattr(agent,name,None) is not component:
             raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE,

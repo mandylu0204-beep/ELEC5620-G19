@@ -92,6 +92,19 @@ class PlanningCoordinator:
         }
         return {**values, 'configuration_fingerprint': digest(canonical(values))}
 
+    @property
+    def interpreter_identity(self):
+        # Request understanding is not part of the frozen itinerary/audit role.
+        from .request_interpretation import interpreter_identity
+        return interpreter_identity(self.client)
+
+    async def interpret_request_with_observation(self, raw):
+        from .request_interpretation import interpret_request_with_observation
+        return await interpret_request_with_observation(self.dataset, self.client, raw)
+
+    async def interpret_request(self, raw):
+        return (await self.interpret_request_with_observation(raw)).result
+
     async def plan(self, raw):
         try:
             input = ItineraryInput.model_validate(raw).model_copy(deep=True)

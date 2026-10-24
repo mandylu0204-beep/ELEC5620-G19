@@ -159,7 +159,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {
             'project': 'CampMate AI', 'version': '0.6.0', 'schema_version': SCHEMA_VERSION,
             'supported_operations': operations,
-            'planning_stages': {'interpretation':'rules', 'recommendation':'rules',
+            'planning_stages': {'interpretation':'model' if runtime and getattr(runtime.agent, 'model_request_terms', False) is True else 'rules', 'recommendation':'rules',
                 'itinerary':'model' if config.execution_mode == ExecutionMode.AGENT else 'rules',
                 'logistics':'model' if planning and config.logistics_execution == 'model' else 'rules',
                 'safety':'model' if planning and config.safety_execution == 'model' else 'rules'} if config.execution_mode != ExecutionMode.STUB else {},

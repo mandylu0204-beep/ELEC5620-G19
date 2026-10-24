@@ -12,6 +12,10 @@ from .contracts.enums import ErrorCode, AllowedAction
 from .contracts.errors import ContractError, ContractFailure
 from .http_accounts import current_user, writing_user
 from .application.presentation import request_response
+from .storage.requests import (
+    RequestInterpretationIdentity, RequestInterpretationMetadata,
+    RequestInterpretationObservation, request_input_fingerprint,
+)
 
 
 class RequestInput(ContractModel):
@@ -105,11 +109,34 @@ async def interpret_request(request_id: str, body: RevisionInput, request: Reque
     demo = snapshot.demo
     revision, input = await run_in_threadpool(repository.begin_analysis, user, request_id, body.expected_revision, demo, dataset)
     try:
-        result = InterpretRequestResult.model_validate(await agent.interpret_request(input))
+        interpreted_terms = getattr(agent, 'model_request_terms', False) is True
+        metadata = None
+        if interpreted_terms:
+            if demo.mode.value != 'agent':
+                raise ValueError('Model interpretation requires agent mode')
+            identity = RequestInterpretationIdentity.model_validate(agent.request_interpretation_identity)
+            observe = getattr(agent, 'interpret_request_with_observation', None)
+            if not callable(observe):
+                raise ValueError('Model interpretation observation is unavailable')
+            outcome = await observe(input)
+            observation = RequestInterpretationObservation.model_validate(outcome.observation)
+            current = RequestInterpretationIdentity.model_validate(agent.request_interpretation_identity)
+            if observation.identity != identity or current != identity:
+                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT,
+                    message='需求理解配置已变化，请重新生成摘要。'))
+            result = InterpretRequestResult.model_validate(outcome.result)
+            metadata = RequestInterpretationMetadata(**observation.model_dump(mode='json'),
+                analysis_revision=revision, input_sha256=request_input_fingerprint(input))
+        else:
+            result = InterpretRequestResult.model_validate(await agent.interpret_request(input))
         if result.execution_mode != config.execution_mode:
             raise ValueError('Mode mismatch')
-        normalized, status = normalize(result, input.explicit_fields, input.profile_snapshot, regions)
-        return await run_in_threadpool(repository.finish_analysis, user, request_id, revision, normalized, status)
+        normalized, status = normalize(result, input.explicit_fields, input.profile_snapshot, regions,
+            interpreted_terms=interpreted_terms)
+        options = {'interpretation_metadata': metadata} if metadata is not None else {}
+        saved = await run_in_threadpool(repository.finish_analysis, user, request_id, revision,
+            normalized, status, **options)
+        return request_response(saved)
     except (ValidationError, ValueError) as exc:
         error = ContractError(code=ErrorCode.CONTRACT_INVALID, message='解释器输出不符合约定；请求未确认，可修改或重试。', allowed_actions=[AllowedAction.RETRY])
         await run_in_threadpool(repository.fail_analysis, user, request_id, revision, error)
@@ -132,4 +159,8 @@ def confirm_request(request_id: str, body: ConfirmInput, request: Request, user:
     request.app.state.requests.get(user, request_id)
     snapshot = request.app.state.runtime.resolve()
     dataset, demo = snapshot.dataset, snapshot.demo
-    return planning_fields(request, user, request.app.state.requests.confirm(user, request_id, body.expected_revision, body.command_key, demo, dataset))
+    options = {}
+    if getattr(snapshot.agent, 'model_request_terms', False) is True:
+        options['interpretation_identity'] = snapshot.agent.request_interpretation_identity
+    return planning_fields(request, user, request.app.state.requests.confirm(user, request_id,
+        body.expected_revision, body.command_key, demo, dataset, **options))

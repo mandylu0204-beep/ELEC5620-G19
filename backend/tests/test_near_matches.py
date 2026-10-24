@@ -110,12 +110,15 @@ def test_http_no_match_old_snapshot_permissions_no_write_and_adjustable_copy(tmp
 
 def test_model_no_match_comparison_does_not_call_model_and_handles_context_change(tmp_path,monkeypatch):
     from campus_http_fixtures import mock_campus,application as model_application
+    from request_semantics_fixtures import role_requests
     calls,_=mock_campus(monkeypatch)
     with TestClient(model_application(tmp_path,'no_match')) as client:
         _,detail=launch_no_match(client)
-        assert len(detail['recommendation_guidance']['near_matches'])==3 and calls==[]
+        assert len(detail['recommendation_guidance']['near_matches'])==3
+        assert len(role_requests(calls,'INTERPRETATION'))==1 and not role_requests(calls,'PLANNING')
         client.app.state.settings.demo_today=DEMO.demo_today
         current=client.get('/api/v1/plans/'+detail['plan']['plan_id']).json()
         assert current['current_inputs_error'] and current['recommendation_guidance']['metadata_note']
         assert all(i['nightly_fee_cents'] is None for i in current['recommendation_guidance']['near_matches'])
-        assert calls==[] and current['version'] is None
+        assert len(role_requests(calls,'INTERPRETATION'))==1 and not role_requests(calls,'PLANNING')
+        assert current['version'] is None

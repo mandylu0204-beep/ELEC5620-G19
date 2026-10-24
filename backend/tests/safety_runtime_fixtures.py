@@ -14,6 +14,7 @@ from llm_fixtures import ROOT, completion, model_settings, tool_action, final_ac
 from safety_fixtures import proposal_from_safety_facts
 from test_llm_logistics_agent import proposal_from_facts
 from test_v2_http_demo import CASES, INPUTS
+from request_semantics_fixtures import interpretation_proposal
 
 
 def mock_safety_runtime(monkeypatch, *, settings=None):
@@ -23,6 +24,13 @@ def mock_safety_runtime(monkeypatch, *, settings=None):
         body = json.loads(request.content)
         messages = body['messages']
         system = messages[0]['content']
+        first_input = json.loads(messages[1]['content']) if messages[1]['content'].startswith('{') else {}
+        if first_input.get('operation') == 'INTERPRET_REQUEST':
+            requests.append({'role':'INTERPRETATION', 'body':body})
+            # Summary calls are a separate capability, never a safety/logistics
+            # gate, action mutation or workflow-role failure injection.
+            return httpx.Response(200, json=completion(interpretation_proposal(first_input),
+                model='offline-request-interpretation'))
         role = 'SAFETY' if 'SafetyAgent' in system else 'LOGISTICS' if 'LogisticsAgent' in system else 'PLANNING'
         requests.append({'role':role, 'body':body})
         if control.get('on_request'):
@@ -71,6 +79,7 @@ def application(tmp_path,case='normal',*,logistics='model',safety='model',**chan
 
 
 def role_counts(requests):
+    # Formal workflow roles only; interpretation is retained as a separate row.
     return {role:sum(row['role'] == role for row in requests) for role in ('PLANNING','LOGISTICS','SAFETY')}
 
 

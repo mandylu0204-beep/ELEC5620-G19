@@ -6,6 +6,7 @@ from ..contracts.enums import ErrorCode, FieldErrorCode, RequestStatus
 from ..contracts.errors import FieldError
 
 from .datasets import inspect_dataset
+from ..agents.rules.request_terms import merge_explicit_terms, term_issues
 
 
 def data_context(settings):
@@ -13,15 +14,29 @@ def data_context(settings):
     return descriptor.context, descriptor.regions
 
 
-def normalize(result: InterpretRequestResult, explicit: TripRequirements, profile: ProfileSnapshot, regions: list[str]):
+def normalize(result: InterpretRequestResult, explicit: TripRequirements, profile: ProfileSnapshot, regions: list[str], *, interpreted_terms=False):
     extracted = result.extracted_requirements.model_dump(mode='json')
     # Explicit user input has authority over interpretation output.
     for field, value in explicit.model_dump(mode='json', exclude_unset=True).items():
-        if value is not None:
+        if value is not None and field not in {'preferences', 'mandatory_constraints'}:
             extracted[field] = value
+    # Scalar controls are authoritative. Text lists are semantic input, not an
+    # instruction to erase conditions found in the user's original idea. The
+    # model path has already validated every source clause and projected it to
+    # canonical terms; never overwrite that projection with its raw wording.
+    if not interpreted_terms:
+        extracted['preferences'], extracted['mandatory_constraints'] = merge_explicit_terms(
+            extracted.get('preferences', []), extracted.get('mandatory_constraints', []), explicit)
     requirements = TripRequirements.model_validate(extracted)
     errors = list(result.field_errors)
     questions = list(result.clarifications)
+    term_errors, term_questions = term_issues(requirements.preferences, requirements.mandatory_constraints, require_meal=False)
+    for item in term_errors:
+        if item not in errors:
+            errors.append(item)
+    for item in term_questions:
+        if item not in questions:
+            questions.append(item)
 
     def issue(field, message, code=FieldErrorCode.MISSING):
         if not any(item.field == field and item.code == code for item in errors):
@@ -69,5 +84,5 @@ def normalize(result: InterpretRequestResult, explicit: TripRequirements, profil
         'field_errors': [item.model_dump(mode='json') for item in errors],
         'clarifications': [item.model_dump(mode='json') for item in questions],
     })
-    status = RequestStatus.UNSUPPORTED if any(item.code == FieldErrorCode.UNSUPPORTED for item in errors) else RequestStatus.NEEDS_CLARIFICATION if errors or questions else RequestStatus.AWAITING_CONFIRMATION
+    status = RequestStatus.UNSUPPORTED if any(item.code == FieldErrorCode.UNSUPPORTED and item.field == 'destination' for item in errors) else RequestStatus.NEEDS_CLARIFICATION if errors or questions else RequestStatus.AWAITING_CONFIRMATION
     return normalized, status

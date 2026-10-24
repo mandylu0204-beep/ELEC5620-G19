@@ -19,12 +19,12 @@ type Draft = { raw: string; destination: string; start: string; nights: string; 
 const EMPTY: Draft = {raw:'',destination:'',start:'',nights:'',days:'',end:'',budget:'',preferences:'',constraints:''};
 const STATUS: {[key:string]:string} = {DRAFT:'草稿',ANALYSING:'正在生成摘要',NEEDS_CLARIFICATION:'需要澄清',UNSUPPORTED:'暂不支持该地区',AWAITING_CONFIRMATION:'等待你的确认',CONFIRMED:'需求已确认'};
 
-function fromRecord(record: Record): Draft {
+export function requestDraftFromRecord(record: Record): Draft {
   const value = record.explicit_fields;
-  return { raw:record.raw_text, destination:value.destination ?? '', start:value.start_date ?? '', nights:String(value.duration_nights ?? ''), days:String(record.explicit_fields.duration_days ?? ''), end:record.explicit_fields.end_date ?? '', budget:value.budget_cents === null || value.budget_cents === undefined ? '' : (value.budget_cents / 100).toFixed(2), preferences:(value.preferences ?? []).map(item=>termLabel(item,'preference')).join('\n'), constraints:(value.mandatory_constraints ?? []).map(item=>termLabel(item,'constraint')).join('\n') };
+  return { raw:record.raw_text, destination:value.destination ?? '', start:value.start_date ?? '', nights:String(value.duration_nights ?? ''), days:String(record.explicit_fields.duration_days ?? ''), end:record.explicit_fields.end_date ?? '', budget:value.budget_cents === null || value.budget_cents === undefined ? '' : (value.budget_cents / 100).toFixed(2), preferences:(value.preferences ?? []).join('\n'), constraints:(value.mandatory_constraints ?? []).join('\n') };
 }
 
-function payload(draft: Draft) {
+export function requestPayload(draft: Draft) {
   let budget_cents: number | null = null;
   if (draft.budget !== '') {
     if (!/^\d+([.]\d{1,2})?$/.test(draft.budget)) throw new Error('预算请填写最多两位小数的 AUD 金额。');
@@ -32,7 +32,15 @@ function payload(draft: Draft) {
     budget_cents = Number(whole) * 100 + Number(fraction.padEnd(2,'0'));
     if (!Number.isSafeInteger(budget_cents)) throw new Error('预算金额过大，请修改。');
   }
-  return { raw_text:draft.raw, explicit_fields:{destination:draft.destination.trim() || null, start_date:draft.start || null, duration_nights:integer(draft.nights), duration_days:integer(draft.days), end_date:draft.end || null, budget_cents, ...(draft.preferences.trim()?{preferences:canonicalTerms(lines(draft.preferences),'preference')} : {}), mandatory_constraints:canonicalTerms(lines(draft.constraints),'constraint')} };
+  // Free-text fields are evidence for the interpreter. Translating labels or
+  // replacing phrases here loses wording, negation and the soft/hard boundary.
+  return { raw_text:draft.raw, explicit_fields:{destination:draft.destination.trim() || null, start_date:draft.start || null, duration_nights:integer(draft.nights), duration_days:integer(draft.days), end_date:draft.end || null, budget_cents, preferences:lines(draft.preferences), mandatory_constraints:lines(draft.constraints)} };
+}
+
+export function requestMealPreferences(preferences:string,selected:string):string {
+  const original=lines(preferences);
+  const remaining=original.filter(item=>!['ready-to-eat meals','ready_to_eat','self-catered meals','self_catered'].includes(canonicalTerms([item],'preference')[0]));
+  return [...remaining,...(selected?[termLabel(selected,'preference')]:[])].join('\n');
 }
 
 function RequestFields({draft,set,regions,disabled}:{draft:Draft;set:(patch:Partial<Draft>)=>void;regions:string[];disabled:boolean}) {
@@ -42,11 +50,10 @@ function RequestFields({draft,set,regions,disabled}:{draft:Draft;set:(patch:Part
   const cooked=preferences.some(value=>['self-catered meals','self_catered'].includes(value));
   const meal=ready!==cooked?(ready?'ready-to-eat meals':'self-catered meals'):'';
   function selectMeal(value:string) {
-    const remaining=preferences.filter(item=>!['ready-to-eat meals','ready_to_eat','self-catered meals','self_catered'].includes(item));
-    set({preferences:[...remaining,...(value?[value]:[])].map(item=>termLabel(item,'preference')).join('\n')});
+    set({preferences:requestMealPreferences(draft.preferences,value)});
   }
   return <fieldset disabled={disabled}>
-    <section className="request-form-section"><div className="form-section-heading"><span>01</span><h3>想怎样露营？</h3></div><label htmlFor="request-idea">你的露营想法 <span className="required-mark">必填</span></label><textarea id="request-idea" required maxLength={8000} value={draft.raw} placeholder="和谁同行，想去哪里，希望怎样度过这次露营？" onChange={event=>set({raw:event.target.value})}/></section>
+    <section className="request-form-section"><div className="form-section-heading"><span>01</span><h3>想怎样露营？</h3></div><label htmlFor="request-idea">你的露营想法 <span className="required-mark">必填</span></label><textarea id="request-idea" required maxLength={8000} value={draft.raw} aria-describedby="idea-hint" placeholder="和谁同行，想去哪里，希望怎样度过这次露营？" onChange={event=>set({raw:event.target.value})}/><FieldHint id="idea-hint">可用中英文描述，摘要会整理偏好和必须条件，供你核对。</FieldHint></section>
     <section className="request-form-section"><div className="form-section-heading"><span>02</span><h3>目的地与行程</h3></div><div className="form-grid">
       <div><label htmlFor="request-destination">目的地</label><input id="request-destination" list="supported-destinations" value={draft.destination} aria-describedby="destination-hint" onChange={event=>set({destination:event.target.value})}/><datalist id="supported-destinations">{regions.map(region=><option key={region} value={region}/>)}</datalist><FieldHint id="destination-hint">可选地区：{regions.join('、')||'正在读取…'}</FieldHint></div>
       <div><label htmlFor="request-start">开始日期</label><input id="request-start" type="date" value={draft.start} onChange={event=>set({start:event.target.value})}/></div>
@@ -57,8 +64,29 @@ function RequestFields({draft,set,regions,disabled}:{draft:Draft;set:(patch:Part
   </fieldset>;
 }
 
-const FIELD_IDS: {[field:string]:string} = {destination:'request-destination',start_date:'request-start',duration_nights:'request-nights',duration_days:'request-days',end_date:'request-end',budget_cents:'request-budget',preferences:'request-meal',mandatory_constraints:'request-constraints'};
-const FIELD_TITLES: {[field:string]:string} = {destination:'目的地',start_date:'开始日期',duration_nights:'露营晚数',duration_days:'行程天数',end_date:'结束日期',budget_cents:'小组预算',preferences:'偏好与用餐方式',mandatory_constraints:'必须条件','profile.group_size':'小组人数'};
+const FIELD_IDS: {[field:string]:string} = {raw_text:'request-idea',destination:'request-destination',start_date:'request-start',duration_nights:'request-nights',duration_days:'request-days',end_date:'request-end',budget_cents:'request-budget',preferences:'request-preferences',meal_mode:'request-meal',mandatory_constraints:'request-constraints'};
+const FIELD_TITLES: {[field:string]:string} = {raw_text:'露营想法',destination:'目的地',start_date:'开始日期',duration_nights:'露营晚数',duration_days:'行程天数',end_date:'结束日期',budget_cents:'小组预算',preferences:'偏好',meal_mode:'用餐方式',mandatory_constraints:'必须条件','profile.group_size':'小组人数'};
+export function requestFieldRoot(field:string):string {
+  return field.match(/^(raw_text|preferences|mandatory_constraints)(?:\.|\[|$)/)?.[1]??field;
+}
+export function requestClarificationField(field:string,message:string):string {
+  const base=requestFieldRoot(field);
+  const mealQuestions=[
+    'Choose ready-to-eat meals or self-catered meals before confirming the request.',
+    'Choose one confirmed meal mode.',
+    '请选择用餐方式：即食餐食或自行烹饪。',
+    '用餐方式同时包含即食餐食和自行烹饪，请明确本次采用哪一种。',
+  ];
+  return base==='preferences'&&mealQuestions.includes(message)?'meal_mode':base;
+}
+
+export function RequestMeaningSummary({requirements,pendingConstraints=false}:{requirements:Requirements;pendingConstraints?:boolean}) {
+  return <section className="request-meaning-summary" aria-label="需求理解结果">
+    <div className="summary-preferences"><h3>偏好</h3>{requirements.preferences?.length>0?<ul>{requirements.preferences.map((item,index)=><li key={index}>{termLabel(item,'preference')}</li>)}</ul>:<p>暂未提出额外偏好。</p>}</div>
+    <div className="summary-preferences"><h3>必须满足的条件</h3>{requirements.mandatory_constraints?.length>0?<ul>{requirements.mandatory_constraints.map((item,index)=><li key={index}>{termLabel(item,'constraint')}</li>)}</ul>:<p>{pendingConstraints?'还有必须条件需要核对，请查看上方提示。':'暂未提出额外必须条件。'}</p>}</div>
+    <p className="field-hint">请核对是否准确、有无遗漏。如需修改或取消，请检查露营想法及对应输入，再生成摘要。</p>
+  </section>;
+}
 export function RequirementsChangePreview({before,after}:{before:Requirements;after:Requirements}){
   const fields=['destination','start_date','duration_nights','end_date','budget_cents','preferences','mandatory_constraints'] as const;
   const changed=fields.filter(key=>JSON.stringify(before[key])!==JSON.stringify(after[key]));
@@ -66,7 +94,7 @@ export function RequirementsChangePreview({before,after}:{before:Requirements;af
     :key==='budget_cents'&&typeof value==='number'?`AUD ${(value/100).toFixed(2)}`:value==null?'未知':String(value);
   return <section aria-label="需求变化"><h3>需求变化</h3>{changed.length?<ul>{changed.map(key=><li key={key}>{FIELD_TITLES[key]}：{text(key,before[key])} → {text(key,after[key])}</li>)}</ul>:<p>目的地、日期、预算和偏好与原方案一致。</p>}<p>这是本次拟采用的需求，不代表正式检查通过。</p></section>;
 }
-function clarificationText(field:string,message:string,requirements:Requirements|undefined) {
+export function clarificationText(field:string,message:string,requirements:Requirements|undefined) {
   const pastDate=message.match(/^Start date must be on or after the checking date \((\d{4}-\d{2}-\d{2}), Australia\/Sydney\)\.$/);
   if(pastDate)return `开始日期不能早于本次检查日期（${pastDate[1]}，悉尼时间），请调整后重新生成摘要。`;
   if(message==='Start date precedes the fixed demonstration date.')return '开始日期早于此前检查采用的日期，请重新生成摘要以核对当前日期。';
@@ -74,6 +102,8 @@ function clarificationText(field:string,message:string,requirements:Requirements
     return `请补充${FIELD_TITLES[field]??'此项信息'}。`;
   if(message==='Choose ready-to-eat meals or self-catered meals before confirming the request.'||message==='Choose one confirmed meal mode.')return '请选择一种用餐方式：即食餐食或自行烹饪，再重新生成摘要。';
   if(message==='Only registered synthetic regions are supported.')return '当前资料暂不包含该地区，请核对目的地。';
+  const unsupported=message.match(/^Unsupported hard constraint:\s*(.*?)\.?$/);
+  if(unsupported)return `无法核实必须条件“${unsupported[1]}”。请说明具体需要的设施，或将非必要要求移到偏好中，再生成摘要。`;
   if(field==='duration_days'&&(message===`Please clarify ${field}.`||message==='Days must equal nights plus one.')&&requirements?.duration_nights!=null&&requirements.duration_days!=null&&requirements.duration_days!==requirements.duration_nights+1)
     return `${requirements.duration_nights} 晚对应 ${requirements.duration_nights+1} 天，当前填写了 ${requirements.duration_days} 天，请核对。`;
   return message===`Please clarify ${field}.`?`请核对${FIELD_TITLES[field]??'此项信息'}。`:message;
@@ -130,18 +160,18 @@ export function RequestsPage() {
       const fields=record.confirmed_context?.requirements??record.explicit_fields;
       // Derived end/day fields stay blank so changing the start or nights does
       // not accidentally retain a constraint from the old confirmed trip.
-      setDraft({...fromRecord({...record,explicit_fields:fields}),days:'',end:''});
+      setDraft({...requestDraftFromRecord({...record,explicit_fields:fields}),days:'',end:''});
       setCopyNotice('已载入原需求。请修改后重新确认。');
     }).catch(reason=>{if(!controller.signal.aborted){setCopyFailed(true);setError(reason instanceof ApiFailure?reason.message:'无法载入原需求，请重试或开始空白请求。');if(reason instanceof ApiFailure&&reason.envelope.error.code==='UNAUTHENTICATED')reload();}}).finally(()=>{if(!controller.signal.aborted)setCopyLoading(false);});
     return()=>controller.abort();
   },[copyFrom,reload]);
   useEffect(()=>{const controller=new AbortController(); privateApi<{requests:Record[]}>('/requests',{signal:controller.signal}).then(value=>{if(!controller.signal.aborted)setRows(value.requests);}).catch(reason=>{if(!controller.signal.aborted)setError(reason instanceof ApiFailure?reason.message:'无法读取已保存请求。');}); return()=>controller.abort();},[]);
   useEffect(()=>{
-    if(!copyLoading&&!copyFailed&&['request-meal','request-budget'].includes(search.get('focus')??''))focusRequestField(search.get('focus')==='request-meal'?'preferences':'budget_cents');
+    if(!copyLoading&&!copyFailed&&['request-meal','request-budget'].includes(search.get('focus')??''))focusRequestField(search.get('focus')==='request-meal'?'meal_mode':'budget_cents');
   },[copyLoading,copyFailed,search]);
   async function create(event:FormEvent) {
     event.preventDefault(); if(!session||busy||copyLoading||copyFailed||!draft.raw.trim())return; setBusy(true);setError('');
-    try {const record=await privateApi<Record>('/requests',{method:'POST',headers:{'Content-Type':'application/json','X-CampMate-Client':'1','X-CSRF-Token':session.csrf_token},body:JSON.stringify(payload(draft))});navigate('/request/'+record.request_id);}
+    try {const record=await privateApi<Record>('/requests',{method:'POST',headers:{'Content-Type':'application/json','X-CampMate-Client':'1','X-CSRF-Token':session.csrf_token},body:JSON.stringify(requestPayload(draft))});navigate('/request/'+record.request_id);}
     catch(reason){setError(requestFailure(reason,'保存失败。'));if(reason instanceof ApiFailure&&reason.envelope.error.code==='UNAUTHENTICATED')reload();}finally{setBusy(false);}
   }
   const createHint=copyLoading?'正在载入原需求…':copyFailed?'原需求未能载入，请开始空白请求或重新打开原记录。':busy?'正在保存草稿…':!draft.raw.trim()?'先写下你的露营想法，再保存草稿。':'先保存草稿，下一步生成摘要并核对需求。';
@@ -156,20 +186,20 @@ export function RequestDetail() {
   const {requestId}=useParams(); const navigate=useNavigate(); const location=useLocation(); const [search]=useSearchParams(); const {session,reload}=useSession(); const {context,error:contextError}=useRequestContext();
   const [record,setRecord]=useState<UpdateRecord|null>(null); const [draft,setDraft]=useState<Draft>(EMPTY); const [acknowledged,setAcknowledged]=useState(false); const [busy,setBusy]=useState(false); const [error,setError]=useState(''); const [notice,setNotice]=useState(''); const [refresh,setRefresh]=useState(0);
   const updateFlow=useRef<ReplanSession|null>(null);const [updateStale,setUpdateStale]=useState(false);
-  const unsavedSections=changedSections(record?fromRecord(record):null,draft,{raw:'露营想法',destination:'目的地',start:'开始日期',nights:'露营晚数',days:'行程天数',end:'结束日期',budget:'小组预算',preferences:'偏好与用餐方式',constraints:'必须条件'});
+  const unsavedSections=changedSections(record?requestDraftFromRecord(record):null,draft,{raw:'露营想法',destination:'目的地',start:'开始日期',nights:'露营晚数',days:'行程天数',end:'结束日期',budget:'小组预算',preferences:'偏好与用餐方式',constraints:'必须条件'});
   const dirty=unsavedSections.length>0;
   const command=useRef<{revision:number;key:string}|null>(null);
   const planningCommand=useRef<{requestId:string;revision:number;key:string}|null>(null);
-  function apply(value:UpdateRecord){setRecord(value);setDraft(fromRecord(value));setAcknowledged(false);}
+  function apply(value:UpdateRecord){setRecord(value);setDraft(requestDraftFromRecord(value));setAcknowledged(false);}
   useEffect(()=>{const controller=new AbortController();setRecord(null);setError('');setNotice('');updateFlow.current=null;setUpdateStale(false);privateApi<UpdateRecord>('/requests/'+requestId,{signal:controller.signal}).then(value=>{if(!controller.signal.aborted)apply(value);}).catch(reason=>{if(!controller.signal.aborted)setError(reason instanceof ApiFailure?reason.message:'无法读取请求。');});return()=>controller.abort();},[requestId,refresh]);
-  useEffect(()=>{if(record&&['request-meal','request-budget'].includes(search.get('focus')??''))focusRequestField(search.get('focus')==='request-meal'?'preferences':'budget_cents');},[record?.request_id,search]);
+  useEffect(()=>{if(record&&['request-meal','request-budget'].includes(search.get('focus')??''))focusRequestField(search.get('focus')==='request-meal'?'meal_mode':'budget_cents');},[record?.request_id,search]);
   function change(patch:Partial<Draft>){setDraft(value=>({...value,...patch}));setAcknowledged(false);setError('');setNotice('');}
   function headers(){return {'Content-Type':'application/json','X-CampMate-Client':'1','X-CSRF-Token':session?.csrf_token??''};}
   async function saveAndAnalyse(event:FormEvent) {
     event.preventDefault();if(!record||busy||!draft.raw.trim())return;setBusy(true);setError('');setNotice('');
     try {
       let current=record;
-      if(dirty||current.status==='ANALYSING'){current=await privateApi<Record>('/requests/'+requestId,{method:'PATCH',headers:headers(),body:JSON.stringify({...payload(draft),expected_revision:current.revision})});apply(current);}
+      if(dirty||current.status==='ANALYSING'){current=await privateApi<Record>('/requests/'+requestId,{method:'PATCH',headers:headers(),body:JSON.stringify({...requestPayload(draft),expected_revision:current.revision})});apply(current);}
       await privateApi<UpdateRecord>('/requests/'+requestId+'/interpret',{method:'POST',headers:headers(),body:JSON.stringify({expected_revision:current.revision})});
       // Read the role-scoped preparation projection; GET never dispatches a model.
       const updated=await privateApi<UpdateRecord>('/requests/'+requestId);apply(updated);updateFlow.current=null;setUpdateStale(false);
@@ -182,7 +212,7 @@ export function RequestDetail() {
   async function saveOnly(){
     if(!record||busy)return;setBusy(true);setError('');
     try{
-      if(dirty){const saved=await privateApi<UpdateRecord>('/requests/'+requestId,{method:'PATCH',headers:headers(),body:JSON.stringify({...payload(draft),expected_revision:record.revision})});apply(saved);updateFlow.current=null;setUpdateStale(false);}
+      if(dirty){const saved=await privateApi<UpdateRecord>('/requests/'+requestId,{method:'PATCH',headers:headers(),body:JSON.stringify({...requestPayload(draft),expected_revision:record.revision})});apply(saved);updateFlow.current=null;setUpdateStale(false);}
       setNotice('修改已保存，暂未采用新资料或更新正式检查。原方案保持不变。');
     }catch(reason){setError(requestFailure(reason,'保存失败。'));}finally{setBusy(false);}
   }
@@ -229,10 +259,11 @@ export function RequestDetail() {
   const fieldErrors=record?.summary?.field_errors??[];
   const clarificationMap=new Map<string,string[]>();
   for(const item of [...questions.filter(item=>item.question!==`Please clarify ${item.field}.`||!fieldErrors.some(error=>error.field===item.field)).map(item=>({field:item.field,message:item.question})),...fieldErrors]) {
-    const message=clarificationText(item.field,item.message,requirements);
-    const messages=clarificationMap.get(item.field)??[];
+    const field=requestClarificationField(item.field,item.message);
+    const message=clarificationText(field,item.message,requirements);
+    const messages=clarificationMap.get(field)??[];
     if(!messages.includes(message))messages.push(message);
-    clarificationMap.set(item.field,messages);
+    clarificationMap.set(field,messages);
   }
   return <div className="onboarding-page"><TripFlow step={confirmed?3:2}/><div className="onboarding-heading"><div><span className="eyebrow">{updating?'继续处理同一次出行':'核对出行需求'}</span><h1>{updating?'核对本次更新':confirmed?'准备开始这次露营。':'确认这次露营的安排。'}</h1><p>{updating?'保存修改 → 核对资料差异与需求摘要 → 确认采用并重新检查。不会创建另一独立出行。':confirmed?'核对安排，开始生成你的露营方案。':'先生成摘要，再核对并确认。'}</p></div>{record&&<span className="onboarding-status">{STATUS[record.status]??record.status}{dirty?' · 有修改':''}</span>}</div>
     {updating&&<section className="panel"><p>原方案及最终记录保持原样。仅保存或刷新不会启动模型；确认检查后仍会重新规划，营地与行程可能变化。</p>{record?.predecessor_plan_id&&<><Link className="text-link" to={'/profile?request_id='+encodeURIComponent(record.request_id)}>修改个人资料 ↗</Link><Link className="text-link" to={'/plans/'+record.predecessor_plan_id}>取消核对，返回原方案（未保存修改不会保留） ↗</Link></>}</section>}
@@ -255,7 +286,7 @@ export function RequestDetail() {
         {dirty?<div className="summary-placeholder"><span aria-hidden="true">↻</span><h3>摘要需要更新</h3><p>请先保存修改并生成摘要。</p></div>:requirements?<>
           {!confirmed&&clarificationMap.size>0&&<section className="clarification-list" aria-label="需要补充的信息"><h3>需要补充的信息</h3>{[...clarificationMap].map(([field,messages])=><div key={field}><strong>{FIELD_TITLES[field]??'需要核对'}</strong>{messages.map(message=><p key={message}>{message}</p>)}{FIELD_IDS[field]?<button className="text-link focus-field" onClick={()=>focusRequestField(field)}>去补充 ↗</button>:field.startsWith('profile')?<Link className="text-link" to={'/profile?request_id='+encodeURIComponent(record.request_id)}>修改露营资料 ↗</Link>:null}</div>)}</section>}
           <dl className="request-summary-facts">{[['目的地',requirements.destination],['开始日期',requirements.start_date],['行程长度',`${requirements.duration_nights??'未知'} 晚 / ${requirements.duration_days??'未知'} 天`],['结束日期',requirements.end_date],['小组预算',requirements.budget_cents==null?'未知':`AUD ${(requirements.budget_cents/100).toFixed(2)}`]].map(([title,value])=><div key={title}><dt>{title}</dt><dd>{value??'未提供'}</dd></div>)}</dl>
-          {requirements.preferences?.length>0&&<div className="summary-preferences"><h3>偏好</h3><ul>{requirements.preferences.map((item,index)=><li key={index}>{termLabel(item,'preference')}</li>)}</ul></div>}{requirements.mandatory_constraints?.length>0&&<div className="summary-preferences"><h3>必须满足</h3><ul>{requirements.mandatory_constraints.map((item,index)=><li key={index}>{termLabel(item,'constraint')}</li>)}</ul></div>}
+          <RequestMeaningSummary requirements={requirements} pendingConstraints={clarificationMap.has('mandatory_constraints')||clarificationMap.has('raw_text')}/>
           {updating&&record.source_profile_snapshot&&profile&&<ProfileAdoptionPreview before={record.source_profile_snapshot} after={profile} revision={record.profile_revision} sourceRevision={record.source_profile_revision??null}/>}
           {updating&&record.source_requirements&&requirements&&<RequirementsChangePreview before={record.source_requirements} after={requirements}/>}
           <div className="request-profile-overview"><h3>本次采用的露营资料</h3><div><span>小组人数<strong>{profile?.group_size??'未知'} 人</strong></span><span>登记装备<strong>{profile?profile.equipment.filter(item=>!['vehicle','charged_phone'].includes(item.item_key)).length:'未知'} 项</strong></span></div><details><summary>查看同行、交通与装备明细</summary><ProfileSummary profile={profile}/></details></div>
