@@ -2,6 +2,7 @@
 import asyncio
 from copy import deepcopy
 from datetime import date, timedelta
+from functools import wraps
 from threading import Event
 
 from fastapi.testclient import TestClient
@@ -303,11 +304,35 @@ def test_permanent_integrity_error_stays_terminal_through_dispatcher(tmp_path,mo
 
 def fast_heartbeat(monkeypatch):
     factory = DATASET_AGENT_FACTORIES[KEY]
-    def fast(settings,descriptor):
-        binding = factory(settings,descriptor)
+    @wraps(factory)
+    def fast(settings,descriptor,**options):
+        binding = factory(settings,descriptor,**options)
         binding.agent.heartbeat_interval = .005
         return binding
     monkeypatch.setitem(DATASET_AGENT_FACTORIES,KEY,fast)
+
+
+def test_fast_heartbeat_preserves_registered_factory_snapshot_options(tmp_path,monkeypatch):
+    requests,_ = mock_safety_runtime(monkeypatch)
+    factory = DATASET_AGENT_FACTORIES[KEY]
+    seen,contexts = [],[]
+    @wraps(factory)
+    def observed(settings,descriptor,**options):
+        seen.append(options)
+        binding = factory(settings,descriptor,**options)
+        contexts.append(binding.context)
+        return binding
+    monkeypatch.setitem(DATASET_AGENT_FACTORIES,KEY,observed)
+    fast_heartbeat(monkeypatch)
+    app = application(tmp_path)
+    current = app.state.runtime.resolve()
+    assert len(seen) == 2
+    assert all(set(options) == {'parsed_snapshots','snapshot_key'} for options in seen)
+    assert all(options['parsed_snapshots'] is app.state.runtime._parsed_snapshots for options in seen)
+    assert seen[0]['snapshot_key'] == seen[1]['snapshot_key']
+    assert contexts[0] == contexts[1] == current.dataset
+    assert current.agent.heartbeat_interval == .005
+    assert not requests
 
 
 def test_safety_wait_keeps_lease_alive_without_exact_heartbeat_counts(tmp_path,monkeypatch):
