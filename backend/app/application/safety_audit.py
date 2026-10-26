@@ -31,21 +31,27 @@ class ModelSafetyPersistencePort(Protocol):
 def registered_identity(scope, *, new_write=False):
     choices = scope.dataset_context.selection_config
     seed = decode(choices['a_safety_identity_seed'])
+    expected_keys = {'agent_version','tool_version','validation_version','kernel_version',
+                     'dataset_rules_version','prompt_sha256','model_client'}
+    if isinstance(seed, dict) and seed.get('validation_version') == 'safety-advisory-validation-4':
+        expected_keys.add('codec_version')
     if (not required(scope) or choices.get('a_safety_mode') != 'model'
             or choices.get('a_safety_audit_contract') != '1.0' or scope.demo_context.mode != 'agent'
-            or set(seed) != {'agent_version','tool_version','validation_version','kernel_version',
-                            'dataset_rules_version','prompt_sha256','model_client'}):
+            or not isinstance(seed, dict) or set(seed) != expected_keys):
         raise ValueError('Unregistered safety identity')
     versions = {
         'safety-advisory-validation-1': ('campus-safety-advisory-agent-1','safety-read-only-tools-1'),
         'safety-advisory-validation-2': ('campus-safety-advisory-agent-2','safety-read-only-tools-2'),
         'safety-advisory-validation-3': ('campus-safety-advisory-agent-3','safety-read-only-tools-3'),
+        'safety-advisory-validation-4': ('campus-safety-advisory-agent-4','safety-read-only-tools-4'),
     }
     from ..llm.safety_support import matches_live_protocol
     expected = versions.get(seed['validation_version'])
     if (expected is None or (seed['agent_version'],seed['tool_version']) != expected
             or seed['kernel_version'] not in SUPPORTED_RULES_VERSIONS
-            or scope.dataset_context.dataset_version != ('2.2.0' if seed['validation_version'] == 'safety-advisory-validation-3' else '2.1.0')
+            or scope.dataset_context.dataset_version != ('2.2.0' if seed['validation_version'] in {'safety-advisory-validation-3','safety-advisory-validation-4'} else '2.1.0')
+            or (seed['validation_version'] == 'safety-advisory-validation-4'
+                and seed.get('codec_version') != 'safety-lossless-facts-1')
             or (new_write and (not matches_live_protocol(scope.dataset_context.dataset_version, seed)
                                or seed['kernel_version'] != RULES_VERSION))):
         raise ValueError('Unsupported or downgraded safety registration')

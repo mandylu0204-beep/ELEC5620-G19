@@ -1,0 +1,111 @@
+{
+  "recorded_at": "2026-10-26T20:16:58.510676+11:00",
+  "verification": "LOCAL_OFFLINE_ONLY",
+  "source_commit": "a81c8291bcdf4015de8213fbbafd75f9e59e3bb4",
+  "base_report": "3f795c7",
+  "changed_files": [
+    "backend/tests/test_model_safety_wiring.py",
+    "scripts/offline_case_watchdog.py"
+  ],
+  "production_application_changed": false,
+  "production_deadlines_or_leases_changed": false,
+  "existing_assertions_weakened": false,
+  "fixture_defect": "fast_heartbeat had neither unwrap metadata nor forwarding of parsed_snapshots/snapshot_key; the runtime correctly treated it as a legacy two-argument factory and bypassed the parsed cache.",
+  "repair": "@wraps plus explicit **options forwarding; existing heartbeat interval and all cancellation/lease assertions retained.",
+  "regression_red": {
+    "tests": 1,
+    "failed": 1,
+    "passed": 0,
+    "variant": "3f795c7 helper with the new forwarding regression added, before helper repair",
+    "junit_sha256": "822eddc0e584575fe13eeb0ce3784c48728658578bc14fdc579d15dff58f124f"
+  },
+  "new_candidate_runs": [
+    {
+      "report": "heartbeat-forwarding-after.xml",
+      "passed": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 57.773
+    },
+    {
+      "report": "heartbeat-tail.xml",
+      "passed": 34,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 208.171
+    }
+  ],
+  "passing_case_manifest": "a-heartbeat-selected-cases.json",
+  "selected_coverage": {
+    "distinct_cases": 238,
+    "cases_with_passing_evidence": 238,
+    "uncovered": 0,
+    "single_same_commit_whole_suite_run": false,
+    "basis": "Unchanged earlier passing cases plus fresh passing runs for affected heartbeat fixtures, the new regression and the 34 pending cases."
+  },
+  "historical_batches": [
+    {
+      "report": "v4-integration-regression-short.xml",
+      "passed": 11,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 70.581
+    },
+    {
+      "report": "v4-rest.xml",
+      "passed": 183,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 1937.292
+    },
+    {
+      "report": "v4-extra.xml",
+      "passed": 5,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 13.902
+    },
+    {
+      "report": "lease-remaining.xml",
+      "passed": 3,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 2311.374
+    }
+  ],
+  "passive_monitor": {
+    "file": "a-heartbeat-tail-watchdog.json",
+    "sha256": "e04e01d5796a982a6635e8e7ff9a1869c310587886998740d5ecdf999d343a1e",
+    "events": 545,
+    "process_cap_triggered": false,
+    "application_methods_wrapped": false
+  },
+  "historical_limits": [
+    "The 819.267-second and 2223.218-second delays remain unexplained; passing follow-ups do not establish their root cause.",
+    "The fixture deviation is proven by the forwarding regression; it is not asserted to be the sole cause of the long delays.",
+    "Earlier failure records and instrumented results are preserved separately; no whole-backend or cloud CI pass is claimed."
+  ],
+  "static_source_review": [
+    "No concrete DB/runtime reverse-lock cycle was established in the reviewed built-in factory path.",
+    "Synchronous runtime checks and rebuilding inside port validation can cost time; recorded nested spans cannot be added as operation time.",
+    "Dispatcher records failure and invalidates the lease before final cancellation/drain. This preserves late-write protection; no production cleanup order was changed.",
+    "The saved historical failures occurred before the intended safety-cancellation injection; they do not demonstrate the separate failure-visibility/cancellation timing window."
+  ],
+  "source_sha256_git_blob": {
+    "backend/tests/test_model_safety_wiring.py": "ad923fb7c60bb30c6f615be68f751af40ab807446a08a7ce06f05bb62dda6ffd",
+    "scripts/offline_case_watchdog.py": "5adcb2ac6f0f06df53927268789a7fa7404c4b95ab556d7a246b7d689c45519d"
+  },
+  "campus_http_requests": 0,
+  "cloud_tests_started": 0,
+  "main_changed": false,
+  "personal_configuration_changed": false,
+  "original_database_changed": false,
+  "review_status": "READY_FOR_B_REVIEW_NOT_MERGED",
+  "requested_B_action": "Review the test-only forwarding fix, identity/cache boundaries and coverage evidence. The prior request to rerun four old-source cases is superseded; preserve any results already obtained and do not repeat whole-project or live tests."
+}

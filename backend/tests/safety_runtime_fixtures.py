@@ -43,7 +43,16 @@ def mock_safety_runtime(monkeypatch, *, settings=None):
             if not tools:
                 action = {'action':'tool','name':f'read_{name}_facts','arguments':{}}
             else:
-                proposal = proposal_from_safety_facts(tools[0]) if role == 'SAFETY' else proposal_from_facts(tools[0])
+                if role == 'SAFETY' and tools[0].get('codec') == 'safety-lossless-facts-1':
+                    facts = tools[0]
+                    proposal = {'facts_sha256':facts['facts_sha256'],
+                        'findings':[{'id':item['id'],'action':item['actions'][0],
+                            'advice':'Review this recorded issue before departure.'}
+                            for item in facts['findings']],
+                        'priority':[item['id'] for item in facts['findings']],
+                        'summary':'Resolve recorded issues before departure.'}
+                else:
+                    proposal = proposal_from_safety_facts(tools[0]) if role == 'SAFETY' else proposal_from_facts(tools[0])
                 action = {'action':'tool','name':f'evaluate_{name}_plan','arguments':proposal} if len(tools) == 1 else {
                     'action':'final','proposal':proposal}
             if role == 'SAFETY' and control.get('invalid'):

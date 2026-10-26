@@ -1,0 +1,115 @@
+{
+  "task": "Windows compact benchmark lifecycle compatibility fix",
+  "date": "2026-10-26",
+  "timezone": "Australia/Sydney",
+  "base_commit": "57bbdc0299580610e3deae5129773edf416e58b4",
+  "branch": "fix/windows-compact-benchmark",
+  "scope": "Benchmark harness and new regressions only; core protocol/identities/production wiring untouched.",
+  "cause": "The previous main patched socket.connect/connect_ex before asyncio.run created an event loop. Windows stdlib loop bootstrap may create a private TCP socketpair and hit that blanket guard.",
+  "change": {
+    "core_comparison_now_async": true,
+    "one_runner_created_before_guards": true,
+    "fixture_and_comparison_guarded": true,
+    "pending_task_cancellation_guarded": true,
+    "async_generator_and_loop_shutdown_guarded": true,
+    "runner_closed_on_success_failure_and_cancellation": true,
+    "arbitrary_loopback_not_whitelisted": true,
+    "blocked": [
+      "socket.socket.connect",
+      "socket.socket.connect_ex",
+      "socket.create_connection",
+      "httpx.HTTPTransport.handle_request",
+      "httpx.AsyncHTTPTransport.handle_async_request"
+    ],
+    "public_synchronous_compare_entry_retained": true
+  },
+  "tests": {
+    "runs": [
+      {
+        "tests": 86,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 86,
+        "file": "compact-windows-fix-20261026-01.xml",
+        "time_seconds": 12.278,
+        "sha256": "cbb5a609f4d7cc4054ae8be9a7403d23d001ecb42897eba0a1f3a3d39c913d09",
+        "by_module": {
+          "tests.test_safety_compact_benchmark": 23,
+          "tests.test_safety_compact": 63
+        }
+      },
+      {
+        "tests": 87,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 87,
+        "file": "compact-windows-fix-20261026-02.xml",
+        "time_seconds": 11.986,
+        "sha256": "89a9ed5a332ca0297ad4f13673ba57ff79f729b8f44c088db7f5e7d48f96ebe1",
+        "by_module": {
+          "tests.test_safety_compact_benchmark": 24,
+          "tests.test_safety_compact": 63
+        }
+      }
+    ],
+    "final_exit_code": 0,
+    "real_http_transport_blocks": 0,
+    "environment": {
+      "python": "3.12.15",
+      "platform": "darwin"
+    },
+    "native_windows_run": false,
+    "windows_bootstrap_simulated": true,
+    "simulation_uses_sentinel_no_actual_socket_traffic": true,
+    "coverage": [
+      "Full benchmark and stable byte output",
+      "Windows-style private loop startup before guards",
+      "External, campus and arbitrary IPv4/IPv6 loopback connect/connect_ex/create_connection rejection",
+      "Sync/async real HTTP rejection",
+      "Guards active during fixture loading",
+      "Guard restoration and loop closure after success/fixture failure/model failure/cancellation",
+      "Pending task and async-generator cleanup remain network-blocked",
+      "Subprocess CLI emits parseable JSON using the native local event loop"
+    ],
+    "warning": "Existing Starlette TestClient/httpx deprecation warning retained."
+  },
+  "cli": {
+    "exit_code": 0,
+    "all_metrics_and_request_sha256_equal_57bbdc0": true,
+    "v3_second_http_body_bytes": 17321,
+    "v4_second_http_body_bytes": 12481,
+    "actual_campus_calls": 0
+  },
+  "source_sha256": {
+    "benchmark_before": "76e5b52ece311477014967f20453deea2bd2f0513ceeb1f0260768adb198133d",
+    "benchmark_after": "f8f5b03bf797cb93becb0feb2278f33b3d3c6e13c3fa1306f0cefad4c4c181d4",
+    "regression": "cd07e8f1ff041a50cb5fffc884ecc79bed0164bead6dc7a564c3a4922c7a7825"
+  },
+  "prior_candidate_sources_unchanged": {
+    "backend/app/llm/safety_compact.py": true,
+    "backend/app/llm/safety_v4.py": true,
+    "backend/app/export_safety_v4.py": true,
+    "backend/tests/test_safety_compact.py": true,
+    "docs/contracts/safety_advisory_v4.schema.json": true
+  },
+  "schemas": {
+    "v4": true,
+    "v3": true,
+    "shared": true
+  },
+  "boundaries": {
+    "actual_campus_calls": 0,
+    "formal_database_changes": false,
+    "personal_config_changes": false,
+    "core_protocol_or_schema_changes": false,
+    "production_defaults_or_live_registration_changes": false,
+    "real_live_acceptance_repeated": false,
+    "github_actions_runs": 0,
+    "full_suite_repeated": false,
+    "main_merge": false,
+    "commit_or_push": false
+  },
+  "evidence_provenance": "Original 57bbdc0 evidence and hashes were not rewritten. Native Windows rerun by A is still required; macOS plus simulated bootstrap is not labeled Windows passed."
+}

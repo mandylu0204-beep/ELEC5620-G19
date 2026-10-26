@@ -1,0 +1,343 @@
+{
+  "task": "One bounded live standalone test of the compact safety candidate",
+  "date": "2026-10-26",
+  "timezone": "Australia/Sydney",
+  "result": "PASSED_STANDALONE_ONLY",
+  "base_commit": "0c56764d80b7ef24e69e262549142ac5c3fdb178",
+  "candidate_branch": "feature/safety-offline-optimization",
+  "candidate_uncommitted_source_snapshot": true,
+  "candidate_source_sha256": {
+    "backend/app/llm/safety_compact.py": "13e475df08cb84078322075dd3119730ab6a346c67de2b94cd2e4c216de0c688",
+    "backend/app/llm/safety_v4.py": "a5967a0a42ba5c08075a5b0b7d978b3fc3c6b1e8ef5041cd0210d0eae9d8017f",
+    "backend/app/export_safety_v4.py": "a588485f7726fd3429b486a50b193e276f4a261a4136f1802eb1a111955d078b",
+    "backend/tests/test_safety_compact.py": "299c74a25f1770617b799598c8b157751f7bbfb205ba2302b3e02ead3e8ef85f",
+    "scripts/safety_compact_benchmark.py": "76e5b52ece311477014967f20453deea2bd2f0513ceeb1f0260768adb198133d",
+    "docs/contracts/safety_advisory_v4.schema.json": "0970f19cdb8d1f9ac4dd15dd2f3a628fc5ccf9a0b9cc8f703194182ab41922a7"
+  },
+  "runner_sha256": "141f4737e5a2a47a69084950ffb2e7b33557d8566fd825dfc018a7d8b0662e72",
+  "base_control_sha256": "4c6d7c9e1b7bb0ef4ffbe0650c500fa2e0a775785ef51777cd98030f0be0cd84",
+  "reviewed_guard_sha256": "93a0cb4660a2daf6b371fcd95744a1eb6b05eeba3ffc92c6c3772a99e9f1b8b1",
+  "authorization": {
+    "maximum_actual_http_requests": 4,
+    "actual_http_requests": 3,
+    "one_new_round": true,
+    "first_error_stops": true,
+    "automatic_retries": 0,
+    "guard_reset": false,
+    "no_probe_or_additional_PLAN": true
+  },
+  "public_model_identity": {
+    "base_url": "http://10.167.60.148:8000/v1",
+    "model": "campus-qwen",
+    "timeout_seconds": 45,
+    "max_completion_tokens": 4096,
+    "max_attempts": 2,
+    "max_turns": 4,
+    "reasoning_effort": "low"
+  },
+  "source_input": {
+    "input_sha256": "02478d940e0885db118fd6975840244c713b7a679406e0c6fa66088604cec8a4",
+    "source_run_id": "7bd0b20963a843dabc8b8d5a7e49bd49",
+    "source_plan_id": "6d53078a0e2545f4811230f85bbf4698",
+    "source_snapshot_date": "2026-10-23",
+    "trip_start": "2026-10-25",
+    "trip_end": "2026-10-27",
+    "selected_campsite_ids": [
+      "euroka"
+    ],
+    "same_saved_input_and_complete_baseline": true,
+    "facts_losslessly_equal_v3": true,
+    "findings": 6,
+    "facts": 23,
+    "facts_sha256": "e4b7ffd45f90d8039f070c39035e72c25b851acf46a6b58b7d286ab9ef89387e",
+    "new_v4_identity_fingerprint": "545832bd352447acc5c1e3a022d309ab02618b5bb832a497ec373f85ae32d3a9",
+    "old_v3_identity_fingerprint": "3c22ca2067aa5c2453734faed5cec305e9a176a008889749594b205d79f71b63",
+    "identity_changed_explicitly_for_new_protocol": true,
+    "old_saved_scope_untouched": true,
+    "prompt_sha256": "c3a0d6ce8603f7a02f72cef13f5a93b660668688b6bed84d71368079549288b5",
+    "standalone_unregistered_context": true
+  },
+  "transport": {
+    "maximum_requests": 4,
+    "transmitted_requests": 3,
+    "blocked_transmissions": 0,
+    "stopped": true,
+    "requests": [
+      {
+        "number": 1,
+        "actual_http_body_bytes": 5576,
+        "actual_http_body_sha256": "d795ab4cd7d00a44b59ef8aea8d6a52cebe6ca4190e17b1f39e128f53fba81db",
+        "status": 200,
+        "outcome": "body_complete",
+        "seconds_to_response_headers": 0.8423381249886006,
+        "seconds_to_body_complete": 0.8450816659606062,
+        "response_body_complete_at_utc": "2026-10-26T02:16:44.911891+00:00",
+        "response_body_complete_at_sydney": "2026-10-26T13:16:44.911891+11:00",
+        "response_body_capture_status": "TIMING_ONLY_CONTENT_NOT_RECORDED",
+        "started_at_utc": "2026-10-26T02:16:44.066689+00:00",
+        "started_at_sydney": "2026-10-26T13:16:44.066689+11:00",
+        "response_headers_at_utc": "2026-10-26T02:16:44.909180+00:00",
+        "response_headers_at_sydney": "2026-10-26T13:16:44.909180+11:00",
+        "response_correlation_ids": {
+          "x-request-id": "req_46d33b0b9c0244f7bea473e29984d1cb",
+          "x-correlation-id": null,
+          "traceparent": null,
+          "x-amzn-trace-id": null
+        },
+        "response_correlation_id_status": {
+          "x-request-id": "CAPTURED",
+          "x-correlation-id": "NOT_PROVIDED",
+          "traceparent": "NOT_PROVIDED",
+          "x-amzn-trace-id": "NOT_PROVIDED"
+        }
+      },
+      {
+        "number": 2,
+        "actual_http_body_bytes": 12839,
+        "actual_http_body_sha256": "f23c6cee716651464ff384e61f237bdce85320f38c6e453a448a25610ce2eff7",
+        "status": 200,
+        "outcome": "body_complete",
+        "seconds_to_response_headers": 27.136247624992393,
+        "seconds_to_body_complete": 27.138386167003773,
+        "response_body_complete_at_utc": "2026-10-26T02:17:12.056218+00:00",
+        "response_body_complete_at_sydney": "2026-10-26T13:17:12.056218+11:00",
+        "response_body_capture_status": "TIMING_ONLY_CONTENT_NOT_RECORDED",
+        "started_at_utc": "2026-10-26T02:16:44.917942+00:00",
+        "started_at_sydney": "2026-10-26T13:16:44.917942+11:00",
+        "response_headers_at_utc": "2026-10-26T02:17:12.054088+00:00",
+        "response_headers_at_sydney": "2026-10-26T13:17:12.054088+11:00",
+        "response_correlation_ids": {
+          "x-request-id": "req_c24695be275e4b3f9611e9054072cf1f",
+          "x-correlation-id": null,
+          "traceparent": null,
+          "x-amzn-trace-id": null
+        },
+        "response_correlation_id_status": {
+          "x-request-id": "CAPTURED",
+          "x-correlation-id": "NOT_PROVIDED",
+          "traceparent": "NOT_PROVIDED",
+          "x-amzn-trace-id": "NOT_PROVIDED"
+        }
+      },
+      {
+        "number": 3,
+        "actual_http_body_bytes": 15331,
+        "actual_http_body_sha256": "a376f2b0a4a7cdbaa0dafa3d2ae29480ffc635ae1f5e184b13064284b692e469",
+        "status": 200,
+        "outcome": "body_complete",
+        "seconds_to_response_headers": 3.748036000004504,
+        "seconds_to_body_complete": 3.7494822919834405,
+        "response_body_complete_at_utc": "2026-10-26T02:17:15.808461+00:00",
+        "response_body_complete_at_sydney": "2026-10-26T13:17:15.808461+11:00",
+        "response_body_capture_status": "TIMING_ONLY_CONTENT_NOT_RECORDED",
+        "started_at_utc": "2026-10-26T02:17:12.059012+00:00",
+        "started_at_sydney": "2026-10-26T13:17:12.059012+11:00",
+        "response_headers_at_utc": "2026-10-26T02:17:15.807034+00:00",
+        "response_headers_at_sydney": "2026-10-26T13:17:15.807034+11:00",
+        "response_correlation_ids": {
+          "x-request-id": "req_6da765c8b53e4c81985031bf47cf97cf",
+          "x-correlation-id": null,
+          "traceparent": null,
+          "x-amzn-trace-id": null
+        },
+        "response_correlation_id_status": {
+          "x-request-id": "CAPTURED",
+          "x-correlation-id": "NOT_PROVIDED",
+          "traceparent": "NOT_PROVIDED",
+          "x-amzn-trace-id": "NOT_PROVIDED"
+        }
+      }
+    ]
+  },
+  "accepted_completion_metadata": [
+    {
+      "number": 1,
+      "finish_reason": "stop",
+      "accepted": true,
+      "attempts": 1,
+      "usage": {
+        "prompt_tokens": 1336,
+        "total_tokens": 1371,
+        "completion_tokens": 35
+      },
+      "served_model": "Qwen/Qwen3.8-27B-FP8",
+      "served_model_status": "CAPTURED",
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9"
+    },
+    {
+      "number": 2,
+      "finish_reason": "stop",
+      "accepted": true,
+      "attempts": 1,
+      "usage": {
+        "prompt_tokens": 3539,
+        "total_tokens": 6104,
+        "completion_tokens": 2565
+      },
+      "served_model": "Qwen/Qwen3.8-27B-FP8",
+      "served_model_status": "CAPTURED",
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9"
+    },
+    {
+      "number": 3,
+      "finish_reason": "stop",
+      "accepted": true,
+      "attempts": 1,
+      "usage": {
+        "prompt_tokens": 4180,
+        "total_tokens": 4503,
+        "completion_tokens": 323
+      },
+      "served_model": "Qwen/Qwen3.8-27B-FP8",
+      "served_model_status": "CAPTURED",
+      "served_model_sha256": "466b8aaefcdc1f6a109f9a48410f9cdfe0c3ef0edea0bcc0a20006ae69ec09e9"
+    }
+  ],
+  "usage_sum": {
+    "prompt_tokens": 9055,
+    "completion_tokens": 2923,
+    "total_tokens": 11978
+  },
+  "protocol": {
+    "safety_tool_version": "safety-read-only-tools-4",
+    "turns": 3,
+    "validation_passed": true,
+    "all_http_200": true,
+    "all_finish_reason_stop": true,
+    "read_evaluate_exact_final_completed": true,
+    "pure_replay_passed": true,
+    "deterministic_assessment_unchanged": true,
+    "all_six_findings_and_twenty_three_facts_retained": true,
+    "trace_sha256": "fb2bb6222b18d232fc115c4e8218c724e02fe271f81f7efab6e63d8e6faf4083",
+    "advice_sha256": "98fde7818251f9e44126e828c0545fba83579401179cd1d565becab47dabdab0",
+    "formal_trace_or_audit_saved": false
+  },
+  "source_protection": {
+    "old_scope_unchanged": true,
+    "original_database_snapshots_and_transport_unchanged": true,
+    "artifacts": {
+      "runs": {
+        "before_count": 1,
+        "after_count": 1,
+        "sha256_before": "272f3120bb8a1a99076ca05d18cc62fb4017de297cea8b2b906f52501ecded08",
+        "sha256_after": "272f3120bb8a1a99076ca05d18cc62fb4017de297cea8b2b906f52501ecded08",
+        "unchanged": true
+      },
+      "versions": {
+        "before_count": 1,
+        "after_count": 1,
+        "sha256_before": "8fc86fc33db4dde9f907528743d3cfa4714cdd0c235579ffb9871b80631e7f85",
+        "sha256_after": "8fc86fc33db4dde9f907528743d3cfa4714cdd0c235579ffb9871b80631e7f85",
+        "unchanged": true
+      },
+      "assessments": {
+        "before_count": 2,
+        "after_count": 2,
+        "sha256_before": "80746ccd2eb6dfa2f80b91a6d93bdd5fdcbec055bbf6d989b595450471a01b49",
+        "sha256_after": "80746ccd2eb6dfa2f80b91a6d93bdd5fdcbec055bbf6d989b595450471a01b49",
+        "unchanged": true
+      },
+      "model_planning_traces": {
+        "before_count": 1,
+        "after_count": 1,
+        "sha256_before": "d6911dbdcace52354c1b5ab3abe3f98ec375691d9f9b24ea3c4cf7412f01d676",
+        "sha256_after": "d6911dbdcace52354c1b5ab3abe3f98ec375691d9f9b24ea3c4cf7412f01d676",
+        "unchanged": true
+      },
+      "model_logistics_audits": {
+        "before_count": 1,
+        "after_count": 1,
+        "sha256_before": "7c3cda504dee140dc804f8b9b23ff6305b50e714d0ab211dd02cf5eb1ed425c2",
+        "sha256_after": "7c3cda504dee140dc804f8b9b23ff6305b50e714d0ab211dd02cf5eb1ed425c2",
+        "unchanged": true
+      },
+      "model_safety_audits": {
+        "before_count": 1,
+        "after_count": 1,
+        "sha256_before": "16a8dfe2b245b122bac452c6f89f06790bf22a81e010b2f1a36be5cd90f49f82",
+        "sha256_after": "16a8dfe2b245b122bac452c6f89f06790bf22a81e010b2f1a36be5cd90f49f82",
+        "unchanged": true
+      },
+      "write_receipts": {
+        "before_count": 5,
+        "after_count": 5,
+        "sha256_before": "efefecf91d8768026d71a9bca84d3f1e9c526690b154d7a3d2f1536e8cc85647",
+        "sha256_after": "efefecf91d8768026d71a9bca84d3f1e9c526690b154d7a3d2f1536e8cc85647",
+        "unchanged": true
+      },
+      "final_records": {
+        "before_count": 0,
+        "after_count": 0,
+        "sha256_before": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "sha256_after": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "unchanged": true
+      }
+    },
+    "snapshot_sha256_before": "cbddabe56b00f5a91a34f36cab22b27bc892455ceb8054daae5b4d7eb5224896",
+    "snapshot_sha256_after": "cbddabe56b00f5a91a34f36cab22b27bc892455ceb8054daae5b4d7eb5224896",
+    "original_transport_sha256_before": "3e7fbdbf7c5b199ad09dd041df634ba945cc13f0da9168dc279d0a004f03f3e6",
+    "original_transport_sha256_after": "3e7fbdbf7c5b199ad09dd041df634ba945cc13f0da9168dc279d0a004f03f3e6"
+  },
+  "compared_with_v3": {
+    "same_saved_input_digest": true,
+    "same_complete_facts_and_baseline": true,
+    "protocol_prompt_schema_and_identity_explicitly_changed": true,
+    "second_request_bytes": {
+      "v3": 17631,
+      "v4": 12839,
+      "reduction_percent": 27.18
+    },
+    "prior_20261026": {
+      "http": 502,
+      "seconds_to_headers": 30.356468292011414,
+      "request_id": "req_1a13fe28c5234cba9b62af98f59f1051"
+    },
+    "prior_20261023_success": {
+      "http": 200,
+      "seconds_to_body_complete": 24.056524,
+      "completion_tokens": 2192
+    },
+    "current_v4": {
+      "http": 200,
+      "seconds_to_body_complete": 27.138386167003773,
+      "completion_tokens": 2565
+    },
+    "limitations": "Different protocol and execution time/load; prior v3 once succeeded faster. Single v4 success is not proof of causal latency improvement or stable resolution of 502. HTTP body reduction is measured; no private-reasoning token breakdown inferred."
+  },
+  "compared_with_A": {
+    "A_input_or_account_identity_not_provided": true,
+    "same_account_network_or_byte_identical_input_not_claimed": true
+  },
+  "offline_preflight": {
+    "passed": true,
+    "actual_campus_requests": 0,
+    "full_mock_loop_body_bytes": [
+      5576,
+      12839,
+      14947
+    ],
+    "http502_network_invalid200_stop_cases_passed": true,
+    "no_retry_branch_entered_in_mock_failure_tests": true,
+    "guard_and_prior_control_byte_identical": true
+  },
+  "scope": {
+    "planning_calls": 0,
+    "logistics_calls": 0,
+    "request_interpretation_calls": 0,
+    "full_PLAN_runs": 0,
+    "formal_assessments_added": 0,
+    "formal_model_audits_added": 0,
+    "A_failed_run_operated": false,
+    "production_registration_changed": false,
+    "default_safety_changed": false,
+    "browser_or_formal_persistence_acceptance_performed": false,
+    "personal_configuration_changed": false,
+    "source_modified_during_test": false,
+    "github_actions_runs": 0,
+    "cloud_tests": 0,
+    "commit_or_push": false,
+    "main_merge": false
+  },
+  "ended_utc": "2026-10-26T02:17:15.847922+00:00",
+  "privacy": "No key, Authorization/Cookie, complete dynamic prompt, raw model response, private reasoning or database contents shared."
+}

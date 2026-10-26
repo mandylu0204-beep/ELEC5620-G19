@@ -1,0 +1,130 @@
+{
+  "recorded_at": "2026-10-26T14:52:33.917837+11:00",
+  "base_main": "0c56764",
+  "component_base": "57bbdc0",
+  "application_commit": "13ce2bc792cc9c7c4bc688521cf7b36aa8429386",
+  "branch": "feature/safety-v4-integration",
+  "verification": "LOCAL_OFFLINE_ONLY",
+  "merge_status": "NOT_READY_FOR_MERGE",
+  "backend": {
+    "distinct_passed": 199,
+    "batches": [
+      {
+        "report": "v4-integration-regression-short.xml",
+        "passed": 11,
+        "failed": 1,
+        "errors": 0,
+        "skipped": 0,
+        "counted_only_passing_cases": true
+      },
+      {
+        "report": "v4-rest.xml",
+        "passed": 183,
+        "failed": 1,
+        "errors": 0,
+        "skipped": 0,
+        "counted_only_passing_cases": false
+      },
+      {
+        "report": "v4-extra.xml",
+        "passed": 5,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "counted_only_passing_cases": false
+      }
+    ],
+    "compact_runtime_cases_passed": 17,
+    "single_whole_project_run": false,
+    "final_case_failures": 1,
+    "selected_cases": 237,
+    "not_executed_after_first_failure": 37,
+    "failed_cases": [
+      {
+        "node": "tests.test_model_safety_wiring.test_permanent_integrity_error_stays_terminal_through_dispatcher[save_model_safety_assessment]",
+        "test_elapsed_seconds": 819.267
+      }
+    ]
+  },
+  "frontend": {
+    "passed": 124,
+    "failed": 0,
+    "skipped": 0,
+    "typecheck": "PASSED",
+    "build": "PASSED"
+  },
+  "schemas": {
+    "shared": "PASSED",
+    "compact_v4": "PASSED"
+  },
+  "campus_http_requests": 0,
+  "cloud_tests_started": 0,
+  "browser": {
+    "fixture": "isolated MockTransport-seeded SQLite; model calls disabled after seeding",
+    "checks": [
+      "owned plan readback",
+      "formal safety separate from AI advice",
+      "compact sentence appears once per finding",
+      "final save",
+      "final URL readback in new tab",
+      "second Camper cannot read the owned final"
+    ],
+    "real_model_acceptance": false,
+    "helper_stopped": true
+  },
+  "corrected_test_setup": [
+    "Corruption fixture drops the immutable delete trigger only in its isolated database.",
+    "Corruption assertion follows the existing PERSISTENCE_FAILURE HTTP 503 contract.",
+    "Shortened generated temp path: strict resolution of a 261-character Windows path failed with WinError 3; no production source/path guard changed."
+  ],
+  "unclosed_legacy_failure": {
+    "expected": "PERSISTENCE_FAILURE injected at save_model_safety_assessment",
+    "actual": "AGENT_FAILURE: execution interrupted or lease expired",
+    "persisted_stage": "SAVING_VERSION",
+    "dataset_version": "2.1.0",
+    "protocol": "standard",
+    "safety_injection_reached": false,
+    "planning_traces": 0,
+    "logistics_audits": 0,
+    "safety_audits": 0,
+    "write_receipt_operations": [
+      "recommendations"
+    ],
+    "cause": "UNDETERMINED; whole-test time is not operation time",
+    "action": "Stopped on first failure; no timeout/lease/production guard change and no repeat-until-green run"
+  },
+  "invariants": {
+    "default_safety": "rules",
+    "default_model_protocol": "standard",
+    "shared_envelope": "1.0",
+    "database_migrations_added": 0,
+    "personal_configuration_changed": false,
+    "original_database_changed": false,
+    "main_changed": false,
+    "live_502_resolution_claimed": false
+  },
+  "source_sha256_git_blob": {
+    "backend/app/application/agent_runtime.py": "7fe854d3321e8d3ad2d3bb04e9c105d0d5275e7294174036bdfb1458221fd76c",
+    "backend/app/application/presentation.py": "030608fe737cc8d9c978e0419cc3012efd6883ba671c66751decb2933ec16b13",
+    "backend/app/application/safety_audit.py": "dd36c0c418c3c3a3db8b0d7f80fb0539837cc51470679f45f7116c12b01dfb18",
+    "backend/app/config.py": "d816c251a1df5266ec0d2baa270826ec50cc990a439871da96f00ea23274d137",
+    "backend/app/export_safety_v4.py": "d1edcc77fb8298c355cfb8ca4a566b608391c12bf67972cdb13b4501d7d5827d",
+    "backend/app/llm/safety_support.py": "fd2b0c5e2f452db9910a679419f07d252a4909671260e16644fecd3c2a712236",
+    "backend/app/llm/safety_v4.py": "bce26d6a0b4a240e9e7f5d087b0d5b294c0f238a3b80331c2bf8156a5166de99",
+    "backend/app/llm/safety_validation.py": "595524454f0a85218a6b45dc2d61c2072f1f0aa6caa955a7cb15341425248374",
+    "backend/tests/safety_runtime_fixtures.py": "5a940766915be24f41c34396f3389fa64fa96e4fd943e734eb25115967329492",
+    "backend/tests/test_safety_compact.py": "766c92ad6bee16dc31352285748a87b9ed07028167e3f1f3ae0dfbbedb2e06e8",
+    "backend/tests/test_safety_v4_runtime.py": "05e53f579d9b86a55e4747b708da07130fc108e8c1ccd602da337f69f3a3a028",
+    "frontend/src/safety_advisory.ts": "f14fb537be03bd1d179cac4dbb8365abf612f69b8731b780924f34214a3e2177",
+    "frontend/src/safety_advisory_panel.tsx": "2a98a7b39b64e4aa8a249898f1945b5633cf89f3e7b32ba955b806a8fc9aab85",
+    "frontend/tests/safety_advisory.test.mjs": "533b6fd7d16c7000e76c47aa11d7f54c04ef1974c1f2a2c9fc1c9d6a8134ab46",
+    "scripts/sydney.py": "ae6bb5939b59dcc11f96e79f9f404cf2c01aef7f5cb8c37b73a91da3dc7dc82d"
+  },
+  "remaining": [
+    "B independent integration review",
+    "Investigate preserved legacy lease failure before merge",
+    "Complete the 37 unexecuted selected cases after failure analysis",
+    "B portable benchmark fix review",
+    "Separately authorised bounded formal live integration acceptance before main/enable decision"
+  ]
+}

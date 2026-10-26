@@ -21,15 +21,20 @@ def main():
     parser.add_argument('--logistics', choices=('rules', 'model'), default='rules')
     parser.add_argument('--safety', choices=('rules', 'model'), default='rules',
                         help='model explicitly opts into the 2.2/v3 safety adviser')
+    parser.add_argument('--safety-protocol', choices=('standard', 'compact'), default='standard',
+                        help='compact explicitly selects the 2.2/v4 safety adviser')
     args = parser.parse_args()
     if (args.logistics == 'model' or args.safety == 'model') and args.mode != 'agent':
         parser.error('Model assessment roles require --mode agent')
+    if args.safety_protocol == 'compact' and args.safety != 'model':
+        parser.error('Compact safety requires --safety model')
     env = {key: value for key, value in os.environ.items()
            if not key.startswith('CAMPMATE_')}
     env.update(CAMPMATE_DATASET_PATH=str(ROOT / 'data/sydney_surrounds_v2_2'),
                CAMPMATE_EXECUTION_MODE='agent' if args.mode == 'agent' else 'deterministic_demo',
                CAMPMATE_PLANNING_ENABLED='true', CAMPMATE_LOGISTICS_EXECUTION=args.logistics,
-               CAMPMATE_SAFETY_EXECUTION=args.safety, CAMPMATE_CLOCK_MODE='current',
+               CAMPMATE_SAFETY_EXECUTION=args.safety, CAMPMATE_SAFETY_PROTOCOL=args.safety_protocol,
+               CAMPMATE_CLOCK_MODE='current',
                CAMPMATE_SYNTHETIC_EVIDENCE_MODE='auto',
                CAMPMATE_DATASET_SCENARIO_FILES='[]', CAMPMATE_DATASET_SELECTION='{}',
                CAMPMATE_WORKFLOW_SAFETY_CASE_IDS='[]',

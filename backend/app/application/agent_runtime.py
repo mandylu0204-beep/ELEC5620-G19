@@ -106,14 +106,18 @@ def build_v2_hybrid_binding(settings, descriptor, *, parsed_snapshots=None, snap
     from ..workflow import WorkflowConfiguration
     from .logistics_audit import identity_seed, canonical, digest
     roles = {'logistics':settings.logistics_execution, 'safety':settings.safety_execution}
+    if settings.safety_protocol == 'compact' and (
+            settings.safety_execution != 'model' or descriptor.context.dataset_version != '2.2.0'):
+        raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE,
+            message='Compact safety requires model safety with the 2.2 dataset.'))
     for role, mode in roles.items():
         if mode == 'rules' and any(key.startswith(f'a_{role}_') for key in descriptor.context.selection_config):
             raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT,
                 message=f'Rule {role} configuration cannot carry model registration markers.'))
     if settings.safety_execution == 'model':
         from ..workflow.orchestration import Orchestrator
-        from ..llm.safety_support import SAFETY_PROTOCOLS
-        if (descriptor.context.dataset_version not in SAFETY_PROTOCOLS
+        from ..llm.safety_support import selected_protocol
+        if (selected_protocol(descriptor.context.dataset_version, settings.safety_protocol) is None
                 or getattr(HybridPlanningAgent,'safety_audit_contract',None) != '1.0'
                 or not callable(getattr(HybridPlanningAgent,'assess_safety_with_trace',None))
                 or getattr(Orchestrator,'safety_audit_contract',None) != '1.0'):
@@ -154,7 +158,9 @@ def build_v2_hybrid_binding(settings, descriptor, *, parsed_snapshots=None, snap
             constructors['logistics'] = LogisticsAgent
             seeds['logistics'] = identity_seed(LogisticsAgent(dataset,client,workflow_configuration=temporary))
         if settings.safety_execution == 'model':
-            if dataset.context.dataset_version == '2.2.0':
+            if settings.safety_protocol == 'compact':
+                from ..llm.safety_v4 import SafetyAgent
+            elif dataset.context.dataset_version == '2.2.0':
                 from ..llm.safety_v3 import SafetyAgent
             else:
                 from ..llm.safety_agent import SafetyAgent
@@ -222,18 +228,34 @@ class AgentRuntime:
             except ContractFailure as exc:
                 self.error = exc.error
 
-    def resolve(self, *, feedback=None, snapshot_day=None):
+    def resolve(self, *, feedback=None, snapshot_day=None, safety_protocol=None):
         # HTTP reads run in worker threads while the supervisor runs on asyncio.
         # Keep the managed Agent marker and state.agent replacement consistent.
         with self._lock:
             with self._parsed_snapshots.transaction():
-                return self._resolve(feedback=feedback, snapshot_day=snapshot_day)
+                return self._resolve(feedback=feedback, snapshot_day=snapshot_day, safety_protocol=safety_protocol)
 
     def for_scope(self, scope):
         choices=scope.dataset_context.selection_config
         # Recovery consumes its registered date/snapshot even after midnight.
         # Eligibility/finalisation uses validate_scope's CURRENT resolution.
         pinned=scope.demo_context.demo_today if choices.get('a_daily_snapshot')=='synthetic-daily-v1' else None
+        if choices.get('a_safety_mode') == 'model':
+            from ..llm.safety_support import protocol_for_seed
+            from .logistics_audit import decode
+            try:
+                protocol = protocol_for_seed(scope.dataset_context.dataset_version,
+                    decode(choices['a_safety_identity_seed']))
+            except (ValueError, TypeError, KeyError):
+                protocol = None
+            if protocol is None:
+                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT,
+                    message='Saved safety protocol is unknown or incomplete; do not change its identity.'))
+            if protocol != self.state.settings.safety_protocol:
+                # Reconstruct the registered protocol only. All other current
+                # flags, client configuration, bytes and scope checks still run.
+                return self.resolve(feedback=choices.get('a_revision_feedback') or None,
+                    snapshot_day=pinned, safety_protocol=protocol)
         return self.resolve(feedback=choices.get('a_revision_feedback') or None, snapshot_day=pinned)
 
     def validate_scope(self, scope):
@@ -247,8 +269,12 @@ class AgentRuntime:
             raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='本次运行的数据、配置或时钟已变化，请重新评估。'))
         return snapshot
 
-    def _resolve(self, *, feedback=None, snapshot_day=None):
+    def _resolve(self, *, feedback=None, snapshot_day=None, safety_protocol=None):
         settings = self.state.settings
+        if safety_protocol is not None:
+            if safety_protocol not in {'standard', 'compact'}:
+                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='Unknown safety protocol.'))
+            settings = settings.model_copy(update={'safety_protocol': safety_protocol})
         today=settings.checking_date()
         if snapshot_day is not None:
             today=snapshot_day
@@ -260,6 +286,10 @@ class AgentRuntime:
         settings=effective
         if (settings.logistics_execution == 'model' or settings.safety_execution == 'model') and settings.execution_mode != ExecutionMode.AGENT:
             raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='Model assessment roles require registered agent mode.'))
+        if settings.safety_protocol == 'compact' and (settings.execution_mode != ExecutionMode.AGENT
+                or settings.safety_execution != 'model' or descriptor.context.dataset_version != '2.2.0'):
+            raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE,
+                message='Compact safety requires agent mode, model safety and the 2.2 dataset.'))
         agent, context = self.state.agent, descriptor.context
         managed = (self.configured_agent is not None and agent is self.configured_agent) or (
             self.configured_agent is None and agent is None and self.managed_mode is not None)
@@ -316,7 +346,7 @@ class AgentRuntime:
             from .logistics_audit import decode
             try:
                 protocol_matches = matches_live_protocol(context.dataset_version,
-                    decode(context.selection_config['a_safety_identity_seed']))
+                    decode(context.selection_config['a_safety_identity_seed']), protocol=settings.safety_protocol)
             except (ValueError, TypeError, KeyError, AttributeError):
                 protocol_matches = False
             if (not protocol_matches or context.selection_config.get('a_safety_audit_required') != '1'

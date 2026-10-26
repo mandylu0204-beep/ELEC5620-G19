@@ -1,0 +1,780 @@
+{
+  "agent_version": "campus-safety-advisory-agent-4",
+  "codec_version": "safety-lossless-facts-1",
+  "limits": {
+    "action_utf8_bytes": 18432,
+    "advice_characters": 96,
+    "advice_words": 12,
+    "audit_envelope_bytes": 524288,
+    "facts_utf8_bytes": 32768,
+    "findings": 64,
+    "proposal_utf8_bytes": 16384,
+    "summary_characters": 160,
+    "summary_words": 24
+  },
+  "notes": [
+    "Explicit compact selection; standard safety and default rules remain unchanged.",
+    "Every finding mandatory; no source, unknown, blocker or official result omitted.",
+    "Facts expand losslessly; full keys and fact/source references are host-bound.",
+    "One unverified sentence populates both compatibility fields, not a second model claim.",
+    "Text exclusions retained; stricter word/character/byte bounds reject, never truncate.",
+    "V1/V2/V3 unchanged; existing runs cannot be relabeled or resumed as v4."
+  ],
+  "prompt_sha256": "c3a0d6ce8603f7a02f72cef13f5a93b660668688b6bed84d71368079549288b5",
+  "schemas": {
+    "action": {
+      "$defs": {
+        "CompactFinding": {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "enum": [
+                "ACKNOWLEDGE_INFORMATION",
+                "CHECK_NEAR_DEPARTURE",
+                "OBTAIN_APPLICABLE_INFORMATION",
+                "RESOLVE_SOURCE_CONFLICT",
+                "REQUEST_HUMAN_REVIEW",
+                "CHANGE_TRIP",
+                "RESOLVE_LOGISTICS",
+                "CONFIRM_ACTIVITY_DETAILS"
+              ],
+              "title": "Action",
+              "type": "string"
+            },
+            "advice": {
+              "maxLength": 96,
+              "minLength": 1,
+              "title": "Advice",
+              "type": "string",
+              "x-max-words": 12,
+              "x-safety-text-policy": "safety-advice-text-2",
+              "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+            },
+            "id": {
+              "pattern": "^f(?:[0-9]|[1-5][0-9]|6[0-3])$",
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "action",
+            "advice"
+          ],
+          "title": "CompactFinding",
+          "type": "object"
+        },
+        "CompactProposal": {
+          "additionalProperties": false,
+          "properties": {
+            "facts_sha256": {
+              "pattern": "^[0-9a-f]{64}$",
+              "title": "Facts Sha256",
+              "type": "string"
+            },
+            "findings": {
+              "items": {
+                "$ref": "#/$defs/CompactFinding"
+              },
+              "maxItems": 64,
+              "minItems": 1,
+              "title": "Findings",
+              "type": "array"
+            },
+            "priority": {
+              "items": {
+                "pattern": "^f(?:[0-9]|[1-5][0-9]|6[0-3])$",
+                "type": "string"
+              },
+              "maxItems": 64,
+              "minItems": 1,
+              "title": "Priority",
+              "type": "array"
+            },
+            "summary": {
+              "maxLength": 160,
+              "minLength": 1,
+              "title": "Summary",
+              "type": "string",
+              "x-max-words": 24,
+              "x-safety-text-policy": "safety-advice-text-2",
+              "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+            }
+          },
+          "required": [
+            "facts_sha256",
+            "findings",
+            "priority",
+            "summary"
+          ],
+          "title": "CompactProposal",
+          "type": "object"
+        },
+        "EmptyArguments": {
+          "additionalProperties": false,
+          "properties": {},
+          "title": "EmptyArguments",
+          "type": "object"
+        },
+        "EvaluateCompactAction": {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "const": "tool",
+              "title": "Action",
+              "type": "string"
+            },
+            "arguments": {
+              "$ref": "#/$defs/CompactProposal"
+            },
+            "name": {
+              "const": "evaluate_safety_plan",
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          "required": [
+            "action",
+            "name",
+            "arguments"
+          ],
+          "title": "EvaluateCompactAction",
+          "type": "object"
+        },
+        "FinalCompactAction": {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "const": "final",
+              "title": "Action",
+              "type": "string"
+            },
+            "proposal": {
+              "$ref": "#/$defs/CompactProposal"
+            }
+          },
+          "required": [
+            "action",
+            "proposal"
+          ],
+          "title": "FinalCompactAction",
+          "type": "object"
+        },
+        "ReadSafetyFactsAction": {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "const": "tool",
+              "title": "Action",
+              "type": "string"
+            },
+            "arguments": {
+              "$ref": "#/$defs/EmptyArguments"
+            },
+            "name": {
+              "const": "read_safety_facts",
+              "title": "Name",
+              "type": "string"
+            }
+          },
+          "required": [
+            "action",
+            "name",
+            "arguments"
+          ],
+          "title": "ReadSafetyFactsAction",
+          "type": "object"
+        }
+      },
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ReadSafetyFactsAction"
+        },
+        {
+          "$ref": "#/$defs/EvaluateCompactAction"
+        },
+        {
+          "$ref": "#/$defs/FinalCompactAction"
+        }
+      ]
+    },
+    "identity_seed": {
+      "$defs": {
+        "PublicSafetyClient": {
+          "additionalProperties": false,
+          "properties": {
+            "base_url": {
+              "maxLength": 2048,
+              "minLength": 1,
+              "title": "Base Url",
+              "type": "string"
+            },
+            "client_version": {
+              "const": "b04-campus-client-1",
+              "title": "Client Version",
+              "type": "string"
+            },
+            "max_attempts": {
+              "maximum": 3,
+              "minimum": 1,
+              "title": "Max Attempts",
+              "type": "integer"
+            },
+            "max_completion_tokens": {
+              "maximum": 8192,
+              "minimum": 128,
+              "title": "Max Completion Tokens",
+              "type": "integer"
+            },
+            "max_turns": {
+              "maximum": 6,
+              "minimum": 3,
+              "title": "Max Turns",
+              "type": "integer"
+            },
+            "model": {
+              "const": "campus-qwen",
+              "title": "Model",
+              "type": "string"
+            },
+            "reasoning_effort": {
+              "anyOf": [
+                {
+                  "const": "low",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Reasoning Effort"
+            },
+            "timeout_seconds": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "gt": 0,
+              "le": 120,
+              "title": "Timeout Seconds"
+            }
+          },
+          "required": [
+            "client_version",
+            "base_url",
+            "model",
+            "timeout_seconds",
+            "max_completion_tokens",
+            "max_attempts",
+            "max_turns"
+          ],
+          "title": "PublicSafetyClient",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "properties": {
+            "dataset_rules_version": {
+              "const": "b02-v2-rules-2/a-meal-clarification-v1/a-profile-essentials-v1/trip-evidence-selection-1"
+            },
+            "kernel_version": {
+              "const": "b02-v1-rules-2/a-meal-clarification-v1/a-profile-essentials-v1"
+            }
+          }
+        }
+      ],
+      "properties": {
+        "agent_version": {
+          "const": "campus-safety-advisory-agent-4",
+          "title": "Agent Version",
+          "type": "string"
+        },
+        "codec_version": {
+          "const": "safety-lossless-facts-1",
+          "title": "Codec Version",
+          "type": "string"
+        },
+        "dataset_rules_version": {
+          "const": "b02-v2-rules-2/a-meal-clarification-v1/a-profile-essentials-v1/trip-evidence-selection-1",
+          "title": "Dataset Rules Version",
+          "type": "string"
+        },
+        "kernel_version": {
+          "const": "b02-v1-rules-2/a-meal-clarification-v1/a-profile-essentials-v1",
+          "title": "Kernel Version",
+          "type": "string"
+        },
+        "model_client": {
+          "$ref": "#/$defs/PublicSafetyClient"
+        },
+        "prompt_sha256": {
+          "const": "c3a0d6ce8603f7a02f72cef13f5a93b660668688b6bed84d71368079549288b5",
+          "title": "Prompt Sha256",
+          "type": "string"
+        },
+        "tool_version": {
+          "const": "safety-read-only-tools-4",
+          "title": "Tool Version",
+          "type": "string"
+        },
+        "validation_version": {
+          "const": "safety-advisory-validation-4",
+          "title": "Validation Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "agent_version",
+        "tool_version",
+        "validation_version",
+        "kernel_version",
+        "dataset_rules_version",
+        "prompt_sha256",
+        "model_client",
+        "codec_version"
+      ],
+      "title": "SafetyIdentitySeed",
+      "type": "object"
+    },
+    "proposal": {
+      "$defs": {
+        "CompactFinding": {
+          "additionalProperties": false,
+          "properties": {
+            "action": {
+              "enum": [
+                "ACKNOWLEDGE_INFORMATION",
+                "CHECK_NEAR_DEPARTURE",
+                "OBTAIN_APPLICABLE_INFORMATION",
+                "RESOLVE_SOURCE_CONFLICT",
+                "REQUEST_HUMAN_REVIEW",
+                "CHANGE_TRIP",
+                "RESOLVE_LOGISTICS",
+                "CONFIRM_ACTIVITY_DETAILS"
+              ],
+              "title": "Action",
+              "type": "string"
+            },
+            "advice": {
+              "maxLength": 96,
+              "minLength": 1,
+              "title": "Advice",
+              "type": "string",
+              "x-max-words": 12,
+              "x-safety-text-policy": "safety-advice-text-2",
+              "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+            },
+            "id": {
+              "pattern": "^f(?:[0-9]|[1-5][0-9]|6[0-3])$",
+              "title": "Id",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "action",
+            "advice"
+          ],
+          "title": "CompactFinding",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "facts_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Facts Sha256",
+          "type": "string"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/CompactFinding"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Findings",
+          "type": "array"
+        },
+        "priority": {
+          "items": {
+            "pattern": "^f(?:[0-9]|[1-5][0-9]|6[0-3])$",
+            "type": "string"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Priority",
+          "type": "array"
+        },
+        "summary": {
+          "maxLength": 160,
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string",
+          "x-max-words": 24,
+          "x-safety-text-policy": "safety-advice-text-2",
+          "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+        }
+      },
+      "required": [
+        "facts_sha256",
+        "findings",
+        "priority",
+        "summary"
+      ],
+      "title": "CompactProposal",
+      "type": "object"
+    },
+    "trace": {
+      "additionalProperties": false,
+      "properties": {
+        "configuration_fingerprint": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Configuration Fingerprint",
+          "type": "string"
+        },
+        "elapsed_ms": {
+          "maximum": 9223372036854775807,
+          "minimum": 0,
+          "title": "Elapsed Ms",
+          "type": "integer"
+        },
+        "http_attempts": {
+          "maximum": 18,
+          "minimum": 3,
+          "title": "Http Attempts",
+          "type": "integer"
+        },
+        "input_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Input Sha256",
+          "type": "string"
+        },
+        "prompt_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Prompt Sha256",
+          "type": "string"
+        },
+        "proposal_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Proposal Sha256",
+          "type": "string"
+        },
+        "requested_model": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Requested Model",
+          "type": "string"
+        },
+        "response_sha256": {
+          "items": {
+            "pattern": "^[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 6,
+          "minItems": 3,
+          "title": "Response Sha256",
+          "type": "array"
+        },
+        "role": {
+          "const": "SAFETY",
+          "title": "Role",
+          "type": "string"
+        },
+        "rule_facts_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Rule Facts Sha256",
+          "type": "string"
+        },
+        "served_models": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 6,
+          "title": "Served Models",
+          "type": "array"
+        },
+        "tool_calls": {
+          "items": {
+            "enum": [
+              "read_safety_facts",
+              "evaluate_safety_plan"
+            ],
+            "type": "string"
+          },
+          "maxItems": 5,
+          "minItems": 2,
+          "title": "Tool Calls",
+          "type": "array"
+        },
+        "tool_version": {
+          "const": "safety-read-only-tools-4",
+          "title": "Tool Version",
+          "type": "string"
+        },
+        "turns": {
+          "maximum": 6,
+          "minimum": 3,
+          "title": "Turns",
+          "type": "integer"
+        },
+        "usage": {
+          "additionalProperties": {
+            "maximum": 9223372036854775807,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "prompt_tokens",
+              "completion_tokens",
+              "total_tokens"
+            ]
+          },
+          "title": "Usage",
+          "type": "object"
+        },
+        "validation_passed": {
+          "title": "Validation Passed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "role",
+        "requested_model",
+        "served_models",
+        "configuration_fingerprint",
+        "input_sha256",
+        "rule_facts_sha256",
+        "proposal_sha256",
+        "prompt_sha256",
+        "tool_version",
+        "turns",
+        "http_attempts",
+        "elapsed_ms",
+        "tool_calls",
+        "response_sha256",
+        "usage",
+        "validation_passed"
+      ],
+      "title": "SafetyTrace",
+      "type": "object"
+    },
+    "validated_plan": {
+      "$defs": {
+        "Provenance": {
+          "additionalProperties": false,
+          "properties": {
+            "demo_only": {
+              "const": true,
+              "default": true,
+              "title": "Demo Only",
+              "type": "boolean"
+            },
+            "source_date": {
+              "const": "2026-10-07",
+              "default": "2026-10-07",
+              "title": "Source Date",
+              "type": "string"
+            },
+            "source_name": {
+              "default": "CampMate Synthetic Demo Dataset v1",
+              "enum": [
+                "CampMate Synthetic Demo Dataset v1",
+                "CampMate Synthetic Demo Dataset v2"
+              ],
+              "title": "Source Name",
+              "type": "string"
+            },
+            "source_type": {
+              "const": "SYNTHETIC",
+              "default": "SYNTHETIC",
+              "title": "Source Type",
+              "type": "string"
+            }
+          },
+          "title": "Provenance",
+          "type": "object"
+        },
+        "SafetyFinding": {
+          "additionalProperties": false,
+          "properties": {
+            "action_code": {
+              "enum": [
+                "ACKNOWLEDGE_INFORMATION",
+                "CHECK_NEAR_DEPARTURE",
+                "OBTAIN_APPLICABLE_INFORMATION",
+                "RESOLVE_SOURCE_CONFLICT",
+                "REQUEST_HUMAN_REVIEW",
+                "CHANGE_TRIP",
+                "RESOLVE_LOGISTICS",
+                "CONFIRM_ACTIVITY_DETAILS"
+              ],
+              "title": "Action Code",
+              "type": "string"
+            },
+            "action_unverified": {
+              "maxLength": 600,
+              "minLength": 1,
+              "title": "Action Unverified",
+              "type": "string",
+              "x-safety-text-policy": "safety-advice-text-2",
+              "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+            },
+            "fact_refs": {
+              "items": {
+                "maxLength": 512,
+                "minLength": 1,
+                "pattern": "^/(baseline|input|selection)/",
+                "type": "string"
+              },
+              "maxItems": 32,
+              "minItems": 1,
+              "title": "Fact Refs",
+              "type": "array"
+            },
+            "finding_key": {
+              "pattern": "^finding-[0-9a-f]{64}$",
+              "title": "Finding Key",
+              "type": "string"
+            },
+            "interpretation_unverified": {
+              "maxLength": 600,
+              "minLength": 1,
+              "title": "Interpretation Unverified",
+              "type": "string",
+              "x-safety-text-policy": "safety-advice-text-2",
+              "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+            }
+          },
+          "required": [
+            "finding_key",
+            "interpretation_unverified",
+            "action_code",
+            "action_unverified",
+            "fact_refs"
+          ],
+          "title": "SafetyFinding",
+          "type": "object"
+        },
+        "SourceRef": {
+          "additionalProperties": false,
+          "properties": {
+            "dataset_file": {
+              "title": "Dataset File",
+              "type": "string"
+            },
+            "provenance": {
+              "$ref": "#/$defs/Provenance"
+            },
+            "record_id": {
+              "maxLength": 200,
+              "minLength": 1,
+              "title": "Record Id",
+              "type": "string"
+            },
+            "valid_from": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Valid From"
+            },
+            "valid_to": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Valid To"
+            }
+          },
+          "required": [
+            "dataset_file",
+            "record_id"
+          ],
+          "title": "SourceRef",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "action_priority": {
+          "items": {
+            "pattern": "^finding-[0-9a-f]{64}$",
+            "type": "string"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Action Priority",
+          "type": "array"
+        },
+        "decision_summary_unverified": {
+          "maxLength": 1200,
+          "minLength": 1,
+          "title": "Decision Summary Unverified",
+          "type": "string",
+          "x-safety-text-policy": "safety-advice-text-2",
+          "x-safety-text-policy-sha256": "c9c7eeefda16b39e7a7fc348d2bed8460dc347b69eb3a225b092d99c1c998387"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/SafetyFinding"
+          },
+          "maxItems": 64,
+          "minItems": 1,
+          "title": "Findings",
+          "type": "array"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 128,
+          "title": "Source Refs",
+          "type": "array"
+        }
+      },
+      "required": [
+        "findings",
+        "action_priority",
+        "decision_summary_unverified",
+        "source_refs"
+      ],
+      "title": "ValidatedSafetyPlan",
+      "type": "object"
+    }
+  },
+  "shared_audit_envelope": "1.0_UNCHANGED",
+  "status": "OPT_IN_RUNTIME_REGISTERED",
+  "supported_dataset_versions": [
+    "2.2.0"
+  ],
+  "supported_kernel_rule_pairs": [
+    {
+      "dataset_rules_version": "b02-v2-rules-2/a-meal-clarification-v1/a-profile-essentials-v1/trip-evidence-selection-1",
+      "kernel_version": "b02-v1-rules-2/a-meal-clarification-v1/a-profile-essentials-v1"
+    }
+  ],
+  "tool_version": "safety-read-only-tools-4",
+  "validation_version": "safety-advisory-validation-4"
+}

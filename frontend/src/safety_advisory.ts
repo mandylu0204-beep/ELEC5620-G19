@@ -1,5 +1,6 @@
 // Presentation only; official safety results and server guards stay authoritative.
 export type SafetyAudit = {
+  advice_format?:'separate-advice-v1'|'single-advice-v1';
   kind:'SAFETY';run_id:string;plan_version_id:string;assessment_id:string;
   depends_on_assessment_id:string;input_fingerprint:string;
   plan:{findings:{finding_key:string;fact_refs:string[];action_code:string;
@@ -21,6 +22,7 @@ export function safetyAdvice(value:SafetyAudit|null|undefined,binding:SafetyAdvi
   if(!value||!binding||value.kind!=='SAFETY'||value.run_id!==binding.runId
       ||value.plan_version_id!==binding.versionId||value.assessment_id!==binding.assessmentId
       ||value.depends_on_assessment_id!==binding.logisticsId||value.input_fingerprint!==binding.inputFingerprint)return null;
+  if(value.advice_format!==undefined&&!['separate-advice-v1','single-advice-v1'].includes(value.advice_format))return null;
   const plan=value.plan;
   if(!plan||!Array.isArray(plan.findings)||!Array.isArray(plan.action_priority)
       ||!plan.findings.length||plan.findings.length>64||plan.action_priority.length!==plan.findings.length
@@ -31,7 +33,8 @@ export function safetyAdvice(value:SafetyAudit|null|undefined,binding:SafetyAdvi
   const ordered=plan.action_priority.map(key=>byKey.get(key));
   if(ordered.some(item=>!item||!Object.hasOwn(actionTitles,item.action_code)
       ||typeof item.action_unverified!=='string'||!item.action_unverified.trim()
-      ||typeof item.interpretation_unverified!=='string'||!item.interpretation_unverified.trim()))return null;
+      ||typeof item.interpretation_unverified!=='string'||!item.interpretation_unverified.trim()
+      ||value.advice_format==='single-advice-v1'&&item.interpretation_unverified!==item.action_unverified))return null;
   return {summary:plan.decision_summary_unverified,items:ordered.map(item=>({
     key:item!.finding_key,title:actionTitles[item!.action_code],
     explanation:item!.interpretation_unverified,action:item!.action_unverified,

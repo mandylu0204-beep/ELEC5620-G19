@@ -1,0 +1,260 @@
+{
+  "task": "Offline compact safety protocol experiment",
+  "date": "2026-10-26",
+  "timezone": "Australia/Sydney",
+  "base": "0c56764d80b7ef24e69e262549142ac5c3fdb178",
+  "branch": "feature/safety-offline-optimization",
+  "status": "OFFLINE_CANDIDATE_NOT_REGISTERED",
+  "version_matrix": {
+    "production_sydney_2_2": "agent-3 / tools-3 / validation-3 unchanged",
+    "candidate": "agent-4 / tools-4 / validation-4",
+    "default_safety": "rules unchanged",
+    "shared_schema_and_audit_envelope": "1.0 unchanged"
+  },
+  "portable_fixture_metrics": {
+    "v3": {
+      "serialized_http_request_bytes": [
+        6642,
+        17321,
+        22239
+      ],
+      "request_sha256": [
+        "abd75169506d41f939a9a8715f9630f917eb67fd3adbe208085d431606596184",
+        "ad4d81ab29bde68f3f4c5c53bca48ec5547cfa7100767171b6293e9873b7c0de",
+        "b1ece883803a05c96fe4cbbaedd48c46cfc33421aed4f654ffddd5d71d7b83b5"
+      ],
+      "mock_action_utf8_bytes": [
+        59,
+        2258,
+        2228
+      ],
+      "facts_utf8_bytes": 9621
+    },
+    "v4": {
+      "serialized_http_request_bytes": [
+        5582,
+        12481,
+        14589
+      ],
+      "request_sha256": [
+        "fb99cef811cd7c9fff2105a0cd9530af8cc6ddd1e0375554d1133b785927205f",
+        "139146c422ec3d0a8b249a6d986a514af9e00a4fb8f25658e0b8e083992327fb",
+        "68369c122f41103c454eff6a7b1ff56e9ac34117e89fc87fe5a64f826d830848"
+      ],
+      "mock_action_utf8_bytes": [
+        59,
+        873,
+        843
+      ],
+      "facts_utf8_bytes": 6079
+    },
+    "reduction": {
+      "second_http_body_percent": 27.94,
+      "facts_percent": 36.82,
+      "mock_evaluation_action_percent": 61.34
+    },
+    "same_complete_assessment": true,
+    "same_complete_expanded_advice": true,
+    "lossless_fact_projection": true,
+    "findings_retained": 6,
+    "facts_retained": 23,
+    "latency_or_token_improvement": "NOT_MEASURED_NO_REAL_MODEL",
+    "actual_campus_calls": 0,
+    "fake_usage_not_reported": true
+  },
+  "retained_normal_input_metrics": {
+    "v3": {
+      "serialized_http_request_bytes": [
+        6636,
+        17631,
+        22549
+      ],
+      "request_sha256": [
+        "80e33b47ba7cd619c00ea166745c83735fa5528d14c36a2a6c65ab86e08526d2",
+        "39b3c30db97143575aba03aa002eed4fe22ce22017021e3842110040ae5de91c",
+        "7ce38faa42acbb93422d16aae84275c79c4dbd1336fd97ef06d91639cb55b472"
+      ],
+      "mock_action_utf8_bytes": [
+        59,
+        2258,
+        2228
+      ],
+      "facts_utf8_bytes": 9913
+    },
+    "v4": {
+      "serialized_http_request_bytes": [
+        5576,
+        12839,
+        14947
+      ],
+      "request_sha256": [
+        "d795ab4cd7d00a44b59ef8aea8d6a52cebe6ca4190e17b1f39e128f53fba81db",
+        "f23c6cee716651464ff384e61f237bdce85320f38c6e453a448a25610ce2eff7",
+        "fbf257a6f2aea5c4b395d4c7c59309a04df419337cc3470b3cc1f0632955a473"
+      ],
+      "mock_action_utf8_bytes": [
+        59,
+        873,
+        843
+      ],
+      "facts_utf8_bytes": 6419
+    },
+    "reduction": {
+      "second_http_body_percent": 27.18,
+      "facts_percent": 35.25,
+      "mock_evaluation_action_percent": 61.34
+    },
+    "same_complete_assessment": true,
+    "same_complete_expanded_advice": true,
+    "lossless_fact_projection": true,
+    "findings_retained": 6,
+    "facts_retained": 23,
+    "latency_or_token_improvement": "NOT_MEASURED_NO_REAL_MODEL",
+    "actual_campus_calls": 0,
+    "fake_usage_not_reported": true,
+    "input_origin": "B retained normal input, read-only original database; no registered scope rewritten",
+    "input_sha256": "02478d940e0885db118fd6975840244c713b7a679406e0c6fa66088604cec8a4",
+    "new_candidate_identity_not_old_run_recovery": true
+  },
+  "output_policy": {
+    "all_findings_required": true,
+    "maximum_findings": 64,
+    "advice_fields_per_finding": 1,
+    "advice_max_characters": 96,
+    "advice_max_words": 12,
+    "summary_max_characters": 160,
+    "summary_max_words": 24,
+    "encoded_proposal_bytes": 16384,
+    "encoded_action_bytes": 18432,
+    "no_truncation_no_repair": true,
+    "all_legacy_text_exclusions_retained": true
+  },
+  "lossless_policy": {
+    "original_v3_wire_roundtrip_compared_canonically": true,
+    "SourceRef_and_Provenance_interned": true,
+    "reserved_reference_tags_escaped": true,
+    "original_paths_values_nulls_unknowns_validity_dates_sources_actions_and_all_findings_preserved": true,
+    "source_provenance_official_clearance_false_retained": true
+  },
+  "tests": {
+    "runs": [
+      {
+        "tests": 52,
+        "failures": 2,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 50,
+        "file": "compact-candidate-20261026-01.xml",
+        "time_seconds": 8.848,
+        "sha256": "3858256dea1ab1909c9ee72026542c9f1fd0fbeb4faed7c1ab7c44232f63fced"
+      },
+      {
+        "tests": 52,
+        "failures": 2,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 50,
+        "file": "compact-candidate-20261026-02.xml",
+        "time_seconds": 9.035,
+        "sha256": "65794f0a58a0ecd5c6bae245c839cb7959005012c33aef351f6a57c814335e16"
+      },
+      {
+        "tests": 52,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 52,
+        "file": "compact-candidate-20261026-03.xml",
+        "time_seconds": 9.19,
+        "sha256": "dfbb88eb5884219fb17d5f527e92631ae788885995fdfcd6064d4d7c1c4bcbed"
+      },
+      {
+        "tests": 386,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 386,
+        "file": "compact-safety-regression-20261026-01.xml",
+        "time_seconds": 63.675,
+        "sha256": "70ddcd607510fe5817d72409a7c75295bcc8176aa8a20548812884e2cb7cf40b"
+      },
+      {
+        "tests": 388,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 388,
+        "file": "compact-safety-regression-20261026-02.xml",
+        "time_seconds": 65.591,
+        "sha256": "4109c0d7eaa88505c2e33d6234cc0320eb8563e809ce2f18b06a7d30f13f3dc9"
+      }
+    ],
+    "final_local_targeted": {
+      "tests": 388,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 388,
+      "file": "compact-safety-regression-20261026-02.xml",
+      "time_seconds": 65.591,
+      "sha256": "4109c0d7eaa88505c2e33d6234cc0320eb8563e809ce2f18b06a7d30f13f3dc9"
+    },
+    "final_exit_code": 0,
+    "real_http_transport_blocks": 0,
+    "source_sha256": {
+      "backend/app/llm/safety_compact.py": "13e475df08cb84078322075dd3119730ab6a346c67de2b94cd2e4c216de0c688",
+      "backend/app/llm/safety_v4.py": "a5967a0a42ba5c08075a5b0b7d978b3fc3c6b1e8ef5041cd0210d0eae9d8017f",
+      "backend/app/export_safety_v4.py": "a588485f7726fd3429b486a50b193e276f4a261a4136f1802eb1a111955d078b",
+      "backend/tests/test_safety_compact.py": "299c74a25f1770617b799598c8b157751f7bbfb205ba2302b3e02ead3e8ef85f",
+      "scripts/safety_compact_benchmark.py": "76e5b52ece311477014967f20453deea2bd2f0513ceeb1f0260768adb198133d",
+      "docs/contracts/safety_advisory_v4.schema.json": "0970f19cdb8d1f9ac4dd15dd2f3a628fc5ccf9a0b9cc8f703194182ab41922a7"
+    },
+    "scopes": [
+      "new v4 parser, codec and whole Mock tool loop",
+      "64-finding bound, complete priority, strict texts and encoded budgets",
+      "closed road, future/missing evidence, unknown activity/gear, conflict",
+      "real choices/priority vs unchanged deterministic result",
+      "exact final, canonical artifact replay, tamper/legacy relabel rejection",
+      "concurrent results and failure/cancellation isolation",
+      "existing v1/v2/v3 component/kernel/text/2.2 runtime and snapshot regression"
+    ],
+    "first_failures": "Initial two 52-case runs: 50 passed / 2 failed. Both new test-fixture defects: overlapping appended activity and conflict baseline lacking required review/outcome flags. One rerun occurred before a patch was applied due to wrong working directory. Fixtures fixed without loosening production validation or assertions; same 52 then passed. Final 388-case run passed.",
+    "warning": "Existing Starlette TestClient/httpx deprecation warning; dependencies unchanged.",
+    "full_project_suite": false,
+    "windows_or_cloud_run": false
+  },
+  "schema_checks": {
+    "v4_candidate": true,
+    "v3_existing": true,
+    "shared_contracts": true
+  },
+  "unchanged": {
+    "existing_tracked_files": true,
+    "v1_v2_v3_prompts_schemas_and_validators": true,
+    "production_factory_and_live_protocol_matrix": true,
+    "storage_database_migrations_and_signatures": true,
+    "frontend": true,
+    "dataset_and_seals": true,
+    "personal_configuration": true,
+    "retained_live_database_snapshots_and_transport": true
+  },
+  "real_campus_calls": 0,
+  "github_actions_runs": 0,
+  "formal_v4_assessments_saved": 0,
+  "formal_v4_audits_saved": 0,
+  "commit_or_push": false,
+  "main_merge": false,
+  "required_next": [
+    "A reviews the v4 wire/action/identity contract and complete-finding safety boundaries.",
+    "No production enabling or v3-run upgrade. A-owned new-write/reader/factory/Hybrid/Orchestrator/UI version gating must be separately agreed.",
+    "Only after review and explicit user approval consider a new bounded standalone live test with the audited request guard. Do not repeat PLAN or modify original frozen identities."
+  ],
+  "limitations": [
+    "These are actual serialized bytes captured from MockTransport, not estimated tokens or measured live latency.",
+    "Mock candidates use identical advice/actions in both versions; expanded plans and complete official results are equal.",
+    "This does not prove the 30-second proxy issue is solved or that all future inputs complete within a deadline.",
+    "The retained input is read-only historical data; a fresh unregistered candidate context is derived for comparison, not substituted into the old saved scope.",
+    "No real-model REVISE, REASSESS, old failed run recovery, v4 persistence or v4 browser acceptance performed."
+  ],
+  "privacy": "No key, full dynamic prompt, private model reply, private reasoning, DB or snapshot content in shared evidence."
+}
