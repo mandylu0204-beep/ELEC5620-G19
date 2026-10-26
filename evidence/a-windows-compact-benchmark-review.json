@@ -1,0 +1,116 @@
+{
+  "recorded_at": "2026-10-26T15:34:00.202262+11:00",
+  "verification": "NATIVE_WINDOWS_OFFLINE",
+  "platform": "win32",
+  "python": "3.12.14",
+  "B_patch_commit": "350a033917a2efbf9990146c3adb4328f8736f8f",
+  "combined_commit": "ca15292e4328c5ca0337cd7b69ba16269af49b57",
+  "prior_application_source": "13ce2bc",
+  "runs": [
+    {
+      "scope": "exact_B_source",
+      "source_commit": "350a033917a2efbf9990146c3adb4328f8736f8f",
+      "passed": 87,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "junit_seconds": 47.125,
+      "junit_sha256": "dadf2f3efe8a941c9a487a979e1f4f25cbfe31562ae18c42f9918381c35885bc",
+      "unexpected_real_http_guard_hits": 0
+    },
+    {
+      "scope": "combined_integration",
+      "source_commit": "ca15292e4328c5ca0337cd7b69ba16269af49b57",
+      "passed": 87,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "exit_code": 0,
+      "junit_seconds": 42.836,
+      "junit_sha256": "70faf6846d1e48fb6e9786ed46d166b401e1fa77e312d66ea68f8d11cb49fa7c",
+      "unexpected_real_http_guard_hits": 0
+    }
+  ],
+  "distinct_tests_per_run": 87,
+  "summed_as_distinct_tests": false,
+  "benchmark_cli": {
+    "source_commit": "350a033917a2efbf9990146c3adb4328f8736f8f",
+    "exit_code": 0,
+    "all_public_fixture_metrics_and_request_hashes_match": true,
+    "metrics": {
+      "v3": {
+        "serialized_http_request_bytes": [
+          6642,
+          17321,
+          22239
+        ],
+        "request_sha256": [
+          "abd75169506d41f939a9a8715f9630f917eb67fd3adbe208085d431606596184",
+          "ad4d81ab29bde68f3f4c5c53bca48ec5547cfa7100767171b6293e9873b7c0de",
+          "b1ece883803a05c96fe4cbbaedd48c46cfc33421aed4f654ffddd5d71d7b83b5"
+        ],
+        "mock_action_utf8_bytes": [
+          59,
+          2258,
+          2228
+        ],
+        "facts_utf8_bytes": 9621
+      },
+      "v4": {
+        "serialized_http_request_bytes": [
+          5582,
+          12481,
+          14589
+        ],
+        "request_sha256": [
+          "fb99cef811cd7c9fff2105a0cd9530af8cc6ddd1e0375554d1133b785927205f",
+          "139146c422ec3d0a8b249a6d986a514af9e00a4fb8f25658e0b8e083992327fb",
+          "68369c122f41103c454eff6a7b1ff56e9ac34117e89fc87fe5a64f826d830848"
+        ],
+        "mock_action_utf8_bytes": [
+          59,
+          873,
+          843
+        ],
+        "facts_utf8_bytes": 6079
+      },
+      "reduction": {
+        "second_http_body_percent": 27.94,
+        "facts_percent": 36.82,
+        "mock_evaluation_action_percent": 61.34
+      },
+      "same_complete_assessment": true,
+      "same_complete_expanded_advice": true,
+      "lossless_fact_projection": true,
+      "findings_retained": 6,
+      "facts_retained": 23,
+      "latency_or_token_improvement": "NOT_MEASURED_NO_REAL_MODEL",
+      "actual_campus_calls": 0,
+      "fake_usage_not_reported": true
+    }
+  },
+  "git_blob_sha256": {
+    "scripts/safety_compact_benchmark.py": "f8f5b03bf797cb93becb0feb2278f33b3d3c6e13c3fa1306f0cefad4c4c181d4",
+    "backend/tests/test_safety_compact_benchmark.py": "cd07e8f1ff041a50cb5fffc884ecc79bed0164bead6dc7a564c3a4922c7a7825"
+  },
+  "source_review": {
+    "runner_created_before_network_guards": true,
+    "fixture_and_comparison_guarded": true,
+    "runner_shutdown_guarded": true,
+    "no_arbitrary_localhost_allowlist": true,
+    "application_protocol_and_parameters_unchanged_by_patch": true
+  },
+  "campus_http_requests": 0,
+  "cloud_tests_started": 0,
+  "default_safety": "rules",
+  "original_database_changed": false,
+  "personal_configuration_changed": false,
+  "main_changed": false,
+  "merge_status": "NOT_READY_FOR_MERGE",
+  "remaining": [
+    "Prior legacy lease failure is still unresolved",
+    "37 previously selected cases remain unexecuted",
+    "This benchmark result is not formal live safety runtime acceptance or proof 502 is solved"
+  ]
+}

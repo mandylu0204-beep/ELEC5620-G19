@@ -102,8 +102,11 @@ explicitly authorised step. Do not repeat a complete normal PLAN by default or
 change an old failed run's registration to v4. The normal token budget remains
 4096/low; B's recorded second completion used 2565 tokens.
 
-B's Windows benchmark guard portability fix can be reviewed independently; the
-integration does not relax that guard or change the benchmark measurements.
+B's Windows benchmark guard portability fix `350a033` is now included as
+`ca15292`. Exact-source and combined native Windows scopes each passed 87 cases;
+all public benchmark metrics and request hashes remain identical. See the
+[Windows benchmark review](a_windows_compact_benchmark_review.md). This closes
+only that portability gap and does not change the incomplete regression above.
 Before merge or a new live acceptance decision, investigate the preserved legacy
 failure and complete the remaining selected regression. No cloud CI or campus
 requests are part of A's work here. Main is unchanged.
