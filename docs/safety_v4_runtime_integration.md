@@ -56,8 +56,32 @@ by the presentation parser. Legacy v1/v2/v3 advice retains its original format.
 
 ## Local verification
 
-Validation details and final counts are recorded in the accompanying integration
-evidence. All runtime checks use real application/factory/workflow/SQLite code
+Application source: `13ce2bc`. Shared summary:
+[`a-safety-v4-runtime-integration.json`](../evidence/a-safety-v4-runtime-integration.json).
+
+- All 17 compact-runtime cases passed across local batches: explicit selection,
+  complete identity/codec, both logistics modes, PLAN/REVISE/REASSESS, final save,
+  restart/ownership, before-commit/lost-receipt recovery, audit corruption and
+  the separation of pinned recovery snapshots from current-date eligibility.
+- Frontend: 124 passed, no failures/skips; type checking and build passed.
+  Shared and compact-v4 schema checks passed.
+- The broader selected safety regression is **not fully passed**. Across the
+  batches, 199 distinct cases passed; one existing 2.1 standard-protocol case
+  failed, and 37 selected cases were not executed after the first failure.
+  This is not a whole-project result and is not ready for merge.
+
+The failing case is
+`test_permanent_integrity_error_stays_terminal_through_dispatcher[save_model_safety_assessment]`.
+It expected a safety-save persistence failure, but its saved run was still at
+`SAVING_VERSION` when the lease guard recorded `AGENT_FAILURE`. The isolated DB
+contains only a recommendations receipt, no saved planning trace and no
+logistics/safety audits. The intended safety fault was not reached. JUnit records
+819.267 seconds for the entire test; this is not a measured duration for one
+operation. The delay's cause is unresolved. The suite stopped with 183 passed
+and one failure in that batch; no production limit or guard was relaxed, and
+the failing test was not repeatedly run to obtain a green result.
+
+All runtime checks use real application/factory/workflow/SQLite code
 with MockTransport model responses and a real-HTTP rejection guard. The original
 database, sealed data and personal settings are untouched. Tests use short,
 separate temporary paths under this worktree's `var/` for Windows compatibility.
@@ -80,4 +104,6 @@ change an old failed run's registration to v4. The normal token budget remains
 
 B's Windows benchmark guard portability fix can be reviewed independently; the
 integration does not relax that guard or change the benchmark measurements.
-No cloud CI or campus requests are part of A's work here. Main is unchanged.
+Before merge or a new live acceptance decision, investigate the preserved legacy
+failure and complete the remaining selected regression. No cloud CI or campus
+requests are part of A's work here. Main is unchanged.

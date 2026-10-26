@@ -3,6 +3,11 @@
 Reviewed source: `57bbdc0`, based on main `0c56764`.
 Date: 2026-10-26, Australia/Sydney.
 
+This is the standalone component review at `57bbdc0`. The subsequent production
+integration has separate results and one unclosed legacy regression; see
+[runtime integration](safety_v4_runtime_integration.md). The component review
+does not establish that the complete runtime candidate is ready to merge.
+
 ## Conclusion
 
 No blocking defect was found in the candidate's lossless fact projection,
