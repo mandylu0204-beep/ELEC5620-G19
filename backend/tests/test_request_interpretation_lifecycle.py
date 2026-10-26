@@ -415,3 +415,65 @@ def test_managed_factory_rejects_an_unbound_request_interpreter(tmp_path, monkey
     with pytest.raises(ContractFailure) as caught:
         build_v2_hybrid_binding(settings, inspect_dataset(settings))
     assert caught.value.error.code == 'AGENT_FAILURE'
+
+
+@pytest.mark.parametrize('meal', ['ready-to-eat meals', 'self-catered meals'])
+@pytest.mark.parametrize('explicit_strength', ['soft', 'hard'])
+def test_compact_model_meal_summary_confirms_and_restarts_without_facility_blocker(
+        tmp_path, monkeypatch, meal, explicit_strength):
+    from app.config import APP_ROOT
+    from app.llm import client as clients, config as configs
+    from llm_fixtures import completion, model_settings
+    from rule_fixtures import full_profile
+
+    requests = []
+    original = clients.CampusModelClient
+    values = model_settings()
+
+    def respond(request):
+        payload = json.loads(json.loads(request.content)['messages'][1]['content'])
+        assert payload['operation'] == 'INTERPRET_REQUEST'
+        requests.append(payload)
+        clauses = []
+        for source in payload['sources']:
+            clauses.append({'source': source['source'], 'index': source['index'],
+                'quote': source['text'], 'unresolved': False, 'mentions': [{
+                    'quote': meal, 'canonical': meal, 'polarity': 'positive',
+                    'strength': 'hard' if source['source'] == 'raw_text' else explicit_strength,
+                    'ambiguous': False}]})
+        return httpx.Response(200, json=completion({'clauses': clauses}))
+
+    monkeypatch.setattr(configs, 'CampusModelSettings', lambda: values)
+    monkeypatch.setattr(clients, 'CampusModelClient',
+        lambda settings: original(settings, transport=httpx.MockTransport(respond)))
+    settings = Settings(_env_file=None, execution_mode='agent', planning_enabled=True,
+        logistics_execution='model', safety_execution='model', safety_protocol='compact',
+        dataset_path=APP_ROOT / 'data/sydney_surrounds_v2_2', database_path=tmp_path / 'meal.sqlite3',
+        snapshot_cache_path=tmp_path / 'snapshots', clock_mode='fixed', demo_today='2026-10-27',
+        synthetic_evidence_mode='rolling')
+    app = create_app(settings)
+    with TestClient(app) as client:
+        headers = sign_in(client)
+        profile = full_profile(water=30, kilometres='100').model_copy(update={'children_count': 0})
+        assert client.put('/api/v1/profile', headers=headers,
+            json={'expected_revision': 0, 'profile': profile.model_dump(mode='json')}).status_code == 200
+        explicit = {'destination': 'Sydney & Surrounds', 'start_date': '2026-10-29',
+            'duration_nights': 2, 'budget_cents': 100000, 'preferences': [meal]}
+        record = analysed(client, headers, draft(client, headers,
+            raw_text=f'Two people camping near Sydney, {meal}.', explicit=explicit))
+        endpoint = f"/api/v1/requests/{record['request_id']}"
+        assert record['summary']['extracted_requirements']['preferences'] == [meal]
+        assert record['summary']['extracted_requirements']['mandatory_constraints'] == []
+        response = client.post(endpoint + '/confirm', headers=headers, json=confirm_body(record))
+        assert response.status_code == 200, response.text
+        saved = response.json()
+        assert saved['confirmed_context']['requirements']['preferences'] == [meal]
+        assert saved['confirmed_context']['requirements']['mandatory_constraints'] == []
+        assert saved['explicit_fields'] == explicit
+    with TestClient(create_app(settings)) as restarted:
+        sign_in(restarted)
+        assert restarted.get(endpoint).json() == saved
+    assert len(requests) == 1
+    with app.state.database.transaction(write=False) as connection:
+        assert connection.execute('SELECT COUNT(*) FROM request_confirmations').fetchone()[0] == 1
+        assert connection.execute('SELECT COUNT(*) FROM runs').fetchone()[0] == 0

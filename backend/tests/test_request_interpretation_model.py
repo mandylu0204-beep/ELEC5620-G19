@@ -386,3 +386,78 @@ def test_request_identity_does_not_change_planning_or_workflow_identity(monkeypa
     legacy = HybridPlanningAgent(agent.dataset, planner, workflow_configuration=agent.workflow_configuration)
     assert legacy.model_request_terms is False
     assert legacy.request_interpretation_identity is None
+
+
+@pytest.mark.parametrize('meal', ['ready-to-eat meals', 'self-catered meals'])
+@pytest.mark.parametrize('canonical', ['known', 'unknown'])
+def test_positive_meal_mode_is_not_an_unsupported_campsite_requirement(meal, canonical):
+    raw = f'Two people camping near Sydney, {meal}.'
+    agent, input, requests = setup(raw, {
+        raw: [mention(meal, meal if canonical == 'known' else None, strength='hard')],
+        meal: [mention(meal, meal)],
+    }, explicit={'preferences': [meal]})
+    original = input.model_dump(mode='json')
+    result = interpreted(agent, input).result
+    assert result.extracted_requirements.preferences == [meal]
+    assert result.extracted_requirements.mandatory_constraints == []
+    assert not result.field_errors and not result.clarifications
+    assert input.model_dump(mode='json') == original and len(requests) == 1
+
+
+@pytest.mark.parametrize('text,meal', [
+    ('必须即食餐食', 'ready-to-eat meals'),
+    ('We need self-catered meals', 'self-catered meals'),
+    ('无需烹饪的餐食', 'ready-to-eat meals'),
+])
+def test_explicit_meal_arrangement_can_be_required_without_becoming_a_facility(text, meal):
+    agent, input, _ = setup('露营安排。', {text: [mention(text, meal, strength='hard')]},
+        explicit={'preferences': [], 'mandatory_constraints': [text]})
+    result = interpreted(agent, input).result
+    assert result.extracted_requirements.preferences == [meal]
+    assert result.extracted_requirements.mandatory_constraints == []
+    assert not result.field_errors and not result.clarifications
+
+
+def test_meal_mode_does_not_relax_separate_hard_facilities():
+    raw = 'We need showers and ready-to-eat meals.'
+    agent, input, _ = setup(raw, {raw: [mention('need showers', 'showers', strength='hard'),
+        mention('ready-to-eat meals', 'ready-to-eat meals', strength='hard')]})
+    result = interpreted(agent, input).result
+    assert result.extracted_requirements.mandatory_constraints == ['showers']
+    assert result.extracted_requirements.preferences == ['ready-to-eat meals']
+    assert not result.field_errors and not result.clarifications
+
+
+def test_conflicting_meal_modes_still_require_a_choice():
+    raw = 'We need self-catered meals.'
+    agent, input, _ = setup(raw, {raw: [mention('need self-catered meals', 'self-catered meals', strength='hard')]})
+    result = interpreted(agent, input).result
+    assert any(e.field == 'preferences' and e.code == 'CONFLICTING' for e in result.field_errors)
+    assert result.clarifications
+
+
+@pytest.mark.parametrize('polarity', ['negative', 'not_required'])
+def test_negative_meal_mode_is_not_converted_to_a_positive_choice(polarity):
+    raw = 'We do not need ready-to-eat meals.'
+    agent, input, _ = setup(raw, {raw: [mention('do not need ready-to-eat meals',
+        'ready-to-eat meals', polarity=polarity, strength='hard')]}, explicit={'preferences': []})
+    result = interpreted(agent, input).result
+    assert 'ready-to-eat meals' not in result.extracted_requirements.preferences
+    assert result.clarifications
+
+
+def test_required_dietary_details_are_not_dropped_when_routing_meal_mode():
+    text = 'gluten-free ready-to-eat meals'
+    agent, input, _ = setup('露营安排。', {text: [mention(text, 'ready-to-eat meals', strength='hard')]},
+        explicit={'preferences': [], 'mandatory_constraints': [text]})
+    result = interpreted(agent, input).result
+    assert result.clarifications
+    assert any(e.field == 'mandatory_constraints' for e in result.field_errors)
+
+
+def test_known_meal_quote_cannot_be_assigned_an_unrelated_hard_facility():
+    raw = 'We need ready-to-eat meals.'
+    agent, input, _ = setup(raw, {raw: [mention('ready-to-eat meals', 'showers', strength='hard')]})
+    with pytest.raises(ContractFailure) as caught:
+        interpreted(agent, input)
+    assert caught.value.error.code == 'CONTRACT_INVALID'

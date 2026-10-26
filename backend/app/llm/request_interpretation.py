@@ -22,9 +22,9 @@ from ..contracts.enums import ErrorCode, ExecutionMode, FieldErrorCode
 from ..contracts.errors import FieldError
 from .client import model_failure, strict_json
 
-COMPONENT_VERSION = 'request-interpretation-1'
+COMPONENT_VERSION = 'request-interpretation-2'
 SCHEMA_VERSION = 'request-mentions-1'
-VALIDATION_VERSION = 'quoted-semantics-validation-1'
+VALIDATION_VERSION = 'quoted-semantics-validation-2'
 
 CanonicalTerm = Literal[tuple(sorted(HARD_TERMS | SOFT_TERMS))]
 
@@ -70,6 +70,10 @@ before a request (for example going with a boyfriend) is not a facility need.
 For raw prose, 'must', 'need', '必须', '需要' express hard requirements;
 'prefer', '最好', '希望' normally express soft preferences. Unclear obligation
 uses strength=uncertain and ambiguous=true. Respect the whole local clause.
+Ready-to-eat meals and self-catered meals are the group's meal arrangements,
+not campsite facilities. Identify the quoted meal mode even when its wording
+is mandatory. Preserve negation, competing modes and dietary qualifiers;
+never reduce an unverified dietary requirement to a generic meal mode.
 'do not need showers' / '不需要淋浴' means not_required, not required showers.
 'avoid/no campfires' / '不要生火' means negative campfire (or positive no_fires).
 Other negative facility requirements must stay negative, never become positive.
@@ -96,6 +100,10 @@ _SOFT_TO_HARD = {value: key for key, value in {
 _HARD_TO_SOFT = {value: key for key, value in _SOFT_TO_HARD.items()}
 _HARD_TO_SOFT['fire_allowed'] = 'campfire'
 _MEALS = {'ready_to_eat': 'ready-to-eat meals', 'self_catered': 'self-catered meals'}
+_MEAL_MODES = frozenset(_MEALS.values())
+_MEAL_OBLIGATION = re.compile(
+    r'^(?:must(?:\s+(?:have|eat|use))?|need[sd]?(?:\s+(?:to\s+)?(?:eat|use))?|require[sd]?)\s+'
+    r'|^(?:必须|需要|一定要)(?:吃|使用)?', re.I)
 
 
 def _canonical(value):
@@ -156,11 +164,23 @@ def _concept(value):
 
 def _known_term(text, kind):
     # Remove a grammatical subject, never facility qualifiers or negation.
-    return canonical_term(text, kind) or canonical_term(re.sub(r'^(?:we|i)\s+', '', text, flags=re.I), kind)
+    return (canonical_term(text, kind)
+        or canonical_term(re.sub(r'^(?:we|i)\s+', '', text, flags=re.I), kind)
+        or _meal_mode(text))
+
+
+def _meal_mode(text):
+    """Recognise a whole meal label; never discard dietary qualifiers."""
+    value = re.sub(r'^(?:we|i)\s+|^(?:我们|我)', '', text.strip(), flags=re.I)
+    canonical = canonical_term(value, 'preference')
+    if canonical not in _MEAL_MODES:
+        canonical = canonical_term(_MEAL_OBLIGATION.sub('', value, count=1), 'preference')
+    return canonical if canonical in _MEAL_MODES else None
 
 
 def _semantic_problem(clause, mention):
     context = _context(clause.quote, mention.quote)
+    meal = _meal_mode(mention.quote)
     if clause.quote.count(mention.quote) > 1:
         return '同一短语出现多次，否定或必须条件的范围需要核对'
     if mention.ambiguous or mention.strength == 'uncertain':
@@ -168,7 +188,8 @@ def _semantic_problem(clause, mention):
     kind = 'constraint' if mention.strength == 'hard' else 'preference'
     # A positive noun quoted out of a negated sentence is not a positive alias.
     known = _known_term(context, kind)
-    alias_matches = known is not None and mention.canonical is not None and _concept(known) == _concept(mention.canonical)
+    canonical = mention.canonical or meal
+    alias_matches = known is not None and canonical is not None and _concept(known) == _concept(canonical)
     negative = bool(_NEGATIVE.search(context))
     if mention.polarity != 'positive' and not negative:
         return '没有找到否定或可选的原话依据，不能删去这项条件'
@@ -181,13 +202,13 @@ def _semantic_problem(clause, mention):
             return '否定或双重否定的范围需要核对，不能直接作为正向条件'
     if mention.canonical == 'no_fires' and mention.polarity == 'positive' and _OPTIONAL.search(context):
         return '不需要营火不等于禁止生火，请核对本次安排'
-    if clause.source == 'preferences' and mention.polarity == 'positive' and _HARD.search(context) and not negative:
+    if not meal and clause.source == 'preferences' and mention.polarity == 'positive' and _HARD.search(context) and not negative:
         return '这句话表达了必须条件，但填写在偏好栏中，请核对强度'
-    if clause.source == 'mandatory_constraints' and _SOFT.search(context) and not _HARD.search(context):
+    if not meal and clause.source == 'mandatory_constraints' and _SOFT.search(context) and not _HARD.search(context):
         return '这句话表达了偏好，但填写在必须条件栏中，请核对强度'
     if mention.polarity == 'not_required' and _HARD.search(context) and not negative:
         return '明确的必须条件不能自动改为不需要'
-    if clause.source == 'raw_text' and mention.polarity == 'positive':
+    if not meal and clause.source == 'raw_text' and mention.polarity == 'positive':
         hard, soft = bool(_HARD.search(context)), bool(_SOFT.search(context))
         if not hard and not soft:
             prefix = clause.quote[:clause.quote.find(mention.quote)]
@@ -314,6 +335,7 @@ def _project(dataset, input, proposal):
                 field = 'mandatory_constraints'
             issue(field, FieldErrorCode.AMBIGUOUS, f'请明确这句话中的条件：“{clause.quote}”。')
         for mention in clause.mentions:
+            meal = _meal_mode(mention.quote)
             field = 'mandatory_constraints' if mention.strength == 'hard' else 'preferences'
             if clause.source != 'raw_text':
                 field = clause.source
@@ -322,12 +344,12 @@ def _project(dataset, input, proposal):
                 suppress_raw(mention.canonical)
                 issue(field, FieldErrorCode.AMBIGUOUS, f'请核对“{mention.quote}”：{problem}。')
                 continue
-            if (clause.source == 'mandatory_constraints' and mention.strength != 'hard'
+            if not meal and (clause.source == 'mandatory_constraints' and mention.strength != 'hard'
                     or clause.source == 'preferences' and mention.strength != 'soft'):
                 issue(field, FieldErrorCode.CONFLICTING, f'“{mention.quote}”的语气与填写的偏好／必须条件栏不一致，请核对。')
                 continue
             target = lists['raw_text' if clause.source == 'raw_text' else 'explicit']
-            canonical = mention.canonical
+            canonical = mention.canonical or meal
             if canonical is None:
                 if field == 'mandatory_constraints':
                     issue(field, FieldErrorCode.UNSUPPORTED, f'目前无法验证必须条件“{mention.quote}”，请调整或说明。')
@@ -348,6 +370,16 @@ def _project(dataset, input, proposal):
                         uncertainties.append(f'保留否定偏好“{mention.quote}”，不把它升级为必须条件。')
                     else:
                         issue(field, FieldErrorCode.UNSUPPORTED, f'请明确否定条件“{mention.quote}”；目前不能将它作为正向设施要求。')
+                continue
+            if canonical in _MEAL_MODES:
+                if meal is None:
+                    issue(field, FieldErrorCode.UNSUPPORTED,
+                        f'请核对用餐要求“{mention.quote}”中的附加条件，不能只按普通餐食处理。')
+                else:
+                    # The existing downstream meal contract is a single choice
+                    # in preferences, even when that arrangement is required.
+                    # Never send it through campsite hard-facility filtering.
+                    target['preferences'].append(meal)
                 continue
             context = _context(clause.quote, mention.quote)
             detail_unverified = (
