@@ -59,11 +59,12 @@ by the presentation parser. Legacy v1/v2/v3 advice retains its original format.
 Application source: `13ce2bc`. Shared summary:
 [`a-safety-v4-runtime-integration.json`](../evidence/a-safety-v4-runtime-integration.json).
 
-Latest follow-up: [lease diagnostics and B comparison request](a_lease_followup_handoff.md).
-The original failure now has an uninstrumented pass, but a later cancellation
-case failed before saved progress reached safety. Current coverage is 202
-distinct uninstrumented passes, one unclosed failure and 34 unexecuted cases.
-The older counts below remain historical; the branch is still not ready for main.
+Latest follow-up: [test fixture repair and coverage completion](a_heartbeat_fixture_review.md).
+Candidate `a81c829` repairs only the heartbeat test factory's snapshot forwarding.
+The fresh 3-case and 34-case scopes passed; across the earlier unchanged cases,
+all 238 selected cases now have passing evidence. This is not one whole-backend
+run, and the old long delays remain unexplained. The older counts below remain
+historical. Independent review is requested; main remains unchanged.
 
 - All 17 compact-runtime cases passed across local batches: explicit selection,
   complete identity/codec, both logistics modes, PLAN/REVISE/REASSESS, final save,
@@ -113,6 +114,7 @@ B's Windows benchmark guard portability fix `350a033` is now included as
 all public benchmark metrics and request hashes remain identical. See the
 [Windows benchmark review](a_windows_compact_benchmark_review.md). This closes
 only that portability gap and does not change the incomplete regression above.
-Before merge or a new live acceptance decision, investigate the preserved legacy
-failure and complete the remaining selected regression. No cloud CI or campus
+The pending selected coverage has since been completed after the test-only
+forwarding repair. Before a merge/live decision, review that repair and its
+evidence, retaining the historical delay limitation. No cloud CI or campus
 requests are part of A's work here. Main is unchanged.

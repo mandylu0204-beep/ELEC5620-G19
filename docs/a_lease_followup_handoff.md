@@ -1,5 +1,10 @@
 # Lease regression follow-up: local evidence and B comparison request
 
+Update: the four-case rerun request below is superseded by the
+[heartbeat fixture repair review](a_heartbeat_fixture_review.md). The old source,
+failure records and diagnostic limits are preserved; do not erase old results or
+repeat the old batch solely because the newer selected coverage is complete.
+
 Application source: `d3b3601`; reproducible control source: `1bb321a`.
 No production application, model parameters, timeout, lease, date or eligibility
 guard was changed. Main, personal configuration and the original database are
