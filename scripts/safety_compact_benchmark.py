@@ -22,7 +22,7 @@ from llm_fixtures import completion,model_settings
 from test_sydney_model_safety import safety_input
 
 
-def compare(case):
+async def _compare_async(case):
     dataset,config,input,baseline,selection=case
     facts3=V3Tools(input,baseline,selection=selection,workflow_context=config.context).read_safety_facts()
     tools4=CompactSafetyToolset(input,baseline,selection=selection,workflow_context=config.context)
@@ -60,7 +60,7 @@ def compare(case):
             return httpx.Response(200,json=completion(text,model='offline-byte-comparison'))
         values=model_settings(timeout_seconds=45,max_attempts=2,max_completion_tokens=4096,reasoning_effort='low')
         agent=cls(dataset,CampusModelClient(values,transport=httpx.MockTransport(respond)),workflow_configuration=config)
-        outcomes[version]=asyncio.run(agent.assess_safety_with_trace(input))
+        outcomes[version]=await agent.assess_safety_with_trace(input)
         metrics[version]={'serialized_http_request_bytes':[len(raw) for raw in requests],
             'request_sha256':[hashlib.sha256(raw).hexdigest() for raw in requests],
             'mock_action_utf8_bytes':[len(text.encode()) for text in responses],
@@ -88,13 +88,28 @@ def fixture():
     return dataset,config,input,baseline,selection
 
 
-def main():
+def compare(case=None):
+    # Runner.__enter__ creates the loop first. On Windows its internal socketpair
+    # may need a localhost TCP connection; this is stdlib setup, not a benchmark
+    # request. Do NOT whitelist localhost once application work has started.
     def forbidden(*args,**kwargs):
         raise AssertionError('No real network is allowed in the byte benchmark')
-    with patch.object(socket.socket,'connect',forbidden),patch.object(socket.socket,'connect_ex',forbidden),\
-            patch.object(httpx.AsyncHTTPTransport,'handle_async_request',forbidden),\
-            patch.object(httpx.HTTPTransport,'handle_request',forbidden):
-        value=compare(fixture())
+    with asyncio.Runner() as runner:
+        with patch.object(socket.socket,'connect',forbidden),patch.object(socket.socket,'connect_ex',forbidden),\
+                patch.object(socket,'create_connection',forbidden),\
+                patch.object(httpx.AsyncHTTPTransport,'handle_async_request',forbidden),\
+                patch.object(httpx.HTTPTransport,'handle_request',forbidden):
+            try:
+                return runner.run(_compare_async(fixture() if case is None else case))
+            finally:
+                # Also keep pending-task cancellation/async-generator cleanup
+                # under the guards. The outer context's close is an idempotent
+                # no-op, including when fixture/model code failed or cancelled.
+                runner.close()
+
+
+def main():
+    value=compare()
     print(json.dumps(value,indent=2))
     return 0
 
