@@ -86,6 +86,16 @@ def _view(value, diagnostics_allowed):
     diagnostics = {'planning': planning,
         'assessments': {key: {k: v for k, v in audit.items() if k != 'plan'} for key, audit in audits.items()}}
     data['model_assessment_audits'] = {key: {k: v for k, v in audit.items() if k in _PUBLIC_AUDIT} for key, audit in audits.items()}
+    safe = audits.get('SAFETY')
+    if safe:
+        # Derive presentation shape from the validated stored trace. Neither a
+        # query flag nor model prose can select the compact compatibility mode.
+        formats = {'safety-read-only-tools-1':'separate-advice-v1',
+            'safety-read-only-tools-2':'separate-advice-v1',
+            'safety-read-only-tools-3':'separate-advice-v1',
+            'safety-read-only-tools-4':'single-advice-v1'}
+        data['model_assessment_audits']['SAFETY']['advice_format'] = formats.get(
+            safe.get('trace', {}).get('tool_version'), 'unsupported')
     data['planning_explanation'] = None if not planning else {
         'source_run_id': planning['run_id'],
         'selected_campsite_id': planning['trace']['selected_campsite_id'],

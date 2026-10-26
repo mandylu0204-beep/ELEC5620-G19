@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     planning_enabled: bool = False
     logistics_execution: Literal['rules', 'model'] = 'rules'
     safety_execution: Literal['rules', 'model'] = 'rules'
+    safety_protocol: Literal['standard', 'compact'] = 'standard'
     demo_today: date = date(2026, 10, 8)
     clock_mode: Literal['current', 'fixed'] = 'current'
     synthetic_evidence_mode: Literal['auto', 'sealed', 'rolling'] = 'auto'

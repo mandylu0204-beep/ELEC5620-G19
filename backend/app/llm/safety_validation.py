@@ -64,10 +64,16 @@ def _validate_v3(*args, **kwargs):
     return validate_v3(*args, **kwargs)
 
 
+def _validate_v4(*args, **kwargs):
+    from .safety_v4 import validate_safety_payload as validate_v4
+    return validate_v4(*args, **kwargs)
+
+
 SAFETY_VALIDATORS = MappingProxyType({
     'safety-advisory-validation-1': validate_safety_payload_v1,
     SAFETY_VALIDATION_VERSION: validate_safety_payload,
     'safety-advisory-validation-3': _validate_v3,
+    'safety-advisory-validation-4': _validate_v4,
 })
 
 

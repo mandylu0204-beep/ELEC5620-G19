@@ -13,7 +13,7 @@
     "summary_words": 24
   },
   "notes": [
-    "No runtime factory, audit validator dispatch or new_write registration.",
+    "Explicit compact selection; standard safety and default rules remain unchanged.",
     "Every finding mandatory; no source, unknown, blocker or official result omitted.",
     "Facts expand losslessly; full keys and fact/source references are host-bound.",
     "One unverified sentence populates both compatibility fields, not a second model claim.",
@@ -765,7 +765,7 @@
     }
   },
   "shared_audit_envelope": "1.0_UNCHANGED",
-  "status": "OFFLINE_CANDIDATE_NOT_REGISTERED",
+  "status": "OPT_IN_RUNTIME_REGISTERED",
   "supported_dataset_versions": [
     "2.2.0"
   ],

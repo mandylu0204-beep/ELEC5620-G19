@@ -31,6 +31,27 @@ function fixture(){return {kind:'SAFETY',run_id:binding.runId,plan_version_id:bi
     action_priority:['weather','road']}};}
 const render=(value=fixture(),options={})=>renderToStaticMarkup(createElement(SafetyAdvisoryPanel,{value,binding,...options}));
 
+test('compact advice is displayed once and does not invent a second explanation',()=>{
+  const value=fixture();value.advice_format='single-advice-v1';
+  for(const item of value.plan.findings)item.interpretation_unverified=item.action_unverified;
+  const html=render(value);
+  for(const item of value.plan.findings)assert.equal(html.split(item.action_unverified).length-1,1);
+  assert.equal(safetyAdvice(value,binding).items.length,2);
+});
+
+test('compact advice with a localized original is not repeated inside details',()=>{
+  const value=fixture();value.advice_format='single-advice-v1';
+  for(const item of value.plan.findings)item.interpretation_unverified=item.action_unverified='请在出发前核对这项安排。';
+  assert.equal(render(value).split('请在出发前核对这项安排。').length-1,2);
+});
+
+test('unknown advice formats and mismatched compact compatibility fields fail closed',()=>{
+  const unknown=fixture();unknown.advice_format='future-format';
+  assert.equal(safetyAdvice(unknown,binding),null);
+  const mismatch=fixture();mismatch.advice_format='single-advice-v1';
+  assert.equal(safetyAdvice(mismatch,binding),null);
+});
+
 test('no model audit means no model label or fabricated advice',()=>{
   assert.equal(safetyAdvice(undefined,binding),null);
   assert.equal(render(undefined,{value:null}), '');

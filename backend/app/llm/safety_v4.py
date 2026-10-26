@@ -1,4 +1,4 @@
-"""Offline-only compact 2.2 candidate; NOT registered for runtime/storage."""
+"""Compact 2.2 protocol, explicitly selectable in the guarded model runtime."""
 import time
 from typing import Literal
 from .client import model_failure
@@ -123,7 +123,7 @@ def validate_safety_payload(input,baseline,result,raw_plan,raw_trace,*,identity,
 
 
 class SafetyAgent(V3Agent):
-    """Standalone candidate; existing factory and validator maps remain v3."""
+    """Compact role; standard v3 remains available under its original identity."""
     system_prompt = SYSTEM_PROMPT
     tool_version = TOOL_VERSION
     trace_type = SafetyTrace
@@ -200,7 +200,7 @@ class SafetyAgent(V3Agent):
 
 
 def safety_contract_document():
-    return {'status':'OFFLINE_CANDIDATE_NOT_REGISTERED','agent_version':AGENT_VERSION,
+    return {'status':'OPT_IN_RUNTIME_REGISTERED','agent_version':AGENT_VERSION,
         'tool_version':TOOL_VERSION,'validation_version':VALIDATION_VERSION,
         'prompt_sha256':PROMPT_SHA256,'codec_version':CODEC_VERSION,
         'supported_dataset_versions':['2.2.0'],'shared_audit_envelope':'1.0_UNCHANGED',
@@ -211,7 +211,7 @@ def safety_contract_document():
         'schemas':{'identity_seed':SafetyIdentitySeed.model_json_schema(),
             'action':COMPACT_ACTION.json_schema(),'proposal':CompactProposal.model_json_schema(),
             'trace':SafetyTrace.model_json_schema(),'validated_plan':ValidatedSafetyPlan.model_json_schema()},
-        'notes':['No runtime factory, audit validator dispatch or new_write registration.',
+        'notes':['Explicit compact selection; standard safety and default rules remain unchanged.',
             'Every finding mandatory; no source, unknown, blocker or official result omitted.',
             'Facts expand losslessly; full keys and fact/source references are host-bound.',
             'One unverified sentence populates both compatibility fields, not a second model claim.',

@@ -1,4 +1,4 @@
-"""Generate/check only the unregistered compact candidate schema."""
+"""Generate/check the explicitly selected compact safety schema."""
 import argparse
 import json
 from .config import APP_ROOT
@@ -13,9 +13,9 @@ def main():
     expected = json.dumps(safety_contract_document(),ensure_ascii=False,indent=2,sort_keys=True)+'\n'
     if args.check:
         if not path.is_file() or path.read_text(encoding='utf-8') != expected:
-            print('Compact candidate schema differs.')
+            print('Compact safety schema differs.')
             return 1
-        print('Compact candidate schema current; production unchanged.')
+        print('Compact safety schema is up to date.')
     else:
         path.write_text(expected,encoding='utf-8')
     return 0

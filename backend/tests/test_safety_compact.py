@@ -173,9 +173,9 @@ def test_tampering_or_v3_relabel_rejected(case,field):
         validate_safety_payload(case[2],baseline,result,plan,trace,identity=identity,selection=case[4])
 
 
-def test_unregistered_candidate_cannot_attach_v3_seed(case):
-    assert safety_contract_document()['status']=='OFFLINE_CANDIDATE_NOT_REGISTERED'
-    with pytest.raises(ContractFailure):safety_validator_for('safety-advisory-validation-4')
+def test_registered_compact_protocol_cannot_attach_v3_seed(case):
+    assert safety_contract_document()['status']=='OPT_IN_RUNTIME_REGISTERED'
+    assert callable(safety_validator_for('safety-advisory-validation-4'))
     old=V3Agent(case[0],CampusModelClient(model_settings()),workflow_configuration=case[1])
     current,_=agent_for(case);context=case[1].context.model_dump(mode='json')
     context['selection_config']['a_safety_identity_seed']=canonical(old.identity_seed)
