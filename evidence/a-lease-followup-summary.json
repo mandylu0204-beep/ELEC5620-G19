@@ -1,0 +1,115 @@
+{
+  "recorded_at": "2026-10-26T19:01:39.531983+11:00",
+  "verification": "LOCAL_OFFLINE_ONLY",
+  "application_source": "d3b3601",
+  "control_source": "1bb321a5f8d8192d9a0931718b67e944e94581b6",
+  "control_sha256_git_blob": {
+    "scripts/offline_lease_probe.py": "f1526ba2395b57a9c51f2c8a81b6525cfc2ba920040bc205832a7ee5775a98b1",
+    "scripts/offline_http_guard.py": "4db2b586a8e2f09f65a7a97bc3174fb9a8074d9e8d252554030c4a778ccef3a2",
+    "evidence/controls/lease_probe_guard_executed.py": "dec87223abf9e5a79a4199537a9c4c07d142d6263b79c2772d39366dae310c12"
+  },
+  "production_code_changed": false,
+  "limits_or_guards_relaxed": false,
+  "diagnostic_process_cap_seconds": 180,
+  "diagnostics": [
+    {
+      "case": "permanent persistence failure",
+      "events_file": "a-lease-probe-persistence.json",
+      "event_sha256": "217a46dd5236afb4d5fecdfa20fcc118a9f852f7d913d7197f26688a3e2b2380",
+      "events": 789,
+      "dropped": 0,
+      "paired_function_spans": 291,
+      "time_ordered": true,
+      "exit_code": 0,
+      "wall_interval_seconds": 35.63552927970886,
+      "process_cpu_interval_seconds": 35.234375,
+      "max_monitor_sample_gap_seconds": 0.9193694000132382,
+      "process_cpu_in_max_sample_gap_seconds": 0.921875
+    },
+    {
+      "case": "lost-lease cancellation",
+      "events_file": "a-lease-probe-cancellation.json",
+      "event_sha256": "f9d04ba6a6d59843df811c5361eaaff564b6a66309f91379b1caf156d3b7a833",
+      "events": 729,
+      "dropped": 0,
+      "paired_function_spans": 267,
+      "time_ordered": true,
+      "exit_code": 0,
+      "wall_interval_seconds": 40.73788070678711,
+      "process_cpu_interval_seconds": 32.234375,
+      "max_monitor_sample_gap_seconds": 8.754269700031728,
+      "process_cpu_in_max_sample_gap_seconds": 0.71875
+    }
+  ],
+  "uninstrumented_batch": {
+    "selected": 38,
+    "executed": 4,
+    "passed": 3,
+    "failed": 1,
+    "errors": 0,
+    "skipped": 0,
+    "not_executed": 34,
+    "exit_code": 1,
+    "junit_seconds": 2311.374,
+    "cases": [
+      {
+        "node": "backend/tests/test_model_safety_wiring.py::test_permanent_integrity_error_stays_terminal_through_dispatcher[save_model_safety_assessment]",
+        "seconds": 32.936,
+        "status": "PASSED"
+      },
+      {
+        "node": "backend/tests/test_model_safety_wiring.py::test_permanent_integrity_error_stays_terminal_through_dispatcher[load_checkpoint]",
+        "seconds": 10.216,
+        "status": "PASSED"
+      },
+      {
+        "node": "backend/tests/test_model_safety_wiring.py::test_safety_wait_keeps_lease_alive_without_exact_heartbeat_counts",
+        "seconds": 43.304,
+        "status": "PASSED"
+      },
+      {
+        "node": "backend/tests/test_model_safety_wiring.py::test_lost_lease_cancels_inflight_safety_and_rejects_late_artifacts",
+        "seconds": 2223.218,
+        "status": "FAILED"
+      }
+    ]
+  },
+  "coverage_across_batches": {
+    "selected_original_scope": 237,
+    "distinct_uninstrumented_passed": 202,
+    "unclosed_uninstrumented_failures": 1,
+    "not_executed": 34,
+    "single_whole_project_run": false,
+    "diagnostic_passes_do_not_replace_uninstrumented_failure": true
+  },
+  "original_failure": {
+    "test": "backend/tests/test_model_safety_wiring.py::test_permanent_integrity_error_stays_terminal_through_dispatcher[save_model_safety_assessment]",
+    "historical_case_seconds": 819.267,
+    "uninstrumented_followup": "PASSED",
+    "historical_delay_cause": "UNDETERMINED"
+  },
+  "new_failure": {
+    "test": "backend/tests/test_model_safety_wiring.py::test_lost_lease_cancels_inflight_safety_and_rejects_late_artifacts",
+    "case_seconds": 2223.218,
+    "last_persisted_stage": "ASSESSING_LOGISTICS",
+    "persisted_error_code": "AGENT_FAILURE",
+    "safety_audit_count": 0,
+    "logistics_audit_count": 0,
+    "planning_trace_count": 1,
+    "intended_safety_cancellation_not_reached_in_saved_progress": true,
+    "delay_cause": "UNDETERMINED"
+  },
+  "interpretation_limits": [
+    "Whole-case duration and last saved stage are not measurements of a single operation.",
+    "Process CPU is process-wide; nested/overlapping spans cannot be added as saved wall time.",
+    "Monitor sample gaps alone do not identify the cause of an interruption.",
+    "No direct version-save span was captured: SqlitePersistencePort.save_model_version was absent and the optional wrapper skipped it."
+  ],
+  "campus_http_requests": 0,
+  "cloud_tests_started": 0,
+  "main_changed": false,
+  "personal_configuration_changed": false,
+  "original_database_changed": false,
+  "merge_status": "NOT_READY_FOR_MERGE",
+  "next": "B independently run the four prefix cases once, locally, in the preserved order; stop on first failure. Do not repeat PLAN, campus calls or whole-project tests."
+}

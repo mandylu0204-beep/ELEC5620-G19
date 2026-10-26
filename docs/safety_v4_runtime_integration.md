@@ -59,6 +59,12 @@ by the presentation parser. Legacy v1/v2/v3 advice retains its original format.
 Application source: `13ce2bc`. Shared summary:
 [`a-safety-v4-runtime-integration.json`](../evidence/a-safety-v4-runtime-integration.json).
 
+Latest follow-up: [lease diagnostics and B comparison request](a_lease_followup_handoff.md).
+The original failure now has an uninstrumented pass, but a later cancellation
+case failed before saved progress reached safety. Current coverage is 202
+distinct uninstrumented passes, one unclosed failure and 34 unexecuted cases.
+The older counts below remain historical; the branch is still not ready for main.
+
 - All 17 compact-runtime cases passed across local batches: explicit selection,
   complete identity/codec, both logistics modes, PLAN/REVISE/REASSESS, final save,
   restart/ownership, before-commit/lost-receipt recovery, audit corruption and
