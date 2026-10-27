@@ -10,6 +10,7 @@ from ..contracts.enums import AssessmentOutcome, ErrorCode
 from .client import model_failure
 from .coordinator import canonical, digest
 from .logistics_schema import GearChoice, LogisticsProposal, SupplyMethod
+from .logistics_diagnostics import cost_priority_failure
 
 LOGISTICS_TOOL_VERSION = 'logistics-read-only-tools-1'
 REFERENCE_METHODS = {
@@ -115,6 +116,11 @@ class LogisticsToolset:
             allowed.insert(0, 'DEFER_OPTIONAL')
         return allowed
 
+    def cost_priority_requirements(self):
+        # Includes host-created unpriced placeholders, not just baseline costs.
+        # Return fresh containers: the model's ordering cannot mutate membership.
+        return {'required_cost_line_ids':list(self._costs),'required_cost_line_count':len(self._costs)}
+
     def read_logistics_facts(self):
         return {
             'tool': 'read_logistics_facts', 'read_only': True, 'source_type': 'SYNTHETIC',
@@ -125,6 +131,7 @@ class LogisticsToolset:
                 'quote_line_id': self._quotes[item.item_key][0] if item.item_key in self._quotes else None}
                 for item in self.baseline.gear_checklist],
             'costs': [{'line_id': key, **line.model_dump(mode='json')} for key, line in self._costs.items()],
+            **self.cost_priority_requirements(),
             'transport_feasible': self.baseline.transport_feasible,
             'mandatory_blockers': [item.model_dump(mode='json') for item in self.baseline.mandatory_blockers],
             'clarifications': [item.model_dump(mode='json') for item in self.baseline.clarifications],
@@ -139,7 +146,7 @@ class LogisticsToolset:
         if len(keys) != len(set(keys)) or set(keys) != set(self._gear):
             raise model_failure('模型必须逐项覆盖原装备清单，不能遗漏、重复或发明物品。', code=ErrorCode.CONTRACT_INVALID)
         if len(proposal.cost_priority) != len(set(proposal.cost_priority)) or set(proposal.cost_priority) != set(self._costs):
-            raise model_failure('模型费用优先级必须覆盖全部原费用行，不能删除必要费用。', code=ErrorCode.CONTRACT_INVALID)
+            raise cost_priority_failure(tuple(self._costs),proposal.cost_priority)
         if not proposal.decision_summary.strip() or any(not choice.reason.strip() for choice in proposal.gear_choices):
             raise model_failure('模型方案说明不能为空。', code=ErrorCode.CONTRACT_INVALID)
         actions, projected = [], {key: line.model_copy(deep=True) for key, line in self._costs.items()}

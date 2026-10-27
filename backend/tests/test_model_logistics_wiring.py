@@ -68,6 +68,8 @@ def mock_roles(monkeypatch, *, settings=None):
                     'action': 'final', 'proposal': proposal}
             if control.get('invalid'):
                 action = {'action': 'final', 'proposal': {}}
+            if control.get('omit_cost') and action.get('name') == 'evaluate_logistics_plan':
+                action['arguments']['cost_priority'].pop()
         else:
             input = json.loads(messages[1]['content'])
             if not messages[-1]['content'].startswith('TOOL_RESULT='):
