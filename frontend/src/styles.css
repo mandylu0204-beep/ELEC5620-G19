@@ -58,6 +58,9 @@ select{width:100%;height:41px;border:1px solid #dce1d4;border-radius:5px;color:#
 .safety-advice-list>li:last-child{border-bottom:0}
 .safety-advice-list h4{margin:0 0 8px}
 .safety-advice-list p{margin:8px 0;white-space:pre-wrap}
+.safety-advice-items{padding-left:22px;margin:8px 0 14px}
+.safety-advice-items>li{padding:3px 0;overflow-wrap:anywhere}
+.safety-advice-items p{margin:5px 0;white-space:pre-wrap}
 .safety-advisory summary{cursor:pointer;color:#365541;padding:6px 0}
 @media(max-width:700px){.safety-advisory{padding:18px}}
 .logistics-todos-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:24px}
@@ -96,3 +99,6 @@ select{width:100%;height:41px;border:1px solid #dce1d4;border-radius:5px;color:#
 .diagnostic-json{white-space:pre-wrap;overflow-wrap:anywhere;max-height:32rem;overflow:auto;font-size:.8rem}
 [role=alertdialog]{padding:16px;border:1px solid #ae7a32;max-width:42rem}
 [role=alertdialog] button{margin:6px}
+/* Keep the hero captions level; tilt only the decorative illustration. */
+.hero-art{transform:none}
+.hero-art>.mountain{transform:rotate(-3deg)}

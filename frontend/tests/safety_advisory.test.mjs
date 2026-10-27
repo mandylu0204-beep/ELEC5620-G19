@@ -6,7 +6,7 @@ import {fileURLToPath,pathToFileURL} from 'node:url';
 import {transpileModule,ModuleKind,JsxEmit} from 'typescript';
 import {createElement} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {safetyAdvice} from '../src/safety_advisory.ts';
+import {groupSafetyAdvice,safetyAdvice} from '../src/safety_advisory.ts';
 
 const require=createRequire(import.meta.url);
 const componentUrl=new URL('../src/safety_advisory_panel.tsx',import.meta.url);
@@ -108,11 +108,68 @@ test('outdated and historical suggestions retain explicit context',()=>{
 
 test('additional and informational advice remain available without overwhelming the initial view',()=>{
   const value=fixture();
-  for(let i=0;i<3;i++)value.plan.findings.push({...value.plan.findings[0],finding_key:'extra-'+i});
+  for(const [i,action_code] of ['RESOLVE_LOGISTICS','CONFIRM_ACTIVITY_DETAILS','REQUEST_HUMAN_REVIEW'].entries())
+    value.plan.findings.push({...value.plan.findings[0],finding_key:'extra-'+i,action_code});
   value.plan.findings.push({...value.plan.findings[0],finding_key:'information',action_code:'ACKNOWLEDGE_INFORMATION'});
   value.plan.action_priority=value.plan.findings.map(item=>item.finding_key);
   const html=render(value);
-  assert.match(html,/其余建议（2）/);
+  assert.match(html,/其余建议类别（2）/);
   assert.match(html,/出行注意事项（1）/);
   assert.match(html,/<ol[^>]*start="4"/);
+});
+
+test('equipment advice has one shared heading and distinct visible original bullet items',()=>{
+  const value=fixture();value.advice_format='single-advice-v1';
+  const texts=['Tent capacity gap must be resolved before departure.',
+    'Sleeping bags are missing; resolve before departure.',
+    'First aid kit is incomplete; resolve before departure.'];
+  value.plan.findings=texts.map((text,index)=>({finding_key:'gear-'+index,fact_refs:[],action_code:'RESOLVE_LOGISTICS',
+    interpretation_unverified:text,action_unverified:text}));
+  value.plan.action_priority=value.plan.findings.map(item=>item.finding_key);
+  const before=structuredClone(value);const html=render(value);
+  assert.equal(html.split('完善装备或交通安排').length-1,1);
+  assert.match(html,/3 项/);assert.match(html,/<ul class="safety-advice-items">/);
+  for(const text of texts)assert.equal(html.split(text).length-1,1,text);
+  assert.doesNotMatch(html,/请按此事项准备|查看已保存的模型建议原文|其余建议类别/);
+  assert.deepEqual(value,before);
+});
+
+test('informational advice has one section, not repeated titles and per-item toggles',()=>{
+  const value=fixture();value.advice_format='single-advice-v1';
+  const texts=['Campfires prohibited; use provided barbecues only.',
+    'Road is currently open; no action needed at this time.',
+    'Check local information before departure.','Keep the recorded emergency details available.'];
+  value.plan.findings=texts.map((text,index)=>({finding_key:'info-'+index,fact_refs:[],action_code:'ACKNOWLEDGE_INFORMATION',
+    interpretation_unverified:text,action_unverified:text}));
+  value.plan.action_priority=value.plan.findings.map(item=>item.finding_key);
+  const html=render(value);
+  assert.equal(html.split('出行注意事项（4）').length-1,1);
+  assert.doesNotMatch(html,/了解出行注意事项|请按此事项准备|查看已保存的模型建议原文/);
+  for(const text of texts)assert.equal(html.split(text).length-1,1,text);
+});
+
+test('groups use validated codes and retain first-priority category order and member order',()=>{
+  const value=fixture();
+  value.plan.findings.push({...value.plan.findings[0],finding_key:'road-later'});
+  value.plan.action_priority=['road','weather','road-later'];
+  const view=safetyAdvice(value,binding);const before=structuredClone(view);
+  const groups=groupSafetyAdvice(view.items);
+  assert.deepEqual(groups.map(group=>group.key),['CHANGE_TRIP','CHECK_NEAR_DEPARTURE']);
+  assert.deepEqual(groups[0].items.map(item=>item.key),['road','road-later']);
+  assert.deepEqual(view,before);
+  // Equal display labels/prose do not authorise merging different action codes.
+  const sameTitle=view.items.slice(0,2).map(item=>({...item,title:'Same title',action:'Same prose'}));
+  assert.equal(groupSafetyAdvice(sameTitle).length,2);
+});
+
+test('legacy separate explanations share one group toggle without duplicating visible action text',()=>{
+  const value=fixture();
+  value.plan.findings[1].action_code=value.plan.findings[0].action_code='RESOLVE_LOGISTICS';
+  const html=render(value);
+  assert.equal(html.split('完善装备或交通安排').length-1,1);
+  assert.equal(html.split('查看本组补充说明与保存原文').length-1,1);
+  for(const item of value.plan.findings){
+    assert.equal(html.split(item.action_unverified).length-1,1);
+    assert.equal(html.split(item.interpretation_unverified).length-1,1);
+  }
 });

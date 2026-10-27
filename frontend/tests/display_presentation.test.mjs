@@ -1,5 +1,6 @@
 import test, {after} from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {createElement as h} from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {MemoryRouter} from 'react-router-dom';
@@ -26,6 +27,16 @@ const {SessionProvider}=await server.ssrLoadModule('/src/session.tsx');
 const {CookingPreparationPanel,cookingDraft}=await server.ssrLoadModule('/src/cooking_preparation.tsx');
 const render=(component,props)=>renderToStaticMarkup(h(component,props));
 const routed=(component,props)=>renderToStaticMarkup(h(MemoryRouter,null,h(component,props)));
+test('hero captions stay level while only the mountain illustration is tilted',()=>{
+  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+  const transforms=selector=>Array.from(css.matchAll(new RegExp(selector+'\\s*\\{([^}]*)\\}','g')))
+    .flatMap(match=>Array.from(match[1].matchAll(/(?:^|;)\s*transform\s*:\s*([^;]+)/g),entry=>entry[1].trim()));
+  assert.equal(transforms('\\.hero-art').at(-1),'none');
+  assert.equal(transforms('\\.hero-art\\s*>\\s*\\.mountain').at(-1),'rotate(-3deg)');
+  const html=routed(App,{});
+  assert.match(html,/class="hero-art"><span>清晰规划，从容出发<\/span><svg/);
+  assert.match(html,/<\/svg><div>规划 · 检查 · 审核<\/div>/);
+});
 const tent={records:[{quantity:2,capacity_per_tent:1,total_capacity:2,confirmed:true,unit:'item'}],
   group_size:3,registered_tent_count:2,registered_capacity:2,assessed_capacity:'2',required_person_spaces:'3',missing_person_spaces:'1'};
 

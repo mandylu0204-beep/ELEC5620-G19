@@ -36,8 +36,23 @@ export function safetyAdvice(value:SafetyAudit|null|undefined,binding:SafetyAdvi
       ||typeof item.interpretation_unverified!=='string'||!item.interpretation_unverified.trim()
       ||value.advice_format==='single-advice-v1'&&item.interpretation_unverified!==item.action_unverified))return null;
   return {summary:plan.decision_summary_unverified,items:ordered.map(item=>({
-    key:item!.finding_key,title:actionTitles[item!.action_code],
+    key:item!.finding_key,actionCode:item!.action_code,title:actionTitles[item!.action_code],
     explanation:item!.interpretation_unverified,action:item!.action_unverified,
     informational:item!.action_code==='ACKNOWLEDGE_INFORMATION',
   }))};
+}
+
+export type SafetyAdviceItem=NonNullable<ReturnType<typeof safetyAdvice>>['items'][number];
+export type SafetyAdviceGroup={key:string;title:string;items:SafetyAdviceItem[]};
+
+export function groupSafetyAdvice(items:readonly SafetyAdviceItem[]):SafetyAdviceGroup[]{
+  const groups=new Map<string,SafetyAdviceGroup>();
+  // Use the validated action code, not model prose or a translated title.
+  // Groups follow their first saved priority; members retain relative order.
+  for(const item of items){
+    let group=groups.get(item.actionCode);
+    if(!group){group={key:item.actionCode,title:item.title,items:[]};groups.set(item.actionCode,group);}
+    group.items.push(item);
+  }
+  return [...groups.values()];
 }
