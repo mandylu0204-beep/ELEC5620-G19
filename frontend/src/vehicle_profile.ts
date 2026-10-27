@@ -13,5 +13,8 @@ export function prepareProfileEquipment(items:DraftEquipment[],mode:string,count
   if(mode==='CAR'&&!result.some(item=>item.item_key==='vehicle'))result.push({
     item_key:'vehicle',label:'车辆',quantity:/^\d+$/.test(count)?count:'',unit:'vehicle',capacity:'',confirmed:false,
   });
+  if(mode==='PUBLIC_TRANSPORT'&&!result.some(item=>item.item_key==='transport_itinerary'))result.push({
+    item_key:'transport_itinerary',label:'往返及接驳计划',quantity:'',unit:'plan',capacity:'',confirmed:false,
+  });
   return result;
 }

@@ -22,11 +22,54 @@ const {RequirementsChangePreview,RequestHistory}=await server.ssrLoadModule('/sr
 const {historicalReviewNotice}=await server.ssrLoadModule('/src/reviews.tsx');
 const {profileChanges}=await server.ssrLoadModule('/src/profile_changes.ts');
 const {App}=await server.ssrLoadModule('/src/App.tsx');
-const {GroupSizeField,EquipmentUnitField,addEquipment,changeEquipmentCategory,fixedEquipmentUnit,ProfileSummary}=await server.ssrLoadModule('/src/profile.tsx');
+const {GroupSizeField,EquipmentUnitField,addEquipment,changeEquipmentCategory,fixedEquipmentUnit,ProfileSummary,ProfileCorrectionStatus,TransportModeField,PublicTransportNotice}=await server.ssrLoadModule('/src/profile.tsx');
+const {VehicleFields}=await server.ssrLoadModule('/src/vehicle_fields.tsx');
 const {SessionProvider}=await server.ssrLoadModule('/src/session.tsx');
 const {CookingPreparationPanel,cookingDraft}=await server.ssrLoadModule('/src/cooking_preparation.tsx');
 const render=(component,props)=>renderToStaticMarkup(h(component,props));
 const routed=(component,props)=>renderToStaticMarkup(h(MemoryRouter,null,h(component,props)));
+test('transport choices follow backend capabilities, retain unsupported history and never promise live timetable checks',()=>{
+  const props={value:'PUBLIC_TRANSPORT',supported:['CAR','PUBLIC_TRANSPORT'],onChange(){},error:''};
+  const html=render(TransportModeField,props);
+  assert.match(html,/<option value="CAR"/);assert.match(html,/<option value="PUBLIC_TRANSPORT"/);
+  assert.doesNotMatch(html,/<option value="WALKING"|<option value="OTHER"/);
+  for(const text of ['去程、返程','最后接驳','模拟往返费用','不查询实际班次','不代表已订票'])assert.ok(html.includes(text),text);
+  const old=render(TransportModeField,{...props,value:'WALKING'});
+  assert.match(old,/<option value="WALKING" disabled="" selected=""/);assert.match(old,/历史资料，当前暂不支持/);
+  const pending=render(TransportModeField,{...props,supported:null});
+  assert.match(pending,/<select[^>]*disabled=""/);
+  assert.match(render(PublicTransportNotice,{}),/营地可达标记/);
+});
+test('connection tasks link to real profile fields while source gaps keep operator-only guidance',()=>{
+  const connection=routed(LogisticsIssues,{items:[{issue_id:'connection',code:'TRANSPORT_CONNECTION',target:'PROFILE',
+    category:'USER_INPUT',field:'transport.assumptions',action_url:'/profile?focus=transport.assumptions'}],onSafety(){}});
+  assert.match(connection,/公共交通往返及接驳安排待核对/);assert.match(connection,/focus=transport.assumptions/);
+  assert.match(connection,/不能视为已订票/);
+  const data=routed(LogisticsIssues,{items:[{issue_id:'access',code:'TRANSPORT_ACCESS_DATA',target:'OPERATOR',
+    category:'DATA_GAP',field:'transport.public_transport_access',action_url:null}],onSafety(){}});
+  assert.match(data,/修改个人车辆数量不能解决/);assert.doesNotMatch(data,/href=|<button/);
+});
+test('completed correction form offers explicit next check without a stale count, dead button or formal pass',()=>{
+  const props={ready:true,loading:false,failed:false,targets:[],dirty:false,returnPlan:true};
+  const saved=render(ProfileCorrectionStatus,props);
+  assert.match(saved,/当前表单没有待补充提示/);assert.match(saved,/不代表原方案的问题已解决/);
+  assert.match(saved,/原方案仍保留上次确认的资料与检查结果/);
+  assert.doesNotMatch(saved,/下方 \d+ 处|<button|检查通过|已解决<|已完成正式检查/);
+  const dirty=render(ProfileCorrectionStatus,{...props,dirty:true});
+  assert.match(dirty,/请先保存修改/);assert.doesNotMatch(dirty,/下方 \d+ 处|<button/);
+  const active=render(ProfileCorrectionStatus,{...props,targets:['gear-quantity-0','gear-capacity-0']});
+  assert.match(active,/下方 2 处/);assert.match(active,/前往首个待补充位置/);
+  for(const state of [{loading:true,ready:false},{failed:true,ready:false}]){
+    const pending=render(ProfileCorrectionStatus,{...props,targets:['gear-quantity-0'],...state});
+    assert.doesNotMatch(pending,/<button|下方 1 处/);
+  }
+});
+test('vehicle total guidance highlights the editable vehicle quantity rather than a read-only output',()=>{
+  const html=render(VehicleFields,{equipment:[{item_key:'vehicle',quantity:'1',capacity:'5',confirmed:true}],
+    issues:{},guidance:{'vehicle-count':'请核对车辆总数'},onChange(){},onRemove(){},onAdd(){}});
+  assert.match(html,/<input[^>]*id="gear-quantity-0"[^>]*aria-invalid="true"/);
+  assert.match(html,/请核对车辆总数/);assert.doesNotMatch(html,/id="vehicle-count"|id="gear-unit-0"/);
+});
 test('hero captions stay level while only the mountain illustration is tilted',()=>{
   const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
   const transforms=selector=>Array.from(css.matchAll(new RegExp(selector+'\\s*\\{([^}]*)\\}','g')))

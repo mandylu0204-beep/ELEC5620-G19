@@ -70,6 +70,9 @@ def test_preview_uses_registered_quantity_rule_and_keeps_unknowns_and_confirmati
 
 def make_request(client, headers):
     payload = deepcopy(CASES['normal']['request'])
+    # The scenario is self-catered in both original prose and explicit input;
+    # keep the production guard against contradictory meal requests intact.
+    payload['raw_text'] = payload['raw_text'].replace('ready-to-eat meals', 'self-catered meals')
     payload['explicit_fields'].update(SELF)
     response = client.post('/api/v1/requests', headers=headers, json=payload)
     assert response.status_code == 201, response.text
@@ -128,6 +131,7 @@ def test_owned_plan_precheck_uses_saved_meal_not_candidate_preferences(web):
 def test_first_self_catered_http_read_exposes_both_preparations_even_when_fuel_rule_is_inactive(web, monkeypatch):
     application, client, headers = web
     payload = deepcopy(CASES['normal']['request'])
+    payload['raw_text'] = payload['raw_text'].replace('ready-to-eat meals', 'self-catered meals')
     payload['explicit_fields'].update(SELF)
     profile = deepcopy(INPUTS['profile'])
     profile['equipment'] = [row for row in profile['equipment'] if row['item_key'] not in ('camping_stove', 'fuel_canister')]

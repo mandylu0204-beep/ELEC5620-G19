@@ -21,6 +21,7 @@ from ..llm.safety_agent import SafetyOutcome
 from ..workflow.configuration import WorkflowConfiguration, failure
 from .rules import interpretation, logistics, planning, safety
 from .rules.common import RULES_VERSION, ensure_execution_mode, input_failure
+from .rules.transport import POLICY_KEY
 
 HYBRID_VERSION = 'b05-hybrid-planning-3'
 
@@ -196,7 +197,8 @@ class HybridPlanningAgent:
         validated = self._input(LogisticsInput, input)
         ids = json.loads(self.workflow_configuration.context.selection_config['safety_case_ids'])
         return self._rule_result(logistics.assess(self.dataset, validated,
-            expected_mode=ExecutionMode.AGENT, safety_case_ids=ids), 'gear and costs')
+            expected_mode=ExecutionMode.AGENT, safety_case_ids=ids,
+            transport_policy=self.workflow_configuration.context.selection_config.get(POLICY_KEY)), 'gear and costs')
 
     async def assess_logistics_with_trace(self, input: LogisticsInput) -> LogisticsOutcome:
         validated = self._input(LogisticsInput, input)
@@ -214,7 +216,8 @@ class HybridPlanningAgent:
         if self.logistics_agent is None:
             raise failure(ErrorCode.CONTRACT_INVALID, 'Model logistics was not registered.')
         ids = json.loads(self.workflow_configuration.context.selection_config['safety_case_ids'])
-        baseline = logistics.assess(self.dataset, validated, expected_mode=ExecutionMode.AGENT, safety_case_ids=ids)
+        baseline = logistics.assess(self.dataset, validated, expected_mode=ExecutionMode.AGENT, safety_case_ids=ids,
+            transport_policy=self.workflow_configuration.context.selection_config.get(POLICY_KEY))
         return validate_logistics_payload(validated, baseline, result, plan, trace,
             identity=self.logistics_agent.identity)
 

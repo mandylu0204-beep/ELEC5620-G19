@@ -46,7 +46,9 @@ class RuleAgent:
         return planning.itinerary(self.dataset, self._input(ItineraryInput, input))
 
     async def assess_gear_and_logistics(self, input: LogisticsInput) -> LogisticsResult:
-        return logistics.assess(self.dataset, self._input(LogisticsInput, input))
+        from .rules.transport import POLICY_KEY
+        policy = self.workflow_configuration.context.selection_config.get(POLICY_KEY) if self.workflow_configuration else None
+        return logistics.assess(self.dataset, self._input(LogisticsInput, input), transport_policy=policy)
 
     async def assess_safety(self, input: SafetyInput) -> SafetyResult:
         return safety.assess(self.dataset, self._input(SafetyInput, input))

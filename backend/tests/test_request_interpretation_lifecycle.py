@@ -370,7 +370,8 @@ def test_production_hybrid_request_chain_with_mock_transport_preserves_canonical
     with TestClient(app) as client:
         headers = sign_in(client)
         assert client.put('/api/v1/profile', headers=headers,
-            json={'expected_revision': 0, 'profile': {'group_size': 2}}).status_code == 200
+            json={'expected_revision': 0, 'profile': {'group_size': 2,
+                'transport': {'transport_type': 'CAR'}}}).status_code == 200
         snapshot = app.state.runtime.resolve()
         before = snapshot.dataset.model_dump(mode='json')
         assert snapshot.agent.model_request_terms is True

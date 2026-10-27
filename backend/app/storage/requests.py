@@ -218,6 +218,8 @@ class RequestRepository:
                 if not matches:
                     fail(ErrorCode.STALE_CONTEXT, '需求理解结果或配置已变化，请重新生成摘要。')
             context = ConfirmedContext(request_id=request_id, confirmed_at=now(), requirements=ConfirmedRequirements.model_validate(result['extracted_requirements']), profile_snapshot=ProfileSnapshot.model_validate_json(summary['profile_snapshot']), demo_context=demo, dataset_context=dataset)
+            from ..agents.rules.transport import require_supported
+            require_supported(context.profile_snapshot, dataset)
             connection.execute('INSERT INTO request_confirmations VALUES(?,?,?,?,?)', (request_id, user.id, command_key, input_hash, context.confirmed_at.isoformat()))
             connection.execute("UPDATE requests SET status='CONFIRMED',revision=revision+1,confirmed_context=? WHERE id=?", (encode(context), request_id))
             return self.result(connection, self.own(connection, user, request_id))

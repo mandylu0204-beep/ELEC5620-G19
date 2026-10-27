@@ -68,6 +68,13 @@ class WorkflowConfiguration:
             selection_config={**base.selection_config, **choices},
             rules_version=f'{base.rules_version}/{getattr(dataset, "adapter_version", ADAPTER_VERSION)}/{getattr(dataset, "rules_version", RULES_VERSION)}/{WORKFLOW_VERSION}',
         )
+        from ..agents.rules.transport import POLICY_KEY, checked_policy
+        transport_policy = checked_policy(base.selection_config.get(POLICY_KEY))
+        if transport_policy is not None:
+            if not dataset.has_v2_policy:
+                raise failure(ErrorCode.STALE_CONTEXT, 'The minimal transport policy requires a v2 dataset.')
+            self._context = self._context.model_copy(update={
+                'rules_version': self._context.rules_version + '/' + transport_policy})
         self._scenarios = tuple(selected)
         self._feedback = feedback
         self._selector = getattr(dataset, 'trip_evidence_selector', None)

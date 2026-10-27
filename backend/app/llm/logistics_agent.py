@@ -167,8 +167,10 @@ class LogisticsAgent:
         return input
 
     def _facts(self, input):
+        from ..agents.rules.transport import POLICY_KEY
         ids = json.loads(self.configuration.context.selection_config['safety_case_ids'])
-        return logistics.assess(self.dataset, input, expected_mode=ExecutionMode.AGENT, safety_case_ids=ids)
+        return logistics.assess(self.dataset, input, expected_mode=ExecutionMode.AGENT, safety_case_ids=ids,
+            transport_policy=self.configuration.context.selection_config.get(POLICY_KEY))
 
     async def assess_with_trace(self, raw):
         input = self._input(raw)

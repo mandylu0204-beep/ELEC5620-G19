@@ -6,6 +6,8 @@ import { CookingPreparationPanel,type CookingPreparation } from './cooking_prepa
 
 export type LogisticsIssue = {tent_capacity?:TentCapacity;cooking_preparation?:CookingPreparation|null;related_equipment?:string[];issue_id:string;code:string;category:string;field:string;item_key:string|null;current:unknown;required:unknown;target:string;action_url:string|null;alternate_action_url?:string;arrangement_action_url?:string;affects?:string[];cost_impacts?:{code:string;item_key:string;category:string;unit_price_cents:null}[];pending_checks?:{item_key:string;status:string}[]};
 const COPY:Record<string,[string,string]>={
+  TRANSPORT_CONNECTION:['公共交通往返及接驳安排待核对','请在交通说明中记录去程、返程和最后接驳安排，并核对交通连接计划的数量、单位及确认状态。系统不查询实际班次，费用是模拟往返参考，不能视为已订票。'],
+  TRANSPORT_ACCESS_DATA:['营地公共交通可达资料不足','系统没有确认该营地的公共交通可达性。请调整营地安排，或由项目负责人维护来源资料；修改个人车辆数量不能解决这个问题。'],
   OVER_BUDGET:['调整预算或降低费用','估算超过已确认预算。可选择更低成本方案；如修改预算，必须重新确认需求。'],
   MEAL_CHOICE:['选择用餐方式','请选择即食餐食或自行烹饪。这会影响食物费用、炉具和燃料需求。'],
   COOKING_ARRANGEMENT:['确认烹饪安排','已选择自行烹饪，但没有核实可用的炉具。请登记真实可用的炉具和数量；如果不做饭，也可改选即食餐食。'],

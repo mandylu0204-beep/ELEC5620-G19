@@ -13,9 +13,9 @@ export function VehicleFields({equipment,issues,guidance,onChange,onRemove,onAdd
       <header><strong>车辆 {position+1}</strong><button type="button" className="text-button" aria-label={`移除车辆 ${position+1}`} onClick={()=>onRemove(index)}>移除</button></header>
       <div className="form-grid"><div><label htmlFor={`gear-quantity-${index}`}>车辆数量</label>
         <input id={`gear-quantity-${index}`} aria-label={`车辆 ${position+1} 数量`} type="number" min="0" step="1" placeholder="未知" value={item.quantity}
-          aria-invalid={!!(issues[`gear-quantity-${index}`]||guidance[`gear-quantity-${index}`])} aria-describedby={`gear-quantity-hint-${index}`}
+          aria-invalid={!!(issues[`gear-quantity-${index}`]||guidance[`gear-quantity-${index}`]||position===0&&guidance['vehicle-count'])} aria-describedby={`gear-quantity-hint-${index}`}
           onChange={event=>onChange(index,{quantity:event.target.value})}/>
-        <FieldHint id={`gear-quantity-hint-${index}`} error={issues[`gear-quantity-${index}`]??guidance[`gear-quantity-${index}`]}/></div>
+        <FieldHint id={`gear-quantity-hint-${index}`} error={issues[`gear-quantity-${index}`]??guidance[`gear-quantity-${index}`]??(position===0?guidance['vehicle-count']:undefined)}/></div>
       <div><label htmlFor={`gear-capacity-${index}`}>每辆载客人数（含驾驶员）</label>
         <input id={`gear-capacity-${index}`} aria-label={`车辆 ${position+1} 载客人数`} type="number" min="1" step="1" placeholder="例如 5" value={item.capacity}
           aria-invalid={!!(issues[`gear-capacity-${index}`]||guidance[`gear-capacity-${index}`])} aria-describedby={`gear-capacity-hint-${index}`}

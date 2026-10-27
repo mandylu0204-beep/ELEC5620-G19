@@ -111,3 +111,38 @@ test('tent correction uses current confirmed sleeping capacity instead of stale 
   assert.match(profileGuidance(draft([{...small,capacity:'2'}],{group:'3'}),[previous])['gear-quantity-0'],/本次需 3 人/);
   assert.deepEqual(profileGuidance(draft([small,{...small}]),[previous]),{});
 });
+
+test('old car findings and URL focus cannot demand vehicle input for a non-car trip',()=>{
+  const questions=[issue('transport.vehicle_count'),issue('equipment.vehicle.capacity','VEHICLE_DETAILS'),
+    issue('transport.estimated_km','DISTANCE')];
+  const equipment=[{item_key:'vehicle',label:'旧车',quantity:'',unit:'vehicle',capacity:'',confirmed:false}];
+  const before=structuredClone({questions,equipment});
+  for(const transport of ['PUBLIC_TRANSPORT','WALKING','OTHER','']){
+    for(const focus of ['transport.vehicle_count','equipment.vehicle.quantity','transport.estimated_km'])
+      assert.deepEqual(profileGuidance(draft(equipment,{transport,vehicles:'',km:''}),questions,focus),{});
+    assert.deepEqual(prepareMissingEquipment([],questions,'equipment.vehicle',catalog,[],transport),[]);
+  }
+  assert.deepEqual({questions,equipment},before);
+  const car=prepareMissingEquipment([],questions,'equipment.vehicle',catalog,[],'CAR');
+  assert.equal(car[0].item_key,'vehicle');
+  assert.ok(profileGuidance(draft(car,{vehicles:'',km:''}),questions)['vehicle-count']);
+});
+
+test('public transport retains its actual connection-plan hints without treating form edits as a formal pass',()=>{
+  const connection={item_key:'transport_itinerary',label:'往返连接',quantity:'',unit:'plan',capacity:'',confirmed:false};
+  const questions=[issue('transport.vehicle_count'),issue('equipment.transport_itinerary')];
+  const original=structuredClone(questions);
+  const value=draft([connection],{transport:'PUBLIC_TRANSPORT',vehicles:'',km:''});
+  assert.deepEqual(Object.keys(profileGuidance(value,questions)),['gear-quantity-0','gear-confirmed-0']);
+  assert.deepEqual(profileGuidance({...value,equipment:[{...connection,quantity:'1',confirmed:true}]},questions),{});
+  assert.deepEqual(questions,original); // Saved findings still require a new formal assessment.
+});
+
+test('public connection notes have their own hint without requiring private vehicles or replacing the original issue',()=>{
+  const questions=[issue('transport.assumptions','TRANSPORT_CONNECTION')];
+  const value=draft([],{transport:'PUBLIC_TRANSPORT',vehicles:'',km:'',assumptions:'  \n'});
+  assert.match(profileGuidance(value,questions)['transport-assumptions'],/去程、返程/);
+  assert.deepEqual(profileGuidance({...value,assumptions:'去程、返程及最后接驳已核对。'},questions),{});
+  assert.deepEqual(profileGuidance({...value,transport:'CAR'},questions),{});
+  assert.equal(questions.length,1);
+});

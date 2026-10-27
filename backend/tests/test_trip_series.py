@@ -167,9 +167,13 @@ def test_repeated_meal_summary_edits_keep_one_update_request_and_one_trip(web):
     request_id=draft['request_id'];path='/api/v1/requests/'+request_id
     for meal in ('self-catered meals','ready-to-eat meals','self-catered meals'):
         fields={**before['requirements'],'preferences':[meal,'quiet']}
-        response=client.patch(path,headers=headers,json={'raw_text':draft['raw_text'],'explicit_fields':fields,'expected_revision':draft['revision']})
+        # Change the original statement too: contradictory raw/explicit meal
+        # choices must remain blocked by the production request validator.
+        text=draft['raw_text'].replace('ready-to-eat meals',meal).replace('self-catered meals',meal)
+        response=client.patch(path,headers=headers,json={'raw_text':text,'explicit_fields':fields,'expected_revision':draft['revision']})
         assert response.status_code==200,response.text
         draft=preview(client,headers,response.json())
+        assert draft['status']=='AWAITING_CONFIRMATION',draft['summary']
         assert draft['request_id']==request_id
         assert draft['source_requirements']==before['requirements']
         assert_public(draft)

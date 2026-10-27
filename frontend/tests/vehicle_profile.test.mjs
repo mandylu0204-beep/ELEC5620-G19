@@ -9,7 +9,9 @@ test('transport count seeds an unconfirmed vehicle draft without inventing seats
   const rows=prepareProfileEquipment([],'CAR','2');
   assert.deepEqual(rows,[car('2','')]);
   assert.equal(vehicleCount(rows),'2');
-  assert.deepEqual(prepareProfileEquipment([],'PUBLIC_TRANSPORT',''),[]);
+  assert.deepEqual(prepareProfileEquipment([],'PUBLIC_TRANSPORT',''),[{
+    item_key:'transport_itinerary',label:'往返及接驳计划',quantity:'',unit:'plan',capacity:'',confirmed:false,
+  }]);
 });
 
 test('different car groups retain separate seat capacity and confirmation while sharing one total',()=>{
@@ -33,4 +35,13 @@ test('vehicle count and missing seats navigate to the actual transport form fiel
   assert.equal(profileFocusId('equipment.vehicle.capacity',[car('1','')]),'gear-capacity-0');
   assert.equal(profileFocusId('transport.vehicle_count',[car('','')]),'gear-quantity-0');
   assert.equal(profileFocusId('transport.vehicle_count',[]),'add-vehicle');
+});
+
+test('public-transport preparation preserves existing plans and never confirms them or removes saved vehicles',()=>{
+  const plan={item_key:'transport_itinerary',label:'My return trip',quantity:'1',unit:'plan',capacity:'',confirmed:true};
+  const rows=[car('2'),plan];const original=structuredClone(rows);
+  assert.deepEqual(prepareProfileEquipment(rows,'PUBLIC_TRANSPORT','2'),original);
+  assert.deepEqual(rows,original);
+  const unknown=prepareProfileEquipment([car('2')],'PUBLIC_TRANSPORT','2');
+  assert.equal(unknown[1].confirmed,false);assert.equal(unknown[1].quantity,'');
 });

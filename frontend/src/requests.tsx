@@ -3,7 +3,7 @@ import { changedSections } from './display_facts';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ApiFailure, type PreviewResult, type Requirements } from './api';
-import { integer, lines, ProfileSummary, type Profile } from './profile';
+import { integer, lines, ProfileSummary, PublicTransportNotice, type Profile } from './profile';
 import { CookingPreparationPanel, type CookingPreparation } from './cooking_preparation';
 import { privateApi, useSession } from './session';
 import { TripFlow, FieldHint } from './trip_flow';
@@ -290,6 +290,7 @@ export function RequestDetail() {
           {updating&&record.source_profile_snapshot&&profile&&<ProfileAdoptionPreview before={record.source_profile_snapshot} after={profile} revision={record.profile_revision} sourceRevision={record.source_profile_revision??null}/>}
           {updating&&record.source_requirements&&requirements&&<RequirementsChangePreview before={record.source_requirements} after={requirements}/>}
           <div className="request-profile-overview"><h3>本次采用的露营资料</h3><div><span>小组人数<strong>{profile?.group_size??'未知'} 人</strong></span><span>登记装备<strong>{profile?profile.equipment.filter(item=>!['vehicle','charged_phone'].includes(item.item_key)).length:'未知'} 项</strong></span></div><details><summary>查看同行、交通与装备明细</summary><ProfileSummary profile={profile}/></details></div>
+          {profile?.transport.transport_type==='PUBLIC_TRANSPORT'&&<PublicTransportNotice/>}
           <CookingPreparationPanel value={record.cooking_preparation}/>
           {record.cooking_preparation&&!record.planning_plan_id&&<Link className="text-link" to={'/profile?request_id='+encodeURIComponent(record.request_id)+'&focus=equipment.camping_stove'}>规划前一起核对炉具与燃料（不会启动模型） ↗</Link>}
           {record.summary?.uncertainties.filter(item=>item!=='This output is not a confirmation event.').map((item,index)=><p className="muted" key={index}>{item}</p>)}

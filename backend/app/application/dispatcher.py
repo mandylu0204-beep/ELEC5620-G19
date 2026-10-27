@@ -25,12 +25,14 @@ class PlanningDispatcher:
 
     def logistics_facts(self, scope, input):
         from ..agents.rules import logistics
+        from ..agents.rules.transport import POLICY_KEY
         import json
         snapshot = self.state.runtime.for_scope(scope)
         if snapshot.demo != scope.demo_context or snapshot.dataset != scope.dataset_context:
             fail(ErrorCode.STALE_CONTEXT, '物流验证配置已变化，请开启新运行。')
         return logistics.assess(snapshot.agent.dataset, input, expected_mode=ExecutionMode.AGENT,
-            safety_case_ids=json.loads(scope.dataset_context.selection_config['safety_case_ids']))
+            safety_case_ids=json.loads(scope.dataset_context.selection_config['safety_case_ids']),
+            transport_policy=scope.dataset_context.selection_config.get(POLICY_KEY))
 
     def safety_facts(self, scope, confirmed, version, logistics):
         from ..agents.rules import safety

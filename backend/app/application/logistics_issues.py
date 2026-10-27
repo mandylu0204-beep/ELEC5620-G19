@@ -38,6 +38,8 @@ def project(data):
         shortage = shortage or (fact.get('missing_quantity') is not None and Decimal(fact['missing_quantity']) > 0)
         if key == 'vehicle':
             field, code = 'equipment.vehicle.capacity', 'VEHICLE_DETAILS'
+        elif key == 'transport_itinerary':
+            field, code = 'equipment.transport_itinerary.quantity', 'TRANSPORT_CONNECTION'
         else:
             suffix = 'capacity' if key == 'tent' and any(row.get('quantity') and row.get('capacity_persons') is None for row in rows) else 'quantity'
             field, code = f'equipment.{key}.{suffix}', 'EQUIPMENT_SHORTAGE' if shortage else 'EQUIPMENT_DETAILS'
@@ -89,9 +91,11 @@ def project(data):
             if meal_unknown and key in {'camping_stove', 'fuel_canister', 'cooking_pot', 'fire_free_meal_plan'}:
                 continue
             gear(key)
+        elif field == 'transport.public_transport_access':
+            add(field, 'TRANSPORT_ACCESS_DATA', 'DATA_GAP', field)
         elif field.startswith('transport.'):
             name = field.split('.')[1]
-            add(field, {'estimated_km': 'DISTANCE', 'vehicle_count': 'VEHICLE_COUNT', 'transport_type': 'TRANSPORT_MODE'}.get(name, 'PROFILE_FIELD'),
+            add(field, {'estimated_km': 'DISTANCE', 'vehicle_count': 'VEHICLE_COUNT', 'transport_type': 'TRANSPORT_MODE', 'assumptions': 'TRANSPORT_CONNECTION'}.get(name, 'PROFILE_FIELD'),
                 'USER_INPUT', field, current=transport.get(name), required={'registered_vehicle_count': sum(row.get('quantity') or 0 for row in equipment if row['item_key'] == 'vehicle' and row.get('confirmed'))} if name == 'vehicle_count' else None)
         elif field in {'profile.children_count', 'profile.experience_level'}:
             if field == 'profile.children_count' and profile.get('has_children') is None:

@@ -137,6 +137,8 @@ class Repository:
             if single_plan and connection.execute('SELECT 1 FROM plans WHERE request_id=? AND owner_id=?', (request_id, user.id)).fetchone():
                 fail(ErrorCode.INVALID_STATE, '此请求已有规划记录，请查看现有方案或重试失败运行。')
             context = ConfirmedContext.model_validate_json(request['confirmed_context'])
+            from ..agents.rules.transport import require_supported
+            require_supported(context.profile_snapshot, dataset)
             context = ConfirmedContext.model_validate(context.model_copy(update={'demo_context': demo, 'dataset_context': dataset}))
             if plan_id is None:
                 if operation != 'PLAN' or expected_current_version_id is not None:

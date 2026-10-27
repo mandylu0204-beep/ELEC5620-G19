@@ -58,8 +58,10 @@ def request_context(request: Request, user: User = Depends(current_user)):
     from .auth import require_role
     require_role(user, 'CAMPER')
     snapshot = request.app.state.runtime.resolve()
+    from .agents.rules.transport import SUPPORTED_MODES
     return {'supported_destinations': snapshot.descriptor.regions, 'execution_mode': snapshot.demo.mode.value,
         'demo_today': snapshot.demo.demo_today.isoformat(), 'clock_mode': request.app.state.settings.clock_mode,
+        'supported_transport_modes': list(SUPPORTED_MODES),
         'planning_available': request.app.state.dispatcher.available}
 
 
@@ -109,6 +111,8 @@ async def interpret_request(request_id: str, body: RevisionInput, request: Reque
     demo = snapshot.demo
     revision, input = await run_in_threadpool(repository.begin_analysis, user, request_id, body.expected_revision, demo, dataset)
     try:
+        from .agents.rules.transport import require_supported
+        require_supported(input.profile_snapshot, dataset)
         interpreted_terms = getattr(agent, 'model_request_terms', False) is True
         metadata = None
         if interpreted_terms:

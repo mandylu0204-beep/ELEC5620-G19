@@ -187,7 +187,9 @@ def _required(rule, context):
     raise rule_failure(f'Unsupported gear quantity rule: {rule.quantity_rule}.', 'gear_rules')
 
 
-def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, safety_case_ids=None) -> LogisticsResult:
+def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, safety_case_ids=None, transport_policy=None) -> LogisticsResult:
+    from .transport import checked_policy
+    minimal_transport = checked_policy(transport_policy) is not None
     ensure_execution_mode(dataset, input.demo_context, expected_mode)
     requirements, profile = input.confirmed_requirements, input.profile_snapshot
     if profile.group_size is None:
@@ -203,6 +205,11 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
         sleeping_bags = _available(profile, 'sleeping_bag', 'item', group)
         stove_count = _available(profile, 'camping_stove', 'item')
         vehicle_count = profile.transport.vehicle_count
+        if minimal_transport and profile.transport.transport_type == 'PUBLIC_TRANSPORT':
+            # This is the count of private vehicles USED by this confirmed
+            # mode, not missing inventory defaulted to zero. Do not mutate the
+            # profile, infer ownership, or apply this to an unknown/other mode.
+            vehicle_count = 0
         fire_prohibited = 'no_fires' in requirements.mandatory_constraints or any(camp.fire_allowed is not True for camp in campsites)
         selected_ids = set(getattr(dataset, 'selected_safety_case_ids', ()) if safety_case_ids is None else safety_case_ids)
         facts = []
@@ -382,6 +389,21 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
         if transport_feasible and _available(profile, 'transport_itinerary', 'plan', Decimal(1)) in {None, Decimal(0)}:
             transport_feasible = None
             clarify('equipment.transport_itinerary', 'Confirm an actual public-transport connection plan.', 'An access flag alone does not verify connections.')
+        if minimal_transport:
+            assumptions.extend([
+                'Public transport access is a registered campsite attribute, not live timetable verification.',
+                'The traveller confirms outbound, return and last-mile arrangements; the system does not verify services or reservations.',
+                'Public transport uses a synthetic return-fare allowance per person, not a live ticket quote.',
+            ])
+            if not any(item.strip() for item in transport.assumptions):
+                if transport_feasible is not False:
+                    transport_feasible = None
+                clarify('transport.assumptions', 'Describe the outbound, return and last-mile arrangements you have checked.',
+                    'User-confirmed connection details are required; the system cannot infer timetables from an access flag.')
+            if any(camp.public_transport_access is None for camp in campsites) and not any(camp.public_transport_access is False for camp in campsites):
+                transport_feasible = None
+                clarify('transport.public_transport_access', 'Registered campsite public-transport access is unknown.',
+                    'Source maintenance or another supported campsite is required; do not invent access evidence.')
     else:
         clarify('transport.transport_type', 'Confirm car or public transport.', 'Unsupported or missing mode cannot be assumed.')
     if transport_feasible is False:
