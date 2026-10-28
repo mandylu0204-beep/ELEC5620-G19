@@ -64,6 +64,9 @@ def request_response(value):
         or (data.get('summary') or {}).get('extracted_requirements') or data.get('explicit_fields') or {})
     data['cooking_preparation'] = outline(requirements, (data.get('confirmed_context') or {}).get('profile_snapshot') or data.get('profile_snapshot') or {})
     confirmed = data.get('confirmed_context')
+    from ..agents.rules.transport import POLICY_KEY, POLICY_VERSION
+    data['system_preparation'] = ((confirmed.get('dataset_context') or {}).get('selection_config', {}).get(POLICY_KEY)
+        == POLICY_VERSION) if confirmed else None
     if confirmed and 'dataset_context' in confirmed:
         confirmed['dataset_context'] = {key: val for key, val in confirmed['dataset_context'].items()
             if key == 'dataset_version'}
@@ -75,6 +78,9 @@ def _view(value, diagnostics_allowed):
     from .cooking_preparation import outline
     confirmed = data.get('confirmed_context') or {}
     source = confirmed.get('dataset_context') or {}
+    from .trip_preparation import summary as preparation_summary
+    saved_logistics = next((v['result'] for v in data.get('assessments', []) if v['kind'] == 'LOGISTICS'), None)
+    data['preparation_summary'] = preparation_summary(confirmed, saved_logistics)
     if (source.get('dataset_version') == '2.2.0' and
             source.get('file_digests', {}).get('source_catalogue.json') == SYDNEY_CATALOGUE_DIGEST):
         data['campsite_catalogue_id'] = SYDNEY_CATALOGUE_ID

@@ -17,7 +17,7 @@ from ..contracts.errors import ContractError, ContractFailure
 from ..contracts.ports import AgentPort
 from .agent_registry import create_agent
 from .datasets import DatasetDescriptor, inspect_dataset, scenario_path
-from ..agents.rules.transport import POLICY_KEY, POLICY_VERSION, checked_policy
+from ..agents.rules.transport import POLICY_KEY, POLICY_VERSION, MINIMAL_POLICY_VERSION, checked_policy
 
 
 @dataclass(frozen=True)
@@ -89,6 +89,8 @@ def build_v2_binding(settings, descriptor, *, parsed_snapshots=None, snapshot_ke
 
     dataset = SyntheticDatasetV2Adapter(settings.dataset_path).load(expected_context=descriptor.context,
         parsed_snapshots=parsed_snapshots, snapshot_key=snapshot_key)
+    from ..adapters.transport_reference import bind_reference
+    bind_reference(dataset, descriptor.context)
     dataset.selected_safety_case_ids = tuple(settings.workflow_safety_case_ids)
     base = descriptor.context.model_copy(update={'rules_version': descriptor.context.rules_version + '/a-runtime-bindings-v2'})
     configuration = WorkflowConfiguration(dataset, safety_case_ids=settings.workflow_safety_case_ids,
@@ -133,6 +135,8 @@ def build_v2_hybrid_binding(settings, descriptor, *, parsed_snapshots=None, snap
     dataset = SyntheticDatasetV2Adapter(settings.dataset_path).load(expected_context=descriptor.context,
         parsed_snapshots=parsed_snapshots,
         snapshot_key=(snapshot_key, json.dumps(client.settings.public_identity(), sort_keys=True)))
+    from ..adapters.transport_reference import bind_reference
+    bind_reference(dataset, descriptor.context)
     coordinator = PlanningCoordinator(dataset, client)
     identity = coordinator.identity
     choices = {**descriptor.context.selection_config, 'a_model_trace_required':'1', 'a_model_trace_contract':'1.0',
@@ -239,6 +243,10 @@ class AgentRuntime:
 
     def for_scope(self, scope):
         choices=scope.dataset_context.selection_config
+        # Read external extension bytes against the SAVED digest before any
+        # current registration/cache can substitute a different distance table.
+        from ..adapters.transport_reference import register_reference
+        register_reference(scope.dataset_context)
         # Recovery consumes its registered date/snapshot even after midnight.
         # Eligibility/finalisation uses validate_scope's CURRENT resolution.
         pinned=scope.demo_context.demo_today if choices.get('a_daily_snapshot')=='synthetic-daily-v1' else None
@@ -301,6 +309,8 @@ class AgentRuntime:
             choices = {key: value for key, value in descriptor.context.selection_config.items() if key != 'a_revision_feedback'}
             choices['a_runtime_bound'] = '1'
             if descriptor.context.dataset_version.startswith('2.'):
+                if transport_policy == POLICY_VERSION and descriptor.context.dataset_version != '2.2.0':
+                    transport_policy = MINIMAL_POLICY_VERSION
                 # A server-owned policy dimension, pinned by the complete
                 # context fingerprint. for_scope reconstructs absence for old runs.
                 if transport_policy is not None:
@@ -312,6 +322,8 @@ class AgentRuntime:
             if feedback is not None:
                 choices['a_revision_feedback'] = feedback
             descriptor = replace(descriptor, context=descriptor.context.model_copy(update={'selection_config': choices}))
+            from ..adapters.transport_reference import register_reference
+            descriptor = replace(descriptor, context=register_reference(descriptor.context))
             if settings.execution_mode != self.managed_mode:
                 raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='执行模式已变化，请重新启动对应模式的应用。'))
             factory = DATASET_AGENT_FACTORIES.get((settings.execution_mode, descriptor.provenance.source_name))

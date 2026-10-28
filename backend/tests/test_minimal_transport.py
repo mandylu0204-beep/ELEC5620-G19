@@ -9,7 +9,7 @@ import pytest
 from app.adapters.synthetic_dataset_v2 import SyntheticDatasetV2Adapter
 from app.agents.rule_agent import RuleAgent
 from app.agents.rules import logistics
-from app.agents.rules.transport import POLICY_KEY, POLICY_VERSION
+from app.agents.rules.transport import POLICY_KEY, POLICY_VERSION, MINIMAL_POLICY_VERSION
 from app.application.logistics_issues import project
 from app.contracts.dto import DemoContext, ItineraryInput, LogisticsInput, RecommendCampsitesResult, Transport
 from app.contracts.errors import ContractFailure
@@ -51,7 +51,7 @@ def source_input(profile=None, site='bonnie-vale'):
         confirmed_requirements=req, profile_snapshot=profile, demo_context=demo)
 
 
-def assess(dataset, input, *, policy=POLICY_VERSION):
+def assess(dataset, input, *, policy=MINIMAL_POLICY_VERSION):
     return logistics.assess(dataset, input, transport_policy=policy)
 
 

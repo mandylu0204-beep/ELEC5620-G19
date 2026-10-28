@@ -27,8 +27,66 @@ const {GroupSizeField,EquipmentUnitField,addEquipment,changeEquipmentCategory,fi
 const {VehicleFields}=await server.ssrLoadModule('/src/vehicle_fields.tsx');
 const {SessionProvider}=await server.ssrLoadModule('/src/session.tsx');
 const {CookingPreparationPanel,cookingDraft}=await server.ssrLoadModule('/src/cooking_preparation.tsx');
+const {TripPreparation}=await server.ssrLoadModule('/src/trip_preparation.tsx');
+const {NearMatches}=await server.ssrLoadModule('/src/near_matches.tsx');
+const {prepareProfileEquipment}=await server.ssrLoadModule('/src/vehicle_profile.ts');
+const {profileGuidance:preparationGuidance}=await server.ssrLoadModule('/src/profile_guidance.ts');
+const {profileFocusId:preparationFocus}=await server.ssrLoadModule('/src/profile_focus.ts');
 const render=(component,props)=>renderToStaticMarkup(h(component,props));
 const routed=(component,props)=>renderToStaticMarkup(h(MemoryRouter,null,h(component,props)));
+test('system preparation removes artificial inventory prerequisites while preserving old registered facts',()=>{
+  assert.deepEqual(prepareProfileEquipment([],'PUBLIC_TRANSPORT','',true),[]);
+  const legacy=[{item_key:'transport_itinerary',label:'原计划',quantity:'1',unit:'plan',capacity:'',confirmed:true}];
+  assert.deepEqual(prepareProfileEquipment(legacy,'PUBLIC_TRANSPORT','',true),legacy);
+  assert.equal(prepareProfileEquipment([],'PUBLIC_TRANSPORT','',false)[0].item_key,'transport_itinerary');
+  assert.equal(prepareProfileEquipment([],'CAR','2',true)[0].confirmed,false);
+  const fields=['transport.estimated_km','transport.assumptions','equipment.transport_itinerary','equipment.fire_free_meal_plan'];
+  const draft={equipment:legacy,transport:'PUBLIC_TRANSPORT',vehicles:'',km:'',children:'no',childrenCount:'0',experience:'BEGINNER',systemPreparation:true};
+  const issues=fields.map(field=>({field,category:'USER_INPUT',target:'PROFILE'}));
+  assert.deepEqual(preparationGuidance(draft,issues),{});
+  fields.forEach(field=>assert.equal(preparationFocus(field,legacy,'PUBLIC_TRANSPORT',true),null));
+});
+test('new transport notice asks the system to select first and never asks the user for a preplanned route',()=>{
+  const props={value:'PUBLIC_TRANSPORT',supported:['CAR','PUBLIC_TRANSPORT'],onChange(){},error:'',systemPreparation:true};
+  const html=render(TransportModeField,props);
+  for(const text of ['按所选交通方式','没有匹配','选定营地后核对','不需要先写路线'])assert.ok(html.includes(text),text);
+  assert.doesNotMatch(html,/自行核对去程|另请在下方/);
+  assert.match(render(TransportModeField,{...props,value:'CAR'}),/固定模拟出发地|版本化模拟距离/);
+});
+test('saved preparation distinguishes synthetic group kilometres, transport allowance and departure checks',()=>{
+  const value={system_preparation:true,transport_type:'CAR',origin_label:'悉尼市区（固定模拟出发地）',
+    access_and_capacity:true,estimated_total_vehicle_km:'200',vehicle_count:2,estimated_transport_cents:7600,meal_mode:'SELF_CATERED',source_refs:[]};
+  const before=structuredClone(value);const html=render(TripPreparation,{value});
+  for(const text of ['200 km','2 辆','76.00','不是用户希望的行程长度','不是实测道路距离','核对炉具、燃料和炊具'])assert.ok(html.includes(text),text);
+  assert.deepEqual(value,before);
+  const transit=render(TripPreparation,{value:{...value,transport_type:'PUBLIC_TRANSPORT',estimated_transport_cents:null}});
+  assert.match(transit,/未知，不能按零费用处理/);assert.match(transit,/去程、返程末班/);
+  assert.doesNotMatch(transit,/累计里程（模拟）|本次确认车辆/);
+  const ready=render(TripPreparation,{value:{...value,meal_mode:'READY_TO_EAT'}});
+  assert.match(ready,/<dt>用餐方式<\/dt><dd>即食餐食<\/dd>/);
+  assert.doesNotMatch(ready,/无火餐食计划|无需登记/);
+});
+test('no-match adjustment is an explicit user choice, disabled in read-only history',()=>{
+  const value={near_matches:[],excluded_count:10,ranking:'test',metadata_note:null,scope:'SAVED'};
+  const html=routed(NearMatches,{value,planId:'trip-1'});
+  assert.match(html,/系统不会替你更改已确认需求/);
+  assert.match(html,/href="\/profile\?plan_id=trip-1&amp;focus=transport.transport_type"/);
+  assert.match(html,/href="\/plans\/trip-1\/update"/);
+  assert.doesNotMatch(routed(NearMatches,{value,planId:'trip-1',readOnly:true}),/href=|<button/);
+});
+test('new summaries hide irrelevant mileage and keep old virtual plans explicitly historical',()=>{
+  const profile={group_size:2,experience_level:'BEGINNER',has_children:false,children_count:0,accessibility_requirements:[],
+    transport:{transport_type:'PUBLIC_TRANSPORT',vehicle_count:1,estimated_km:'999',assumptions:['原交通说明']},
+    equipment:[{item_key:'transport_itinerary',label:'原交通计划',quantity:1,unit:'plan',capacity_persons:null,confirmed:true}]};
+  const before=structuredClone(profile);
+  const modern=render(ProfileSummary,{profile,systemPreparation:true});
+  assert.match(modern,/旧版计划登记记录（仅供历史回看）/);
+  assert.match(modern,/本次不将这些记录作为装备或可达证明/);
+  assert.doesNotMatch(modern,/999|车辆数量|车辆 \/ 总路程|交通估算说明/);
+  const legacy=render(ProfileSummary,{profile});
+  assert.match(legacy,/999|交通估算说明/);assert.doesNotMatch(legacy,/旧版计划登记记录/);
+  assert.deepEqual(profile,before);
+});
 const budgetIssue={issue_id:'budget',code:'OVER_BUDGET',category:'USER_INPUT',field:'budget_cents',item_key:null,
   current:34600,required:30000,target:'REQUEST',action_url:'/plans/plan/update?focus=request-budget'};
 test('over-budget task separates lower-cost preparation from changing the confirmed budget',()=>{

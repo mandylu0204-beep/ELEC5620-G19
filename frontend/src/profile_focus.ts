@@ -1,5 +1,6 @@
 type FocusEquipment={item_key:string;quantity:string;capacity:string;confirmed:boolean;unit:string};
-export function profileFocusId(field:string,items:FocusEquipment[],transport?:string):string|null {
+export function profileFocusId(field:string,items:FocusEquipment[],transport?:string,systemPreparation=false):string|null {
+  if(systemPreparation&&(field==='transport.estimated_km'||field==='transport.assumptions'||/^equipment\.(transport_itinerary|fire_free_meal_plan)(?:\.(quantity|capacity))?$/.test(field)))return null;
   if(transport!==undefined&&transport!=='CAR'&&(field==='transport.vehicle_count'||field==='transport.estimated_km'||/^equipment\.vehicle(?:\.(quantity|capacity))?$/.test(field)))return null;
   const ids:Record<string,string>={'transport.estimated_km':'estimated-km','transport.vehicle_count':'vehicle-count',
     'transport.assumptions':'transport-assumptions',

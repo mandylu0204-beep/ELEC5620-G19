@@ -11,6 +11,7 @@ export function NearMatches({value,planId,readOnly=false}:{value:RecommendationG
   return <section className="panel near-matches" aria-label="最接近的营地比较">
     <span className="eyebrow">比较与调整</span><h2>最接近的营地</h2>
     <p>这 {value.near_matches.length} 个营地最接近你的需求，仍有以下条件需要调整或核实。</p>
+    {!readOnly&&planId&&<p>是否调整交通方式、日期、预算或其他条件？系统不会替你更改已确认需求。<Link className="text-link" to={'/profile?plan_id='+encodeURIComponent(planId)+'&focus=transport.transport_type'}>修改交通方式 ↗</Link> <Link className="text-link" to={tripUpdatePath(planId)}>核对并调整本次需求 ↗</Link></p>}
     <p className="muted">以下价格仅含营地费。</p>
     {value.metadata_note&&<p className="clarifications">{value.metadata_note}</p>}
     <div className="near-match-grid">{value.near_matches.map(item=><article className="near-match-card" key={item.campsite_id}>

@@ -58,10 +58,12 @@ def request_context(request: Request, user: User = Depends(current_user)):
     from .auth import require_role
     require_role(user, 'CAMPER')
     snapshot = request.app.state.runtime.resolve()
-    from .agents.rules.transport import SUPPORTED_MODES
+    from .agents.rules.transport import SUPPORTED_MODES, POLICY_KEY, POLICY_VERSION
     return {'supported_destinations': snapshot.descriptor.regions, 'execution_mode': snapshot.demo.mode.value,
         'demo_today': snapshot.demo.demo_today.isoformat(), 'clock_mode': request.app.state.settings.clock_mode,
         'supported_transport_modes': list(SUPPORTED_MODES),
+        'system_preparation': snapshot.dataset.selection_config.get(POLICY_KEY) == POLICY_VERSION,
+        'planning_origin': {'id':'sydney_city_demo','label':'悉尼市区（固定模拟出发地）'} if snapshot.dataset.selection_config.get(POLICY_KEY) == POLICY_VERSION else None,
         'planning_available': request.app.state.dispatcher.available}
 
 

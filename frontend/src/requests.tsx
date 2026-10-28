@@ -3,7 +3,7 @@ import { changedSections } from './display_facts';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ApiFailure, type PreviewResult, type Requirements } from './api';
-import { integer, lines, ProfileSummary, PublicTransportNotice, type Profile } from './profile';
+import { integer, lines, ProfileSummary, PublicTransportNotice, SystemPreparationNotice, type Profile } from './profile';
 import { CookingPreparationPanel, type CookingPreparation } from './cooking_preparation';
 import { privateApi, useSession } from './session';
 import { TripFlow, FieldHint } from './trip_flow';
@@ -12,8 +12,8 @@ import { ProfileAdoptionPreview } from './replan';
 import { ReplanSession } from './replan_session';
 import { tripCommandKey,tripUpdatePath } from './trip_update';
 
-type RequestContext = { supported_destinations: string[]; execution_mode: string; demo_today: string; planning_available: boolean };
-type Record = { request_id: string; raw_text: string; explicit_fields: Partial<Requirements>; status: string; revision: number; created_at: string; summary: PreviewResult | null; profile_snapshot: Profile | null; profile_revision: number | null; error: { message:string } | null; confirmed_context: { requirements: Requirements; profile_snapshot: Profile; confirmed_at: string; demo_context: { mode:string } } | null; planning_available:boolean; planning_plan_id?:string|null };
+type RequestContext = { system_preparation?:boolean; supported_destinations: string[]; execution_mode: string; demo_today: string; planning_available: boolean };
+type Record = { system_preparation?:boolean|null; request_id: string; raw_text: string; explicit_fields: Partial<Requirements>; status: string; revision: number; created_at: string; summary: PreviewResult | null; profile_snapshot: Profile | null; profile_revision: number | null; error: { message:string } | null; confirmed_context: { requirements: Requirements; profile_snapshot: Profile; confirmed_at: string; demo_context: { mode:string } } | null; planning_available:boolean; planning_plan_id?:string|null };
 type UpdateRecord = Record & {trip_series_id?:string;predecessor_plan_id?:string|null;source_profile_revision?:number|null;source_profile_snapshot?:Profile;source_requirements?:Requirements;is_trip_update?:boolean;cooking_preparation?:CookingPreparation|null};
 type Draft = { raw: string; destination: string; start: string; nights: string; days: string; end: string; budget: string; preferences: string; constraints: string };
 const EMPTY: Draft = {raw:'',destination:'',start:'',nights:'',days:'',end:'',budget:'',preferences:'',constraints:''};
@@ -252,6 +252,7 @@ export function RequestDetail() {
   }
   const confirmed=record?.status==='CONFIRMED';const updating=!!record?.trip_series_id; const requirements=record?.confirmed_context?.requirements??record?.summary?.extracted_requirements;
   const profile=record?.confirmed_context?.profile_snapshot??record?.profile_snapshot??null;
+  const systemPreparation=record?.confirmed_context?record.system_preparation===true:context?.system_preparation===true;
   const confirmationHint=busy?'正在处理，请稍候…':dirty?'修改尚未保存，请先保存修改并重新生成摘要。':record?.status==='DRAFT'?'先点击“生成需求摘要”，核对行程与同行资料。':record?.status==='ANALYSING'?'摘要尚未完成，可以重新生成摘要。':record?.status==='NEEDS_CLARIFICATION'?'请补充下方列出的问题，再重新生成摘要。':record?.status==='UNSUPPORTED'?'请调整超出支持范围的条件，再重新生成摘要。':record?.status==='AWAITING_CONFIRMATION'?!acknowledged?'核对下方摘要后，勾选确认即可继续。':'已勾选确认，可以保存需求。':'正在读取需求…';
   const tripTooLong=context?.execution_mode==='agent'&&requirements?.duration_nights!=null&&requirements.duration_nights>30;
   const planningHint=busy?'正在提交规划…':tripTooLong?'当前规划支持最多 30 晚，请缩短行程并重新确认需求。':record?.planning_available?'开始生成行程，并检查装备、费用与安全。':'规划服务暂不可用；需求已保存，请稍后再试。';
@@ -289,8 +290,8 @@ export function RequestDetail() {
           <RequestMeaningSummary requirements={requirements} pendingConstraints={clarificationMap.has('mandatory_constraints')||clarificationMap.has('raw_text')}/>
           {updating&&record.source_profile_snapshot&&profile&&<ProfileAdoptionPreview before={record.source_profile_snapshot} after={profile} revision={record.profile_revision} sourceRevision={record.source_profile_revision??null}/>}
           {updating&&record.source_requirements&&requirements&&<RequirementsChangePreview before={record.source_requirements} after={requirements}/>}
-          <div className="request-profile-overview"><h3>本次采用的露营资料</h3><div><span>小组人数<strong>{profile?.group_size??'未知'} 人</strong></span><span>登记装备<strong>{profile?profile.equipment.filter(item=>!['vehicle','charged_phone'].includes(item.item_key)).length:'未知'} 项</strong></span></div><details><summary>查看同行、交通与装备明细</summary><ProfileSummary profile={profile}/></details></div>
-          {profile?.transport.transport_type==='PUBLIC_TRANSPORT'&&<PublicTransportNotice/>}
+          <div className="request-profile-overview"><h3>本次采用的露营资料</h3><div><span>小组人数<strong>{profile?.group_size??'未知'} 人</strong></span><span>登记装备<strong>{profile?profile.equipment.filter(item=>!['vehicle','charged_phone',...(systemPreparation?['transport_itinerary','fire_free_meal_plan']:[])].includes(item.item_key)).length:'未知'} 项</strong></span></div><details><summary>查看同行、交通与装备明细</summary><ProfileSummary profile={profile} systemPreparation={systemPreparation}/></details></div>
+          {systemPreparation?<SystemPreparationNotice mode={profile?.transport.transport_type??''}/>:profile?.transport.transport_type==='PUBLIC_TRANSPORT'&&<PublicTransportNotice/>}
           <CookingPreparationPanel value={record.cooking_preparation}/>
           {record.cooking_preparation&&!record.planning_plan_id&&<Link className="text-link" to={'/profile?request_id='+encodeURIComponent(record.request_id)+'&focus=equipment.camping_stove'}>规划前一起核对炉具与燃料（不会启动模型） ↗</Link>}
           {record.summary?.uncertainties.filter(item=>item!=='This output is not a confirmation event.').map((item,index)=><p className="muted" key={index}>{item}</p>)}

@@ -188,8 +188,9 @@ def _required(rule, context):
 
 
 def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, safety_case_ids=None, transport_policy=None) -> LogisticsResult:
-    from .transport import checked_policy
+    from .transport import POLICY_VERSION, checked_policy
     minimal_transport = checked_policy(transport_policy) is not None
+    system_preparation = transport_policy == POLICY_VERSION
     ensure_execution_mode(dataset, input.demo_context, expected_mode)
     requirements, profile = input.confirmed_requirements, input.profile_snapshot
     if profile.group_size is None:
@@ -198,6 +199,9 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
     nights = validate_itinerary(dataset, input.saved_itinerary, requirements, expected_mode=expected_mode)
     campsites = [dataset.get_campsite(key) for key in nights]
     group, mode = Decimal(profile.group_size), meal_mode(requirements)
+    # A profile's old kilometres are not bound to the selected campsite/trip.
+    # A route estimate needs a registered origin/distance source, never a guess.
+    vehicle_km = None if system_preparation else profile.transport.estimated_km
     policy_values = {}
     if dataset.has_v2_policy:
         tent_capacity = _available(profile, 'tent', 'person_space', group)
@@ -268,6 +272,11 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
     clarifications, blockers, sources = [], [], [campsite.source_ref for campsite in campsites]
     if dataset.has_v2_policy and evidence_selection is not None:
         sources.extend(ref for evidence in evidence_selection.scenario_context.evidence for ref in evidence.source_refs)
+    if system_preparation and profile.transport.transport_type == 'CAR':
+        from ...adapters.transport_reference import estimate_vehicle_km
+        vehicle_km, distance_source = estimate_vehicle_km(dataset, profile, campsites)
+        if distance_source is not None:
+            sources.append(distance_source)
     assumptions = [
         'Gear quantities are conservative synthetic planning rules, not real safety advice.',
         ('Conditional v2 weather gear uses only selected, current, trip-covering synthetic observations; unknown triggers are conservatively included.'
@@ -275,6 +284,10 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
         'Food/water use synthetic provision-value allowances, not a claim of actual purchases.',
         'Priced equipment gaps are estimates; they do not confirm a hire or purchase.',
     ]
+    if system_preparation:
+        assumptions.append('Transport access and cooking preparation are system checks, not equipment inventory plans. Actual services and permissions remain unverified.')
+        if profile.transport.transport_type == 'CAR':
+            assumptions.append('Vehicle kilometres use the registered Sydney city synthetic round-trip reference multiplied by confirmed vehicle count; not live routing or profile-entered mileage.')
     if dataset.has_v2_policy and evidence_selection is not None:
         assumptions.append('Trip evidence selection digest: ' + evidence_selection.selection_digest + '.')
 
@@ -292,7 +305,7 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
         clarify('meal_mode', 'Confirm ready-to-eat meals or self-catered meals in request preferences.', 'Meal and stove rules need one unambiguous, confirmed meal mode.')
     if profile.has_children is None or profile.has_children and profile.children_count is None:
         clarify('profile.children_count', 'Confirm whether children are present and how many.', 'Do not derive child/adult counts from notes.')
-    if mode == 'SELF_CATERED' and all(campsite.fire_allowed is True for campsite in campsites) and _available(profile, 'camping_stove', 'item') == 0:
+    if not system_preparation and mode == 'SELF_CATERED' and all(campsite.fire_allowed is True for campsite in campsites) and _available(profile, 'camping_stove', 'item') == 0:
         clarify('cooking_method', 'Confirm a fire-free cooking arrangement.', 'A campsite fire_allowed flag is not current fire permission or a cooking arrangement.')
 
     merged = {}
@@ -303,9 +316,12 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
         # It must not require a profile inventory entry or prevent planning.
         if rule.item_name == 'Charged phone':
             continue
+        if system_preparation and rule.item_name in {'Transport itinerary', 'Fire-free meal plan'}:
+            continue  # Replaced by explicit transport/cooking checks under this pinned policy.
         if rule.item_name not in ITEMS:
             raise rule_failure(f'Unsupported gear item: {rule.item_name}.', 'gear_rules')
-        if not _active(rule, context):
+        required_stove = system_preparation and rule.item_name == 'Camping stove' and mode == 'SELF_CATERED'
+        if not required_stove and not _active(rule, context):
             continue
         sources.append(rule.source_ref)
         key, unit = ITEMS[rule.item_name]
@@ -374,7 +390,7 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
             vehicle_count = sum(item.quantity for item in vehicles if item.confirmed and item.unit == 'vehicle' and item.quantity is not None)
             if transport.vehicle_count is None:
                 clarify('transport.vehicle_count', 'Confirm vehicle count.', 'Parking uses a per-vehicle rate.')
-            if transport.estimated_km is None:
+            if not system_preparation and transport.estimated_km is None:
                 clarify('transport.estimated_km', 'Confirm total vehicle kilometres for the trip.', 'Do not invent distance or multiply a group-total distance by vehicle count again.')
             if not vehicles or unknown:
                 clarify('equipment.vehicle', 'Confirm available vehicle count and passenger capacity.', 'Vehicle access does not establish group transport capacity.')
@@ -382,20 +398,21 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
                 clarify('transport.vehicle_count', 'Reconcile vehicle stock and vehicle count.', 'Confirmed vehicle records and parking input disagree.')
             elif capacity < profile.group_size:
                 transport_feasible = False
-            elif transport.vehicle_count is not None and transport.estimated_km is not None:
+            elif transport.vehicle_count is not None and (system_preparation or transport.estimated_km is not None):
                 transport_feasible = True
     elif transport.transport_type == 'PUBLIC_TRANSPORT':
         transport_feasible = all(campsite.public_transport_access is True for campsite in campsites)
-        if transport_feasible and _available(profile, 'transport_itinerary', 'plan', Decimal(1)) in {None, Decimal(0)}:
+        if not system_preparation and transport_feasible and _available(profile, 'transport_itinerary', 'plan', Decimal(1)) in {None, Decimal(0)}:
             transport_feasible = None
             clarify('equipment.transport_itinerary', 'Confirm an actual public-transport connection plan.', 'An access flag alone does not verify connections.')
         if minimal_transport:
             assumptions.extend([
                 'Public transport access is a registered campsite attribute, not live timetable verification.',
-                'The traveller confirms outbound, return and last-mile arrangements; the system does not verify services or reservations.',
+                ('Outbound, return and last-mile service details are departure-time checks after campsite selection; no user-authored itinerary is required for matching.'
+                 if system_preparation else 'The traveller confirms outbound, return and last-mile arrangements; the system does not verify services or reservations.'),
                 'Public transport uses a synthetic return-fare allowance per person, not a live ticket quote.',
             ])
-            if not any(item.strip() for item in transport.assumptions):
+            if not system_preparation and not any(item.strip() for item in transport.assumptions):
                 if transport_feasible is not False:
                     transport_feasible = None
                 clarify('transport.assumptions', 'Describe the outbound, return and last-mile arrangements you have checked.',
@@ -425,7 +442,7 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
             if row['rate_source'] != 'typical_aud':
                 raise rule_failure(f'Unsupported v2 rate source for {cost_id}.', 'cost_reference')
             values = {
-                'estimated_total_vehicle_km': transport.estimated_km,
+                'estimated_total_vehicle_km': vehicle_km,
                 'vehicle_count': transport.vehicle_count,
                 'group_size': profile.group_size,
                 'duration_days': requirements.duration_days,
@@ -478,7 +495,7 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO, sa
         if campsite.nightly_fee_cents is None:
             clarify(f'cost.{campsite.campsite_id}', 'Supply a registered campsite fee.', 'Missing fee cannot be zero.')
     if transport.transport_type == 'CAR':
-        reference_line('cost-02', transport.estimated_km, 'Total vehicle kilometres already includes all vehicles.')
+        reference_line('cost-02', vehicle_km, 'Synthetic Sydney city round-trip kilometres for the selected campsite, summed across confirmed vehicles; not measured distance.' if system_preparation and vehicle_km is not None else 'Selected-trip distance has no registered source; previous profile kilometres were not reused.' if system_preparation else 'Total vehicle kilometres already includes all vehicles.')
         reference_line('cost-15', None if transport.vehicle_count is None else Decimal(transport.vehicle_count), 'One parking allowance per confirmed vehicle.')
     elif transport.transport_type == 'PUBLIC_TRANSPORT':
         reference_line('cost-03', group, 'Synthetic return fare per traveller; connection feasibility is separate.')

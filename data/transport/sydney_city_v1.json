@@ -1,0 +1,25 @@
+{
+  "version": "sydney-city-demo-distances-1",
+  "created_on": "2026-10-27",
+  "origin_id": "sydney_city_demo",
+  "origin_label": "悉尼市区（固定模拟出发地）",
+  "scope": "Synthetic round-trip distance assumptions for one campsite, per vehicle. Not measured road distances, live routes or travel times.",
+  "provenance": {
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  "routes": [
+    {"campsite_id": "the-basin", "round_trip_km_per_vehicle": 110},
+    {"campsite_id": "bonnie-vale", "round_trip_km_per_vehicle": 100},
+    {"campsite_id": "bents-basin", "round_trip_km_per_vehicle": 130},
+    {"campsite_id": "cattai", "round_trip_km_per_vehicle": 110},
+    {"campsite_id": "euroka", "round_trip_km_per_vehicle": 140},
+    {"campsite_id": "lane-cove", "round_trip_km_per_vehicle": 40},
+    {"campsite_id": "putty-beach", "round_trip_km_per_vehicle": 180},
+    {"campsite_id": "little-beach", "round_trip_km_per_vehicle": 190},
+    {"campsite_id": "tallow-beach", "round_trip_km_per_vehicle": 190},
+    {"campsite_id": "cockatoo-island", "round_trip_km_per_vehicle": null}
+  ]
+}

@@ -3,12 +3,13 @@ import type { LogisticsIssue } from './logistics_issues';
 export type DraftEquipment={item_key:string;label:string;quantity:string;unit:string;capacity:string;confirmed:boolean};
 type Catalog=readonly (readonly string[])[];
 export type ProfileDraft={equipment:DraftEquipment[];transport:string;vehicles:string;km:string;
-  children:string;childrenCount:string;experience:string;group?:string;assumptions?:string};
+  children:string;childrenCount:string;experience:string;group?:string;assumptions?:string;systemPreparation?:boolean};
 
 function equipmentKey(field:string){return /^equipment\.([a-z_]+)(?:\.(quantity|capacity))?$/.exec(field)?.[1]??null;}
 
 // This only selects editable form hints. Saved formal assessments remain unchanged.
-export function profileFieldApplies(field:string,transport:string){
+export function profileFieldApplies(field:string,transport:string,systemPreparation=false){
+  if(systemPreparation&&(field==='transport.estimated_km'||field==='transport.assumptions'||['transport_itinerary','fire_free_meal_plan'].includes(equipmentKey(field)??'')))return false;
   return transport==='CAR'||!(field==='transport.vehicle_count'||field==='transport.estimated_km'||equipmentKey(field)==='vehicle');
 }
 
@@ -35,7 +36,7 @@ export function profileGuidance(draft:ProfileDraft,issues:LogisticsIssue[],focus
   if(fields.has('transport.vehicle_count'))fields.add('equipment.vehicle');
   const positive=(value:string)=>/^\d+$/.test(value)&&Number(value)>0;
   for(const field of fields){
-    if(!profileFieldApplies(field,draft.transport))continue;
+    if(!profileFieldApplies(field,draft.transport,draft.systemPreparation))continue;
     const key=equipmentKey(field);
     if(key){
       const related=issues.find(issue=>equipmentKey(issue.field)===key);

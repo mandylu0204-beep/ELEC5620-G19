@@ -1,5 +1,7 @@
 # 公共交通最小支持：实现与交接
 
+> 2026-10-27 后续修正：Sydney 2.2 新运行改由系统负责筛选与准备，不再要求用户提前登记路线计划。见 [系统出行准备交接](system_trip_preparation_handoff.md)。本文保留 `public-transport-minimal-1` 的旧策略与验证记录，供历史恢复及 2.0／2.1 兼容使用，不能用其旧填写步骤验收当前 Sydney 新流程。
+
 日期：2026-10-27（Australia/Sydney）。基线：fix/transport-profile-guidance，5e6258a；保留阶段一以及此前物流诊断／费用协议的未提交改动。
 
 ## 交付范围

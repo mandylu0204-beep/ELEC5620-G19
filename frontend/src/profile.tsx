@@ -2,7 +2,7 @@ import { DiscardChanges } from './display_panels';
 import { changedSections, PROFILE_SAVED_NOTICE } from './display_facts';
 import { prepareMissingEquipment, profileGuidance } from './profile_guidance';
 import { CookingPreparationPanel, cookingDraft, type CookingPreparation } from './cooking_preparation';
-import { prepareProfileEquipment, vehicleCount } from './vehicle_profile';
+import { prepareProfileEquipment, vehicleCount, PLAN_RECORD_KEYS } from './vehicle_profile';
 import { VehicleFields } from './vehicle_fields';
 import type { LogisticsIssue } from './logistics_issues';
 import { profileFocusId, profileCorrectionTargets, focusProfileTargets } from './profile_focus';
@@ -35,8 +35,11 @@ const MODES = [['CAR','汽车'],['PUBLIC_TRANSPORT','公共交通'],['WALKING','
 export function PublicTransportNotice(){
   return <p className="mode-notice">公共交通需自行核对去程、返程及到营地的最后接驳安排。系统使用已登记的营地可达标记及模拟往返费用，不查询实际班次、末班车或实时票价，也不代表已订票。</p>;
 }
-export function TransportModeField({value,supported,onChange,error,guidance}:{
-  value:string;supported:string[]|null;onChange:(value:string)=>void;error:string;guidance?:string;
+export function SystemPreparationNotice({mode}:{mode:string}){
+  return <p className="mode-notice">系统按所选交通方式及其他条件筛选营地；没有匹配时会说明原因，由你决定是否调整。{mode==='CAR'?'本轮使用固定模拟出发地“悉尼市区”，选定营地后按版本化模拟距离及确认车辆数估算费用，不是实时导航。':'公共交通使用营地可达资料和模拟往返费用；具体去程、返程班次及最后接驳在选定营地后核对，不需要先写路线。'}</p>;
+}
+export function TransportModeField({value,supported,onChange,error,guidance,systemPreparation=false}:{
+  value:string;supported:string[]|null;onChange:(value:string)=>void;error:string;guidance?:string;systemPreparation?:boolean;
 }){
   const choices=MODES.filter(([key])=>supported?.includes(key)&&['CAR','PUBLIC_TRANSPORT'].includes(key));
   const unsupported=supported!==null&&!!value&&!choices.some(([key])=>key===value);
@@ -45,7 +48,7 @@ export function TransportModeField({value,supported,onChange,error,guidance}:{
     <option value="">尚未明确</option>{choices.map(([key,label])=><option key={key} value={key}>{label}</option>)}
     {value&&!choices.some(([key])=>key===value)&&<option value={value} disabled>{Object.fromEntries(MODES)[value]??value}（{supported===null?'已保存，正在读取支持范围':'历史资料，当前暂不支持'}）</option>}
   </select><FieldHint id="transport-hint" error={error||guidance||(unsupported?'原交通方式已保留，但当前不能用于新规划。请明确选择支持的方式，再重新生成摘要。':undefined)}>{supported===null?'正在读取交通支持范围…':`当前可选：${choices.map(([,label])=>label).join('、')||'暂无'}；步行、其他交通暂未实现。`}</FieldHint>
-  {value==='PUBLIC_TRANSPORT'&&<PublicTransportNotice/>}</>;
+  {systemPreparation?<SystemPreparationNotice mode={value}/>:value==='PUBLIC_TRANSPORT'&&<PublicTransportNotice/>}</>;
 }
 export const equipmentLabel = (key: string) => EQUIPMENT_TYPES.find(([type])=>type===key)?.[1] ?? key;
 const unitLabel = (unit: string) => ({item:'件',litre:'升',portion:'份',vehicle:'辆',plan:'份计划',set:'套'} as Record<string,string>)[unit] ?? unit;
@@ -156,15 +159,7 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
   const [transport, setTransport] = useState('');
   const [supportedModes,setSupportedModes]=useState<string[]|null>(null);
   const [transportContextError,setTransportContextError]=useState('');
-  useEffect(()=>{
-    const controller=new AbortController();setSupportedModes(null);setTransportContextError('');
-    privateApi<{supported_transport_modes:string[]}>('/request-context',{signal:controller.signal}).then(value=>{
-      if(controller.signal.aborted)return;
-      if(!Array.isArray(value.supported_transport_modes))throw new Error('交通支持范围未提供，请更新后端后重新载入页面。');
-      setSupportedModes(value.supported_transport_modes);
-    }).catch(reason=>{if(!controller.signal.aborted)setTransportContextError(reason instanceof Error?reason.message:'无法读取交通支持范围，请重新载入页面。');});
-    return ()=>controller.abort();
-  },[session?.user.user_id,refresh]);
+  const [systemPreparation,setSystemPreparation]=useState(false);
   const [vehicles, setVehicles] = useState('');
   const [km, setKm] = useState('');
   const [assumptions, setAssumptions] = useState('');
@@ -192,16 +187,20 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
   },[sourcePlan,sourceRequest,refresh,issueRetry]);
   useEffect(() => {
     const controller = new AbortController();
-    setLoaded(false); setGroupTouched(false); setError(''); setMessage('');
-    privateApi<ProfileResponse>('/profile', { signal: controller.signal }).then(value => {
+    setLoaded(false); setGroupTouched(false); setError(''); setMessage('');setSupportedModes(null);setTransportContextError('');
+    const capabilities=privateApi<{supported_transport_modes:string[];system_preparation?:boolean}>('/request-context',{signal:controller.signal})
+      .then(value=>{if(!Array.isArray(value.supported_transport_modes))throw new Error('交通支持范围未提供，请更新后端后重新载入页面。');return value;})
+      .catch(reason=>{if(!controller.signal.aborted)setTransportContextError(reason instanceof Error?reason.message:'无法读取交通支持范围，请重新载入页面。');return null;});
+    Promise.all([privateApi<ProfileResponse>('/profile', { signal: controller.signal }),capabilities]).then(([value,context]) => {
       if (controller.signal.aborted) return;
+      const system=context?.system_preparation===true;setSystemPreparation(system);setSupportedModes(context?.supported_transport_modes??null);
       setRevision(value.revision); const profile = value.profile;
       setGroup(String(profile?.group_size ?? '')); setExperience(canonical(profile?.experience_level, LEVELS));
       setChildren(profile?.has_children === true ? 'yes' : profile?.has_children === false ? 'no' : 'unknown');
       setChildrenCount(String(profile?.children_count ?? ''));
       const mode=canonical(profile?.transport.transport_type, MODES);
       const raw=profile?.equipment.map(item => ({ item_key: item.item_key, label: item.label, quantity: String(item.quantity ?? ''), unit: item.unit, capacity: String(item.capacity_persons ?? ''), confirmed: item.confirmed })) ?? [];
-      const prepared=discardReload.current?raw:prepareProfileEquipment(raw,mode,String(profile?.transport.vehicle_count??''));
+      const prepared=discardReload.current?raw:prepareProfileEquipment(raw,mode,String(profile?.transport.vehicle_count??''),system);
       setEquipment(prepared);setTransport(mode);setVehicles(mode==='CAR'?(discardReload.current?String(profile?.transport.vehicle_count??''):vehicleCount(prepared)):'');
       setKm(profile?.transport.estimated_km ?? ''); setAssumptions(profile?.transport.assumptions.join('\n') ?? '');
       setAccessibility(profile?.accessibility_requirements.map(item=>termLabel(item,'accessibility')).join('\n') ?? '');
@@ -214,12 +213,13 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
     return () => controller.abort();
   }, [session?.user.user_id, refresh]);
   useEffect(()=>{
-    const token=`${session?.user.user_id}:${sourcePlan??''}:${sourceRequest??''}:${requestedFocus}:${refresh}:${issueRetry}:${transport}`;
+    const token=`${session?.user.user_id}:${sourcePlan??''}:${sourceRequest??''}:${requestedFocus}:${refresh}:${issueRetry}:${transport}:${systemPreparation}`;
     if(discardReload.current||!loaded||!relatedLoaded||relatedError||preparedContext.current===token)return;
     preparedContext.current=token;
-    const prepared=prepareMissingEquipment(equipment,relatedIssues,requestedFocus,EQUIPMENT_TYPES,cooking?.items.map(item=>item.item_key)??[],transport);
+    const catalog=EQUIPMENT_TYPES.filter(([key])=>!systemPreparation||!PLAN_RECORD_KEYS.has(key));
+    const prepared=prepareMissingEquipment(equipment,relatedIssues,requestedFocus,catalog,cooking?.items.map(item=>item.item_key)??[],transport);
     if(prepared!==equipment){setEquipment(prepared);focusDone.current='';}
-  },[loaded,relatedLoaded,relatedError,sourcePlan,sourceRequest,requestedFocus,refresh,issueRetry,session?.user.user_id,equipment,relatedIssues,cooking,transport]);
+  },[loaded,relatedLoaded,relatedError,sourcePlan,sourceRequest,requestedFocus,refresh,issueRetry,session?.user.user_id,equipment,relatedIssues,cooking,transport,systemPreparation]);
   const cookingSignature=JSON.stringify(equipment.filter(item=>['camping_stove','fuel_canister'].includes(item.item_key)));
   async function checkCooking(){
     if(!session||cookingBusy||!relatedLoaded||relatedError||!cooking)return;
@@ -240,7 +240,7 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
     setChildren(profile.has_children ? 'yes' : 'no'); setChildrenCount(String(profile.children_count));
     const mode=canonical(profile.transport.transport_type, MODES);
     const prepared=prepareProfileEquipment(profile.equipment.map(item => ({ item_key: item.item_key, label: EQUIPMENT_TYPES.find(([key]) => key === item.item_key)?.[1] ?? item.label,
-      quantity: String(item.quantity), unit: item.unit, capacity: 'capacity_persons' in item ? String(item.capacity_persons) : '', confirmed: item.confirmed })),mode,String(profile.transport.vehicle_count));
+      quantity: String(item.quantity), unit: item.unit, capacity: 'capacity_persons' in item ? String(item.capacity_persons) : '', confirmed: item.confirmed })),mode,String(profile.transport.vehicle_count),systemPreparation);
     setEquipment(prepared);setTransport(mode);setVehicles(mode==='CAR'?vehicleCount(prepared):'');
     setKm(profile.transport.estimated_km); setAssumptions(''); setAccessibility('');
     setError(''); setMessage('已载入资料样例，尚未保存。请核对并保存。');
@@ -249,7 +249,7 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
   function replaceEquipment(items:EquipmentForm[]) {setEquipment(items);if(transport==='CAR')setVehicles(vehicleCount(items));changed();}
   function updateEquipment(index: number, patch: Partial<EquipmentForm>) { replaceEquipment(equipment.map((item, i) => i === index ? { ...item, ...patch } : item)); }
   function removeEquipment(index:number) {replaceEquipment(equipment.filter((_,i)=>i!==index));}
-  function changeTransport(mode:string) {const prepared=prepareProfileEquipment(equipment,mode,vehicles);setEquipment(prepared);setTransport(mode);setVehicles(mode==='CAR'?vehicleCount(prepared):'');changed();}
+  function changeTransport(mode:string) {const prepared=prepareProfileEquipment(equipment,mode,vehicles,systemPreparation);setEquipment(prepared);setTransport(mode);setVehicles(mode==='CAR'?vehicleCount(prepared):'');changed();}
   async function save(event: FormEvent) {
     event.preventDefault(); if (!session || busy) return;
     setGroupTouched(true);
@@ -277,21 +277,24 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
   checkNumber('children-count',childrenCount,'儿童人数',0);
   if(!issues['group-size']&&!issues['children-count']&&group&&childrenCount&&Number(childrenCount)>Number(group))issues['children-count']='儿童人数不能超过小组总人数。';
   checkNumber('vehicle-count',vehicles,'车辆数量',1);
-  if(km.trim()&&!/^\d+(\.\d+)?$/.test(km.trim()))issues['estimated-km']='路程请填写非负数字，单位为 km。';
+  if(!systemPreparation&&km.trim()&&!/^\d+(\.\d+)?$/.test(km.trim()))issues['estimated-km']='路程请填写非负数字，单位为 km。';
   equipment.forEach((item,index)=>{
+    if(systemPreparation&&PLAN_RECORD_KEYS.has(item.item_key))return;
     if(!item.label.trim())issues[`gear-name-${index}`]='请填写装备名称。';
     if(!item.unit.trim())issues[`gear-unit-${index}`]='请选择计量单位。';
     checkNumber(`gear-quantity-${index}`,item.quantity,'数量',0);
     checkNumber(`gear-capacity-${index}`,item.capacity,'每件人数容量',1);
   });
-  const guidance=profileGuidance({equipment,transport,vehicles,km,children,childrenCount,experience,group,assumptions},relatedIssues,requestedFocus);
+  const equipmentTypes=EQUIPMENT_TYPES.filter(([key])=>!systemPreparation||!PLAN_RECORD_KEYS.has(key));
+  const editableEquipment=(item:EquipmentForm)=>item.item_key!=='vehicle'&&(!systemPreparation||!PLAN_RECORD_KEYS.has(item.item_key));
+  const guidance=profileGuidance({equipment,transport,vehicles,km,children,childrenCount,experience,group,assumptions,systemPreparation},relatedIssues,requestedFocus);
   const guidanceIds=profileCorrectionTargets(guidance,equipment);
   const problemIds=Object.keys(issues);
   useEffect(()=>{
     if(!loaded||!relatedLoaded||!activeFocus||focusDone.current===activeFocus)return;
-    const id=profileFocusId(activeFocus,equipment,transport); if(id==='add-equipment')return;
+    const id=profileFocusId(activeFocus,equipment,transport,systemPreparation); if(id==='add-equipment')return;
     if(id&&focusProfileTargets([id]))focusDone.current=activeFocus;
-  },[loaded,relatedLoaded,activeFocus,equipment,transport]);
+  },[loaded,relatedLoaded,activeFocus,equipment,transport,systemPreparation]);
   const saveHint=busy?'正在保存资料…':!dirty?revision?(returnPlan?'资料已保存，可以返回方案重新规划。':'资料已保存，可以继续填写需求。'):demoAvailable?'填写自己的资料，或展开下方资料样例。':'填写自己的资料，保存后继续。':problemIds.length?`${issues[problemIds[0]]}${problemIds.length>1?` 另有 ${problemIds.length-1} 项需要修改。`:''}`:'有未保存的修改，请保存后继续。';
   return <div className="onboarding-page"><TripFlow step={1}/><div className="onboarding-heading"><div><span className="eyebrow">同行资料</span><h1>为同行的人做好准备。</h1><p>填写小组、交通与已有装备，让计划更贴合你们。</p></div>{loaded&&<span className="onboarding-status">{dirty?'有未保存修改':revision?'资料已保存':'开始填写'}</span>}</div>
     {error&&<p className="error-box" role="alert">{error}</p>}{message&&<p className="success-box" role="status">{message}</p>}
@@ -302,7 +305,7 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
     </section>}
     {relatedError&&<div className="error-box" role="alert"><p>{relatedError}</p><button type="button" className="secondary-button" onClick={()=>setIssueRetry(value=>value+1)}>重新载入</button></div>}
     {!loaded?<section className="panel"><p>正在读取资料…</p><button className="secondary-button" onClick={()=>setRefresh(value=>value+1)}>重新读取</button></section>:<form className="profile-form" onSubmit={save}><fieldset disabled={busy}>
-      <div className="profile-intro"><span>填写自己的露营资料</span><p>不确定的数量、容量和路程可以留空，后续评估会提示需要补充的信息。</p></div>
+      <div className="profile-intro"><span>填写自己的露营资料</span><p>不确定的数量与容量可以留空，后续评估会提示需要补充的信息。</p></div>
       {demoAvailable&&<details className="demo-profile-option"><summary>想先体验？使用资料样例</summary><div><p>样例包含两位同行者、交通安排与装备。载入后请核对并保存。</p><button type="button" className="secondary-button" onClick={loadDemo}>载入资料样例</button></div></details>}
       <div className="bottom-grid profile-main-grid"><section className="panel"><div className="section-title"><span className="eyebrow">同行小组</span><h2>小组信息</h2></div><div className="form-grid">
         <GroupSizeField value={group} error={issues['group-size']} guidance={guidance['group-size']} revealValidation={groupTouched} onTouch={()=>setGroupTouched(true)} onChange={value=>{setGroup(value);changed();}}/>
@@ -310,16 +313,16 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
         <div><label htmlFor="has-children">是否有儿童</label><select id="has-children" aria-invalid={!!guidance['has-children']} aria-describedby="has-children-hint" value={children} onChange={event=>{setChildren(event.target.value);if(event.target.value==='no')setChildrenCount('0');changed();}}><option value="unknown">尚未明确</option><option value="yes">有儿童</option><option value="no">没有儿童</option></select><FieldHint id="has-children-hint" error={guidance['has-children']}/></div>
         <div><label htmlFor="children-count">儿童人数</label><input id="children-count" type="number" min="0" step="1" value={childrenCount} disabled={children==='no'} aria-invalid={!!(issues['children-count']||guidance['children-count'])} aria-describedby="children-hint" onChange={event=>{setChildrenCount(event.target.value);changed();}}/><FieldHint id="children-hint" error={issues['children-count']??guidance['children-count']}>{children==='no'?'已记录为 0 人。':'计入小组总人数；未知可留空。'}</FieldHint></div>
       </div><label htmlFor="accessibility">无障碍及其他同行需求（每行一项）</label><textarea id="accessibility" value={accessibility} placeholder="例如：需要无台阶通道" onChange={event=>{setAccessibility(event.target.value);changed();}}/></section>
-      <section className="panel"><div className="section-title"><span className="eyebrow">出行交通</span><h2>交通安排</h2></div><TransportModeField value={transport} supported={supportedModes} onChange={changeTransport} error={transportContextError} guidance={guidance.transport}/><div className="form-grid">
+      <section className="panel"><div className="section-title"><span className="eyebrow">出行交通</span><h2>交通安排</h2></div><TransportModeField value={transport} supported={supportedModes} onChange={changeTransport} error={transportContextError} guidance={guidance.transport} systemPreparation={systemPreparation}/><div className="form-grid">
         {transport==='CAR'&&<div><span>车辆总数</span><output id="vehicle-count" className="vehicle-total">{vehicles?`${vehicles} 辆`:'待填写'}</output><FieldHint id="vehicles-hint" error={guidance['vehicle-count']}>根据下方车辆数量自动汇总。</FieldHint></div>}
-        <div><label htmlFor="estimated-km">预计总路程 km</label><input id="estimated-km" inputMode="decimal" pattern="[0-9]+([.][0-9]+)?" value={km} aria-invalid={!!(issues['estimated-km']||guidance['estimated-km'])} aria-describedby="km-hint" onChange={event=>{setKm(event.target.value);changed();}}/><FieldHint id="km-hint" error={issues['estimated-km']??guidance['estimated-km']}>填写总路程，未知可留空。</FieldHint></div>
-      </div>{(transport==='CAR'||equipment.some(item=>item.item_key==='vehicle'))&&<VehicleFields equipment={equipment} issues={issues} guidance={guidance} onChange={updateEquipment} onRemove={removeEquipment} onAdd={()=>replaceEquipment([...equipment,{item_key:'vehicle',label:'车辆',quantity:'',unit:'vehicle',capacity:'',confirmed:false}])}/>}<label htmlFor="transport-assumptions">{transport==='PUBLIC_TRANSPORT'?'已核对的往返与最后接驳安排（每行一项）':'路程与交通说明（每行一项）'}</label><textarea id="transport-assumptions" value={assumptions} aria-invalid={!!guidance['transport-assumptions']} aria-describedby="transport-assumptions-hint" placeholder={transport==='PUBLIC_TRANSPORT'?'去程：出发点与换乘方式；返程：离开安排；最后接驳：下车或下船后如何到营地。未知内容请注明待确认。':'例如：往返合计，使用自己的车辆'} onChange={event=>{setAssumptions(event.target.value);changed();}}/><FieldHint id="transport-assumptions-hint" error={guidance['transport-assumptions']}>{transport==='PUBLIC_TRANSPORT'?'另请在下方交通连接计划中登记一份计划；只有核实安排后才勾选确认。未知信息可以先保存，正式检查会保留缺项。':undefined}</FieldHint></section></div>
+        {!systemPreparation&&<div><label htmlFor="estimated-km">预计总路程 km</label><input id="estimated-km" inputMode="decimal" pattern="[0-9]+([.][0-9]+)?" value={km} aria-invalid={!!(issues['estimated-km']||guidance['estimated-km'])} aria-describedby="km-hint" onChange={event=>{setKm(event.target.value);changed();}}/><FieldHint id="km-hint" error={issues['estimated-km']??guidance['estimated-km']}>填写总路程，未知可留空。</FieldHint></div>}
+      </div>{(transport==='CAR'||!systemPreparation&&equipment.some(item=>item.item_key==='vehicle'))&&<VehicleFields equipment={equipment} issues={issues} guidance={guidance} onChange={updateEquipment} onRemove={removeEquipment} onAdd={()=>replaceEquipment([...equipment,{item_key:'vehicle',label:'车辆',quantity:'',unit:'vehicle',capacity:'',confirmed:false}])}/>}{!systemPreparation&&<><label htmlFor="transport-assumptions">{transport==='PUBLIC_TRANSPORT'?'已核对的往返与最后接驳安排（每行一项）':'路程与交通说明（每行一项）'}</label><textarea id="transport-assumptions" value={assumptions} aria-invalid={!!guidance['transport-assumptions']} aria-describedby="transport-assumptions-hint" placeholder={transport==='PUBLIC_TRANSPORT'?'去程：出发点与换乘方式；返程：离开安排；最后接驳：下车或下船后如何到营地。未知内容请注明待确认。':'例如：往返合计，使用自己的车辆'} onChange={event=>{setAssumptions(event.target.value);changed();}}/><FieldHint id="transport-assumptions-hint" error={guidance['transport-assumptions']}>{transport==='PUBLIC_TRANSPORT'?'另请在下方交通连接计划中登记一份计划；只有核实安排后才勾选确认。未知信息可以先保存，正式检查会保留缺项。':undefined}</FieldHint></>}</section></div>
       <CookingPreparationPanel value={cooking} preview={cookingPreview?.value} stale={!!cookingPreview&&cookingPreview.signature!==cookingSignature}
         onCheck={checkCooking} busy={cookingBusy} error={cookingError} onFocus={key=>{const index=equipment.findIndex(item=>item.item_key===key);const node=document.getElementById(`gear-quantity-${index}`);node?.focus();node?.scrollIntoView({block:'center'});}}/>
-      <section className="panel equipment-panel"><div className="panel-title"><div><span className="eyebrow">装备准备</span><h2>已有装备 <small>{equipment.filter(item=>item.item_key!=='vehicle').length} 项</small></h2></div><button id="add-equipment" type="button" className="secondary-button" onClick={()=>{const key=activeFocus.split('.')[1];const type=EQUIPMENT_TYPES.find(([value])=>value===key&&value!=='vehicle')??EQUIPMENT_TYPES[0];focusDone.current='';setEquipment(items=>addEquipment(items,type[0],datasetVersion));changed();}}>添加装备</button></div><p className="field-hint">类别用于装备检查，名称用于区分同类物品，可改为“三人帐”“单人帐”等。不同容量请分行添加；每行数量表示该名称下有几件物品。帐篷按顶、水按升、餐食按份记录；仅“其他装备”可选择单位。勾选确认拥有的装备。</p>
-        {!equipment.some(item=>item.item_key!=='vehicle')&&<div className="equipment-empty"><span aria-hidden="true">＋</span><p>还没有登记装备</p><small>添加已有物品；不确定的数量可以留空。</small></div>}
-        {equipment.map((item,index)=>item.item_key==='vehicle'?null:<article className={Object.keys(guidance).some(id=>id.startsWith('gear-')&&id.endsWith('-'+index))?'equipment-card equipment-card-needed':'equipment-card'} key={index}><header><span className="equipment-number">{String(equipment.slice(0,index).filter(row=>row.item_key!=='vehicle').length+1).padStart(2,'0')}</span><h3>{item.label||'未命名装备'}</h3><button type="button" className="text-button" aria-label={`移除装备 ${index+1}`} onClick={()=>removeEquipment(index)}>移除</button></header><div className="equipment-fields">
-          <div><label htmlFor={`gear-type-${index}`}>类别</label><select id={`gear-type-${index}`} aria-label={`装备 ${index+1} 类别`} value={item.item_key} onChange={event=>replaceEquipment(changeEquipmentCategory(equipment,index,event.target.value,datasetVersion))}>{EQUIPMENT_TYPES.filter(([key])=>key!=='vehicle').map(([key,label])=><option key={key} value={key}>{label}</option>)}{!EQUIPMENT_TYPES.some(([key])=>key===item.item_key)&&<option value={item.item_key}>{item.label}</option>}</select></div>
+      <section className="panel equipment-panel"><div className="panel-title"><div><span className="eyebrow">装备准备</span><h2>已有装备 <small>{equipment.filter(editableEquipment).length} 项</small></h2></div><button id="add-equipment" type="button" className="secondary-button" onClick={()=>{const key=activeFocus.split('.')[1];const type=equipmentTypes.find(([value])=>value===key&&value!=='vehicle')??equipmentTypes[0];focusDone.current='';setEquipment(items=>addEquipment(items,type[0],datasetVersion));changed();}}>添加装备</button></div><p className="field-hint">类别用于装备检查，名称用于区分同类物品，可改为“三人帐”“单人帐”等。不同容量请分行添加；每行数量表示该名称下有几件物品。帐篷按顶、水按升、餐食按份记录；仅“其他装备”可选择单位。勾选确认拥有的装备。</p>
+        {!equipment.some(editableEquipment)&&<div className="equipment-empty"><span aria-hidden="true">＋</span><p>还没有登记装备</p><small>添加已有物品；不确定的数量可以留空。</small></div>}
+        {equipment.map((item,index)=>!editableEquipment(item)?null:<article className={Object.keys(guidance).some(id=>id.startsWith('gear-')&&id.endsWith('-'+index))?'equipment-card equipment-card-needed':'equipment-card'} key={index}><header><span className="equipment-number">{String(equipment.slice(0,index).filter(editableEquipment).length+1).padStart(2,'0')}</span><h3>{item.label||'未命名装备'}</h3><button type="button" className="text-button" aria-label={`移除装备 ${index+1}`} onClick={()=>removeEquipment(index)}>移除</button></header><div className="equipment-fields">
+          <div><label htmlFor={`gear-type-${index}`}>类别</label><select id={`gear-type-${index}`} aria-label={`装备 ${index+1} 类别`} value={item.item_key} onChange={event=>replaceEquipment(changeEquipmentCategory(equipment,index,event.target.value,datasetVersion))}>{equipmentTypes.filter(([key])=>key!=='vehicle').map(([key,label])=><option key={key} value={key}>{label}</option>)}{!EQUIPMENT_TYPES.some(([key])=>key===item.item_key)&&<option value={item.item_key}>{item.label}</option>}</select></div>
           <div><label htmlFor={`gear-name-${index}`}>名称</label><input id={`gear-name-${index}`} aria-label={`装备 ${index+1} 名称`} required value={item.label} aria-invalid={!!(issues[`gear-name-${index}`]||guidance[`gear-name-${index}`])} aria-describedby={`gear-name-hint-${index}`} onChange={event=>updateEquipment(index,{label:event.target.value})}/><FieldHint id={`gear-name-hint-${index}`} error={issues[`gear-name-${index}`]??guidance[`gear-name-${index}`]}/></div>
           <div><label htmlFor={`gear-quantity-${index}`}>数量</label><input id={`gear-quantity-${index}`} aria-label={`装备 ${index+1} 数量`} type="number" min="0" step="1" value={item.quantity} aria-invalid={!!(issues[`gear-quantity-${index}`]||guidance[`gear-quantity-${index}`])} aria-describedby={`gear-quantity-hint-${index}`} placeholder="未知" onChange={event=>updateEquipment(index,{quantity:event.target.value})}/><FieldHint id={`gear-quantity-hint-${index}`} error={issues[`gear-quantity-${index}`]??guidance[`gear-quantity-${index}`]}>{item.item_key==='vehicle'?'填写本次实际可用的车辆数，不含尚未落实的借车。':undefined}</FieldHint></div>
           <EquipmentUnitField item={item} index={index} datasetVersion={datasetVersion} error={issues[`gear-unit-${index}`]??guidance[`gear-unit-${index}`]} onChange={unit=>updateEquipment(index,{unit})}/>
@@ -345,9 +348,10 @@ export function ProfileCorrectionStatus({ready,loading,failed,targets,dirty,retu
   </>;
 }
 
-export function ProfileSummary({ profile }: { profile: Profile | null }) {
+export function ProfileSummary({ profile, systemPreparation=false }: { profile: Profile | null;systemPreparation?:boolean }) {
   if (!profile) return <p>尚无资料快照，请先填写露营资料。</p>;
-  const gear=profile.equipment.filter(item=>!['vehicle','charged_phone'].includes(item.item_key));
+  const gear=profile.equipment.filter(item=>!['vehicle','charged_phone'].includes(item.item_key)&&(!systemPreparation||!PLAN_RECORD_KEYS.has(item.item_key)));
+  const historicalPlans=profile.equipment.filter(item=>PLAN_RECORD_KEYS.has(item.item_key));
   const fleet=profile.equipment.filter(item=>item.item_key==='vehicle');
-  return <><dl className="summary-list"><div><dt>小组人数</dt><dd>{profile.group_size ?? '未知'}</dd></div><div><dt>露营经验</dt><dd>{Object.fromEntries(LEVELS)[canonical(profile.experience_level, LEVELS)] ?? profile.experience_level ?? '未知'}</dd></div><div><dt>儿童情况</dt><dd>{profile.has_children === false ? '没有儿童' : profile.has_children === true ? `有儿童，人数 ${profile.children_count ?? '未知'}` : `尚未明确${profile.children_count === null ? '' : `，登记人数 ${profile.children_count}`}`}</dd></div><div><dt>交通方式</dt><dd>{Object.fromEntries(MODES)[canonical(profile.transport.transport_type, MODES)] ?? profile.transport.transport_type ?? '未知'}</dd></div><div><dt>车辆 / 总路程</dt><dd>{profile.transport.vehicle_count ?? '未知'} 辆 / {profile.transport.estimated_km ?? '未知'} km</dd></div></dl>{fleet.length>0&&<><h3>车辆安排</h3><ul>{fleet.map((item,index)=><li key={index}>{item.quantity??'未知'} 辆，每辆 {item.capacity_persons??'未知'} 人（含驾驶员），{item.confirmed?'已确认可用':'尚未确认'}</li>)}</ul></>}<h3>登记装备</h3>{gear.length === 0 ? <p className="muted">未登记，尚未进行装备评估。</p> : <ul className="equipment-summary">{gear.map((item,index) => <li key={index}>{item.label||equipmentLabel(item.item_key)}：{item.quantity ?? '未知'} {item.item_key==='tent'?'顶':unitLabel(item.unit)}，{item.item_key==='tent'?'每顶可住人数':'每件人数容量'} {item.capacity_persons ?? '未知'}{item.item_key==='tent'&&item.unit==='item'&&item.quantity!==null&&item.capacity_persons!==null?`，该行总住宿容量 ${item.quantity*item.capacity_persons} 人`:''}，{item.confirmed ? '已核实拥有' : '未核实'}</li>)}</ul>}{profile.accessibility_requirements.length > 0 && <><h3>同行需求</h3><ul>{profile.accessibility_requirements.map((item,index) => <li key={index}>{termLabel(item,'accessibility')}</li>)}</ul></>}{profile.transport.assumptions.length > 0 && <><h3>交通估算说明</h3><ul>{profile.transport.assumptions.map((item,index) => <li key={index}>{item}</li>)}</ul></>}</>;
+  return <><dl className="summary-list"><div><dt>小组人数</dt><dd>{profile.group_size ?? '未知'}</dd></div><div><dt>露营经验</dt><dd>{Object.fromEntries(LEVELS)[canonical(profile.experience_level, LEVELS)] ?? profile.experience_level ?? '未知'}</dd></div><div><dt>儿童情况</dt><dd>{profile.has_children === false ? '没有儿童' : profile.has_children === true ? `有儿童，人数 ${profile.children_count ?? '未知'}` : `尚未明确${profile.children_count === null ? '' : `，登记人数 ${profile.children_count}`}`}</dd></div><div><dt>交通方式</dt><dd>{Object.fromEntries(MODES)[canonical(profile.transport.transport_type, MODES)] ?? profile.transport.transport_type ?? '未知'}</dd></div>{(!systemPreparation||profile.transport.transport_type==='CAR')&&<div><dt>{systemPreparation?'车辆数量':'车辆 / 总路程'}</dt><dd>{profile.transport.vehicle_count ?? '未知'} 辆{!systemPreparation&&<> / {profile.transport.estimated_km ?? '未知'} km</>}</dd></div>}</dl>{fleet.length>0&&(!systemPreparation||profile.transport.transport_type==='CAR')&&<><h3>车辆安排</h3><ul>{fleet.map((item,index)=><li key={index}>{item.quantity??'未知'} 辆，每辆 {item.capacity_persons??'未知'} 人（含驾驶员），{item.confirmed?'已确认可用':'尚未确认'}</li>)}</ul></>}<h3>登记装备</h3>{gear.length === 0 ? <p className="muted">未登记，尚未进行装备评估。</p> : <ul className="equipment-summary">{gear.map((item,index) => <li key={index}>{item.label||equipmentLabel(item.item_key)}：{item.quantity ?? '未知'} {item.item_key==='tent'?'顶':unitLabel(item.unit)}，{item.item_key==='tent'?'每顶可住人数':'每件人数容量'} {item.capacity_persons ?? '未知'}{item.item_key==='tent'&&item.unit==='item'&&item.quantity!==null&&item.capacity_persons!==null?`，该行总住宿容量 ${item.quantity*item.capacity_persons} 人`:''}，{item.confirmed ? '已核实拥有' : '未核实'}</li>)}</ul>}{profile.accessibility_requirements.length > 0 && <><h3>同行需求</h3><ul>{profile.accessibility_requirements.map((item,index) => <li key={index}>{termLabel(item,'accessibility')}</li>)}</ul></>}{!systemPreparation&&profile.transport.assumptions.length > 0 && <><h3>交通估算说明</h3><ul>{profile.transport.assumptions.map((item,index) => <li key={index}>{item}</li>)}</ul></>}{systemPreparation&&historicalPlans.length>0&&<details><summary>旧版计划登记记录（仅供历史回看）</summary><ul>{historicalPlans.map((item,index)=><li key={index}>{item.label}：{item.quantity??'未知'} {unitLabel(item.unit)}，{item.confirmed?'原登记已确认':'原登记未确认'}</li>)}</ul><p>本次不将这些记录作为装备或可达证明。</p></details>}</>;
 }

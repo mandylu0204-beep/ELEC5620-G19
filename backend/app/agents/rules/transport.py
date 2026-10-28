@@ -4,13 +4,14 @@ from ...contracts.enums import ErrorCode
 from ...contracts.errors import ContractError, ContractFailure
 
 POLICY_KEY = 'b_transport_policy'
-POLICY_VERSION = 'public-transport-minimal-1'
+MINIMAL_POLICY_VERSION = 'public-transport-minimal-1'
+POLICY_VERSION = 'system-trip-preparation-2'
 SUPPORTED_MODES = ('CAR', 'PUBLIC_TRANSPORT')
 
 
 def checked_policy(value):
     # Absent marker means historical behavior, never silently upgrade it.
-    if value not in {None, POLICY_VERSION}:
+    if value not in {None, MINIMAL_POLICY_VERSION, POLICY_VERSION}:
         raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT,
             message='交通检查规则版本不受支持，请联系项目负责人。'))
     return value
