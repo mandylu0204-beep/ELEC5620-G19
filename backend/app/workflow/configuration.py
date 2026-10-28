@@ -76,6 +76,11 @@ class WorkflowConfiguration:
             self._context = self._context.model_copy(update={
                 'rules_version': self._context.rules_version + '/' + transport_policy})
         self._scenarios = tuple(selected)
+        from ..llm.safety_feedback import POLICY_KEY as FEEDBACK_KEY, checked_policy as feedback_policy
+        action_feedback = feedback_policy(base.selection_config.get(FEEDBACK_KEY))
+        if action_feedback is not None:
+            self._context = self._context.model_copy(update={
+                'rules_version': self._context.rules_version + '/' + action_feedback})
         self._feedback = feedback
         self._selector = getattr(dataset, 'trip_evidence_selector', None)
         if self._selector is not None:

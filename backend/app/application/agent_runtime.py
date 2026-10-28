@@ -18,6 +18,8 @@ from ..contracts.ports import AgentPort
 from .agent_registry import create_agent
 from .datasets import DatasetDescriptor, inspect_dataset, scenario_path
 from ..agents.rules.transport import POLICY_KEY, POLICY_VERSION, MINIMAL_POLICY_VERSION, checked_policy
+from ..llm.safety_feedback import (POLICY_KEY as FEEDBACK_KEY, POLICY_VERSION as FEEDBACK_VERSION,
+    checked_policy as checked_feedback)
 
 
 @dataclass(frozen=True)
@@ -233,13 +235,14 @@ class AgentRuntime:
             except ContractFailure as exc:
                 self.error = exc.error
 
-    def resolve(self, *, feedback=None, snapshot_day=None, safety_protocol=None, transport_policy=POLICY_VERSION):
+    def resolve(self, *, feedback=None, snapshot_day=None, safety_protocol=None, transport_policy=POLICY_VERSION,
+                safety_feedback_policy=FEEDBACK_VERSION):
         # HTTP reads run in worker threads while the supervisor runs on asyncio.
         # Keep the managed Agent marker and state.agent replacement consistent.
         with self._lock:
             with self._parsed_snapshots.transaction():
                 return self._resolve(feedback=feedback, snapshot_day=snapshot_day, safety_protocol=safety_protocol,
-                    transport_policy=transport_policy)
+                    transport_policy=transport_policy, safety_feedback_policy=safety_feedback_policy)
 
     def for_scope(self, scope):
         choices=scope.dataset_context.selection_config
@@ -265,9 +268,10 @@ class AgentRuntime:
                 # Reconstruct the registered protocol only. All other current
                 # flags, client configuration, bytes and scope checks still run.
                 return self.resolve(feedback=choices.get('a_revision_feedback') or None,
-                    snapshot_day=pinned, safety_protocol=protocol, transport_policy=choices.get(POLICY_KEY))
+                    snapshot_day=pinned, safety_protocol=protocol, transport_policy=choices.get(POLICY_KEY),
+                    safety_feedback_policy=choices.get(FEEDBACK_KEY))
         return self.resolve(feedback=choices.get('a_revision_feedback') or None, snapshot_day=pinned,
-            transport_policy=choices.get(POLICY_KEY))
+            transport_policy=choices.get(POLICY_KEY), safety_feedback_policy=choices.get(FEEDBACK_KEY))
 
     def validate_scope(self, scope):
         # Internal legacy fixtures predate runtime bindings. All HTTP-created
@@ -280,8 +284,10 @@ class AgentRuntime:
             raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='本次运行的数据、配置或时钟已变化，请重新评估。'))
         return snapshot
 
-    def _resolve(self, *, feedback=None, snapshot_day=None, safety_protocol=None, transport_policy=POLICY_VERSION):
+    def _resolve(self, *, feedback=None, snapshot_day=None, safety_protocol=None, transport_policy=POLICY_VERSION,
+                 safety_feedback_policy=FEEDBACK_VERSION):
         checked_policy(transport_policy)
+        checked_feedback(safety_feedback_policy)
         settings = self.state.settings
         if safety_protocol is not None:
             if safety_protocol not in {'standard', 'compact'}:
@@ -308,6 +314,13 @@ class AgentRuntime:
         if managed:
             choices = {key: value for key, value in descriptor.context.selection_config.items() if key != 'a_revision_feedback'}
             choices['a_runtime_bound'] = '1'
+            if settings.safety_execution == 'model' and descriptor.context.dataset_version == '2.2.0':
+                if safety_feedback_policy is not None:
+                    if choices.get(FEEDBACK_KEY, safety_feedback_policy) != safety_feedback_policy:
+                        raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='安全反馈策略登记冲突。'))
+                    choices[FEEDBACK_KEY] = safety_feedback_policy
+                elif FEEDBACK_KEY in choices:
+                    raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='旧运行不能采用新的安全反馈策略。'))
             if descriptor.context.dataset_version.startswith('2.'):
                 if transport_policy == POLICY_VERSION and descriptor.context.dataset_version != '2.2.0':
                     transport_policy = MINIMAL_POLICY_VERSION

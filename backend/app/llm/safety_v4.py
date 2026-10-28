@@ -14,6 +14,7 @@ from ..contracts.dto import SafetyInput,SafetyResult
 from ..contracts.enums import ErrorCode
 from ..contracts.errors import ContractFailure
 from ..agents.rules.common import RULES_VERSION
+from .safety_feedback import POLICY_KEY as FEEDBACK_KEY, correction_result
 
 AGENT_VERSION = 'campus-safety-advisory-agent-4'
 TOOL_VERSION = 'safety-read-only-tools-4'
@@ -149,6 +150,7 @@ class SafetyAgent(V3Agent):
                 'demo_context':input.demo_context.model_dump(mode='json')})}]
         calls,hashes,served,usage = [],[],[],{}
         last_proposal,last_plan = None,None
+        correction_used = False
         attempts,started = 0,time.monotonic()
         for turn in range(1,self.client.settings.max_turns+1):
             try:
@@ -168,7 +170,10 @@ class SafetyAgent(V3Agent):
                 served.append(response.served_model)
             for key,value in response.usage.items():
                 usage[key] = usage.get(key,0)+value
-            action = parse_compact_action(response.content)
+            try:
+                action = parse_compact_action(response.content)
+            except ContractFailure as exc:
+                raise self._diagnostic_failure(exc, response, turn, attempts, started) from None
             if turn==1 and not isinstance(action,ReadSafetyFactsAction):
                 raise model_failure('Compact model must first read facts.',code=ErrorCode.CONTRACT_INVALID)
             if isinstance(action,FinalCompactAction):
@@ -188,7 +193,22 @@ class SafetyAgent(V3Agent):
             if isinstance(action,ReadSafetyFactsAction):
                 output = tools.read_safety_facts()
             elif isinstance(action,EvaluateCompactAction):
-                last_plan = tools.evaluate_compact_plan(action.arguments)
+                try:
+                    last_plan = tools.evaluate_compact_plan(action.arguments)
+                except ContractFailure as exc:
+                    feedback = correction_result(exc.error, tools, compact=True,
+                        policy=self.configuration.context.selection_config.get(FEEDBACK_KEY),
+                        turn=turn, max_turns=self.client.settings.max_turns, already_used=correction_used)
+                    if feedback is not None:
+                        self._diagnostic_failure(exc, response, turn, attempts, started)
+                        correction_used = True
+                        last_proposal, last_plan = None, None
+                        calls.append(action.name)
+                        messages.extend([{'role':'assistant','content':canonical(action.model_dump(mode='json'))},
+                            {'role':'user','content':'TOOL_RESULT='+canonical(feedback)}])
+                        continue
+                    raise self._diagnostic_failure(exc, response, turn, attempts, started,
+                        stage='SAFETY_PROPOSAL_VALIDATION') from None
                 last_proposal = canonical(action.arguments.model_dump(mode='json'))
                 output = {'tool':'evaluate_safety_plan','read_only':True,
                     'evaluated_proposal':action.arguments.model_dump(mode='json'),

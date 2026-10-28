@@ -1,5 +1,6 @@
 """Opt-in standalone campus safety adviser. No persistence or registration."""
 from dataclasses import dataclass
+import logging
 import time
 
 from ..agents.rules import safety
@@ -15,6 +16,9 @@ from .safety_schema import (SAFETY_ACTION, SAFETY_TOOL_VERSION, EvaluateSafetyAc
     ReadSafetyFactsAction, SafetyTrace, canonical, parse_safety_action)
 from .safety_tools import SafetyToolset, ValidatedSafetyPlan, check_payload_size
 from .safety_validation import validate_safety_payload
+from .safety_feedback import POLICY_KEY as FEEDBACK_KEY, correction_result
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -38,6 +42,15 @@ class SafetyAgent:
     compose_identity = staticmethod(compose_safety_identity)
     make_identity_seed = staticmethod(safety_identity_seed)
     validate_payload = staticmethod(validate_safety_payload)
+
+    def _diagnostic_failure(self, exc, response, turn, attempts, started, *, stage='SAFETY_ACTION_PARSE'):
+        context = {**exc.error.context, 'role': 'SAFETY', 'safety_turn': str(turn),
+            'safety_protocol': self.tool_version, 'http_attempts': str(attempts),
+            'elapsed_ms': str(int((time.monotonic()-started)*1000)),
+            'response_bytes': str(len(response.content.encode('utf-8', errors='replace')))}
+        context.setdefault('failure_stage', stage)
+        logger.warning('Safety validation failed: %s', canonical(context))
+        return ContractFailure(exc.error.model_copy(update={'context': context}))
 
     def __init__(self, dataset, client, *, workflow_configuration):
         self.dataset, self.client, self.configuration = dataset, client, workflow_configuration
@@ -115,6 +128,7 @@ class SafetyAgent:
                 'demo_context':input.demo_context.model_dump(mode='json')})}]
         calls, hashes, served, usage = [], [], [], {}
         last_proposal, last_plan = None, None
+        correction_used = False
         attempts, started = 0, time.monotonic()
         for turn in range(1,self.client.settings.max_turns+1):
             try:
@@ -134,7 +148,10 @@ class SafetyAgent:
                 served.append(response.served_model)
             for key,value in response.usage.items():
                 usage[key] = usage.get(key,0)+value
-            action = parse_safety_action(response.content)
+            try:
+                action = parse_safety_action(response.content)
+            except ContractFailure as exc:
+                raise self._diagnostic_failure(exc, response, turn, attempts, started) from None
             if turn == 1 and not isinstance(action,ReadSafetyFactsAction):
                 raise model_failure('Safety model must first read the registered facts.',code=ErrorCode.CONTRACT_INVALID)
             if isinstance(action,FinalSafetyAction):
@@ -153,7 +170,22 @@ class SafetyAgent:
             if isinstance(action,ReadSafetyFactsAction):
                 output = tools.read_safety_facts()
             elif isinstance(action,EvaluateSafetyAction):
-                last_plan = tools.evaluate_safety_plan(action.arguments)
+                try:
+                    last_plan = tools.evaluate_safety_plan(action.arguments)
+                except ContractFailure as exc:
+                    feedback = correction_result(exc.error, tools, compact=False,
+                        policy=self.configuration.context.selection_config.get(FEEDBACK_KEY),
+                        turn=turn, max_turns=self.client.settings.max_turns, already_used=correction_used)
+                    if feedback is not None:
+                        self._diagnostic_failure(exc, response, turn, attempts, started)
+                        correction_used = True
+                        last_proposal, last_plan = None, None
+                        calls.append(action.name)
+                        messages.extend([{'role':'assistant','content':canonical(action.model_dump(mode='json'))},
+                            {'role':'user','content':'TOOL_RESULT='+canonical(feedback)}])
+                        continue
+                    raise self._diagnostic_failure(exc, response, turn, attempts, started,
+                        stage='SAFETY_PROPOSAL_VALIDATION') from None
                 last_proposal = canonical(action.arguments.model_dump(mode='json'))
                 output = {'tool':'evaluate_safety_plan','read_only':True,
                     'evaluated_proposal':action.arguments.model_dump(mode='json'),

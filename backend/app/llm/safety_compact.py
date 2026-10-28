@@ -10,6 +10,7 @@ from .coordinator import digest
 from .safety_schema import (ActionCode, Hash, MAX_FINDINGS, SafetyProposal,
     ReadSafetyFactsAction, ADVICE_SCHEMA_POLICY, canonical, check_advice, encoded_size)
 from .safety_tools import ValidatedSafetyPlan
+from .safety_diagnostics import proposal_failure
 from .safety_v3 import SafetyToolset as V3Tools
 
 CODEC_VERSION = 'safety-lossless-facts-1'
@@ -188,19 +189,26 @@ class CompactSafetyToolset(V3Tools):
         return strict_json(self._compact_json)
 
     def expanded_proposal(self,raw):
+        def failure(stage, **detail):
+            return proposal_failure(stage, aliases=self._full_keys,
+                run_id=self.input.version_context.run_id, **detail)
         try:
             proposal = CompactProposal.model_validate(raw)
-            if (proposal.facts_sha256 != self.facts_sha256
-                    or {item.id for item in proposal.findings} != set(self._full_keys)):
-                raise ValueError('Wrong facts digest or missing/extra finding')
+        except (ValueError, TypeError, KeyError):
+            raise failure('PROPOSAL_SCHEMA') from None
+        if proposal.facts_sha256 != self.facts_sha256:
+            raise failure('FACT_IDENTITY')
+        if {item.id for item in proposal.findings} != set(self._full_keys):
+            raise failure('FINDING_COVERAGE', expected=list(self._full_keys.values()),
+                provided=[self._full_keys.get(item.id, '<unknown_finding>') for item in proposal.findings])
+        try:
             return SafetyProposal(findings=[{'finding_key':self._full_keys[item.id],
                 'action_code':item.action,'interpretation_unverified':item.advice,
                 'action_unverified':item.advice} for item in proposal.findings],
                 action_priority=[self._full_keys[key] for key in proposal.priority],
                 decision_summary_unverified=proposal.summary)
         except (ValueError,TypeError,KeyError):
-            raise model_failure('Compact proposal must cover every grounded finding.',
-                code=ErrorCode.CONTRACT_INVALID) from None
+            raise failure('PROPOSAL_SCHEMA') from None
 
     def evaluate_compact_plan(self,raw):
         return super().evaluate_safety_plan(self.expanded_proposal(raw))

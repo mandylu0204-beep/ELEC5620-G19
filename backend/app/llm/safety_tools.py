@@ -12,6 +12,7 @@ from ..contracts.enums import ErrorCode
 from ..agents.rules.trip_evidence import TripEvidenceSelection, KINDS
 from .client import model_failure
 from .coordinator import digest
+from .safety_diagnostics import proposal_failure
 from .safety_schema import (ActionCode, FactRef, FindingChoice, FindingKey, MAX_FACTS_BYTES,
     MAX_FINDINGS, MAX_INPUT_BYTES, MAX_PAYLOAD_BYTES, MAX_PROPOSAL_BYTES, SafetyProposal, canonical, encoded_size,
     ADVICE_SCHEMA_POLICY)
@@ -208,23 +209,33 @@ class SafetyToolset:
         return json.loads(self._wire_json)
 
     def evaluate_safety_plan(self, raw):
+        def failure(stage, **detail):
+            return proposal_failure(stage, aliases=getattr(self, '_full_keys', None),
+                run_id=self.input.version_context.run_id, **detail)
         try:
             proposal = SafetyProposal.model_validate(raw)
-            by_key = {item.finding_key:item for item in proposal.findings}
-            if set(by_key) != {item.finding_key for item in self._definitions}:
-                raise ValueError('Every canonical finding is required exactly once')
-            findings = []
-            definitions = {item.finding_key:item for item in self._definitions}
-            for choice in proposal.findings:
-                definition = definitions[choice.finding_key]
-                if choice.action_code not in definition.allowed_actions:
-                    raise ValueError('Action is not allowed for this canonical finding')
+        except (ValidationError, ValueError, TypeError, KeyError):
+            raise failure('PROPOSAL_SCHEMA') from None
+        keys = [item.finding_key for item in proposal.findings]
+        definitions = {item.finding_key:item for item in self._definitions}
+        if set(keys) != set(definitions):
+            raise failure('FINDING_COVERAGE', expected=list(definitions), provided=keys)
+        findings = []
+        for choice in proposal.findings:
+            definition = definitions[choice.finding_key]
+            if choice.action_code not in definition.allowed_actions:
+                raise failure('ACTION_NOT_ALLOWED', finding=choice.finding_key,
+                    actual=choice.action_code, allowed=definition.allowed_actions)
+            try:
                 findings.append(SafetyFinding(**choice.model_dump(), fact_refs=list(definition.fact_refs)))
+            except (ValidationError, ValueError, TypeError, KeyError):
+                raise failure('FACT_BINDING', finding=choice.finding_key) from None
+        try:
             return ValidatedSafetyPlan(findings=findings, action_priority=list(proposal.action_priority),
                 decision_summary_unverified=proposal.decision_summary_unverified,
                 source_refs=self.baseline.source_refs)
         except (ValidationError, ValueError, TypeError, KeyError):
-            raise model_failure('Safety proposal omits facts or chooses an unsupported action.', code=ErrorCode.CONTRACT_INVALID) from None
+            raise failure('PLAN_VALIDATION') from None
 
     @staticmethod
     def proposal_hash(proposal):
