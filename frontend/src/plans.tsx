@@ -7,7 +7,7 @@ import { logisticsQuestions, needsMealChoice } from './logistics_guidance';
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { FinalisePanel } from './finalise';
-import { RetryPlanning, ChangePlanning } from './planning';
+import { RetryPlanning, ChangePlanning, revealRevisionPanel } from './planning';
 import { NextSteps } from './next_steps';
 import { ReplanFromProfile } from './replan';
 import { CheckFeedback } from './check_feedback';
@@ -159,6 +159,7 @@ const PLAN_SECTIONS: {id:PlanSection; title:string}[] = [
 export function PlanView({data,error,refresh,current,review=false,snapshot=false,reviewActions}:{data:PlanDetail;error:string;refresh:()=>void;current?:()=>void;review?:boolean;snapshot?:boolean;reviewActions?:ReactNode}) {
   const [section,setSection] = useState<PlanSection>(review?'safety':'itinerary');
   const [adjustOpen,setAdjustOpen] = useState(false);
+  const [revisionChoice,setRevisionChoice] = useState('change campsite');
   const tabRefs = useRef<(HTMLButtonElement|null)[]>([]);
   const prefix = useId().replaceAll(':','');
   const logisticsAssessment = data.assessments.find(item=>item.kind==='LOGISTICS');
@@ -227,7 +228,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
     : ['FINALISED','ELIGIBLE_FOR_FINALISATION'].includes(version?.status??'') ? 'success' : 'neutral';
   const stateText = data.current_inputs_error ? data.current_inputs_state==='UNAVAILABLE'?'检查服务暂不可用':'检查结果待更新' : run&&['PENDING','RUNNING'].includes(run.status) ? run.operation==='REASSESS'?'正在重新检查':label(run.status)
     : run?.status==='FAILED' ? '执行未完成' : noMatch ? '需要调整需求' : version ? planRowState({run_status:run?.status??null,stage:run?.stage??null,version_status:version.status,display_status:data.display_status}) : label(run?.status);
-  useEffect(()=>{setSection(review?'safety':'itinerary');setAdjustOpen(false);},[run?.run_id,version?.version_context.plan_version_id,review]);
+  useEffect(()=>{setSection(review?'safety':'itinerary');setAdjustOpen(false);setRevisionChoice('change campsite');},[run?.run_id,version?.version_context.plan_version_id,review]);
   function keyboardTabs(event:KeyboardEvent<HTMLButtonElement>,index:number) {
     let target=index;
     if(event.key==='ArrowRight')target=(index+1)%PLAN_SECTIONS.length;
@@ -284,12 +285,13 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       {!snapshot&&!review&&run?.is_active&&data.trip_series?.is_current!==false&&!['PENDING','RUNNING'].includes(run.status)&&
         <Link className="text-link" to={'/profile?plan_id='+encodeURIComponent(data.plan.plan_id)+'&focus=equipment.camping_stove'}>一起核对炉具与燃料资料 ↗</Link>}
     </div>}
-    {<LogisticsIssues items={logisticsIssues} disabled={snapshot||review||!run?.is_active||data.trip_series?.is_current===false||['PENDING','RUNNING'].includes(run?.status??'')} onSafety={()=>{setSection('safety');tabRefs.current[3]?.focus();}}/>}
+    {<LogisticsIssues items={logisticsIssues} disabled={snapshot||review||!run?.is_active||data.trip_series?.is_current===false||['PENDING','RUNNING'].includes(run?.status??'')} onSafety={()=>{setSection('safety');tabRefs.current[3]?.focus();}}
+      onRevisionRequested={!review&&!snapshot&&data.revision_available?goal=>{setRevisionChoice(goal);setAdjustOpen(true);revealRevisionPanel(prefix+'-adjust');}:undefined}/>}
     {!review&&!snapshot&&<NextSteps data={data} onRecheck={()=>{setAdjustOpen(true);document.getElementById(prefix+'-adjust')?.scrollIntoView({block:'start'});}}/>}
     {!snapshot&&!review&&data.trip_series&&!data.trip_series.is_current&&<div className="mode-notice">这是本次出行的历史方案，原待办已被后继方案取代；旧审核不授权新结果。{data.trip_series.current_plan_id&&<Link to={'/plans/'+data.trip_series.current_plan_id}>查看当前方案 ↗</Link>}</div>}
     {!snapshot&&!review&&savedFinal&&<div className="saved-plan-notice"><span>{['PENDING','RUNNING'].includes(run?.status??'')?'此前最终方案已保留，本次检查尚未完成':savedFinal.is_current?'当前最终方案已保存':'保留了一份历史最终方案，不代表本次检查通过'}</span><Link className="text-link" to={'/plans/'+savedFinal.plan_id+'/finals/'+savedFinal.final_id}>查看保存的方案 ↗</Link></div>}
     {!review&&!snapshot&&(data.revision_available||data.reassessment_available)&&<details className="plan-adjust" id={prefix+'-adjust'} key={run?.run_id} open={adjustOpen} onToggle={event=>setAdjustOpen(event.currentTarget.open)}>
-      <summary>修改行程或更新检查 <span aria-hidden="true">↗</span></summary><ChangePlanning data={data} refresh={refresh}/>
+      <summary>修改行程或更新检查 <span aria-hidden="true">↗</span></summary><ChangePlanning data={data} refresh={refresh} choice={revisionChoice} onChoiceChange={setRevisionChoice}/>
     </details>}
     {run&&run.operation!=='REASSESS'&&['PENDING','RUNNING'].includes(run.status)&&<div className="plan-live-progress" role="status"><span className="progress-pulse" aria-hidden="true"/><span>正在{label(run.stage)}，完成后会自动更新。</span></div>}
     <div className="plan-tabs" role="tablist" aria-label="方案内容">

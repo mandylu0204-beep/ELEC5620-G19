@@ -17,6 +17,7 @@ const panels=await server.ssrLoadModule('/src/display_panels.tsx');
 const {LogisticsIssues}=await server.ssrLoadModule('/src/logistics_issues.tsx');
 const {TripCoveragePanel}=await server.ssrLoadModule('/src/trip_coverage.tsx');
 const {PlanView,NewPlanPrompt,TripSeriesCard}=await server.ssrLoadModule('/src/plans.tsx');
+const {ChangePlanning,revealRevisionPanel}=await server.ssrLoadModule('/src/planning.tsx');
 const {ProfileAdoptionPreview}=await server.ssrLoadModule('/src/replan.tsx');
 const {RequirementsChangePreview,RequestHistory}=await server.ssrLoadModule('/src/requests.tsx');
 const {historicalReviewNotice}=await server.ssrLoadModule('/src/reviews.tsx');
@@ -28,6 +29,54 @@ const {SessionProvider}=await server.ssrLoadModule('/src/session.tsx');
 const {CookingPreparationPanel,cookingDraft}=await server.ssrLoadModule('/src/cooking_preparation.tsx');
 const render=(component,props)=>renderToStaticMarkup(h(component,props));
 const routed=(component,props)=>renderToStaticMarkup(h(MemoryRouter,null,h(component,props)));
+const budgetIssue={issue_id:'budget',code:'OVER_BUDGET',category:'USER_INPUT',field:'budget_cents',item_key:null,
+  current:34600,required:30000,target:'REQUEST',action_url:'/plans/plan/update?focus=request-budget'};
+test('over-budget task separates lower-cost preparation from changing the confirmed budget',()=>{
+  const calls=[];const props={items:[structuredClone(budgetIssue)],onSafety(){},onRevisionRequested:goal=>calls.push(goal)};
+  const before=structuredClone(props.items);
+  const html=routed(LogisticsIssues,props);
+  assert.match(html,/保持预算，寻找更低费用方案/);assert.match(html,/调整本次预算/);
+  assert.match(html,/href="\/plans\/plan\/update\?focus=request-budget"/);
+  assert.match(html,/确认后才执行/);assert.match(html,/不保证总费用已在预算内/);
+  assert.match(html,/AUD 346\.00/);assert.match(html,/AUD 300\.00/);
+  const buttons=[];
+  function walk(node){
+    if(Array.isArray(node)){node.forEach(walk);return;}
+    if(!node||typeof node!=='object')return;
+    if(node.type==='button')buttons.push(node);
+    walk(node.props?.children);
+  }
+  walk(LogisticsIssues(props));
+  buttons.find(node=>node.props.children==='保持预算，寻找更低费用方案').props.onClick();
+  assert.deepEqual(calls,['cheaper campsite']); // Prepares the existing goal, no command submission.
+  assert.deepEqual(props.items,before);
+});
+test('history and unavailable revision never offer an active lower-cost action',()=>{
+  const props={items:[budgetIssue],onSafety(){},onRevisionRequested(){}};
+  assert.doesNotMatch(routed(LogisticsIssues,{...props,disabled:true}),/保持预算，寻找更低费用方案|href=/);
+  const unavailable=routed(LogisticsIssues,{items:[budgetIssue],onSafety(){}});
+  assert.doesNotMatch(unavailable,/保持预算，寻找更低费用方案/);
+  assert.match(unavailable,/当前不能启动营地修订/);assert.match(unavailable,/调整本次预算/);
+});
+test('budget navigation opens the real revision panel and focuses its editable goal without submitting',()=>{
+  const calls=[];
+  const panel={tagName:'DETAILS',open:false,scrollIntoView:options=>calls.push(options)};
+  const goal={focus:()=>calls.push('focus')};
+  assert.equal(revealRevisionPanel('adjust',id=>id==='adjust'?panel:id==='revision-choice'?goal:null),true);
+  assert.equal(panel.open,true);assert.deepEqual(calls,[{block:'start'},'focus']);
+  assert.equal(revealRevisionPanel('missing',()=>null),false);
+});
+test('cheaper revision confirmation preserves the displayed budget and explains the actual limited strategy',()=>{
+  const data=planFixture();data.run.is_active=true;data.revision_available=true;
+  data.confirmed_context.demo_context={mode:'agent'};
+  const before=structuredClone(data);
+  const html=renderToStaticMarkup(h(MemoryRouter,null,h(SessionProvider,null,h(ChangePlanning,{
+    data,refresh(){},choice:'cheaper campsite',onChoiceChange(){},
+  }))));
+  assert.match(html,/<option value="cheaper campsite" selected=""/);
+  for(const text of ['AUD 300.00','单晚营地费更低','不保证整份方案在预算内','点击确认后才会调用规划模型','确认保持预算并修订方案'])assert.ok(html.includes(text),text);
+  assert.deepEqual(data,before);
+});
 test('transport choices follow backend capabilities, retain unsupported history and never promise live timetable checks',()=>{
   const props={value:'PUBLIC_TRANSPORT',supported:['CAR','PUBLIC_TRANSPORT'],onChange(){},error:''};
   const html=render(TransportModeField,props);
@@ -351,6 +400,21 @@ function planFixture(){
     tent_capacity:tent,logistics_issues:[],can_view_model_diagnostics:false};
 }
 const renderPlan=(data,options={})=>renderToStaticMarkup(h(MemoryRouter,null,h(SessionProvider,null,h(PlanView,{data,error:'',refresh(){},...options}))));
+test('plan budget action follows revision capability and is absent from historical, final and review views',()=>{
+  const value=planFixture();value.run.is_active=true;value.revision_available=true;value.reassessment_available=true;
+  value.current_version_revision=1;value.logistics_issues=[budgetIssue];
+  value.assessments[0].result.total_cents=34600;value.assessments[0].result.budget_difference_cents=4600;
+  const html=renderPlan(value);
+  assert.match(html,/保持预算，寻找更低费用方案/);assert.match(html,/修改行程或更新检查/);
+  const forbidden=structuredClone(value);forbidden.revision_available=false;forbidden.display_status='NEEDS_REVISION';
+  assert.doesNotMatch(renderPlan(forbidden),/保持预算，寻找更低费用方案/);
+  for(const options of [{snapshot:true},{review:true}])
+    assert.doesNotMatch(renderPlan(value,options),/保持预算，寻找更低费用方案/);
+  for(const change of [v=>{v.run.is_active=false;},v=>{v.run.status='RUNNING';},v=>{v.trip_series={is_current:false};}]){
+    const changed=structuredClone(value);change(changed);
+    assert.doesNotMatch(renderPlan(changed),/保持预算，寻找更低费用方案/);
+  }
+});
 test('historical and final plan components use saved tent facts and mark all suggested itinerary times',()=>{
   for(const snapshot of [false,true]){
     const html=renderPlan(planFixture(),{snapshot});

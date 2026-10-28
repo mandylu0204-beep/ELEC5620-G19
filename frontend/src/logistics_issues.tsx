@@ -8,7 +8,7 @@ export type LogisticsIssue = {tent_capacity?:TentCapacity;cooking_preparation?:C
 const COPY:Record<string,[string,string]>={
   TRANSPORT_CONNECTION:['公共交通往返及接驳安排待核对','请在交通说明中记录去程、返程和最后接驳安排，并核对交通连接计划的数量、单位及确认状态。系统不查询实际班次，费用是模拟往返参考，不能视为已订票。'],
   TRANSPORT_ACCESS_DATA:['营地公共交通可达资料不足','系统没有确认该营地的公共交通可达性。请调整营地安排，或由项目负责人维护来源资料；修改个人车辆数量不能解决这个问题。'],
-  OVER_BUDGET:['调整预算或降低费用','估算超过已确认预算。可选择更低成本方案；如修改预算，必须重新确认需求。'],
+  OVER_BUDGET:['调整预算或降低费用','估算超过已确认预算。可保持预算，尝试寻找营地费更低的方案，再重新计算完整费用；这不保证总费用已在预算内。如修改预算，必须重新确认需求。'],
   MEAL_CHOICE:['选择用餐方式','请选择即食餐食或自行烹饪。这会影响食物费用、炉具和燃料需求。'],
   COOKING_ARRANGEMENT:['确认烹饪安排','已选择自行烹饪，但没有核实可用的炉具。请登记真实可用的炉具和数量；如果不做饭，也可改选即食餐食。'],
   DISTANCE:['补充全程预计公里数','请填写所有车辆在整个行程中的行车总公里数，用于计算交通费用。'],
@@ -42,7 +42,7 @@ function factText(value:unknown):string {
   return Object.entries(row).filter(([key,v])=>v!=null&&names[key]).map(([key,v])=>`${names[key]}：${factText(v)}`).join('；')||'未知';
 }
 
-export function LogisticsIssues({items,onSafety,disabled=false,summary=false,onGear}:{items:LogisticsIssue[];onSafety:()=>void;disabled?:boolean;summary?:boolean;onGear?:()=>void}) {
+export function LogisticsIssues({items,onSafety,disabled=false,summary=false,onGear,onRevisionRequested}:{items:LogisticsIssue[];onSafety:()=>void;disabled?:boolean;summary?:boolean;onGear?:()=>void;onRevisionRequested?:(goal:'cheaper campsite')=>void}) {
   if(!items.length)return null;
   if(summary)return <section aria-label="装备问题摘要"><h3>装备与交通问题</h3><ul>{items.map(item=><li key={item.issue_id}>
     {item.item_key==='tent'&&item.tent_capacity?tentSummary(item.tent_capacity):(COPY[item.code]??COPY.UNCLASSIFIED)[0]} → 暂不能保存最终方案 → {(COPY[item.code]??COPY.UNCLASSIFIED)[1]}
@@ -53,7 +53,7 @@ export function LogisticsIssues({items,onSafety,disabled=false,summary=false,onG
     <p>先处理可确认的资料，再核对关联装备和费用。保存后请核对本次更新并明确启动检查；旧检查不会因填写表单而自动通过。</p>
     {disabled&&<p className="muted">当前为历史记录或检查尚未结束，这里只展示当时的缺项。</p>}
     {items.map(item=>{const [title,body]=COPY[item.code]??COPY.UNCLASSIFIED;return <article className="logistics-todo" key={item.issue_id}>
-      <span className="tag">{item.category==='USER_INPUT'?'需要补充信息':item.category==='EQUIPMENT_GAP'?'需要调整安排':'系统资料问题'}</span>
+      <span className="tag">{item.code==='OVER_BUDGET'?'需要调整安排':item.category==='USER_INPUT'?'需要补充信息':item.category==='EQUIPMENT_GAP'?'需要调整安排':'系统资料问题'}</span>
       <h3>{item.item_key==='tent'?'帐篷总住宿容量需要核对':item.item_key&&equipmentLabel(item.item_key)!==item.item_key?equipmentLabel(item.item_key)+' · '+title:title}</h3>
       <p><strong>问题：</strong>{item.item_key==='tent'&&item.tent_capacity?tentSummary(item.tent_capacity):title}</p>
       <p><strong>影响：</strong>本次确认资料与检查仍有缺项，暂不能保存最终方案。</p><p><strong>处理：</strong>{body}</p>
@@ -63,11 +63,13 @@ export function LogisticsIssues({items,onSafety,disabled=false,summary=false,onG
       {!!item.cost_impacts?.length&&<div className="clarifications" aria-label="关联费用"><strong>关联费用，不是另一项无关任务</strong>{item.cost_impacts.map((cost,index)=><p key={index}>{equipmentLabel(cost.item_key)}补缺费用暂无法估算：系统暂无适用单价，完整总费用仍未知。若实际已备齐，采用新资料重新检查后不再需要估算这项补缺费用；不能把未知费用当作零元。</p>)}</div>}
       {!!item.pending_checks?.length?<p className="muted">后续尚待明确：{item.pending_checks.map(check=>equipmentLabel(check.item_key)).join('、')}。这些项目依赖本项资料／选择，暂不能确定具体需求；补充后仍需正式检查。</p>:!!item.affects?.length&&<p className="muted">这个缺项同时影响：{item.affects.map(field=>field.startsWith('equipment.')?equipmentLabel(field.split('.')[1])+'的需求及费用':'相关费用').join('、')}。先补充此项后再检查。</p>}
       {!disabled&&<div className="plan-actions">
+        {item.code==='OVER_BUDGET'&&onRevisionRequested&&<button type="button" className="secondary-button" onClick={()=>onRevisionRequested('cheaper campsite')}>保持预算，寻找更低费用方案</button>}
         {item.action_url&&<Link className="text-link" to={item.action_url}>{item.target==='PROFILE'?`核对${item.item_key?equipmentLabel(item.item_key):'对应'}资料`:item.code==='OVER_BUDGET'?'调整本次预算':'调整本次用餐方式'} ↗</Link>}
         {item.alternate_action_url&&<Link className="text-link" to={item.alternate_action_url}>{item.cooking_preparation?'一起核对炉具与燃料资料':'核对炉具资料'} ↗</Link>}
         {item.arrangement_action_url&&<Link className="text-link" to={item.arrangement_action_url}>调整本次用餐方式 ↗</Link>}
         {item.target==='SAFETY'&&<button className="text-button" onClick={onSafety}>查看资料覆盖与安全信息</button>}
       </div>}
+      {item.code==='OVER_BUDGET'&&!disabled&&<p className="muted">{onRevisionRequested?'降费入口会先打开修订设置；确认后才执行。费用优先级只改变预算分配，不会自动降价。':'当前不能启动营地修订。请先查看运行状态；不要仅为继续操作而提高预算。'}</p>}
     </article>;})}
   </section>;
 }
