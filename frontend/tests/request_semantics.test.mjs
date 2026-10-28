@@ -9,7 +9,7 @@ import {createServer} from 'vite';
 const server=await createServer({configFile:false,envDir:false,appType:'custom',
   server:{middlewareMode:true,hmr:false,ws:false,watch:null},optimizeDeps:{noDiscovery:true}});
 after(()=>server.close());
-const {requestPayload,requestDraftFromRecord,requestMealPreferences,RequestMeaningSummary,
+const {requestPayload,requestDraftFromRecord,requestMealPreferences,RequestMeaningSummary,requestHistoryTitle,
   clarificationText,requestFieldRoot,requestClarificationField}=await server.ssrLoadModule('/src/requests.tsx');
 const draft=(patch={})=>({raw:'准备和我男朋友一起去，想找个安静的地方',destination:'Sydney and Surrounds',
   start:'2026-11-09',nights:'2',days:'',end:'',budget:'320.05',preferences:'',constraints:'',...patch});
@@ -94,4 +94,17 @@ test('missing meal clarification locates the meal selector without redirecting o
 test('conflicting meal clarification locates the selector while unknown indexed preferences retain their textarea',()=>{
   assert.equal(requestClarificationField('preferences','用餐方式同时包含即食餐食和自行烹饪，请明确本次采用哪一种。'),'meal_mode');
   assert.equal(requestClarificationField('preferences[0]','请明确是否希望附近有餐厅。'),'preferences');
+});
+
+test('new structured requests omit prose rather than sending filler text',()=>{
+  const payload=requestPayload(draft({raw:''}));
+  assert.equal(Object.hasOwn(payload,'raw_text'),false);
+  assert.equal(payload.explicit_fields.destination,'Sydney and Surrounds');
+  assert.equal(payload.explicit_fields.budget_cents,32005);
+});
+
+test('structured history names come from real destination and dates without rewriting saved raw text',()=>{
+  const row={raw_text:'',explicit_fields:{destination:'Sydney',start_date:'2026-11-10',duration_nights:2}};
+  assert.equal(requestHistoryTitle(row),'Sydney · 2026-11-10 · 2 晚');assert.equal(row.raw_text,'');
+  assert.equal(requestHistoryTitle({raw_text:'历史原文',explicit_fields:row.explicit_fields}),'历史原文');
 });

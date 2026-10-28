@@ -1,3 +1,5 @@
+import {RequirementChoices,type RequirementCatalogue} from './requirement_choices';
+import {RequirementHelpPanel,type RequirementHelpState} from './requirement_help';
 import { DiscardChanges } from './display_panels';
 import { changedSections } from './display_facts';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
@@ -12,8 +14,8 @@ import { ProfileAdoptionPreview } from './replan';
 import { ReplanSession } from './replan_session';
 import { tripCommandKey,tripUpdatePath } from './trip_update';
 
-type RequestContext = { system_preparation?:boolean; supported_destinations: string[]; execution_mode: string; demo_today: string; planning_available: boolean };
-type Record = { system_preparation?:boolean|null; request_id: string; raw_text: string; explicit_fields: Partial<Requirements>; status: string; revision: number; created_at: string; summary: PreviewResult | null; profile_snapshot: Profile | null; profile_revision: number | null; error: { message:string } | null; confirmed_context: { requirements: Requirements; profile_snapshot: Profile; confirmed_at: string; demo_context: { mode:string } } | null; planning_available:boolean; planning_plan_id?:string|null };
+type RequestContext = { requirement_choices?:RequirementCatalogue; system_preparation?:boolean; supported_destinations: string[]; execution_mode: string; demo_today: string; planning_available: boolean };
+type Record = { summary_origin?:'STRUCTURED_FORM'|'MODEL_INTERPRETATION'|'LEGACY'; requirement_help?:RequirementHelpState|null; system_preparation?:boolean|null; request_id: string; raw_text: string; explicit_fields: Partial<Requirements>; status: string; revision: number; created_at: string; summary: PreviewResult | null; profile_snapshot: Profile | null; profile_revision: number | null; error: { message:string } | null; confirmed_context: { requirements: Requirements; profile_snapshot: Profile; confirmed_at: string; demo_context: { mode:string } } | null; planning_available:boolean; planning_plan_id?:string|null };
 type UpdateRecord = Record & {trip_series_id?:string;predecessor_plan_id?:string|null;source_profile_revision?:number|null;source_profile_snapshot?:Profile;source_requirements?:Requirements;is_trip_update?:boolean;cooking_preparation?:CookingPreparation|null};
 type Draft = { raw: string; destination: string; start: string; nights: string; days: string; end: string; budget: string; preferences: string; constraints: string };
 const EMPTY: Draft = {raw:'',destination:'',start:'',nights:'',days:'',end:'',budget:'',preferences:'',constraints:''};
@@ -34,7 +36,7 @@ export function requestPayload(draft: Draft) {
   }
   // Free-text fields are evidence for the interpreter. Translating labels or
   // replacing phrases here loses wording, negation and the soft/hard boundary.
-  return { raw_text:draft.raw, explicit_fields:{destination:draft.destination.trim() || null, start_date:draft.start || null, duration_nights:integer(draft.nights), duration_days:integer(draft.days), end_date:draft.end || null, budget_cents, preferences:lines(draft.preferences), mandatory_constraints:lines(draft.constraints)} };
+  return { ...(draft.raw?{raw_text:draft.raw}:{}), explicit_fields:{destination:draft.destination.trim() || null, start_date:draft.start || null, duration_nights:integer(draft.nights), duration_days:integer(draft.days), end_date:draft.end || null, budget_cents, preferences:lines(draft.preferences), mandatory_constraints:lines(draft.constraints)} };
 }
 
 export function requestMealPreferences(preferences:string,selected:string):string {
@@ -43,7 +45,7 @@ export function requestMealPreferences(preferences:string,selected:string):strin
   return [...remaining,...(selected?[termLabel(selected,'preference')]:[])].join('\n');
 }
 
-function RequestFields({draft,set,regions,disabled}:{draft:Draft;set:(patch:Partial<Draft>)=>void;regions:string[];disabled:boolean}) {
+export function RequestFields({draft,set,regions,disabled,catalogue}:{catalogue?:RequirementCatalogue;draft:Draft;set:(patch:Partial<Draft>)=>void;regions:string[];disabled:boolean}) {
   const nights=Number(draft.nights);
   const preferences=canonicalTerms(lines(draft.preferences),'preference');
   const ready=preferences.some(value=>['ready-to-eat meals','ready_to_eat'].includes(value));
@@ -53,19 +55,19 @@ function RequestFields({draft,set,regions,disabled}:{draft:Draft;set:(patch:Part
     set({preferences:requestMealPreferences(draft.preferences,value)});
   }
   return <fieldset disabled={disabled}>
-    <section className="request-form-section"><div className="form-section-heading"><span>01</span><h3>想怎样露营？</h3></div><label htmlFor="request-idea">你的露营想法 <span className="required-mark">必填</span></label><textarea id="request-idea" required maxLength={8000} value={draft.raw} aria-describedby="idea-hint" placeholder="和谁同行，想去哪里，希望怎样度过这次露营？" onChange={event=>set({raw:event.target.value})}/><FieldHint id="idea-hint">可用中英文描述，摘要会整理偏好和必须条件，供你核对。</FieldHint></section>
-    <section className="request-form-section"><div className="form-section-heading"><span>02</span><h3>目的地与行程</h3></div><div className="form-grid">
+    {draft.raw.trim()&&<details className="source-details legacy-request-source"><summary>查看旧版请求原文</summary><p>此旧版请求仍按原文与表单共同生成摘要。新建请求使用结构化字段；从已有方案更新时，会沿用已确认条件，不重新带入旧原文。</p><blockquote>{draft.raw}</blockquote></details>}
+    <section className="request-form-section"><div className="form-section-heading"><span>01</span><h3>目的地与行程</h3></div><div className="form-grid">
       <div><label htmlFor="request-destination">目的地</label><input id="request-destination" list="supported-destinations" value={draft.destination} aria-describedby="destination-hint" onChange={event=>set({destination:event.target.value})}/><datalist id="supported-destinations">{regions.map(region=><option key={region} value={region}/>)}</datalist><FieldHint id="destination-hint">可选地区：{regions.join('、')||'正在读取…'}</FieldHint></div>
       <div><label htmlFor="request-start">开始日期</label><input id="request-start" type="date" value={draft.start} onChange={event=>set({start:event.target.value})}/></div>
       <div><label htmlFor="request-nights">露营晚数</label><input id="request-nights" type="number" min="1" step="1" value={draft.nights} aria-describedby="nights-hint" onChange={event=>set({nights:event.target.value})}/><FieldHint id="nights-hint">{draft.nights&&Number.isSafeInteger(nights)&&nights>0&&nights<Number.MAX_SAFE_INTEGER?`${nights} 晚对应 ${nights+1} 天。`:'例如：两晚对应三天。'}</FieldHint></div>
       <div><label htmlFor="request-budget">整个小组预算 AUD</label><input id="request-budget" inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?" placeholder="例如 320.00" value={draft.budget} aria-describedby="budget-hint" onChange={event=>set({budget:event.target.value})}/><FieldHint id="budget-hint">填写整个行程的总预算。</FieldHint></div>
     </div><details className="optional-fields"><summary>已明确天数或结束日期？补充在这里</summary><div className="form-grid"><div><label htmlFor="request-days">已明确的天数</label><input id="request-days" type="number" min="1" step="1" value={draft.days} onChange={event=>set({days:event.target.value})}/></div><div><label htmlFor="request-end">已明确的结束日期</label><input id="request-end" type="date" value={draft.end} onChange={event=>set({end:event.target.value})}/></div></div><p className="field-hint">与晚数冲突时，请按摘要提示核对。</p></details></section>
-    <section className="request-form-section"><div className="form-section-heading"><span>03</span><h3>偏好与必须条件</h3></div><label htmlFor="request-meal">用餐方式</label><select id="request-meal" value={meal} onChange={event=>selectMeal(event.target.value)} aria-describedby="meal-hint"><option value="">请选择用餐方式</option><option value="ready-to-eat meals">即食餐食（无需烹饪）</option><option value="self-catered meals">自行烹饪（需要核对炉具和燃料）</option></select><FieldHint id="meal-hint">用于计算餐食费用和烹饪装备；确认需求前需要明确选择。</FieldHint><div className="form-grid"><div><label htmlFor="request-preferences">偏好（每行一项）</label><textarea id="request-preferences" value={draft.preferences} placeholder="例如：安静的环境" onChange={event=>set({preferences:event.target.value})}/></div><div><label htmlFor="request-constraints">必须满足的条件（每行一项）</label><textarea id="request-constraints" value={draft.constraints} placeholder="例如：需要淋浴" onChange={event=>set({constraints:event.target.value})}/></div></div></section>
+    <section className="request-form-section"><div className="form-section-heading"><span>02</span><h3>偏好与必须条件</h3></div><label htmlFor="request-meal">用餐方式</label><select id="request-meal" value={meal} onChange={event=>selectMeal(event.target.value)} aria-describedby="meal-hint"><option value="">请选择用餐方式</option><option value="ready-to-eat meals">即食餐食（无需烹饪）</option><option value="self-catered meals">自行烹饪（需要核对炉具和燃料）</option></select><FieldHint id="meal-hint">用于计算餐食费用和烹饪装备；确认需求前需要明确选择。</FieldHint><div className="requirements-sections"><RequirementChoices id="request-preferences" title="露营偏好" value={draft.preferences} choices={catalogue?.fields.preferences??null} preserved={['ready-to-eat meals','self-catered meals','ready_to_eat','self_catered','即食餐食','自行烹饪','即食食品','无需烹饪的餐食','自己做饭']} onChange={value=>set({preferences:value})} hint="可多选。偏好用于比较适合程度；资料不足时会说明，不能保证全部满足。"/><RequirementChoices id="request-constraints" title="必须满足的条件" value={draft.constraints} choices={catalogue?.fields.mandatory_constraints??null} onChange={value=>set({constraints:value})} hint="可多选。必须条件会严格筛选；没有符合的营地时，由你决定是否调整。"/></div></section>
   </fieldset>;
 }
 
-const FIELD_IDS: {[field:string]:string} = {raw_text:'request-idea',destination:'request-destination',start_date:'request-start',duration_nights:'request-nights',duration_days:'request-days',end_date:'request-end',budget_cents:'request-budget',preferences:'request-preferences',meal_mode:'request-meal',mandatory_constraints:'request-constraints'};
-const FIELD_TITLES: {[field:string]:string} = {raw_text:'露营想法',destination:'目的地',start_date:'开始日期',duration_nights:'露营晚数',duration_days:'行程天数',end_date:'结束日期',budget_cents:'小组预算',preferences:'偏好',meal_mode:'用餐方式',mandatory_constraints:'必须条件','profile.group_size':'小组人数'};
+const FIELD_IDS: {[field:string]:string} = {destination:'request-destination',start_date:'request-start',duration_nights:'request-nights',duration_days:'request-days',end_date:'request-end',budget_cents:'request-budget',preferences:'request-preferences',meal_mode:'request-meal',mandatory_constraints:'request-constraints'};
+const FIELD_TITLES: {[field:string]:string} = {raw_text:'旧版请求原文',destination:'目的地',start_date:'开始日期',duration_nights:'露营晚数',duration_days:'行程天数',end_date:'结束日期',budget_cents:'小组预算',preferences:'偏好',meal_mode:'用餐方式',mandatory_constraints:'必须条件','profile.group_size':'小组人数'};
 export function requestFieldRoot(field:string):string {
   return field.match(/^(raw_text|preferences|mandatory_constraints)(?:\.|\[|$)/)?.[1]??field;
 }
@@ -84,7 +86,7 @@ export function RequestMeaningSummary({requirements,pendingConstraints=false}:{r
   return <section className="request-meaning-summary" aria-label="需求理解结果">
     <div className="summary-preferences"><h3>偏好</h3>{requirements.preferences?.length>0?<ul>{requirements.preferences.map((item,index)=><li key={index}>{termLabel(item,'preference')}</li>)}</ul>:<p>暂未提出额外偏好。</p>}</div>
     <div className="summary-preferences"><h3>必须满足的条件</h3>{requirements.mandatory_constraints?.length>0?<ul>{requirements.mandatory_constraints.map((item,index)=><li key={index}>{termLabel(item,'constraint')}</li>)}</ul>:<p>{pendingConstraints?'还有必须条件需要核对，请查看上方提示。':'暂未提出额外必须条件。'}</p>}</div>
-    <p className="field-hint">请核对是否准确、有无遗漏。如需修改或取消，请检查露营想法及对应输入，再生成摘要。</p>
+    <p className="field-hint">请核对是否准确、有无遗漏。如需修改或取消，请调整勾选项和其他要求，再生成摘要。旧版原文如仍参与解释，会单独显示来源。</p>
   </section>;
 }
 export function RequirementsChangePreview({before,after}:{before:Requirements;after:Requirements}){
@@ -124,11 +126,17 @@ function useRequestContext() {
   return {context,error};
 }
 
+export function requestHistoryTitle(row:Pick<Record,'raw_text'> & {explicit_fields?:Partial<Requirements>}){
+  if(row.raw_text.trim())return row.raw_text.slice(0,85);
+  const fields=row.explicit_fields;
+  return [fields?.destination,fields?.start_date,fields?.duration_nights?`${fields.duration_nights} 晚`:null].filter(Boolean).join(' · ')||'待完善的露营请求';
+}
+
 export function RequestHistory({rows,deleting,selected,onSelect,onDelete,onCancel}:{rows:UpdateRecord[]|null;deleting:string|null;selected:string|null;onSelect:(id:string)=>void;onDelete:(id:string)=>void;onCancel:()=>void}){
   return <details className="panel request-history"><summary>草稿与历史需求（{rows?.length??'…'}）</summary>
     <p>这些是需求及确认记录，不代表新增了一次独立出行。同系列的更新方案请在“方案与历史”查看。</p>
     {rows===null?<p>正在读取…</p>:rows.length===0?<p>暂无记录。</p>:<ul className="request-list">{rows.map(row=><li key={row.request_id}>
-      <Link to={'/request/'+row.request_id}><strong>{row.raw_text.slice(0,85)}</strong><span className="tag">{row.trip_series_id?'本次出行更新 · ':''}{STATUS[row.status]??row.status}</span></Link>
+      <Link to={'/request/'+row.request_id}><strong>{requestHistoryTitle(row)}</strong><span className="tag">{row.trip_series_id?'本次出行更新 · ':''}{STATUS[row.status]??row.status}</span></Link>
       {selected===row.request_id?<div className="plan-delete-confirm" role="group" aria-label="确认删除请求"><p>删除这条需求记录？已有方案和不可变确认快照保留。</p><button disabled={deleting!==null} onClick={()=>onDelete(row.request_id)}>确认删除</button><button disabled={deleting!==null} onClick={onCancel}>取消</button></div>
         :<button className="text-button" disabled={deleting!==null||row.status==='ANALYSING'} onClick={()=>onSelect(row.request_id)}>删除需求记录</button>}
     </li>)}</ul>}
@@ -170,14 +178,14 @@ export function RequestsPage() {
     if(!copyLoading&&!copyFailed&&['request-meal','request-budget'].includes(search.get('focus')??''))focusRequestField(search.get('focus')==='request-meal'?'meal_mode':'budget_cents');
   },[copyLoading,copyFailed,search]);
   async function create(event:FormEvent) {
-    event.preventDefault(); if(!session||busy||copyLoading||copyFailed||!draft.raw.trim())return; setBusy(true);setError('');
+    event.preventDefault(); if(!session||busy||copyLoading||copyFailed)return; setBusy(true);setError('');
     try {const record=await privateApi<Record>('/requests',{method:'POST',headers:{'Content-Type':'application/json','X-CampMate-Client':'1','X-CSRF-Token':session.csrf_token},body:JSON.stringify(requestPayload(draft))});navigate('/request/'+record.request_id);}
     catch(reason){setError(requestFailure(reason,'保存失败。'));if(reason instanceof ApiFailure&&reason.envelope.error.code==='UNAUTHENTICATED')reload();}finally{setBusy(false);}
   }
-  const createHint=copyLoading?'正在载入原需求…':copyFailed?'原需求未能载入，请开始空白请求或重新打开原记录。':busy?'正在保存草稿…':!draft.raw.trim()?'先写下你的露营想法，再保存草稿。':'先保存草稿，下一步生成摘要并核对需求。';
+  const createHint=copyLoading?'正在载入原需求…':copyFailed?'原需求未能载入，请开始空白请求或重新打开原记录。':busy?'正在保存草稿…':'先保存草稿，下一步生成摘要并核对需求。';
   return <div className="onboarding-page"><TripFlow step={2}/><div className="onboarding-heading"><div><span className="eyebrow">露营需求</span><h1>先把需求说清楚。</h1><p>写下想法，核对安排，再开始规划。</p></div><Link className="text-link" to="/profile">查看露营资料 ↗</Link></div>
     {(error||contextError)&&<p className="error-box" role="alert">{error||contextError}</p>}{copyNotice&&<p className="success-box" role="status">{copyNotice}</p>}{copyLoading&&<p role="status">正在载入原需求…</p>}{copyFrom&&<button className="secondary-button" disabled={busy} onClick={()=>setSearch({})}>开始空白请求</button>}
-    <div className="request-layout"><section className="panel request-editor"><div className="section-title"><span className="eyebrow">规划下一次出行</span><h2>新建露营请求</h2></div><form onSubmit={create}><RequestFields draft={draft} set={patch=>setDraft(value=>({...value,...patch}))} regions={context?.supported_destinations??[]} disabled={busy||copyLoading||copyFailed}/><div className="request-action"><p id="create-hint" className="action-hint" role="status">{createHint}</p><button className="primary-button" disabled={busy||copyLoading||copyFailed||!draft.raw.trim()} aria-describedby="create-hint">{busy?'正在保存…':'保存草稿，下一步'} <span>↗</span></button></div></form></section>
+    <div className="request-layout"><section className="panel request-editor"><div className="section-title"><span className="eyebrow">规划下一次出行</span><h2>新建露营请求</h2></div><form onSubmit={create}><RequestFields draft={draft} set={patch=>setDraft(value=>({...value,...patch}))} regions={context?.supported_destinations??[]} catalogue={context?.requirement_choices} disabled={busy||copyLoading||copyFailed}/><div className="request-action"><p id="create-hint" className="action-hint" role="status">{createHint}</p><button className="primary-button" disabled={busy||copyLoading||copyFailed} aria-describedby="create-hint">{busy?'正在保存…':'保存草稿，下一步'} <span>↗</span></button></div></form></section>
     <aside className="request-sidebar"><section className="panel request-guide"><span className="eyebrow">开始之前</span><h2>一份清楚的计划</h2><ul><li>同行人数和装备来自已保存的露营资料。</li><li>不确定的信息先留空，摘要会提示需要补充的内容。</li><li>确认摘要后，再生成行程与评估。</li></ul><Link className="text-link" to="/profile">完善露营资料 ↗</Link></section>{deleteError&&<p className="error-box" role="alert">{deleteError}</p>}<RequestHistory rows={rows} deleting={deleting} selected={confirmDelete} onSelect={id=>{setConfirmDelete(id);setDeleteError('');}} onDelete={id=>void deleteRequest(id)} onCancel={()=>setConfirmDelete(null)}/></aside></div>
   </div>;
 }
@@ -186,7 +194,7 @@ export function RequestDetail() {
   const {requestId}=useParams(); const navigate=useNavigate(); const location=useLocation(); const [search]=useSearchParams(); const {session,reload}=useSession(); const {context,error:contextError}=useRequestContext();
   const [record,setRecord]=useState<UpdateRecord|null>(null); const [draft,setDraft]=useState<Draft>(EMPTY); const [acknowledged,setAcknowledged]=useState(false); const [busy,setBusy]=useState(false); const [error,setError]=useState(''); const [notice,setNotice]=useState(''); const [refresh,setRefresh]=useState(0);
   const updateFlow=useRef<ReplanSession|null>(null);const [updateStale,setUpdateStale]=useState(false);
-  const unsavedSections=changedSections(record?requestDraftFromRecord(record):null,draft,{raw:'露营想法',destination:'目的地',start:'开始日期',nights:'露营晚数',days:'行程天数',end:'结束日期',budget:'小组预算',preferences:'偏好与用餐方式',constraints:'必须条件'});
+  const unsavedSections=changedSections(record?requestDraftFromRecord(record):null,draft,{raw:'旧版请求原文',destination:'目的地',start:'开始日期',nights:'露营晚数',days:'行程天数',end:'结束日期',budget:'小组预算',preferences:'偏好与用餐方式',constraints:'必须条件'});
   const dirty=unsavedSections.length>0;
   const command=useRef<{revision:number;key:string}|null>(null);
   const planningCommand=useRef<{requestId:string;revision:number;key:string}|null>(null);
@@ -196,7 +204,7 @@ export function RequestDetail() {
   function change(patch:Partial<Draft>){setDraft(value=>({...value,...patch}));setAcknowledged(false);setError('');setNotice('');}
   function headers(){return {'Content-Type':'application/json','X-CampMate-Client':'1','X-CSRF-Token':session?.csrf_token??''};}
   async function saveAndAnalyse(event:FormEvent) {
-    event.preventDefault();if(!record||busy||!draft.raw.trim())return;setBusy(true);setError('');setNotice('');
+    event.preventDefault();if(!record||busy)return;setBusy(true);setError('');setNotice('');
     try {
       let current=record;
       if(dirty||current.status==='ANALYSING'){current=await privateApi<Record>('/requests/'+requestId,{method:'PATCH',headers:headers(),body:JSON.stringify({...requestPayload(draft),expected_revision:current.revision})});apply(current);}
@@ -213,7 +221,7 @@ export function RequestDetail() {
     if(!record||busy)return;setBusy(true);setError('');
     try{
       if(dirty){const saved=await privateApi<UpdateRecord>('/requests/'+requestId,{method:'PATCH',headers:headers(),body:JSON.stringify({...requestPayload(draft),expected_revision:record.revision})});apply(saved);updateFlow.current=null;setUpdateStale(false);}
-      setNotice('修改已保存，暂未采用新资料或更新正式检查。原方案保持不变。');
+      setNotice(record.trip_series_id?'修改已保存，暂未采用新资料或更新正式检查。原方案保持不变。':'草稿已保存，尚未生成摘要或启动规划。');
     }catch(reason){setError(requestFailure(reason,'保存失败。'));}finally{setBusy(false);}
   }
   async function runUpdate(){
@@ -274,15 +282,18 @@ export function RequestDetail() {
     {!record?<section className="panel"><p>正在读取请求…</p><button className="secondary-button" onClick={()=>setRefresh(value=>value+1)}>重新读取</button></section>:<div className={'request-layout'+(confirmed?' request-confirmed-layout':'')}>
       {!confirmed&&<section className="panel request-editor">
         <div className="section-title"><span className="eyebrow">出行详情</span><h2>填写与补充</h2></div>
-        <form onSubmit={saveAndAnalyse}><RequestFields draft={draft} set={change} regions={context?.supported_destinations??[]} disabled={busy}/>
-          <div className="request-action"><p id="analyse-hint" className="action-hint" role="status">{busy?'正在生成摘要…':!context?contextError?'暂时无法读取支持范围，请重新打开页面。':'正在读取支持范围…':!draft.raw.trim()?'请先填写露营想法。':dirty?'保存这次修改后，会更新确认摘要。':'生成摘要，查看安排与需要补充的信息。'}</p>
-            <button className="primary-button" disabled={busy||!context||!draft.raw.trim()} aria-describedby="analyse-hint">{busy?'正在处理…':dirty?'保存修改并生成摘要':record.status==='ANALYSING'?'重新保存并生成摘要':'生成需求摘要'} <span>↗</span></button>
+        <form onSubmit={saveAndAnalyse}><RequestFields draft={draft} set={change} regions={context?.supported_destinations??[]} catalogue={context?.requirement_choices} disabled={busy}/>
+          <div className="request-action"><p id="analyse-hint" className="action-hint" role="status">{busy?'正在生成摘要…':!context?contextError?'暂时无法读取支持范围，请重新打开页面。':'正在读取支持范围…':!dirty&&record.requirement_help?.needed?'其他要求需要先完成需求协助，或调整为已有选项。':dirty?'可仅保存后提交需求协助，也可保存并核对摘要。':'生成摘要，查看安排与需要补充的信息。'}</p>
+            <button className="primary-button" disabled={busy||!context||!dirty&&record.requirement_help?.needed===true} aria-describedby="analyse-hint">{busy?'正在处理…':dirty?'保存修改并生成摘要':record.status==='ANALYSING'?'重新保存并生成摘要':'生成需求摘要'} <span>↗</span></button>
+            <button type="button" className="secondary-button" disabled={busy||!dirty} onClick={saveOnly}>仅保存草稿，暂不生成摘要</button>
           </div></form>
+        <RequirementHelpPanel requestId={record.request_id} requestRevision={record.revision} state={record.requirement_help??null} dirty={dirty} disabled={busy} catalogue={context?.requirement_choices} refresh={()=>setRefresh(value=>value+1)}/>
         <div className="editor-secondary"><DiscardChanges sections={unsavedSections} busy={busy} onDiscard={()=>setRefresh(value=>value+1)}/>
           <Link className="text-link" to={'/profile?request_id='+encodeURIComponent(record.request_id)}>修改露营资料 ↗</Link>
         </div>
       </section>}
       <section className={'panel confirmation-panel'+(confirmed?' confirmed-summary':'')}><div className="section-title"><span className="eyebrow">{confirmed?'准备开始规划':'核对与确认'}</span><h2>{confirmed?'已确认的安排':'待确认摘要'}</h2></div>
+        {record.summary_origin==='STRUCTURED_FORM'&&<p className="field-hint" role="status">本摘要根据已填写的资料与条件整理，未调用需求解释模型；尚不代表营地、装备或安全检查通过。</p>}
         {!confirmed&&<div className={'confirmation-status'+(record.status==='AWAITING_CONFIRMATION'&&!dirty?' confirmation-ready':'')}><span aria-hidden="true">{record.status==='AWAITING_CONFIRMATION'&&!dirty?'✓':'○'}</span><p id="confirmation-hint" role="status">{confirmationHint}</p></div>}
         {dirty?<div className="summary-placeholder"><span aria-hidden="true">↻</span><h3>摘要需要更新</h3><p>请先保存修改并生成摘要。</p></div>:requirements?<>
           {!confirmed&&clarificationMap.size>0&&<section className="clarification-list" aria-label="需要补充的信息"><h3>需要补充的信息</h3>{[...clarificationMap].map(([field,messages])=><div key={field}><strong>{FIELD_TITLES[field]??'需要核对'}</strong>{messages.map(message=><p key={message}>{message}</p>)}{FIELD_IDS[field]?<button className="text-link focus-field" onClick={()=>focusRequestField(field)}>去补充 ↗</button>:field.startsWith('profile')?<Link className="text-link" to={'/profile?request_id='+encodeURIComponent(record.request_id)}>修改露营资料 ↗</Link>:null}</div>)}</section>}
@@ -298,7 +309,7 @@ export function RequestDetail() {
         </>:<div className="summary-placeholder"><span aria-hidden="true">⌁</span><h3>先生成需求摘要</h3><p>摘要会展示日期、预算、同行资料和需要补充的信息。</p></div>}
         {record.error&&<p className="error-box" role="alert">{record.error.message}</p>}
         {!confirmed&&<div className="confirmation-actions"><p className="action-hint">{confirmationHint}</p><label className="checkbox-label acknowledgement"><input type="checkbox" checked={acknowledged} disabled={busy||dirty||updateStale||record.status!=='AWAITING_CONFIRMATION'} aria-describedby="confirmation-hint" onChange={event=>setAcknowledged(event.target.checked)}/>我已阅读本次需求和资料，{updating?'确认采用以上修改并重新检查。':'确认以上内容。'}</label><button className="primary-button" disabled={busy||dirty||updateStale||!acknowledged||record.status!=='AWAITING_CONFIRMATION'||updating&&tripTooLong} aria-describedby="confirmation-hint" onClick={confirm}>{busy?'正在处理…':updating?'确认采用并重新检查':'确认并保存需求'} <span>✓</span></button>{updating&&<button className="secondary-button" disabled={busy} onClick={saveOnly}>仅保存修改，暂不检查</button>}</div>}
-        {confirmed&&<div className="confirmation-actions">{record.planning_plan_id?<Link className="primary-button" to={'/plans/'+record.planning_plan_id}>查看规划进度与方案 ↗</Link>:<><p id="planning-hint" className="action-hint" role="status">{planningHint}</p><button className="primary-button" disabled={busy||!record.planning_available||tripTooLong||updateStale} aria-describedby="planning-hint" onClick={startPlanning}>{busy?'正在提交…':updating?'继续提交本次检查':'开始规划'} <span>↗</span></button></>}{record.planning_plan_id&&<Link className="text-link" to={tripUpdatePath(record.planning_plan_id)}>调整本次出行需求 ↗</Link>}<Link className="text-link" to={'/request?copy_from='+encodeURIComponent(record.request_id)}>以此为模板，新建独立出行 ↗</Link></div>}
+        {confirmed&&<div className="confirmation-actions">{record.planning_plan_id?<Link className="primary-button" to={'/plans/'+record.planning_plan_id}>查看规划进度与方案 ↗</Link>:<><p id="planning-hint" className="action-hint" role="status">{planningHint}</p><button className="primary-button" disabled={busy||!record.planning_available||tripTooLong||updateStale} aria-describedby="planning-hint" onClick={startPlanning}>{busy?'正在提交…':updating?'继续提交本次检查':'开始规划'} <span>↗</span></button></>}{record.planning_plan_id&&<Link className="text-link" to={tripUpdatePath(record.planning_plan_id)}>调整本次出行需求 ↗</Link>}</div>}
       </section>
     </div>}
     <Link className="text-link return-requests" to="/request">← 返回请求列表</Link>

@@ -239,6 +239,34 @@ CREATE TRIGGER no_delete_series_delete_command BEFORE DELETE ON series_delete_co
 """
 
 
+MIGRATION_12 = """
+CREATE TABLE requirement_help_tasks(
+ id TEXT PRIMARY KEY, request_id TEXT NOT NULL REFERENCES requests(id),
+ owner_id TEXT NOT NULL REFERENCES users(id), request_revision INTEGER NOT NULL,
+ profile_revision INTEGER NOT NULL, snapshot TEXT NOT NULL,
+ status TEXT NOT NULL CHECK(status IN ('PENDING','PROPOSED','RETURNED','APPLIED')),
+ revision INTEGER NOT NULL DEFAULT 1, response TEXT, created_at TEXT NOT NULL,
+ UNIQUE(request_id,request_revision,profile_revision));
+CREATE TABLE requirement_help_commands(
+ actor_id TEXT NOT NULL REFERENCES users(id),command_key TEXT NOT NULL,
+ operation TEXT NOT NULL,input_hash TEXT NOT NULL,task_id TEXT NOT NULL REFERENCES requirement_help_tasks(id),
+ result TEXT NOT NULL,PRIMARY KEY(actor_id,command_key));
+CREATE TABLE requirement_help_events(
+ id INTEGER PRIMARY KEY,task_id TEXT NOT NULL REFERENCES requirement_help_tasks(id),
+ actor_id TEXT NOT NULL REFERENCES users(id),operation TEXT NOT NULL,payload TEXT NOT NULL,created_at TEXT NOT NULL);
+CREATE TRIGGER immutable_requirement_help_snapshot BEFORE UPDATE OF request_id,owner_id,request_revision,profile_revision,snapshot,created_at ON requirement_help_tasks
+ BEGIN SELECT RAISE(ABORT, 'immutable requirement help snapshot'); END;
+CREATE TRIGGER immutable_requirement_help_event BEFORE UPDATE ON requirement_help_events
+ BEGIN SELECT RAISE(ABORT, 'immutable requirement help event'); END;
+CREATE TRIGGER no_delete_requirement_help_event BEFORE DELETE ON requirement_help_events
+ BEGIN SELECT RAISE(ABORT, 'immutable requirement help event'); END;
+CREATE TRIGGER immutable_requirement_help_command BEFORE UPDATE ON requirement_help_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable requirement help command'); END;
+CREATE TRIGGER no_delete_requirement_help_command BEFORE DELETE ON requirement_help_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable requirement help command'); END;
+"""
+
+
 def execute_migration(connection, script):
     statement = ''
     for line in script.splitlines():
@@ -308,7 +336,11 @@ class Database:
                 execute_migration(connection, MIGRATION_11)
                 connection.execute("INSERT INTO schema_migrations VALUES(11, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
                 versions.append(11)
-            if versions != list(range(1, 12)):
+            if versions == list(range(1, 12)):
+                execute_migration(connection, MIGRATION_12)
+                connection.execute("INSERT INTO schema_migrations VALUES(12, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
+                versions.append(12)
+            if versions != list(range(1, 13)):
                 raise RuntimeError('Unsupported database schema version')
 
     @contextmanager
@@ -344,6 +376,6 @@ class Database:
         try:
             with self.transaction(write=False) as connection:
                 versions = [row[0] for row in connection.execute('SELECT version FROM schema_migrations ORDER BY version')]
-            return versions == list(range(1, 12))
+            return versions == list(range(1, 13))
         except ContractFailure:
             return False

@@ -9,6 +9,7 @@ from ..contracts.base import ContractModel
 from ..contracts.dto import ConfirmedContext, ConfirmedRequirements, DemoContext, InterpretRequestInput, ProfileSnapshot, TripRequirements
 from ..contracts.enums import ErrorCode
 from .repository import encode, fingerprint, now
+from ..application.structured_summary import StructuredRequestInput, StructuredSummaryMetadata, input_fingerprint as structured_fingerprint
 
 
 _Sha256 = Annotated[str, Field(pattern=r'^[0-9a-f]{64}$')]
@@ -56,6 +57,12 @@ def _saved_interpretation_input(row, summary):
         demo_context=DemoContext.model_validate_json(summary['demo_context']))
 
 
+def _saved_structured_input(row,summary):
+    return StructuredRequestInput(explicit_fields=TripRequirements.model_validate_json(row['payload']),
+        profile_snapshot=ProfileSnapshot.model_validate_json(summary['profile_snapshot']),
+        demo_context=DemoContext.model_validate_json(summary['demo_context']))
+
+
 class RequestRepository:
     def __init__(self, database):
         self.db = database
@@ -85,6 +92,8 @@ class RequestRepository:
             'confirmed_context': json.loads(row['confirmed_context']) if row['confirmed_context'] else None,
             'planning_available': False,
         }
+        from .requirement_help import help_state
+        result['requirement_help']=help_state(connection,row)
         origin = connection.execute('SELECT o.*,s.revision FROM successor_requests o JOIN trip_series s ON s.id=o.series_id WHERE o.request_id=? AND s.deleted_at IS NULL', (row['id'],)).fetchone()
         if origin:
             source = connection.execute('SELECT id FROM plans WHERE id=? AND deleted_at IS NULL', (origin['predecessor_plan_id'],)).fetchone()
@@ -118,11 +127,13 @@ class RequestRepository:
     def list(self, user):
         require_role(user, 'CAMPER')
         with self.db.transaction(write=False) as connection:
-            return [dict(row) for row in connection.execute('''SELECT q.id AS request_id,q.status,q.revision,q.raw_text,q.created_at,
+            rows=[dict(row) for row in connection.execute('''SELECT q.id AS request_id,q.status,q.revision,q.raw_text,q.created_at,q.payload AS explicit_fields,
                 o.series_id AS trip_series_id,CASE WHEN o.request_id IS NULL THEN 0 ELSE 1 END AS is_trip_update
                 FROM requests q LEFT JOIN successor_requests o ON o.request_id=q.id
                 WHERE q.owner_id=? AND NOT EXISTS (SELECT 1 FROM deleted_requests d WHERE d.request_id=q.id)
                 ORDER BY q.created_at DESC''', (user.id,))]
+            for row in rows:row['explicit_fields']=json.loads(row['explicit_fields'])
+            return rows
 
     def delete(self, user, request_id):
         with self.db.transaction() as connection:
@@ -155,17 +166,34 @@ class RequestRepository:
             saved_profile = connection.execute('SELECT * FROM profiles WHERE owner_id=?', (user.id,)).fetchone()
             profile = ProfileSnapshot.model_validate_json(saved_profile['payload']) if saved_profile else ProfileSnapshot()
             profile_revision = saved_profile['revision'] if saved_profile else 0
+            from ..application.requirement_choices import unknown_items
+            if unknown_items(TripRequirements.model_validate_json(row['payload']),profile):
+                fail(ErrorCode.INVALID_STATE,'其他要求尚未对应已有条件，请先完成需求协助；本次未调用模型。')
             revision = row['revision'] + 1
             connection.execute("UPDATE requests SET status='ANALYSING',revision=? WHERE id=?", (revision, request_id))
             connection.execute('INSERT INTO request_summaries VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(request_id) DO UPDATE SET analysis_revision=excluded.analysis_revision,profile_revision=excluded.profile_revision,profile_snapshot=excluded.profile_snapshot,demo_context=excluded.demo_context,dataset_context=excluded.dataset_context,result=NULL,error=NULL', (request_id, revision, profile_revision, encode(profile), encode(demo), encode(dataset), None, None))
+            if not row['raw_text'].strip():
+                return revision,StructuredRequestInput(explicit_fields=TripRequirements.model_validate_json(row['payload']),profile_snapshot=profile,demo_context=demo)
             return revision, InterpretRequestInput(raw_text=row['raw_text'], explicit_fields=TripRequirements.model_validate_json(row['payload']), profile_snapshot=profile, demo_context=demo)
 
-    def finish_analysis(self, user, request_id, analysis_revision, result, status, *, interpretation_metadata=None):
+    def finish_analysis(self, user, request_id, analysis_revision, result, status, *, interpretation_metadata=None, structured_metadata=None):
         with self.db.transaction() as connection:
             row = self.own(connection, user, request_id)
             if row['revision'] != analysis_revision or row['status'] != 'ANALYSING':
                 fail(ErrorCode.STALE_CONTEXT, '较旧的分析结果未应用；请求已修改。')
             saved = result.model_dump(mode='json')
+            if not row['raw_text'].strip():
+                summary=connection.execute('SELECT * FROM request_summaries WHERE request_id=?',(request_id,)).fetchone()
+                try:
+                    metadata=StructuredSummaryMetadata.model_validate(structured_metadata)
+                    valid=(interpretation_metadata is None and metadata.analysis_revision==analysis_revision
+                        and summary['analysis_revision']==analysis_revision
+                        and metadata.input_sha256==structured_fingerprint(_saved_structured_input(row,summary)))
+                except (ValidationError,ValueError,TypeError):valid=False
+                if not valid:fail(ErrorCode.STALE_CONTEXT,'结构化摘要与本次表单资料不一致，请重新生成。')
+                saved['structured_summary_metadata']=metadata.model_dump(mode='json')
+            elif structured_metadata is not None:
+                fail(ErrorCode.STALE_CONTEXT,'旧版原文请求不能采用结构化摘要身份。')
             if interpretation_metadata is not None:
                 metadata = RequestInterpretationMetadata.model_validate(interpretation_metadata)
                 summary = connection.execute('SELECT * FROM request_summaries WHERE request_id=?', (request_id,)).fetchone()
@@ -206,6 +234,16 @@ class RequestRepository:
             if summary['dataset_context'] != encode(dataset) or summary['demo_context'] != encode(demo):
                 fail(ErrorCode.STALE_CONTEXT, '数据或演示上下文已变化，请重新生成摘要。')
             result = json.loads(summary['result'])
+            if not row['raw_text'].strip():
+                try:
+                    metadata=StructuredSummaryMetadata.model_validate(result.get('structured_summary_metadata'))
+                    valid=(metadata.analysis_revision==summary['analysis_revision']
+                        and metadata.input_sha256==structured_fingerprint(_saved_structured_input(row,summary))
+                        and 'interpretation_metadata' not in result)
+                except (ValidationError,ValueError,TypeError):valid=False
+                if not valid:fail(ErrorCode.STALE_CONTEXT,'结构化摘要身份或资料已变化，请重新生成。')
+            elif 'structured_summary_metadata' in result:
+                fail(ErrorCode.STALE_CONTEXT,'摘要来源不匹配，请重新生成。')
             if 'interpretation_metadata' in result:
                 try:
                     metadata = RequestInterpretationMetadata.model_validate(result['interpretation_metadata'])
@@ -217,6 +255,9 @@ class RequestRepository:
                     matches = False
                 if not matches:
                     fail(ErrorCode.STALE_CONTEXT, '需求理解结果或配置已变化，请重新生成摘要。')
+            from .requirement_help import help_state
+            if help_state(connection,row)['needed']:
+                fail(ErrorCode.INVALID_STATE,'其他要求尚未明确，请先完成需求协助并重新生成摘要。')
             context = ConfirmedContext(request_id=request_id, confirmed_at=now(), requirements=ConfirmedRequirements.model_validate(result['extracted_requirements']), profile_snapshot=ProfileSnapshot.model_validate_json(summary['profile_snapshot']), demo_context=demo, dataset_context=dataset)
             from ..agents.rules.transport import require_supported
             require_supported(context.profile_snapshot, dataset)

@@ -3,7 +3,7 @@ import type { LogisticsIssue } from './logistics_issues';
 export type DraftEquipment={item_key:string;label:string;quantity:string;unit:string;capacity:string;confirmed:boolean};
 type Catalog=readonly (readonly string[])[];
 export type ProfileDraft={equipment:DraftEquipment[];transport:string;vehicles:string;km:string;
-  children:string;childrenCount:string;experience:string;group?:string;assumptions?:string;systemPreparation?:boolean};
+  children:string;childrenCount:string;experience:string;group?:string;assumptions?:string;systemPreparation?:boolean;quantityConfirmsEquipment?:boolean};
 
 function equipmentKey(field:string){return /^equipment\.([a-z_]+)(?:\.(quantity|capacity))?$/.exec(field)?.[1]??null;}
 
@@ -60,7 +60,7 @@ export function profileGuidance(draft:ProfileDraft,issues:LogisticsIssue[],focus
         const absent=item.quantity.trim()==='0';
         if(!absent&&['tent','vehicle'].includes(key)&&!positive(item.capacity))
           hints[id('capacity')]=vehicle?'填写每辆车可乘坐的总人数，包含驾驶员。例如 5 座车填写 5。':'填写每顶帐篷实际可容纳的人数。例如双人帐填写 2。';
-        if(!absent&&!item.confirmed)hints[id('confirmed')]=vehicle?'落实车辆并核对座位后，勾选“已确认可用于本次出行”；借车或租车尚未确认时请保持未勾选。':key==='transport_itinerary'?'核对本次去程、返程与最后接驳后再确认计划；尚未核对时保持未确认。':'核实物品确实可用于本次出行后，再勾选“已核实拥有”；尚未落实请保持未勾选。';
+        if(!absent&&!item.confirmed&&(!draft.quantityConfirmsEquipment||['transport_itinerary','fire_free_meal_plan'].includes(key)))hints[id('confirmed')]=vehicle?'落实车辆并核对座位后，勾选“已确认可用于本次出行”；借车或租车尚未确认时请保持未勾选。':key==='transport_itinerary'?'核对本次去程、返程与最后接驳后再确认计划；尚未核对时保持未确认。':'核实物品确实可用于本次出行后，再勾选“已核实拥有”；尚未落实请保持未勾选。';
         if(related?.code==='TRANSPORT_CAPACITY'&&positive(item.quantity)&&positive(item.capacity)){
           const capacity=rows.filter(({item})=>item.confirmed).reduce((sum,{item})=>sum+(Number(item.quantity)||0)*(Number(item.capacity)||0),0);
           const need=Number(related.required);

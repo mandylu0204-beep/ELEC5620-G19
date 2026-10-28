@@ -28,12 +28,12 @@ export function RegisterPage(){
   }
   return <><div className="page-heading"><span className="eyebrow">加入露营伙伴</span><h1>开启你的露营计划。</h1><p>创建账户，保存专属于你的资料与行程。</p></div>
     <section className="panel registration-panel"><h2>注册账户</h2><form onSubmit={submit}><fieldset disabled={busy}>
-      <label htmlFor="register-name">昵称</label><input id="register-name" autoComplete="nickname" required maxLength={80} value={name} onChange={event=>setName(event.target.value)}/>
-      <label htmlFor="register-username">用户名</label><input id="register-username" autoComplete="username" required minLength={3} maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9_.\-]{2,31}" aria-describedby="register-username-hint" value={username} onChange={event=>setUsername(event.target.value)}/>
+      <label htmlFor="register-name">昵称 <span className="required-mark">必填</span></label><input id="register-name" autoComplete="nickname" required maxLength={80} value={name} onChange={event=>setName(event.target.value)}/>
+      <label htmlFor="register-username">用户名 <span className="required-mark">必填</span></label><input id="register-username" autoComplete="username" required minLength={3} maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9_.\-]{2,31}" aria-describedby="register-username-hint" value={username} onChange={event=>setUsername(event.target.value)}/>
       <p id="register-username-hint" className="field-hint">3–32 位英文字母、数字、点、下划线或短横线，以字母或数字开头；不区分大小写。</p>
-      <label htmlFor="register-password">密码</label><input id="register-password" type="password" autoComplete="new-password" required minLength={8} maxLength={256} aria-describedby="register-password-hint" value={password} onChange={event=>{setPassword(event.target.value);setError('');}}/>
+      <label htmlFor="register-password">密码 <span className="required-mark">必填</span></label><input id="register-password" type="password" autoComplete="new-password" required minLength={8} maxLength={256} aria-describedby="register-password-hint" value={password} onChange={event=>{setPassword(event.target.value);setError('');}}/>
       <ul id="register-password-hint" className="password-requirements" aria-label="密码要求" aria-live="polite">{checks.map(item=><li key={item.key} className={item.met?'requirement-met':'requirement-pending'}><span aria-hidden="true">{item.met?'✓':'○'}</span> {item.label} <span className="requirement-state">{item.met?'已满足':'未满足'}</span></li>)}</ul>
-      <label htmlFor="register-confirmation">确认密码</label><input id="register-confirmation" type="password" autoComplete="new-password" required minLength={8} maxLength={256} value={confirmation} onChange={event=>{setConfirmation(event.target.value);setError('');}}/>
+      <label htmlFor="register-confirmation">确认密码 <span className="required-mark">必填</span></label><input id="register-confirmation" type="password" autoComplete="new-password" required minLength={8} maxLength={256} value={confirmation} onChange={event=>{setConfirmation(event.target.value);setError('');}}/>
       {error&&<p className="error-box" role="alert">{error}</p>}
       <button className="primary-button" disabled={busy||!validPassword}>{busy?'正在注册…':'注册并前往登录'} ↗</button>
     </fieldset></form><p>已有账户？<Link className="text-link" to="/login" state={{returnTo:location.state?.returnTo}}>前往登录 ↗</Link></p></section></>;

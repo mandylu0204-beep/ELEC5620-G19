@@ -1,3 +1,4 @@
+import {RequirementChoices,type RequirementCatalogue} from './requirement_choices';
 import { DiscardChanges } from './display_panels';
 import { changedSections, PROFILE_SAVED_NOTICE } from './display_facts';
 import { prepareMissingEquipment, profileGuidance } from './profile_guidance';
@@ -10,7 +11,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ApiFailure } from './api';
 import { privateApi, useSession } from './session';
-import demoInputs from '../../docs/demo/v2_inputs.json';
+import { equipmentForSave, equipmentPayload } from './equipment_confirmation';
 import { TripFlow, FieldHint } from './trip_flow';
 import { canonicalTerms, termLabel } from './user_terms';
 
@@ -38,17 +39,17 @@ export function PublicTransportNotice(){
 export function SystemPreparationNotice({mode}:{mode:string}){
   return <p className="mode-notice">系统按所选交通方式及其他条件筛选营地；没有匹配时会说明原因，由你决定是否调整。{mode==='CAR'?'本轮使用固定模拟出发地“悉尼市区”，选定营地后按版本化模拟距离及确认车辆数估算费用，不是实时导航。':'公共交通使用营地可达资料和模拟往返费用；具体去程、返程班次及最后接驳在选定营地后核对，不需要先写路线。'}</p>;
 }
-export function TransportModeField({value,supported,onChange,error,guidance,systemPreparation=false}:{
+export function TransportModeField({value,supported,onChange,error,guidance}:{
   value:string;supported:string[]|null;onChange:(value:string)=>void;error:string;guidance?:string;systemPreparation?:boolean;
 }){
   const choices=MODES.filter(([key])=>supported?.includes(key)&&['CAR','PUBLIC_TRANSPORT'].includes(key));
   const unsupported=supported!==null&&!!value&&!choices.some(([key])=>key===value);
   return <><label htmlFor="transport">交通方式</label><select id="transport" disabled={supported===null}
     aria-invalid={!!guidance||unsupported} aria-describedby="transport-hint" value={value} onChange={event=>onChange(event.target.value)}>
-    <option value="">尚未明确</option>{choices.map(([key,label])=><option key={key} value={key}>{label}</option>)}
+    <option value="" disabled hidden>请选择交通方式</option>{choices.map(([key,label])=><option key={key} value={key}>{label}</option>)}
     {value&&!choices.some(([key])=>key===value)&&<option value={value} disabled>{Object.fromEntries(MODES)[value]??value}（{supported===null?'已保存，正在读取支持范围':'历史资料，当前暂不支持'}）</option>}
   </select><FieldHint id="transport-hint" error={error||guidance||(unsupported?'原交通方式已保留，但当前不能用于新规划。请明确选择支持的方式，再重新生成摘要。':undefined)}>{supported===null?'正在读取交通支持范围…':`当前可选：${choices.map(([,label])=>label).join('、')||'暂无'}；步行、其他交通暂未实现。`}</FieldHint>
-  {systemPreparation?<SystemPreparationNotice mode={value}/>:value==='PUBLIC_TRANSPORT'&&<PublicTransportNotice/>}</>;
+  </>;
 }
 export const equipmentLabel = (key: string) => EQUIPMENT_TYPES.find(([type])=>type===key)?.[1] ?? key;
 const unitLabel = (unit: string) => ({item:'件',litre:'升',portion:'份',vehicle:'辆',plan:'份计划',set:'套'} as Record<string,string>)[unit] ?? unit;
@@ -126,7 +127,7 @@ export function GroupSizeField({value,error,guidance,revealValidation,onTouch,on
   </div>;
 }
 
-export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAvailable?: boolean; datasetVersion?: string | null }) {
+export function ProfilePage({ datasetVersion }: { datasetVersion?: string | null }) {
   const { session, reload } = useSession();
   const navigate=useNavigate();
   const [search]=useSearchParams(); const requestedFocus=search.get('focus')??''; const sourceRequest=search.get('request_id');
@@ -160,6 +161,7 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
   const [supportedModes,setSupportedModes]=useState<string[]|null>(null);
   const [transportContextError,setTransportContextError]=useState('');
   const [systemPreparation,setSystemPreparation]=useState(false);
+  const [requirementCatalogue,setRequirementCatalogue]=useState<RequirementCatalogue|null>(null);
   const [vehicles, setVehicles] = useState('');
   const [km, setKm] = useState('');
   const [assumptions, setAssumptions] = useState('');
@@ -168,9 +170,12 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
   const [savedDraft,setSavedDraft]=useState<Record<string,unknown>|null>(null);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const equipmentToSave=equipmentForSave(equipment);
+  const quantityConfirmationPending=JSON.stringify(equipmentToSave)!==JSON.stringify(equipment);
   const formDraft={group,experience,children,childrenCount,equipment,transport,vehicles,km,assumptions,accessibility,format:false};
   const unsavedSections=changedSections(savedDraft,formDraft,{group:'同行人数',experience:'露营经验',children:'儿童情况',childrenCount:'儿童人数',equipment:'帐篷及其他装备（数量、容量、确认状态）',transport:'交通方式',vehicles:'车辆数量',km:'预计路程',assumptions:'交通说明',accessibility:'同行特殊需求',format:'资料填写格式'});
   const dirty=unsavedSections.length>0;
+  const canSave=dirty||quantityConfirmationPending;
   useEffect(()=>{
     const controller=new AbortController();setRelatedIssues([]);setRelatedLoaded(false);setRelatedError('');setCooking(null);setCookingPreview(null);setCookingError('');
     if(sourcePlan&&/^[a-zA-Z0-9_-]{1,100}$/.test(sourcePlan)){
@@ -188,12 +193,12 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
   useEffect(() => {
     const controller = new AbortController();
     setLoaded(false); setGroupTouched(false); setError(''); setMessage('');setSupportedModes(null);setTransportContextError('');
-    const capabilities=privateApi<{supported_transport_modes:string[];system_preparation?:boolean}>('/request-context',{signal:controller.signal})
+    const capabilities=privateApi<{supported_transport_modes:string[];system_preparation?:boolean;requirement_choices?:RequirementCatalogue}>('/request-context',{signal:controller.signal})
       .then(value=>{if(!Array.isArray(value.supported_transport_modes))throw new Error('交通支持范围未提供，请更新后端后重新载入页面。');return value;})
       .catch(reason=>{if(!controller.signal.aborted)setTransportContextError(reason instanceof Error?reason.message:'无法读取交通支持范围，请重新载入页面。');return null;});
     Promise.all([privateApi<ProfileResponse>('/profile', { signal: controller.signal }),capabilities]).then(([value,context]) => {
       if (controller.signal.aborted) return;
-      const system=context?.system_preparation===true;setSystemPreparation(system);setSupportedModes(context?.supported_transport_modes??null);
+      const system=context?.system_preparation===true;setSystemPreparation(system);setRequirementCatalogue(context?.requirement_choices??null);setSupportedModes(context?.supported_transport_modes??null);
       setRevision(value.revision); const profile = value.profile;
       setGroup(String(profile?.group_size ?? '')); setExperience(canonical(profile?.experience_level, LEVELS));
       setChildren(profile?.has_children === true ? 'yes' : profile?.has_children === false ? 'no' : 'unknown');
@@ -220,7 +225,7 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
     const prepared=prepareMissingEquipment(equipment,relatedIssues,requestedFocus,catalog,cooking?.items.map(item=>item.item_key)??[],transport);
     if(prepared!==equipment){setEquipment(prepared);focusDone.current='';}
   },[loaded,relatedLoaded,relatedError,sourcePlan,sourceRequest,requestedFocus,refresh,issueRetry,session?.user.user_id,equipment,relatedIssues,cooking,transport,systemPreparation]);
-  const cookingSignature=JSON.stringify(equipment.filter(item=>['camping_stove','fuel_canister'].includes(item.item_key)));
+  const cookingSignature=JSON.stringify(equipmentToSave.filter(item=>['camping_stove','fuel_canister'].includes(item.item_key)));
   async function checkCooking(){
     if(!session||cookingBusy||!relatedLoaded||relatedError||!cooking)return;
     const context=cookingContext.current;const signature=cookingSignature;
@@ -228,22 +233,10 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
     try{
       const value=await privateApi<CookingPreparation>('/preparation/cooking',{method:'POST',
         headers:{'Content-Type':'application/json','X-CampMate-Client':'1','X-CSRF-Token':session.csrf_token},
-        body:JSON.stringify({...sourcePlan?{plan_id:sourcePlan}:{request_id:sourceRequest},equipment:cookingDraft(equipment)})});
+        body:JSON.stringify({...sourcePlan?{plan_id:sourcePlan}:{request_id:sourceRequest},equipment:cookingDraft(equipmentToSave)})});
       if(cookingContext.current===context)setCookingPreview({value,signature});
     }catch(reason){if(cookingContext.current===context){setCookingPreview(null);setCookingError(reason instanceof Error?reason.message:'准备预检查暂不可用，请按正式检查核对。');}}
     finally{setCookingBusy(false);}
-  }
-  function loadDemo() {
-    const profile = demoInputs.profile;
-    setGroupTouched(false);
-    setGroup(String(profile.group_size)); setExperience(canonical(profile.experience_level, LEVELS));
-    setChildren(profile.has_children ? 'yes' : 'no'); setChildrenCount(String(profile.children_count));
-    const mode=canonical(profile.transport.transport_type, MODES);
-    const prepared=prepareProfileEquipment(profile.equipment.map(item => ({ item_key: item.item_key, label: EQUIPMENT_TYPES.find(([key]) => key === item.item_key)?.[1] ?? item.label,
-      quantity: String(item.quantity), unit: item.unit, capacity: 'capacity_persons' in item ? String(item.capacity_persons) : '', confirmed: item.confirmed })),mode,String(profile.transport.vehicle_count),systemPreparation);
-    setEquipment(prepared);setTransport(mode);setVehicles(mode==='CAR'?vehicleCount(prepared):'');
-    setKm(profile.transport.estimated_km); setAssumptions(''); setAccessibility('');
-    setError(''); setMessage('已载入资料样例，尚未保存。请核对并保存。');
   }
   function changed() { setMessage(''); setError(''); }
   function replaceEquipment(items:EquipmentForm[]) {setEquipment(items);if(transport==='CAR')setVehicles(vehicleCount(items));changed();}
@@ -258,10 +251,10 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
     setBusy(true); setError(''); setMessage('');
     try {
       const profile: Profile = { group_size: integer(group), experience_level: canonical(experience, LEVELS) || null, has_children: children === 'unknown' ? null : children === 'yes', children_count: integer(childrenCount),
-        equipment: equipment.map(item => ({ item_key: item.item_key, label: item.label.trim(), quantity: integer(item.quantity), unit: item.unit.trim(), capacity_persons: integer(item.capacity), confirmed: item.confirmed })),
+        equipment: equipmentPayload(equipment),
         transport: { transport_type: canonical(transport, MODES) || null, vehicle_count: integer(vehicles), estimated_km: km.trim() || null, assumptions: lines(assumptions) }, accessibility_requirements: canonicalTerms(lines(accessibility),'accessibility') };
       const saved = await privateApi<ProfileResponse>('/profile', { method:'PUT', headers:{ 'Content-Type':'application/json', 'X-CampMate-Client':'1', 'X-CSRF-Token':session.csrf_token }, body:JSON.stringify({ profile, expected_revision:revision }) });
-      setRevision(saved.revision); setSavedDraft(formDraft); setMessage(returnPlan?'资料已保存；当前方案仍使用旧资料，采用新资料后的检查尚未完成。':'露营资料已保存，可以继续填写需求。');
+      setRevision(saved.revision); setEquipment(equipmentToSave); setSavedDraft({...formDraft,equipment:equipmentToSave}); setMessage(returnPlan?'资料已保存；当前方案仍使用旧资料，采用新资料后的检查尚未完成。':'露营资料已保存，可以继续填写需求。');
       if(returnAfterSave&&returnRequest)navigate(returnRequest,{state:{profileSaved:true}});
     } catch (reason) {
       setError(reason instanceof ApiFailure ? [reason.message, ...reason.envelope.error.field_errors.map(item => item.message)].join(' ') : reason instanceof Error ? reason.message : '保存失败。');
@@ -287,39 +280,39 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
   });
   const equipmentTypes=EQUIPMENT_TYPES.filter(([key])=>!systemPreparation||!PLAN_RECORD_KEYS.has(key));
   const editableEquipment=(item:EquipmentForm)=>item.item_key!=='vehicle'&&(!systemPreparation||!PLAN_RECORD_KEYS.has(item.item_key));
-  const guidance=profileGuidance({equipment,transport,vehicles,km,children,childrenCount,experience,group,assumptions,systemPreparation},relatedIssues,requestedFocus);
-  const guidanceIds=profileCorrectionTargets(guidance,equipment);
+  const guidance=profileGuidance({equipment:equipmentToSave,quantityConfirmsEquipment:true,transport,vehicles,km,children,childrenCount,experience,group,assumptions,systemPreparation},relatedIssues,requestedFocus);
+  const guidanceIds=profileCorrectionTargets(guidance,equipmentToSave);
   const problemIds=Object.keys(issues);
   useEffect(()=>{
     if(!loaded||!relatedLoaded||!activeFocus||focusDone.current===activeFocus)return;
-    const id=profileFocusId(activeFocus,equipment,transport,systemPreparation); if(id==='add-equipment')return;
+    const id=profileFocusId(activeFocus,equipmentToSave,transport,systemPreparation,true); if(id==='add-equipment')return;
     if(id&&focusProfileTargets([id]))focusDone.current=activeFocus;
   },[loaded,relatedLoaded,activeFocus,equipment,transport,systemPreparation]);
-  const saveHint=busy?'正在保存资料…':!dirty?revision?(returnPlan?'资料已保存，可以返回方案重新规划。':'资料已保存，可以继续填写需求。'):demoAvailable?'填写自己的资料，或展开下方资料样例。':'填写自己的资料，保存后继续。':problemIds.length?`${issues[problemIds[0]]}${problemIds.length>1?` 另有 ${problemIds.length-1} 项需要修改。`:''}`:'有未保存的修改，请保存后继续。';
-  return <div className="onboarding-page"><TripFlow step={1}/><div className="onboarding-heading"><div><span className="eyebrow">同行资料</span><h1>为同行的人做好准备。</h1><p>填写小组、交通与已有装备，让计划更贴合你们。</p></div>{loaded&&<span className="onboarding-status">{dirty?'有未保存修改':revision?'资料已保存':'开始填写'}</span>}</div>
+  const saveHint=busy?'正在保存资料…':!canSave?revision?(returnPlan?'资料已保存，可以返回方案重新规划。':'资料已保存，可以继续填写需求。'):'填写自己的资料，保存后继续。':problemIds.length?`${issues[problemIds[0]]}${problemIds.length>1?` 另有 ${problemIds.length-1} 项需要修改。`:''}`:quantityConfirmationPending&&!dirty?'核对已填写的实际可用数量，保存即确认这些装备可用于本次出行。':'有未保存的修改，请保存后继续。';
+  return <div className="onboarding-page"><TripFlow step={1}/><div className="onboarding-heading"><div><span className="eyebrow">同行资料</span><h1>为同行的人做好准备。</h1><p>填写小组、交通与已有装备，让计划更贴合你们。</p></div>{loaded&&<span className="onboarding-status">{dirty?'有未保存修改':quantityConfirmationPending?'装备数量待保存确认':revision?'资料已保存':'开始填写'}</span>}</div>
     {error&&<p className="error-box" role="alert">{error}</p>}{message&&<p className="success-box" role="status">{message}</p>}
     {(requestedFocus||relatedIssues.length>0)&&<section className="panel profile-correction-summary" aria-label="补充本次方案资料"><h2>补充本次检查需要的资料</h2>
-      <ProfileCorrectionStatus ready={loaded&&relatedLoaded&&!relatedError} loading={!loaded||!relatedLoaded} failed={!!relatedError} targets={guidanceIds} dirty={dirty} returnPlan={!!returnPlan}/>
-      <p className="mode-notice">{PROFILE_SAVED_NOTICE.replace('露营资料已保存。','保存资料只更新个人资料。')}</p><p className="muted">{dirty?'修改后的资料需要保存。':''}没有的物品可填 0；尚未落实的安排请保持未确认。</p>
-      {returnRequest&&!dirty&&<Link className="text-link" to={returnRequest}>{returnLabel}</Link>}
+      <ProfileCorrectionStatus ready={loaded&&relatedLoaded&&!relatedError} loading={!loaded||!relatedLoaded} failed={!!relatedError} targets={guidanceIds} dirty={canSave} returnPlan={!!returnPlan}/>
+      <p className="mode-notice">{PROFILE_SAVED_NOTICE.replace('露营资料已保存。','保存资料只更新个人资料。')}</p><p className="muted">{dirty?'修改后的资料需要保存。':''}没有的物品可填 0；尚未确定的装备数量请留空。</p>
+      {returnRequest&&!canSave&&<Link className="text-link" to={returnRequest}>{returnLabel}</Link>}
     </section>}
     {relatedError&&<div className="error-box" role="alert"><p>{relatedError}</p><button type="button" className="secondary-button" onClick={()=>setIssueRetry(value=>value+1)}>重新载入</button></div>}
     {!loaded?<section className="panel"><p>正在读取资料…</p><button className="secondary-button" onClick={()=>setRefresh(value=>value+1)}>重新读取</button></section>:<form className="profile-form" onSubmit={save}><fieldset disabled={busy}>
       <div className="profile-intro"><span>填写自己的露营资料</span><p>不确定的数量与容量可以留空，后续评估会提示需要补充的信息。</p></div>
-      {demoAvailable&&<details className="demo-profile-option"><summary>想先体验？使用资料样例</summary><div><p>样例包含两位同行者、交通安排与装备。载入后请核对并保存。</p><button type="button" className="secondary-button" onClick={loadDemo}>载入资料样例</button></div></details>}
+
       <div className="bottom-grid profile-main-grid"><section className="panel"><div className="section-title"><span className="eyebrow">同行小组</span><h2>小组信息</h2></div><div className="form-grid">
         <GroupSizeField value={group} error={issues['group-size']} guidance={guidance['group-size']} revealValidation={groupTouched} onTouch={()=>setGroupTouched(true)} onChange={value=>{setGroup(value);changed();}}/>
         <div><label htmlFor="experience">露营经验</label><select id="experience" aria-invalid={!!guidance.experience} aria-describedby="experience-hint" value={experience} onChange={event=>{setExperience(event.target.value);changed();}}><option value="">尚未明确</option>{LEVELS.map(([key,label])=><option key={key} value={key}>{label}</option>)}{experience&&!LEVELS.some(([key])=>key===experience)&&<option value={experience}>{experience}</option>}</select><FieldHint id="experience-hint" error={guidance.experience}/></div>
         <div><label htmlFor="has-children">是否有儿童</label><select id="has-children" aria-invalid={!!guidance['has-children']} aria-describedby="has-children-hint" value={children} onChange={event=>{setChildren(event.target.value);if(event.target.value==='no')setChildrenCount('0');changed();}}><option value="unknown">尚未明确</option><option value="yes">有儿童</option><option value="no">没有儿童</option></select><FieldHint id="has-children-hint" error={guidance['has-children']}/></div>
         <div><label htmlFor="children-count">儿童人数</label><input id="children-count" type="number" min="0" step="1" value={childrenCount} disabled={children==='no'} aria-invalid={!!(issues['children-count']||guidance['children-count'])} aria-describedby="children-hint" onChange={event=>{setChildrenCount(event.target.value);changed();}}/><FieldHint id="children-hint" error={issues['children-count']??guidance['children-count']}>{children==='no'?'已记录为 0 人。':'计入小组总人数；未知可留空。'}</FieldHint></div>
-      </div><label htmlFor="accessibility">无障碍及其他同行需求（每行一项）</label><textarea id="accessibility" value={accessibility} placeholder="例如：需要无台阶通道" onChange={event=>{setAccessibility(event.target.value);changed();}}/></section>
+      </div><RequirementChoices id="accessibility" title="同行特殊需求" value={accessibility} choices={requirementCatalogue?.fields.accessibility_requirements??null} onChange={value=>{setAccessibility(value);changed();}} hint="可多选。系统会按这些要求筛选营地；未知资料不会被当作满足。其他要求可先保存，之后在露营请求中提交人工协助。"/></section>
       <section className="panel"><div className="section-title"><span className="eyebrow">出行交通</span><h2>交通安排</h2></div><TransportModeField value={transport} supported={supportedModes} onChange={changeTransport} error={transportContextError} guidance={guidance.transport} systemPreparation={systemPreparation}/><div className="form-grid">
         {transport==='CAR'&&<div><span>车辆总数</span><output id="vehicle-count" className="vehicle-total">{vehicles?`${vehicles} 辆`:'待填写'}</output><FieldHint id="vehicles-hint" error={guidance['vehicle-count']}>根据下方车辆数量自动汇总。</FieldHint></div>}
         {!systemPreparation&&<div><label htmlFor="estimated-km">预计总路程 km</label><input id="estimated-km" inputMode="decimal" pattern="[0-9]+([.][0-9]+)?" value={km} aria-invalid={!!(issues['estimated-km']||guidance['estimated-km'])} aria-describedby="km-hint" onChange={event=>{setKm(event.target.value);changed();}}/><FieldHint id="km-hint" error={issues['estimated-km']??guidance['estimated-km']}>填写总路程，未知可留空。</FieldHint></div>}
       </div>{(transport==='CAR'||!systemPreparation&&equipment.some(item=>item.item_key==='vehicle'))&&<VehicleFields equipment={equipment} issues={issues} guidance={guidance} onChange={updateEquipment} onRemove={removeEquipment} onAdd={()=>replaceEquipment([...equipment,{item_key:'vehicle',label:'车辆',quantity:'',unit:'vehicle',capacity:'',confirmed:false}])}/>}{!systemPreparation&&<><label htmlFor="transport-assumptions">{transport==='PUBLIC_TRANSPORT'?'已核对的往返与最后接驳安排（每行一项）':'路程与交通说明（每行一项）'}</label><textarea id="transport-assumptions" value={assumptions} aria-invalid={!!guidance['transport-assumptions']} aria-describedby="transport-assumptions-hint" placeholder={transport==='PUBLIC_TRANSPORT'?'去程：出发点与换乘方式；返程：离开安排；最后接驳：下车或下船后如何到营地。未知内容请注明待确认。':'例如：往返合计，使用自己的车辆'} onChange={event=>{setAssumptions(event.target.value);changed();}}/><FieldHint id="transport-assumptions-hint" error={guidance['transport-assumptions']}>{transport==='PUBLIC_TRANSPORT'?'另请在下方交通连接计划中登记一份计划；只有核实安排后才勾选确认。未知信息可以先保存，正式检查会保留缺项。':undefined}</FieldHint></>}</section></div>
       <CookingPreparationPanel value={cooking} preview={cookingPreview?.value} stale={!!cookingPreview&&cookingPreview.signature!==cookingSignature}
         onCheck={checkCooking} busy={cookingBusy} error={cookingError} onFocus={key=>{const index=equipment.findIndex(item=>item.item_key===key);const node=document.getElementById(`gear-quantity-${index}`);node?.focus();node?.scrollIntoView({block:'center'});}}/>
-      <section className="panel equipment-panel"><div className="panel-title"><div><span className="eyebrow">装备准备</span><h2>已有装备 <small>{equipment.filter(editableEquipment).length} 项</small></h2></div><button id="add-equipment" type="button" className="secondary-button" onClick={()=>{const key=activeFocus.split('.')[1];const type=equipmentTypes.find(([value])=>value===key&&value!=='vehicle')??equipmentTypes[0];focusDone.current='';setEquipment(items=>addEquipment(items,type[0],datasetVersion));changed();}}>添加装备</button></div><p className="field-hint">类别用于装备检查，名称用于区分同类物品，可改为“三人帐”“单人帐”等。不同容量请分行添加；每行数量表示该名称下有几件物品。帐篷按顶、水按升、餐食按份记录；仅“其他装备”可选择单位。勾选确认拥有的装备。</p>
+      <section className="panel equipment-panel"><div className="panel-title"><div><span className="eyebrow">装备准备</span><h2>已有装备 <small>{equipment.filter(editableEquipment).length} 项</small></h2></div><button id="add-equipment" type="button" className="secondary-button" onClick={()=>{const key=activeFocus.split('.')[1];const type=equipmentTypes.find(([value])=>value===key&&value!=='vehicle')??equipmentTypes[0];focusDone.current='';setEquipment(items=>addEquipment(items,type[0],datasetVersion));changed();}}>添加装备</button></div><p className="field-hint">类别用于装备检查，名称用于区分同类物品，可改为“三人帐”“单人帐”等。不同容量请分行添加；每行数量表示该名称下有几件物品。帐篷按顶、水按升、餐食按份记录；仅“其他装备”可选择单位。保存数量即确认该数量可用于本次出行。</p>
         {!equipment.some(editableEquipment)&&<div className="equipment-empty"><span aria-hidden="true">＋</span><p>还没有登记装备</p><small>添加已有物品；不确定的数量可以留空。</small></div>}
         {equipment.map((item,index)=>!editableEquipment(item)?null:<article className={Object.keys(guidance).some(id=>id.startsWith('gear-')&&id.endsWith('-'+index))?'equipment-card equipment-card-needed':'equipment-card'} key={index}><header><span className="equipment-number">{String(equipment.slice(0,index).filter(editableEquipment).length+1).padStart(2,'0')}</span><h3>{item.label||'未命名装备'}</h3><button type="button" className="text-button" aria-label={`移除装备 ${index+1}`} onClick={()=>removeEquipment(index)}>移除</button></header><div className="equipment-fields">
           <div><label htmlFor={`gear-type-${index}`}>类别</label><select id={`gear-type-${index}`} aria-label={`装备 ${index+1} 类别`} value={item.item_key} onChange={event=>replaceEquipment(changeEquipmentCategory(equipment,index,event.target.value,datasetVersion))}>{equipmentTypes.filter(([key])=>key!=='vehicle').map(([key,label])=><option key={key} value={key}>{label}</option>)}{!EQUIPMENT_TYPES.some(([key])=>key===item.item_key)&&<option value={item.item_key}>{item.label}</option>}</select></div>
@@ -327,9 +320,9 @@ export function ProfilePage({ demoAvailable = false, datasetVersion }: { demoAva
           <div><label htmlFor={`gear-quantity-${index}`}>数量</label><input id={`gear-quantity-${index}`} aria-label={`装备 ${index+1} 数量`} type="number" min="0" step="1" value={item.quantity} aria-invalid={!!(issues[`gear-quantity-${index}`]||guidance[`gear-quantity-${index}`])} aria-describedby={`gear-quantity-hint-${index}`} placeholder="未知" onChange={event=>updateEquipment(index,{quantity:event.target.value})}/><FieldHint id={`gear-quantity-hint-${index}`} error={issues[`gear-quantity-${index}`]??guidance[`gear-quantity-${index}`]}>{item.item_key==='vehicle'?'填写本次实际可用的车辆数，不含尚未落实的借车。':undefined}</FieldHint></div>
           <EquipmentUnitField item={item} index={index} datasetVersion={datasetVersion} error={issues[`gear-unit-${index}`]??guidance[`gear-unit-${index}`]} onChange={unit=>updateEquipment(index,{unit})}/>
           <div><label htmlFor={`gear-capacity-${index}`}>{item.item_key==='vehicle'?'每辆载客人数（含驾驶员）':item.item_key==='tent'?'每顶帐篷可住人数':'每件人数容量'}</label><input id={`gear-capacity-${index}`} aria-label={`装备 ${index+1} 每件人数容量`} type="number" min="1" step="1" value={item.capacity} aria-invalid={!!(issues[`gear-capacity-${index}`]||guidance[`gear-capacity-${index}`])} aria-describedby={`gear-capacity-hint-${index}`} placeholder="未知 / 不适用" onChange={event=>updateEquipment(index,{capacity:event.target.value})}/><FieldHint id={`gear-capacity-hint-${index}`} error={issues[`gear-capacity-${index}`]??guidance[`gear-capacity-${index}`]}>{item.item_key==='vehicle'?'包含驾驶员；例如 5 座车填 5。多辆车容量不同时请分行登记。':undefined}</FieldHint></div>
-        </div><label className="checkbox-label equipment-confirmation"><input id={`gear-confirmed-${index}`} type="checkbox" aria-invalid={!!guidance[`gear-confirmed-${index}`]} aria-describedby={`gear-confirmed-hint-${index}`} checked={item.confirmed} aria-label={item.item_key==='transport_itinerary'?`交通计划 ${index+1} 已核对本次往返及接驳安排`:`装备 ${index+1} 已核实拥有`} onChange={event=>updateEquipment(index,{confirmed:event.target.checked})}/>{item.item_key==='transport_itinerary'?'已核对本次往返及接驳安排':'已核实拥有'}</label><FieldHint id={`gear-confirmed-hint-${index}`} error={guidance[`gear-confirmed-${index}`]}/></article>)}
+        </div>{PLAN_RECORD_KEYS.has(item.item_key)&&<><label className="checkbox-label equipment-confirmation"><input id={`gear-confirmed-${index}`} type="checkbox" aria-invalid={!!guidance[`gear-confirmed-${index}`]} aria-describedby={`gear-confirmed-hint-${index}`} checked={item.confirmed} aria-label={`计划 ${index+1} 已核对安排`} onChange={event=>updateEquipment(index,{confirmed:event.target.checked})}/>已核对本次安排</label><FieldHint id={`gear-confirmed-hint-${index}`} error={guidance[`gear-confirmed-${index}`]}/></>}</article>)}
       </section>
-      <div className="profile-save-bar"><div><strong>{dirty?(returnRequest?'保存后，核对本次更新':'保存后，继续填写需求'):'准备下一步'}</strong><p id="profile-save-hint" role="status">{saveHint}</p>{problemIds.length>0&&dirty&&<button type="button" className="text-link focus-field" onClick={()=>document.getElementById(problemIds[0])?.focus()}>前往需要修改的字段 ↗</button>}</div><div className="form-actions">{returnRequest&&<button type="submit" name="save-and-return" className="primary-button" disabled={!dirty||problemIds.length>0} aria-describedby="profile-save-hint">{busy?'正在保存…':'保存并核对本次更新'} <span>↗</span></button>}<button className={returnRequest?"secondary-button":"primary-button"} disabled={!dirty||problemIds.length>0} aria-describedby="profile-save-hint">{busy?'正在保存…':returnRequest?'仅保存资料，暂不检查':'保存露营资料'} <span>✓</span></button><DiscardChanges sections={unsavedSections} busy={busy} onDiscard={()=>{discardReload.current=true;preparedContext.current='';setRefresh(value=>value+1);}}/>{!dirty&&revision>0&&<Link className="text-link" to={returnRequest??"/request"}>{returnRequest?returnLabel:"填写露营请求 ↗"}</Link>}</div></div>
+      <div className="profile-save-bar"><div><strong>{dirty?(returnRequest?'保存后，核对本次更新':'保存后，继续填写需求'):'准备下一步'}</strong><p id="profile-save-hint" role="status">{saveHint}</p>{problemIds.length>0&&dirty&&<button type="button" className="text-link focus-field" onClick={()=>document.getElementById(problemIds[0])?.focus()}>前往需要修改的字段 ↗</button>}</div><div className="form-actions">{returnRequest&&<button type="submit" name="save-and-return" className="primary-button" disabled={!canSave||problemIds.length>0} aria-describedby="profile-save-hint">{busy?'正在保存…':'保存并核对本次更新'} <span>↗</span></button>}<button className={returnRequest?"secondary-button":"primary-button"} disabled={!canSave||problemIds.length>0} aria-describedby="profile-save-hint">{busy?'正在保存…':returnRequest?'仅保存资料，暂不检查':'保存露营资料'} <span>✓</span></button><DiscardChanges sections={unsavedSections} busy={busy} onDiscard={()=>{discardReload.current=true;preparedContext.current='';setRefresh(value=>value+1);}}/>{!canSave&&revision>0&&<Link className="text-link" to={returnRequest??"/request"}>{returnRequest?returnLabel:"填写露营请求 ↗"}</Link>}</div></div>
     </fieldset></form>}
   </div>;
 }

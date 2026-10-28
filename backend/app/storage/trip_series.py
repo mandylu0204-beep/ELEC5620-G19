@@ -123,11 +123,10 @@ class TripSeriesService:
                 series_id = series['id']
             context = body.model_dump(mode='json', exclude={'command_key'})
             context['expected_series_revision'] = series['revision'] if series else 1
-            request = connection.execute('SELECT * FROM requests WHERE id=?', (source['request_id'],)).fetchone()
             confirmed = json.loads(connection.execute('SELECT confirmed_context FROM runs WHERE id=?', (source['active_run_id'],)).fetchone()['confirmed_context'])
             request_id = uuid4().hex
             connection.execute('INSERT INTO requests VALUES(?,?,?,?,?,?,?,?)',
-                (request_id, user.id, request['raw_text'], 'DRAFT', 1, encode(confirmed['requirements']), None, now()))
+                (request_id, user.id, '', 'DRAFT', 1, encode(confirmed['requirements']), None, now()))
             connection.execute('INSERT INTO successor_requests VALUES(?,?,?,?)', (request_id, series_id, plan_id, encode(context)))
             connection.execute('INSERT INTO successor_commands VALUES(?,?,?,?)', (user.id, body.command_key, input_hash, request_id))
             return RequestRepository(self.db).result(connection, RequestRepository.own(connection, user, request_id))

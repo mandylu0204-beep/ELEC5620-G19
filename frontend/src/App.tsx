@@ -1,3 +1,4 @@
+import {RequirementHelpQueue,RequirementHelpReview} from './requirement_help';
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, NavLink, Route, Routes } from 'react-router-dom';
 import { ApiFailure, loadStatus, previewRequest, type ApiError, type Meta, type PreviewResult, type Ready } from './api';
@@ -47,7 +48,7 @@ function AppContent() {
         <NavLink to="/request"><span>↗</span>露营请求</NavLink>
         <NavLink to="/profile"><span>◎</span>露营资料</NavLink>
         <NavLink to="/plans"><span>≋</span>方案与历史</NavLink>
-        {session?.user.role === 'FOUNDER' && <NavLink to="/review"><span>◇</span>人工审核</NavLink>}
+        {session?.user.role === 'FOUNDER' && <><NavLink to="/review"><span>◇</span>人工审核</NavLink><NavLink to="/requirement-help"><span>?</span>需求协助</NavLink></>}
       </nav>
       <div className="sidebar-note"><span className="eyebrow">规划下一次出行</span><p>从清晰的需求开始，<br />让每一步都有依据。</p></div>
     </aside>
@@ -63,12 +64,14 @@ function AppContent() {
           <Route path="/dev/request-preview" element={<RequestPreview enabled={status?.meta.features.request_preview === true && status.ready.status === 'ready'} />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
-          <Route path="/profile" element={<Protected role="CAMPER"><ProfilePage demoAvailable={['deterministic_demo','agent'].includes(status?.meta.execution_mode ?? '') && ['2.0.0','2.1.0','2.2.0'].includes(status?.meta.dataset_version ?? '')} datasetVersion={status?.meta.dataset_version} /></Protected>} />
+          <Route path="/profile" element={<Protected role="CAMPER"><ProfilePage datasetVersion={status?.meta.dataset_version} /></Protected>} />
           <Route path="/plans" element={<Protected role="CAMPER"><PlansPage /></Protected>} />
           <Route path="/plans/:planId/update" element={<Protected role="CAMPER"><TripUpdateEntry /></Protected>} />
           <Route path="/plans/:planId/finals/:finalId" element={<Protected role="CAMPER"><FinalPage /></Protected>} />
           <Route path="/plans/:planId" element={<Protected role="CAMPER"><PlanPage /></Protected>} />
           <Route path="/review/:planId" element={<Protected role="FOUNDER"><ReviewPage /></Protected>} />
+          <Route path="/requirement-help" element={<Protected role="FOUNDER"><RequirementHelpQueue/></Protected>}/>
+          <Route path="/requirement-help/:taskId" element={<Protected role="FOUNDER"><RequirementHelpReview/></Protected>}/>
           <Route path="/review" element={<Protected role="FOUNDER"><ReviewQueue /></Protected>} />
           <Route path="*" element={<Upcoming title="页面不存在" description="请使用左侧导航返回首页。" />} />
         </Routes>

@@ -67,11 +67,13 @@ test('confirmation and planning keys survive controller recreation and are disti
   const attempts=calls.filter(call=>call.path.endsWith('/plan'));assert.deepEqual(attempts[0],attempts[1]);
   assert.notEqual(calls.find(call=>call.path.endsWith('/confirm')).body.command_key,attempts[0].body.command_key);
 });
-test('correction links use series update paths; copy_from remains explicit independent-template only',()=>{
+test('correction links use series update paths; confirmed requests have no independent-template entry',()=>{
   assert.equal(tripUpdatePath('owned-plan','request-meal'),'/plans/owned-plan/update?focus=request-meal');
   for(const file of ['planning.tsx','next_steps.tsx','near_matches.tsx','trip_coverage.tsx','profile.tsx']){
     const source=readFileSync(new URL('../src/'+file,import.meta.url),'utf8');assert.doesNotMatch(source,/copy_from/);
   }
   const request=readFileSync(new URL('../src/requests.tsx',import.meta.url),'utf8');
-  assert.match(request,/以此为模板，新建独立出行/);assert.match(request,/确认采用并重新检查/);
+  assert.doesNotMatch(request,/以此为模板，新建独立出行/);
+  assert.doesNotMatch(request,/to=\{['"]\/request\?copy_from=/);
+  assert.match(request,/确认采用并重新检查/);assert.match(request,/调整本次出行需求/);assert.match(request,/'开始规划'/);
 });

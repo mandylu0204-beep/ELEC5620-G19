@@ -37,3 +37,8 @@ test('login cannot redirect externally or enter the other role through return st
     assert.equal(loginReturnPath(value,'CAMPER'),'/plans');
   assert.equal(loginReturnPath('/request','FOUNDER'),'/review');
 });
+
+test('founder login can resume a requirement assistance task without giving campers reviewer access',()=>{
+  assert.equal(loginReturnPath('/requirement-help/task-1','FOUNDER'),'/requirement-help/task-1');
+  assert.equal(loginReturnPath('/requirement-help/task-1','CAMPER'),'/plans');
+});

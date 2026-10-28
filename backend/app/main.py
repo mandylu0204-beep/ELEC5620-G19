@@ -21,6 +21,7 @@ from .storage.reviews import ReviewService
 from .storage.finalisation import FinalisationService
 from .storage.workflows import WorkflowService
 from .storage.plan_queries import PlanQueries
+from .http_requirement_help import router as requirement_help_router
 from .storage.requests import RequestRepository
 from .storage.database import Database
 from .storage.repository import Repository
@@ -70,6 +71,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     application.state.dispatcher = PlanningDispatcher(application.state)
     application.include_router(accounts_router)
     application.include_router(requests_router)
+    application.include_router(requirement_help_router)
     application.include_router(plans_router)
     application.include_router(reviews_router)
     application.include_router(preparation_router)

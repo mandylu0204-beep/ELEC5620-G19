@@ -21,10 +21,6 @@ export function VehicleFields({equipment,issues,guidance,onChange,onRemove,onAdd
           aria-invalid={!!(issues[`gear-capacity-${index}`]||guidance[`gear-capacity-${index}`])} aria-describedby={`gear-capacity-hint-${index}`}
           onChange={event=>onChange(index,{capacity:event.target.value})}/>
         <FieldHint id={`gear-capacity-hint-${index}`} error={issues[`gear-capacity-${index}`]??guidance[`gear-capacity-${index}`]}>包含驾驶员，例如 5 座车填 5。</FieldHint></div></div>
-      <label className="checkbox-label"><input id={`gear-confirmed-${index}`} type="checkbox" checked={item.confirmed} aria-label={`车辆 ${position+1} 已确认可用`}
-        aria-invalid={!!guidance[`gear-confirmed-${index}`]} aria-describedby={`gear-confirmed-hint-${index}`}
-        onChange={event=>onChange(index,{confirmed:event.target.checked})}/>已确认可用于本次出行</label>
-      <FieldHint id={`gear-confirmed-hint-${index}`} error={guidance[`gear-confirmed-${index}`]}/>
     </article>)}
   </section>;
 }

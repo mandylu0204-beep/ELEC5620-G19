@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Request, Response
-from pydantic import Field, StrictInt, model_validator
+from pydantic import Field, StrictInt, model_validator, field_validator
 
 from .auth import COOKIE_NAME, User, fail
 from .contracts.base import ContractModel
@@ -21,6 +21,12 @@ class RegisterInput(ContractModel):
 class ProfileInput(ContractModel):
     profile: ProfileSnapshot
     expected_revision: StrictInt = Field(ge=0)
+
+    @field_validator('profile')
+    @classmethod
+    def normalize_known_accessibility(cls,profile):
+        from .application.requirement_choices import recognized
+        return profile.model_copy(update={'accessibility_requirements':[recognized(value,'accessibility_requirements') or value for value in profile.accessibility_requirements]})
 
     @model_validator(mode='after')
     def meaningful_equipment(self):

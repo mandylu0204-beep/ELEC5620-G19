@@ -11,7 +11,7 @@ import {evidenceState,planRowState} from '../src/plan_language.ts';
 // Vite only transforms modules in middleware mode: no HTTP listener, browser,
 // app database, personal env file or model client is started by these tests.
 const server=await createServer({configFile:false,envDir:false,appType:'custom',
-  server:{middlewareMode:true,hmr:false,watch:null},optimizeDeps:{noDiscovery:true}});
+  server:{middlewareMode:true,hmr:false,ws:false,watch:null},optimizeDeps:{noDiscovery:true}});
 after(()=>server.close());
 const panels=await server.ssrLoadModule('/src/display_panels.tsx');
 const {LogisticsIssues}=await server.ssrLoadModule('/src/logistics_issues.tsx');
@@ -25,7 +25,8 @@ const {profileChanges}=await server.ssrLoadModule('/src/profile_changes.ts');
 const {App}=await server.ssrLoadModule('/src/App.tsx');
 const {GroupSizeField,EquipmentUnitField,addEquipment,changeEquipmentCategory,fixedEquipmentUnit,ProfileSummary,ProfileCorrectionStatus,TransportModeField,PublicTransportNotice}=await server.ssrLoadModule('/src/profile.tsx');
 const {VehicleFields}=await server.ssrLoadModule('/src/vehicle_fields.tsx');
-const {SessionProvider}=await server.ssrLoadModule('/src/session.tsx');
+const {SessionProvider,LoginPage}=await server.ssrLoadModule('/src/session.tsx');
+const {RegisterPage}=await server.ssrLoadModule('/src/register.tsx');
 const {CookingPreparationPanel,cookingDraft}=await server.ssrLoadModule('/src/cooking_preparation.tsx');
 const {TripPreparation}=await server.ssrLoadModule('/src/trip_preparation.tsx');
 const {NearMatches}=await server.ssrLoadModule('/src/near_matches.tsx');
@@ -46,12 +47,12 @@ test('system preparation removes artificial inventory prerequisites while preser
   assert.deepEqual(preparationGuidance(draft,issues),{});
   fields.forEach(field=>assert.equal(preparationFocus(field,legacy,'PUBLIC_TRANSPORT',true),null));
 });
-test('new transport notice asks the system to select first and never asks the user for a preplanned route',()=>{
-  const props={value:'PUBLIC_TRANSPORT',supported:['CAR','PUBLIC_TRANSPORT'],onChange(){},error:'',systemPreparation:true};
+test('transport selection omits unknown choices and yellow explanatory notices without inventing a selection',()=>{
+  const props={value:'',supported:['CAR','PUBLIC_TRANSPORT'],onChange(){},error:'',systemPreparation:true};
   const html=render(TransportModeField,props);
-  for(const text of ['按所选交通方式','没有匹配','选定营地后核对','不需要先写路线'])assert.ok(html.includes(text),text);
-  assert.doesNotMatch(html,/自行核对去程|另请在下方/);
-  assert.match(render(TransportModeField,{...props,value:'CAR'}),/固定模拟出发地|版本化模拟距离/);
+  assert.match(html,/<option value="" disabled="" hidden="" selected="">请选择交通方式/);
+  assert.doesNotMatch(html,/尚未明确|class="mode-notice"|自行核对去程|固定模拟出发地/);
+  assert.doesNotMatch(html,/<option value="CAR" selected/);
 });
 test('saved preparation distinguishes synthetic group kilometres, transport allowance and departure checks',()=>{
   const value={system_preparation:true,transport_type:'CAR',origin_label:'悉尼市区（固定模拟出发地）',
@@ -140,7 +141,7 @@ test('transport choices follow backend capabilities, retain unsupported history 
   const html=render(TransportModeField,props);
   assert.match(html,/<option value="CAR"/);assert.match(html,/<option value="PUBLIC_TRANSPORT"/);
   assert.doesNotMatch(html,/<option value="WALKING"|<option value="OTHER"/);
-  for(const text of ['去程、返程','最后接驳','模拟往返费用','不查询实际班次','不代表已订票'])assert.ok(html.includes(text),text);
+  assert.doesNotMatch(html,/class="mode-notice"|尚未明确/);
   const old=render(TransportModeField,{...props,value:'WALKING'});
   assert.match(old,/<option value="WALKING" disabled="" selected=""/);assert.match(old,/历史资料，当前暂不支持/);
   const pending=render(TransportModeField,{...props,supported:null});
@@ -175,7 +176,7 @@ test('vehicle total guidance highlights the editable vehicle quantity rather tha
   const html=render(VehicleFields,{equipment:[{item_key:'vehicle',quantity:'1',capacity:'5',confirmed:true}],
     issues:{},guidance:{'vehicle-count':'请核对车辆总数'},onChange(){},onRemove(){},onAdd(){}});
   assert.match(html,/<input[^>]*id="gear-quantity-0"[^>]*aria-invalid="true"/);
-  assert.match(html,/请核对车辆总数/);assert.doesNotMatch(html,/id="vehicle-count"|id="gear-unit-0"/);
+  assert.match(html,/请核对车辆总数/);assert.doesNotMatch(html,/id="vehicle-count"|id="gear-unit-0"|type="checkbox"|已确认可用于本次出行/);
 });
 test('hero captions stay level while only the mountain illustration is tilted',()=>{
   const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
@@ -541,4 +542,31 @@ test('historical approval is labelled as past and never becomes current eligibil
   }
   const newer=structuredClone(v);newer.version.status='ESCALATED';newer.run.operation='REASSESS';
   assert.doesNotMatch(renderPlan(newer),/当时审核已批准/);
+});
+
+test('login and profile no longer offer sample credentials or sample-filled personal facts',()=>{
+  const html=renderToStaticMarkup(h(MemoryRouter,null,h(SessionProvider,null,h(LoginPage))));
+  assert.doesNotMatch(html,/示例账户|camper\.a|camper\.b|CampMate-Founder|demo-accounts/);
+  assert.match(html,/注册账户/);assert.match(html,/login-layout/);
+  const profile=readFileSync(new URL('../src/profile.tsx',import.meta.url),'utf8');
+  assert.doesNotMatch(profile,/想先体验|载入资料样例|demoInputs|loadDemo|demoAvailable/);
+  assert.doesNotMatch(profile,/EquipmentSaveNotice|equipment-save-notice|数量请填写本次实际可用的装备/);
+  assert.doesNotMatch(profile,/已核实拥有<\/label>/);
+});
+test('required fields have visible text badges without making optional profile facts mandatory',()=>{
+  for(const [Page,ids] of [[RegisterPage,['register-name','register-username','register-password','register-confirmation']]]){
+    const html=renderToStaticMarkup(h(MemoryRouter,null,h(SessionProvider,null,h(Page))));
+    for(const id of ids){
+      assert.ok(html.includes(`<label for="${id}">`),id);
+      assert.match(html.split(`<label for="${id}">`)[1].split('</label>')[0],/class="required-mark">必填/);
+    }
+  }
+  const css=readFileSync(new URL('../src/styles.css',import.meta.url),'utf8');
+  assert.match(css,/\.required-mark\{[^}]*font-size:12px;[^}]*font-weight:700/);
+  const profile=readFileSync(new URL('../src/profile.tsx',import.meta.url),'utf8');
+  assert.match(profile,/htmlFor=\{`gear-name-\$\{index\}`\}>名称<\/label>/);
+  assert.match(profile,/aria-label=\{`装备 \$\{index\+1\} 名称`\} required/);
+  const login=renderToStaticMarkup(h(MemoryRouter,null,h(SessionProvider,null,h(LoginPage))));
+  assert.doesNotMatch(login,/required-mark/);assert.match(login,/required=""/);
+  assert.match(profile,/equipment: equipmentPayload\(equipment\)/);
 });

@@ -1,11 +1,11 @@
 type FocusEquipment={item_key:string;quantity:string;capacity:string;confirmed:boolean;unit:string};
-export function profileFocusId(field:string,items:FocusEquipment[],transport?:string,systemPreparation=false):string|null {
+export function profileFocusId(field:string,items:FocusEquipment[],transport?:string,systemPreparation=false,quantityConfirmsEquipment=false):string|null {
   if(systemPreparation&&(field==='transport.estimated_km'||field==='transport.assumptions'||/^equipment\.(transport_itinerary|fire_free_meal_plan)(?:\.(quantity|capacity))?$/.test(field)))return null;
   if(transport!==undefined&&transport!=='CAR'&&(field==='transport.vehicle_count'||field==='transport.estimated_km'||/^equipment\.vehicle(?:\.(quantity|capacity))?$/.test(field)))return null;
   const ids:Record<string,string>={'transport.estimated_km':'estimated-km','transport.vehicle_count':'vehicle-count',
     'transport.assumptions':'transport-assumptions',
     'transport.transport_type':'transport','profile.children_count':'children-count','profile.has_children':'has-children','profile.experience_level':'experience'};
-  if(field==='transport.vehicle_count')return profileFocusId('equipment.vehicle.quantity',items,transport);
+  if(field==='transport.vehicle_count')return profileFocusId('equipment.vehicle.quantity',items,transport,systemPreparation,quantityConfirmsEquipment);
   if(ids[field])return ids[field];
   const match=field.match(/^equipment\.([a-z_]+)(?:\.(quantity|capacity))?$/);
   if(!match)return null;
@@ -16,7 +16,7 @@ export function profileFocusId(field:string,items:FocusEquipment[],transport?:st
   if(index<0)return match[1]==='vehicle'?'add-vehicle':'add-equipment';
   const item=items[index];
   const expectedUnit=item.item_key==='vehicle'?'vehicle':item.item_key==='tent'?'item':null;
-  const part=expectedUnit&&item.unit!==expectedUnit&&item.item_key!=='vehicle'?'unit':!item.quantity?'quantity':(['tent','vehicle'].includes(item.item_key)&&!item.capacity)?'capacity':!item.confirmed?'confirmed':match[2]??'quantity';
+  const part=expectedUnit&&item.unit!==expectedUnit&&item.item_key!=='vehicle'?'unit':!item.quantity?'quantity':(['tent','vehicle'].includes(item.item_key)&&!item.capacity)?'capacity':!item.confirmed&&(!quantityConfirmsEquipment||['transport_itinerary','fire_free_meal_plan'].includes(item.item_key))?'confirmed':match[2]??'quantity';
   return `gear-${part}-${index}`;
 }
 

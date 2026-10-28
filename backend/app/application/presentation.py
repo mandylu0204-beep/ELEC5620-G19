@@ -58,7 +58,9 @@ def request_response(value):
     """Confirmed-request reads must not become a runtime-configuration side door."""
     data = deepcopy(value)
     if isinstance(data.get('summary'), dict):
-        data['summary'].pop('interpretation_metadata', None)
+        structured=data['summary'].pop('structured_summary_metadata',None)
+        model=data['summary'].pop('interpretation_metadata', None)
+        data['summary_origin']='STRUCTURED_FORM' if structured else 'MODEL_INTERPRETATION' if model else 'LEGACY'
     from .cooking_preparation import outline
     requirements = ((data.get('confirmed_context') or {}).get('requirements')
         or (data.get('summary') or {}).get('extracted_requirements') or data.get('explicit_fields') or {})
