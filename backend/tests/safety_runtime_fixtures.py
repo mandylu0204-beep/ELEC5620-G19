@@ -66,6 +66,11 @@ def mock_safety_runtime(monkeypatch, *, settings=None):
                 first = date.fromisoformat(input['confirmed_requirements']['start_date'])
                 action = final_action(campsite_id=site,nights=[(first+timedelta(days=i)).isoformat()
                     for i in range(input['confirmed_requirements']['duration_nights'])])
+                if 'daily_scope' in tools[0]:
+                    selected = next(item for item in tools[0]['candidates'] if item['campsite_id'] == site)
+                    activities = selected['onsite_activities']
+                    action['proposal']['daily_plan'] = [{'date':night,'activity_id':activities[i % len(activities)]['activity_id']}
+                        for i,night in enumerate(action['proposal']['nights'])] if activities else []
         if control.get('mutate_action'):
             action = control['mutate_action'](role,len(tools),action)
         return httpx.Response(200,json=completion(action,model='offline-safety-runtime'))

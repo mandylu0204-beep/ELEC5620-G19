@@ -1,0 +1,263 @@
+{
+  "$defs": {
+    "DailyChoice": {
+      "additionalProperties": false,
+      "properties": {
+        "date": {
+          "format": "date",
+          "title": "Date",
+          "type": "string"
+        },
+        "activity_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Activity Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "date",
+        "activity_id"
+      ],
+      "title": "DailyChoice",
+      "type": "object"
+    },
+    "DetailedFinalAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "final",
+          "title": "Action",
+          "type": "string"
+        },
+        "proposal": {
+          "$ref": "#/$defs/DetailedPlanningProposal"
+        }
+      },
+      "required": [
+        "action",
+        "proposal"
+      ],
+      "title": "DetailedFinalAction",
+      "type": "object"
+    },
+    "DetailedPlanningProposal": {
+      "additionalProperties": false,
+      "properties": {
+        "campsite_id": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Campsite Id",
+          "type": "string"
+        },
+        "nights": {
+          "items": {
+            "format": "date",
+            "type": "string"
+          },
+          "maxItems": 30,
+          "minItems": 1,
+          "title": "Nights",
+          "type": "array"
+        },
+        "decision_summary": {
+          "maxLength": 1200,
+          "minLength": 1,
+          "title": "Decision Summary",
+          "type": "string"
+        },
+        "daily_plan": {
+          "items": {
+            "$ref": "#/$defs/DailyChoice"
+          },
+          "maxItems": 30,
+          "title": "Daily Plan",
+          "type": "array"
+        }
+      },
+      "required": [
+        "campsite_id",
+        "nights",
+        "decision_summary",
+        "daily_plan"
+      ],
+      "title": "DetailedPlanningProposal",
+      "type": "object"
+    },
+    "RequirementsChangeAction": {
+      "additionalProperties": false,
+      "description": "A proposal for reconfirmation, never permission to change saved input.",
+      "properties": {
+        "action": {
+          "const": "requirements_change",
+          "title": "Action",
+          "type": "string"
+        },
+        "requested_requirement_changes": {
+          "$ref": "#/$defs/TripRequirements"
+        }
+      },
+      "required": [
+        "action",
+        "requested_requirement_changes"
+      ],
+      "title": "RequirementsChangeAction",
+      "type": "object"
+    },
+    "SearchAction": {
+      "additionalProperties": false,
+      "properties": {
+        "action": {
+          "const": "tool",
+          "title": "Action",
+          "type": "string"
+        },
+        "name": {
+          "const": "search_campsites",
+          "title": "Name",
+          "type": "string"
+        },
+        "arguments": {
+          "$ref": "#/$defs/SearchArguments"
+        }
+      },
+      "required": [
+        "action",
+        "name",
+        "arguments"
+      ],
+      "title": "SearchAction",
+      "type": "object"
+    },
+    "SearchArguments": {
+      "additionalProperties": false,
+      "description": "No model-controlled paths, dates, budget, profile, or SQL parameters.",
+      "properties": {},
+      "title": "SearchArguments",
+      "type": "object"
+    },
+    "TripRequirements": {
+      "additionalProperties": false,
+      "properties": {
+        "destination": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Destination"
+        },
+        "start_date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Start Date"
+        },
+        "duration_nights": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Nights"
+        },
+        "end_date": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "End Date"
+        },
+        "duration_days": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duration Days"
+        },
+        "budget_cents": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Budget Cents"
+        },
+        "currency": {
+          "const": "AUD",
+          "default": "AUD",
+          "title": "Currency",
+          "type": "string"
+        },
+        "preferences": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Preferences",
+          "type": "array"
+        },
+        "mandatory_constraints": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Mandatory Constraints",
+          "type": "array"
+        }
+      },
+      "title": "TripRequirements",
+      "type": "object"
+    }
+  },
+  "discriminator": {
+    "mapping": {
+      "final": "#/$defs/DetailedFinalAction",
+      "requirements_change": "#/$defs/RequirementsChangeAction",
+      "tool": "#/$defs/SearchAction"
+    },
+    "propertyName": "action"
+  },
+  "oneOf": [
+    {
+      "$ref": "#/$defs/SearchAction"
+    },
+    {
+      "$ref": "#/$defs/DetailedFinalAction"
+    },
+    {
+      "$ref": "#/$defs/RequirementsChangeAction"
+    }
+  ]
+}

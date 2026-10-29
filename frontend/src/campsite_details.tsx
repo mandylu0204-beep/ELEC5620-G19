@@ -1,4 +1,5 @@
 import catalogue from '../../data/sydney_surrounds_v2_2/data/source_catalogue.json';
+import { facilityNames, facilityDescription, type SelectionRow } from './campsite_selection';
 
 type Place = {
   source_urls: string[];
@@ -7,26 +8,46 @@ type Place = {
   fields: Record<string, {value: unknown; status: string}>;
 };
 
-export function CampsiteDetails({id,catalogueId}:{id:string;catalogueId?:string}) {
+export function cataloguePlace(id:string|undefined,catalogueId:string|undefined):Place|null {
   // Never project today's compiled place facts into a different saved source.
-  if(catalogueId!=='sydney-surrounds-2.2-2026-10-23')return null;
+  if(!id||catalogueId!=='sydney-surrounds-2.2-2026-10-23')return null;
   const places:Record<string,Place> = catalogue.campsites;
-  const place=places[id];
-  if(!place)return null; // Historical fictional IDs retain their original data.
-  const state=(key:string,yes:string,no:string)=>{
+  return Object.hasOwn(places,id)?places[id]:null;
+}
+
+export function additionalFacilities(place:Place|null,rows:SelectionRow[]):SelectionRow[]{
+  if(!place)return [];
+  return Object.entries(facilityNames).flatMap(([key,label])=>{
     const field=place.fields[key];
-    return field?.status==='OFFICIAL' && typeof field.value==='boolean'
-      ?field.value?yes:no:'待确认';
-  };
-  return <section className="panel">
-    <div className="section-title"><span className="eyebrow">ABOUT THE CAMPGROUND</span><h2>营地与到达方式</h2></div>
-    <p>{place.access_notes}</p>
-    <dl className="cost-summary">
-      <div><dt>饮用水</dt><dd>{state('potable_water','有饮用水供应','需自备饮用水')}</dd></div>
-      <div><dt>厕所</dt><dd>{state('toilets','有','无')}</dd></div>
-      <div><dt>淋浴</dt><dd>{state('showers','有','无')}</dd></div>
-    </dl>
-    <details><summary>营地规定</summary><ul>{place.static_restrictions.map(text=><li key={text}>{text}</li>)}</ul></details>
-    <p><a href={place.source_urls[0]} target="_blank" rel="noreferrer">查看官方营地信息 ↗</a></p>
-  </section>;
+    const state=field?.status==='OFFICIAL'&&typeof field.value==='boolean'?field.value:null;
+    if(rows.some(row=>row.facility===key&&row.state===state))return [];
+    return [{label,detail:facilityDescription(key,state),facility:key,state}];
+  });
+}
+
+export function campsiteSourceLabel(url:string){
+  try{
+    const parsed=new URL(url);const path=parsed.pathname.replace(/\/$/u,'');
+    if(parsed.hostname==='www.nationalparks.nsw.gov.au'){
+      if(/^\/camping-and-accommodation\/campgrounds\/[^/]+\/visitor-info$/u.test(path))return '官方到达与访客信息';
+      if(/^\/camping-and-accommodation\/campgrounds\/[^/]+$/u.test(path))return '官方营地概况';
+    }
+    if(parsed.hostname==='www.cockatooisland.gov.au'){
+      if(path==='/en/stay/waterfront-campground')return '官方营地概况';
+      if(path==='/en/stay/waterfront-campground/byo-tent-option')return '官方自带帐篷露营说明';
+    }
+    return `资料来源：${parsed.hostname}${parsed.pathname}${parsed.search}${parsed.hash}`;
+  }catch{return `资料来源：${url}`;}
+}
+
+export function CampsiteArrivalDetails({place}:{place:Place|null}) {
+  if(!place)return null;
+  return <>
+    <h3>到达方式与注意事项</h3><p>{place.access_notes}</p>
+    <p className="muted">营地接入资料不代表已确认实际班次、接驳或预订，出发前仍需核对。</p>
+    <details className="source-details"><summary>营地规定与资料来源</summary>
+      <ul>{place.static_restrictions.map(text=><li key={text}>{text}</li>)}</ul>
+      {place.source_urls.map(url=><p key={url}><a href={url} target="_blank" rel="noreferrer">{campsiteSourceLabel(url)} ↗</a></p>)}
+    </details>
+  </>;
 }

@@ -173,7 +173,8 @@ def test_http_public_trip_pins_policy_and_original_profile_without_car_costs(tmp
             import json
             scope = json.loads(db.execute('SELECT scope FROM runs WHERE id=?', (response.json()['run_id'],)).fetchone()[0])
         assert scope['dataset_context']['selection_config'][POLICY_KEY] == POLICY_VERSION
-        assert scope['dataset_context']['rules_version'].endswith('/' + POLICY_VERSION)
+        # Additional independent policies may follow transport in the workflow identity.
+        assert scope['dataset_context']['rules_version'].split('/').count(POLICY_VERSION) == 1
         assert POLICY_KEY not in str(detail)  # Camper reads do not leak full configuration.
 
 

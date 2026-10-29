@@ -18,6 +18,7 @@ from ..contracts.ports import AgentPort
 from .agent_registry import create_agent
 from .datasets import DatasetDescriptor, inspect_dataset, scenario_path
 from ..agents.rules.transport import POLICY_KEY, POLICY_VERSION, MINIMAL_POLICY_VERSION, checked_policy
+from ..adapters.planning_reference import (POLICY_KEY as PLANNING_KEY, POLICY_VERSION as PLANNING_VERSION, checked_policy as checked_planning)
 from ..llm.safety_feedback import (POLICY_KEY as FEEDBACK_KEY, POLICY_VERSION as FEEDBACK_VERSION,
     checked_policy as checked_feedback)
 
@@ -93,6 +94,8 @@ def build_v2_binding(settings, descriptor, *, parsed_snapshots=None, snapshot_ke
         parsed_snapshots=parsed_snapshots, snapshot_key=snapshot_key)
     from ..adapters.transport_reference import bind_reference
     bind_reference(dataset, descriptor.context)
+    from ..adapters.planning_reference import bind_reference as bind_planning
+    bind_planning(dataset, descriptor.context)
     dataset.selected_safety_case_ids = tuple(settings.workflow_safety_case_ids)
     base = descriptor.context.model_copy(update={'rules_version': descriptor.context.rules_version + '/a-runtime-bindings-v2'})
     configuration = WorkflowConfiguration(dataset, safety_case_ids=settings.workflow_safety_case_ids,
@@ -139,6 +142,8 @@ def build_v2_hybrid_binding(settings, descriptor, *, parsed_snapshots=None, snap
         snapshot_key=(snapshot_key, json.dumps(client.settings.public_identity(), sort_keys=True)))
     from ..adapters.transport_reference import bind_reference
     bind_reference(dataset, descriptor.context)
+    from ..adapters.planning_reference import bind_reference as bind_planning
+    bind_planning(dataset, descriptor.context)
     coordinator = PlanningCoordinator(dataset, client)
     identity = coordinator.identity
     choices = {**descriptor.context.selection_config, 'a_model_trace_required':'1', 'a_model_trace_contract':'1.0',
@@ -236,13 +241,13 @@ class AgentRuntime:
                 self.error = exc.error
 
     def resolve(self, *, feedback=None, snapshot_day=None, safety_protocol=None, transport_policy=POLICY_VERSION,
-                safety_feedback_policy=FEEDBACK_VERSION):
+                safety_feedback_policy=FEEDBACK_VERSION, planning_policy=PLANNING_VERSION):
         # HTTP reads run in worker threads while the supervisor runs on asyncio.
         # Keep the managed Agent marker and state.agent replacement consistent.
         with self._lock:
             with self._parsed_snapshots.transaction():
                 return self._resolve(feedback=feedback, snapshot_day=snapshot_day, safety_protocol=safety_protocol,
-                    transport_policy=transport_policy, safety_feedback_policy=safety_feedback_policy)
+                    transport_policy=transport_policy, safety_feedback_policy=safety_feedback_policy, planning_policy=planning_policy)
 
     def for_scope(self, scope):
         choices=scope.dataset_context.selection_config
@@ -250,6 +255,8 @@ class AgentRuntime:
         # current registration/cache can substitute a different distance table.
         from ..adapters.transport_reference import register_reference
         register_reference(scope.dataset_context)
+        from ..adapters.planning_reference import register_reference as register_planning
+        register_planning(scope.dataset_context)
         # Recovery consumes its registered date/snapshot even after midnight.
         # Eligibility/finalisation uses validate_scope's CURRENT resolution.
         pinned=scope.demo_context.demo_today if choices.get('a_daily_snapshot')=='synthetic-daily-v1' else None
@@ -269,9 +276,9 @@ class AgentRuntime:
                 # flags, client configuration, bytes and scope checks still run.
                 return self.resolve(feedback=choices.get('a_revision_feedback') or None,
                     snapshot_day=pinned, safety_protocol=protocol, transport_policy=choices.get(POLICY_KEY),
-                    safety_feedback_policy=choices.get(FEEDBACK_KEY))
+                    safety_feedback_policy=choices.get(FEEDBACK_KEY), planning_policy=choices.get(PLANNING_KEY))
         return self.resolve(feedback=choices.get('a_revision_feedback') or None, snapshot_day=pinned,
-            transport_policy=choices.get(POLICY_KEY), safety_feedback_policy=choices.get(FEEDBACK_KEY))
+            transport_policy=choices.get(POLICY_KEY), safety_feedback_policy=choices.get(FEEDBACK_KEY), planning_policy=choices.get(PLANNING_KEY))
 
     def validate_scope(self, scope):
         # Internal legacy fixtures predate runtime bindings. All HTTP-created
@@ -285,9 +292,10 @@ class AgentRuntime:
         return snapshot
 
     def _resolve(self, *, feedback=None, snapshot_day=None, safety_protocol=None, transport_policy=POLICY_VERSION,
-                 safety_feedback_policy=FEEDBACK_VERSION):
+                 safety_feedback_policy=FEEDBACK_VERSION, planning_policy=PLANNING_VERSION):
         checked_policy(transport_policy)
         checked_feedback(safety_feedback_policy)
+        checked_planning(planning_policy)
         settings = self.state.settings
         if safety_protocol is not None:
             if safety_protocol not in {'standard', 'compact'}:
@@ -332,11 +340,19 @@ class AgentRuntime:
                     choices[POLICY_KEY] = transport_policy
                 elif POLICY_KEY in choices:
                     raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='旧运行不能采用新的交通规则。'))
+            if descriptor.context.dataset_version == '2.2.0' and planning_policy is not None:
+                if choices.get(PLANNING_KEY, planning_policy) != planning_policy:
+                    raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='行程资料登记冲突。'))
+                choices[PLANNING_KEY] = planning_policy
+            elif PLANNING_KEY in choices:
+                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='旧运行不能采用新的行程资料。'))
             if feedback is not None:
                 choices['a_revision_feedback'] = feedback
             descriptor = replace(descriptor, context=descriptor.context.model_copy(update={'selection_config': choices}))
             from ..adapters.transport_reference import register_reference
             descriptor = replace(descriptor, context=register_reference(descriptor.context))
+            from ..adapters.planning_reference import register_reference as register_planning
+            descriptor = replace(descriptor, context=register_planning(descriptor.context))
             if settings.execution_mode != self.managed_mode:
                 raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='执行模式已变化，请重新启动对应模式的应用。'))
             factory = DATASET_AGENT_FACTORIES.get((settings.execution_mode, descriptor.provenance.source_name))

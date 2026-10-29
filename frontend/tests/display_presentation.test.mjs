@@ -18,6 +18,9 @@ const {LogisticsIssues}=await server.ssrLoadModule('/src/logistics_issues.tsx');
 const {TripCoveragePanel}=await server.ssrLoadModule('/src/trip_coverage.tsx');
 const {SafetyInformation}=await server.ssrLoadModule('/src/safety_information.tsx');
 const {PlanView,NewPlanPrompt,TripSeriesCard}=await server.ssrLoadModule('/src/plans.tsx');
+const {DailyItinerary}=await server.ssrLoadModule('/src/daily_itinerary.tsx');
+const {selectionPresentation}=await server.ssrLoadModule('/src/campsite_selection.ts');
+const {cataloguePlace,CampsiteArrivalDetails}=await server.ssrLoadModule('/src/campsite_details.tsx');
 const {ChangePlanning,revealRevisionPanel,preservedRevisionNotice}=await server.ssrLoadModule('/src/planning.tsx');
 const {ApiFailure:PlanningApiFailure}=await server.ssrLoadModule('/src/api.ts');
 const {RevisionComparison,savingsText}=await server.ssrLoadModule('/src/revision_comparison.tsx');
@@ -30,7 +33,7 @@ const {GroupSizeField,EquipmentUnitField,addEquipment,changeEquipmentCategory,fi
 const {VehicleFields}=await server.ssrLoadModule('/src/vehicle_fields.tsx');
 const {SessionProvider,LoginPage}=await server.ssrLoadModule('/src/session.tsx');
 const {RegisterPage}=await server.ssrLoadModule('/src/register.tsx');
-const {CookingPreparationPanel,cookingDraft}=await server.ssrLoadModule('/src/cooking_preparation.tsx');
+const {CookingPreparationPanel,cookingDraft,canHideCookingPreparation}=await server.ssrLoadModule('/src/cooking_preparation.tsx');
 const {TripPreparation}=await server.ssrLoadModule('/src/trip_preparation.tsx');
 const {NearMatches}=await server.ssrLoadModule('/src/near_matches.tsx');
 const {prepareProfileEquipment}=await server.ssrLoadModule('/src/vehicle_profile.ts');
@@ -697,6 +700,23 @@ function planFixture(){
     tent_capacity:tent,logistics_issues:[],can_view_model_diagnostics:false};
 }
 const renderPlan=(data,options={})=>renderToStaticMarkup(h(MemoryRouter,null,h(SessionProvider,null,h(PlanView,{data,error:'',refresh(){},...options}))));
+test('current plan omits the redundant adjustment card while retaining next steps and change controls',()=>{
+  const value=planFixture();
+  value.run.is_active=true;
+  value.version.status='ELIGIBLE_FOR_FINALISATION';
+  value.finalisation_available=true;
+  value.eligibility={eligible:true,blocking_reasons:[],review_required:false,valid_review_id:null};
+  value.revision_available=true;value.reassessment_available=true;
+  const before=structuredClone(value);
+  const html=renderPlan(value);
+  assert.doesNotMatch(html,/aria-label="调整露营方案"|<h2>调整露营方案<\/h2>|修改需求与资料 ↗/);
+  assert.match(html,/方案已生成，待你确认保存/);
+  assert.match(html,/调整本次需求并核对 ↗/);
+  assert.match(html,/href="\/plans\/plan\/update"/);
+  assert.match(html,/修改露营资料 ↗/);
+  assert.match(html,/修改行程或更新检查/);
+  assert.deepEqual(value,before);
+});
 test('plan budget action follows revision capability and is absent from historical, final and review views',()=>{
   const value=planFixture();value.run.is_active=true;value.revision_available=true;value.reassessment_available=true;
   value.current_version_revision=1;value.logistics_issues=[budgetIssue];
@@ -808,4 +828,198 @@ test('required fields have visible text badges without making optional profile f
   const login=renderToStaticMarkup(h(MemoryRouter,null,h(SessionProvider,null,h(LoginPage))));
   assert.doesNotMatch(login,/required-mark/);assert.match(login,/required=""/);
   assert.match(profile,/equipment: equipmentPayload\(equipment\)/);
+});
+
+
+test('daily itinerary groups saved Sydney dates and preserves specific content and suggested-time labels',()=>{
+  const entries=[
+    {entry_kind:'ACTIVITY',start_at:'2026-10-27T02:00:00Z',end_at:'2026-10-27T05:00:00Z',campsite_id:'bonnie-vale',description:'草地营位整理与用餐准备：核对饮水与淋浴设施。'},
+    {entry_kind:'CAMP',start_at:'2026-10-27T17:00:00+11:00',end_at:'2026-10-28T10:00:00+11:00',campsite_id:'bonnie-vale',description:'Synthetic overnight stay at Bonnie Vale campground; no booking implied.'},
+    {entry_kind:'ACTIVITY',start_at:'2026-10-28T10:00:00+11:00',end_at:'2026-10-28T11:00:00+11:00',campsite_id:'bonnie-vale',description:'离营整理与返程准备：清点装备并带走垃圾。'}];
+  const before=structuredClone(entries);
+  const html=render(DailyItinerary,{entries,time:x=>x,label:x=>x});
+  for(const text of ['第 1 天 · 2026-10-27','第 2 天 · 2026-10-28','核对饮水与淋浴设施','离营整理与返程准备','清点装备并带走垃圾'])assert.ok(html.includes(text),text);
+  assert.equal((html.match(/建议时间／待确认/g)||[]).length,3);
+  assert.deepEqual(entries,before);
+});
+
+test('specific matching facts remain separate from model opinion and survive historical/final display',()=>{
+  const data=planFixture();
+  data.recommendations={result:{search_outcome:'MATCHES',excluded_candidates:[],source_refs:[],assumptions:[],uncertainties:[],candidates:[
+    {campsite_id:'demo-river-flat',rank:1,reasons:['同行人数：本次 3 人，登记人数上限 4 人。','营地配套：淋浴已登记提供。','住宿费用：每晚 AUD 85.00；仅为营地费，完整费用仍需检查。'],material_uncertainties:[]},
+    {campsite_id:'demo-wattle-rest',rank:2,reasons:['营地配套：淋浴未提供，需另作安排。','住宿费用：每晚 AUD 45.00；仅为营地费，完整费用仍需检查。'],material_uncertainties:[]}]}};
+  data.planning_explanation={source_run_id:'run',selected_campsite_id:'demo-river-flat',decision_summary_unverified:'A model opinion, not a verified fact.'};
+  const before=structuredClone(data);
+  for(const options of [{},{snapshot:true},{review:true}]){
+    const html=renderPlan(data,options);
+    for(const text of ['本次 3 人','登记人数上限 4 人','淋浴已登记提供','淋浴未提供','AUD 85.00','AUD 45.00','仅为营地费','A model opinion, not a verified fact.'])assert.ok(html.includes(text),text);
+    assert.match(html,/与本次需求的匹配/);
+  }
+  assert.deepEqual(data,before);
+});
+
+
+const registeredCooking={...preparation,items:[
+  {item_key:'camping_stove',recorded:true,entered_quantity:1,confirmed_quantity:1,unit_valid:true},
+  {item_key:'fuel_canister',recorded:true,entered_quantity:2,confirmed_quantity:2,unit_valid:true}]};
+test('complete cooking registration renders no reminder or completed-state message',()=>{
+  const before=structuredClone(registeredCooking);
+  assert.equal(canHideCookingPreparation(registeredCooking),true);
+  const html=render(CookingPreparationPanel,{value:registeredCooking});
+  assert.equal(html,'');
+  assert.deepEqual(registeredCooking,before);
+});
+
+test('missing, zero, unconfirmed, invalid and duplicate cooking rows cannot be hidden',()=>{
+  const badRows=[{entered_quantity:null,confirmed_quantity:null},{entered_quantity:0,confirmed_quantity:0},
+    {confirmed_quantity:null},{unit_valid:false},{recorded:false}];
+  for(const patch of badRows){
+    const value={...registeredCooking,items:[registeredCooking.items[0],{...registeredCooking.items[1],...patch}]};
+    assert.equal(canHideCookingPreparation(value),false);
+    assert.match(render(CookingPreparationPanel,{value}),/<section class="clarifications"/);
+  }
+  for(const value of [{...registeredCooking,items:[registeredCooking.items[0],registeredCooking.items[0]]},
+    {...registeredCooking,calculation_status:'UNAVAILABLE'},
+    {...registeredCooking,calculation_status:'UNKNOWN_FUTURE_STATUS'},
+    {...registeredCooking,applicable:false},
+    {...registeredCooking,required_fuel_quantity:'4',fuel_gap:'2'},
+    {...registeredCooking,required_fuel_quantity:'2',fuel_gap:null}])assert.equal(canHideCookingPreparation(value),false);
+});
+
+test('edits, saved formal issues and errors reopen registered cooking even after a zero-gap preview',()=>{
+  const preview={...registeredCooking,required_fuel_quantity:'2',fuel_gap:'0',calculation_status:'DRAFT_ESTIMATE'};
+  assert.equal(render(CookingPreparationPanel,{value:registeredCooking,preview}),'');
+  for(const patch of [{stale:true},{unsaved:true},{attention:true},{busy:true},{error:'更新失败'}]){
+    const html=render(CookingPreparationPanel,{value:registeredCooking,preview,...patch});
+    assert.match(html,/<section class="clarifications"/);assert.doesNotMatch(html,/class="cooking-registration"/);
+  }
+  const stale=render(CookingPreparationPanel,{value:registeredCooking,preview,stale:true});
+  assert.match(stale,/资料已修改/);assert.doesNotMatch(stale,/还缺 0 个/);
+  assert.match(render(CookingPreparationPanel,{value:registeredCooking,preview,unsaved:true}),/本页修改尚未保存/);
+});
+
+test('formal cooking gaps stay visible while complete records leave no empty panel or edit link',()=>{
+  const value={...planFixture(),cooking_preparation:registeredCooking};
+  for(const options of [{},{snapshot:true},{review:true}]){
+    const html=renderPlan(value,options);
+    assert.equal(html,renderPlan(planFixture(),options));
+    assert.doesNotMatch(html,/烹饪装备已登记|查看或修改烹饪装备|一起核对炉具与燃料资料 ↗/);
+  }
+  const blocked=structuredClone(value);
+  blocked.assessments[0].result.gear_checklist.push({item_key:'fuel_canister',required_quantity:'4',available_quantity:'2',missing_quantity:'2',unit:'item',capacity_requirement:null,arrangement_status:'UNCONFIRMED',essential:true});
+  const html=renderPlan(blocked);
+  assert.match(html,/本次保存的检查仍有烹饪相关待办/);assert.doesNotMatch(html,/class="cooking-registration"/);
+  assert.equal(blocked.assessments[0].result.gear_checklist.at(-1).missing_quantity,'2');
+});
+
+test('selected campsite merges matching facts, facilities, cost and arrival without duplicating facilities',()=>{
+  const reasons=['目的地区域：Sydney & Surrounds，与本次选择一致。',
+    '同行人数：本次 1 人，登记人数上限 4 人。',
+    '交通：资料登记支持公共交通抵达；实际往返班次及最后接驳仍需确认。',
+    '必须条件：厕所，登记信息为支持。','必须条件：淋浴，登记信息为支持。',
+    '营地配套：厕所已登记提供。','营地配套：淋浴已登记提供。','营地配套：饮用水已登记提供。',
+    '住宿费用：每晚 AUD 60.00，2 晚合计 AUD 120.00；仅为营地费，完整费用仍需检查。'];
+  const before=[...reasons];
+  const html=render(panels.PlanningExplanationPanel,{siteName:'Bonnie Vale',siteId:'bonnie-vale',catalogueId:'sydney-surrounds-2.2-2026-10-23',reasons,uncertainties:[]});
+  assert.equal((html.match(/class="panel campsite-selection"/g)||[]).length,1);
+  assert.match(html,/选择 Bonnie Vale 的原因/);
+  for(const name of ['厕所','淋浴','饮用水']){
+    assert.equal((html.match(new RegExp('<th scope="row">'+name,'g'))||[]).length,1);
+    assert.ok(!html.includes('<dt>'+name+'</dt>'));
+  }
+  for(const text of ['与本次需求的匹配','本次必须条件','本次 1 人','营地费用','AUD 120.00','仅为营地费','到达方式与注意事项','营地规定与资料来源','官方营地概况','官方到达与访客信息','实际往返班次及最后接驳仍需确认'])assert.ok(html.includes(text),text);
+  assert.doesNotMatch(html,/营地与到达方式|筛选记录：适合当前需求的原因|ABOUT THE CAMPGROUND/);
+  for(const reason of reasons)assert.ok(html.includes(renderToStaticMarkup(h('li',null,reason))),'original record must remain: '+reason);
+  assert.deepEqual(reasons,before);
+});
+
+test('merged selection preserves conflicting, unknown and unfamiliar facts instead of declaring a match',()=>{
+  const reasons=['必须条件：厕所，登记信息为支持。','营地配套：厕所未提供，需另作安排。',
+    '必须条件：饮用水，登记信息为未知。','未纳入标准格式的新理由。','Untranslated original reason.'];
+  const html=render(panels.PlanningExplanationPanel,{siteName:'历史营地',siteId:'bonnie-vale',catalogueId:'old-catalogue',reasons,uncertainties:[]});
+  assert.equal((html.match(/<th scope="row">厕所/g)||[]).length,2);
+  for(const text of ['登记信息为支持','未提供，需另作安排','登记信息为未知','未纳入标准格式的新理由','Untranslated original reason.'])assert.ok(html.includes(text),text);
+  assert.doesNotMatch(html,/到达方式与注意事项|查看官方营地信息|来源登记提供|最适合|最便宜/);
+  const mixed=render(panels.PlanningExplanationPanel,{siteName:'Bents Basin',siteId:'bents-basin',catalogueId:'sydney-surrounds-2.2-2026-10-23',reasons:['营地配套：饮用水已登记提供。'],uncertainties:[]});
+  assert.match(mixed,/已登记提供/);assert.match(mixed,/营地资料登记不提供，需自备饮用水/);
+});
+
+test('arrival catalogue stays version-bound and model opinion stays folded with original run provenance',()=>{
+  const props={siteName:'Bonnie Vale',siteId:'bonnie-vale',catalogueId:'sydney-surrounds-2.2-2026-10-23',currentRunId:'new',
+    value:{source_run_id:'old',selected_campsite_id:'bonnie-vale',decision_summary_unverified:'模型原始意见，不应当作已核实资料。'},reasons:[],uncertainties:['未知的历史待确认原文。']};
+  const html=render(panels.PlanningExplanationPanel,props);
+  assert.match(html,/<details class="source-details"><summary>已保存的选择记录与模型意见<\/summary>/);
+  assert.doesNotMatch(html,/<details[^>]*open/);
+  for(const text of ['原版本生成时','模型原始意见，不应当作已核实资料','未知的历史待确认原文'])assert.ok(html.includes(text),text);
+  for(const patch of [{catalogueId:undefined},{catalogueId:'different-source'},{siteId:'demo-river-flat'},{siteId:'__proto__'}]){
+    const old=render(panels.PlanningExplanationPanel,{...props,...patch});
+    assert.doesNotMatch(old,/到达方式与注意事项|营地规定与资料来源|营地资料登记提供/);
+    assert.match(old,/模型原始意见/);
+  }
+});
+
+test('current, historical, final and reviewer plans use one merged card for each selected campsite',()=>{
+  const data=planFixture();
+  data.campsite_catalogue_id='sydney-surrounds-2.2-2026-10-23';
+  data.version.content.selected_campsite_ids=['bonnie-vale','bents-basin'];
+  data.recommendations={result:{search_outcome:'MATCHES',excluded_candidates:[],source_refs:[],assumptions:[],uncertainties:[],candidates:[
+    {campsite_id:'bonnie-vale',rank:1,reasons:['同行人数：本次 1 人，登记人数上限 4 人。'],material_uncertainties:[]},
+    {campsite_id:'bents-basin',rank:2,reasons:['营地配套：饮用水未提供，需另作安排。'],material_uncertainties:[]}]}};
+  data.planning_explanation={source_run_id:'old',selected_campsite_id:'bonnie-vale',decision_summary_unverified:'仅属于 Bonnie Vale 的模型原文。'};
+  const before=structuredClone(data);
+  for(const options of [{},{snapshot:true},{review:true}]){
+    const html=renderPlan(data,options);
+    assert.equal((html.match(/class="panel campsite-selection"/g)||[]).length,2);
+    assert.equal((html.match(/到达方式与注意事项/g)||[]).length,2);
+    assert.equal((html.match(/仅属于 Bonnie Vale 的模型原文/g)||[]).length,1);
+    assert.doesNotMatch(html,/营地与到达方式/);
+  }
+  const historical=structuredClone(data);historical.run.is_active=false;
+  assert.equal((renderPlan(historical).match(/class="panel campsite-selection"/g)||[]).length,2);
+  assert.deepEqual(data,before);
+});
+
+
+test('facility wording is consistent across mandatory and other facilities without changing known or unknown state',()=>{
+  const reasons=['必须条件：厕所，登记信息为支持。','营地配套：厕所已登记提供。',
+    '必须条件：淋浴，登记信息为支持。','营地配套：饮用水已登记提供。'];
+  const before=[...reasons];
+  const {rows}=selectionPresentation(reasons);
+  assert.equal(rows.length,3);
+  assert.deepEqual(rows.map(row=>row.detail),Array(3).fill('营地资料登记提供。'));
+  assert.deepEqual(rows.map(row=>!!row.required),[true,true,false]);
+  assert.deepEqual(rows.map(row=>row.state),[true,true,true]);
+  const unavailable=selectionPresentation(['必须条件：淋浴，登记信息为不支持。','必须条件：饮用水，登记信息为未知。','营地配套：饮用水未提供，需另作安排。']).rows;
+  assert.deepEqual(unavailable.map(row=>row.state),[false,null,false]);
+  assert.deepEqual(unavailable.map(row=>row.detail),['营地资料登记不提供。','营地资料尚未明确，待确认。','营地资料登记不提供，需自备饮用水。']);
+  assert.deepEqual(reasons,before);
+});
+
+test('official source links distinguish overview, visitor access and BYO tent pages while preserving URLs',()=>{
+  const regular=cataloguePlace('the-basin','sydney-surrounds-2.2-2026-10-23');
+  const island=cataloguePlace('cockatoo-island','sydney-surrounds-2.2-2026-10-23');
+  for(const [place,labels] of [[regular,['官方营地概况','官方到达与访客信息']],[island,['官方营地概况','官方自带帐篷露营说明']]]){
+    const before=structuredClone(place);
+    const html=render(CampsiteArrivalDetails,{place});
+    const anchors=[...html.matchAll(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/g)];
+    assert.deepEqual(anchors.map(match=>match[1]),place.source_urls);
+    assert.deepEqual(anchors.map(match=>match[2]),labels.map(text=>text+' ↗'));
+    assert.equal(new Set(anchors.map(match=>match[2])).size,place.source_urls.length);
+    assert.match(html,/target="_blank" rel="noreferrer"/);
+    assert.deepEqual(place,before);
+  }
+});
+
+
+test('saved simulated activities show their specific titles without inventing content for old free-time entries',()=>{
+  const marker='（模拟活动建议；须以正式安全检查和现场条件为准。）';
+  const base={entry_kind:'ACTIVITY',start_at:'2026-10-31T13:00:00+11:00',end_at:'2026-10-31T16:00:00+11:00',campsite_id:'the-basin'};
+  const entries=[{...base,description:'营位自然观察与趣味摄影：在营位内观察色彩和形状，穿插休息。'+marker}];
+  const before=structuredClone(entries);
+  const html=render(DailyItinerary,{entries,time:x=>x,label:x=>x});
+  assert.match(html,/<h4>营位自然观察与趣味摄影<\/h4>/);
+  for(const text of ['The Basin','模拟活动建议','在营位内观察色彩和形状','建议时间／待确认'])assert.ok(html.includes(text),text);
+  assert.deepEqual(entries,before);
+  const old=render(DailyItinerary,{entries:[{...base,description:'Synthetic rest and free-time block; no additional activities are assumed.'}],time:x=>x,label:x=>x});
+  assert.doesNotMatch(old,/营位自然观察与趣味摄影|模拟活动建议/);
 });

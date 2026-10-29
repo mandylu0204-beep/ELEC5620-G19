@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { chineseProse, discardMessage, tentSummary, type TentCapacity } from './display_facts';
 import { ModelTracePanel, type ModelTrace } from './model_trace';
+import { selectionPresentation } from './campsite_selection';
+import { cataloguePlace, additionalFacilities, CampsiteArrivalDetails } from './campsite_details';
 
 export function TentCapacityPanel({value}:{value:TentCapacity|null|undefined}){
   if(!value)return null;
@@ -22,16 +24,24 @@ export function DiscardChanges({sections,busy=false,onDiscard}:{sections:string[
 }
 
 export type PlanningExplanation={source_run_id:string;selected_campsite_id:string;decision_summary_unverified:string};
-export function PlanningExplanationPanel({value,currentRunId,siteName,reasons,uncertainties}:{value?:PlanningExplanation|null;currentRunId?:string;siteName:string;reasons:string[];uncertainties:string[]}){
-  const summary=chineseProse(value?.decision_summary_unverified);
-  const visibleReasons=reasons.map(text=>chineseProse(text)).filter((text):text is string=>text!==null);
-  const visibleUncertainties=uncertainties.map(text=>chineseProse(text)).filter((text):text is string=>text!==null);
-  return <section className="panel" aria-label="营地选择与待确认事项"><h2>为什么选择 {siteName}</h2>
-    {value&&<p className="muted">{value.source_run_id!==currentRunId?'以下是原版本生成时的模型意见，本次重评复用原行程。':'以下为已保存的模型选择意见，未经人工核实。'}</p>}
-    {summary&&<p>{summary}</p>}{visibleReasons.length>0&&<><h3>筛选记录：适合当前需求的原因</h3><ul>{visibleReasons.map((text,index)=><li key={index}>{text}</li>)}</ul></>}
-    {!summary&&!visibleReasons.length&&<p>选择理由已保存在下方原始记录中；原文未提供可直接展示的中文说明，请核对日期、同行人数、预算与必须条件，不将选择意见视为已核实承诺。</p>}
-    <h3>出发前待确认</h3><ul>{visibleUncertainties.map((text,index)=><li key={index}>{text}</li>)}<li>营位预订、实际入住时间、交通安排及最新限制仍需确认。</li></ul>
-    {(value||reasons.length>0||uncertainties.length>0)&&<details><summary>查看已保存的选择理由与待确认事项原文</summary>{value&&<p>{value.decision_summary_unverified}</p>}<h3>适合需求的原始理由</h3><ul>{reasons.map((text,index)=><li key={index}>{text}</li>)}</ul><h3>原始待确认事项</h3><ul>{uncertainties.map((text,index)=><li key={index}>{text}</li>)}</ul></details>}
+export function PlanningExplanationPanel({value,currentRunId,siteName,siteId,catalogueId,reasons,uncertainties}:{value?:PlanningExplanation|null;currentRunId?:string;siteName:string;siteId?:string;catalogueId?:string;reasons:string[];uncertainties:string[]}){
+  const {rows,costs}=selectionPresentation(reasons);
+  const place=cataloguePlace(siteId,catalogueId);
+  const extra=additionalFacilities(place,rows);
+  const visibleUncertainties=[...new Set(uncertainties.map(text=>chineseProse(text)).filter((text):text is string=>text!==null))];
+  return <section className="panel campsite-selection" aria-label="营地选择与待确认事项"><h2>选择 {siteName} 的原因</h2>
+    {rows.length>0&&<div className="table-scroll"><table><caption>与本次需求的匹配</caption><thead><tr><th>核对项目</th><th>已保存的筛选依据</th></tr></thead><tbody>
+      {rows.map((row,index)=><tr key={index}><th scope="row">{row.label}{row.required&&<small className="selection-required">本次必须条件</small>}</th><td>{row.detail}</td></tr>)}
+    </tbody></table></div>}
+    {!rows.length&&<p className="muted">未提供可直接展示的具体筛选依据；如有原始选择记录，可在下方展开查看。</p>}
+    {extra.length>0&&<div className="selection-facilities"><h3>其他营地配套</h3><dl>{extra.map(row=><div key={row.facility}><dt>{row.label}</dt><dd>{row.detail}</dd></div>)}</dl></div>}
+    {costs.length>0&&<div className="selection-cost"><h3>营地费用</h3>{costs.map(text=><p key={text}>{text}</p>)}<p className="muted">完整出行费用及预算检查请查看“费用与预算”。</p></div>}
+    <CampsiteArrivalDetails place={place}/>
+    <h3>出发前待确认</h3><ul>{visibleUncertainties.map(text=><li key={text}>{text}</li>)}<li>营位预订、实际入住时间、交通安排及最新限制仍需确认。</li></ul>
+    {(value||reasons.length>0||uncertainties.length>0)&&<details className="source-details"><summary>已保存的选择记录与模型意见</summary>
+      {value&&<><h3>模型选择意见（未经人工核实）</h3><p className="muted">{value.source_run_id!==currentRunId?'以下是原版本生成时的模型意见，本次重评复用原行程。':'以下为已保存的模型选择意见，未经人工核实。'}</p><p>{value.decision_summary_unverified}</p></>}
+      <h3>适合需求的原始理由</h3><ul>{reasons.map((text,index)=><li key={index}>{text}</li>)}</ul><h3>原始待确认事项</h3><ul>{uncertainties.map((text,index)=><li key={index}>{text}</li>)}</ul>
+    </details>}
   </section>;
 }
 

@@ -32,6 +32,20 @@ class PlanningProposal(ContractModel):
         return values
 
 
+class DailyChoice(ContractModel):
+    date: date
+    activity_id: Identifier
+
+    @field_validator('date', mode='before')
+    @classmethod
+    def iso_date_only(cls, value):
+        return PlanningProposal.iso_dates_only([value])[0]
+
+
+class DetailedPlanningProposal(PlanningProposal):
+    daily_plan: list[DailyChoice] = Field(max_length=30)
+
+
 class SearchArguments(ContractModel):
     """No model-controlled paths, dates, budget, profile, or SQL parameters."""
 
@@ -56,13 +70,21 @@ class RequirementsChangeAction(ContractModel):
 ACTION = TypeAdapter(Annotated[SearchAction | FinalAction | RequirementsChangeAction, Field(discriminator='action')])
 
 
-def parse_action(text):
+class DetailedFinalAction(FinalAction):
+    proposal: DetailedPlanningProposal
+
+
+DETAILED_ACTION = TypeAdapter(Annotated[SearchAction | DetailedFinalAction | RequirementsChangeAction, Field(discriminator='action')])
+DETAILED_VALIDATION_VERSION = 'planning-validation-daily-1'
+
+
+def parse_action(text, *, detailed=False):
     # Permit only an entire JSON fence, never extract a convenient substring.
     stripped = text.strip()
     if stripped.startswith('```json\n') and stripped.endswith('\n```'):
         stripped = stripped[8:-4]
     try:
-        return ACTION.validate_python(strict_json(stripped))
+        return (DETAILED_ACTION if detailed else ACTION).validate_python(strict_json(stripped))
     except (ValueError, TypeError, ValidationError, RecursionError):
         raise model_failure('模型未返回合法的规划动作 JSON；没有采纳任何行程。',
             code=ErrorCode.CONTRACT_INVALID) from None
@@ -70,7 +92,8 @@ def parse_action(text):
 
 def validated_itinerary(dataset, input, proposal, exposed_ids):
     try:
-        proposal = PlanningProposal.model_validate(proposal)
+        detailed = getattr(dataset, 'planning_reference', None) is not None
+        proposal = (DetailedPlanningProposal if detailed else PlanningProposal).model_validate(proposal)
         if (input.demo_context.mode != ExecutionMode.AGENT
                 or input.recommendations.execution_mode != ExecutionMode.AGENT):
             raise ValueError('Model proposals require agent execution mode')
@@ -93,12 +116,20 @@ def validated_itinerary(dataset, input, proposal, exposed_ids):
                 old_fees = [dataset.get_campsite(key).nightly_fee_cents for key in previous.selected_campsite_ids]
                 if len(old_fees) != 1 or campsite.nightly_fee_cents >= old_fees[0]:
                     raise ValueError('The requested lower campsite fee was not achieved')
+        entries, refs = camp_entries(campsite, input.confirmed_requirements), []
+        if detailed:
+            from ..adapters.planning_reference import available_activities, daily_entries
+            activities = available_activities(dataset, campsite.campsite_id, input.confirmed_requirements)
+            if activities:
+                entries, refs = daily_entries(dataset, campsite, input.confirmed_requirements, proposal.daily_plan)
+            elif proposal.daily_plan:
+                raise ValueError('No applicable activity catalogue for this campsite')
         result = ItineraryResult(
-            itinerary_entries=camp_entries(campsite, input.confirmed_requirements),
+            itinerary_entries=entries,
             selected_campsite_ids=[campsite.campsite_id],
             revision_reason=input.feedback.strip() if input.previous_version is not None else
                 'Initial campus-qwen planned proposal; assessments remain required.',
-            **artifact(input.demo_context, [campsite.source_ref], assumptions=[
+            **artifact(input.demo_context, [campsite.source_ref, *refs], assumptions=[
                 'Planning decision summary (model-generated, not a verified fact): ' + proposal.decision_summary,
                 'Sydney-local draft times are placeholders, not verified check-in or travel times.',
             ], uncertainties=['Model choice is not a booking or safety clearance; transport, supplies, costs and safety still require assessment.']),

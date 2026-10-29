@@ -1,10 +1,11 @@
 """Read-only campsite tool bound to confirmed input and saved recommendations."""
 from ..contracts.dto import RecommendCampsitesInput
 from ..contracts.enums import ExecutionMode, ErrorCode
-from ..agents.rules.planning import recommend, validate_constraints, violations
+from ..agents.rules.planning import recommend, validate_constraints, violations, match_facts
 from .client import model_failure
 
 TOOL_VERSION = 'b04-campsite-tool-1'
+DETAILED_TOOL_VERSION = 'campsite-tool-daily-1'
 
 
 def recommend_for_model(dataset, input: RecommendCampsitesInput):
@@ -48,7 +49,7 @@ class CampsiteToolset:
         return tuple(campsite.campsite_id for _, campsite in self._records)
 
     def search_campsites(self):
-        return {'tool': 'search_campsites', 'read_only': True, 'source_type': 'SYNTHETIC',
+        value = {'tool': 'search_campsites', 'read_only': True, 'source_type': 'SYNTHETIC',
             'demo_only': True, 'dataset_version': self.dataset.context.dataset_version,
             'scope': 'Only currently viable candidates from the saved recommendation; no booking or safety clearance.',
             'candidates': [{
@@ -62,3 +63,17 @@ class CampsiteToolset:
                 'mandatory_restrictions': list(campsite.mandatory_restrictions),
                 'source_ref': campsite.source_ref.model_dump(mode='json'),
             } for item, campsite in self._records]}
+
+        if getattr(self.dataset, 'planning_reference', None) is not None:
+            from ..adapters.planning_reference import available_activities
+            for item, (_, campsite) in zip(value['candidates'], self._records):
+                item.update(max_group_size=campsite.max_group_size,
+                    vehicle_access=campsite.vehicle_access,
+                    public_transport_access=campsite.public_transport_access,
+                    toilets=campsite.toilets, showers=campsite.showers, potable_water=campsite.potable_water,
+                    match_facts=[{key:value for key,value in fact.items() if key not in {'source_ref','text'}}
+                        for fact in match_facts(campsite, self.input.confirmed_requirements, self.input.profile_snapshot)],
+                    onsite_activities=[row.model_dump(mode='json') for row in available_activities(
+                        self.dataset, campsite.campsite_id, self.input.confirmed_requirements)])
+            value['daily_scope'] = 'Only listed synthetic onsite suggestions; times are host suggestions, not verified schedules.'
+        return value

@@ -11,8 +11,8 @@ from ..contracts.dto import ItineraryInput, ItineraryResult
 from ..contracts.enums import ExecutionMode, ErrorCode
 from .client import CampusModelClient, model_failure
 from ..agents.rules.common import validate_itinerary_content
-from .planning_schema import ACTION, FinalAction, RequirementsChangeAction, parse_action, validated_itinerary, VALIDATION_VERSION
-from .tools import CampsiteToolset, TOOL_VERSION
+from .planning_schema import ACTION, FinalAction, RequirementsChangeAction, parse_action, validated_itinerary, VALIDATION_VERSION, DETAILED_ACTION, DETAILED_VALIDATION_VERSION
+from .tools import CampsiteToolset, TOOL_VERSION, DETAILED_TOOL_VERSION
 
 COORDINATOR_VERSION = 'b04-planning-coordinator-2'
 SYSTEM_PROMPT = """You are CampMate's Planning Coordinator, an AI business role.
@@ -42,6 +42,21 @@ checks afterwards. A model proposal is not finalisation or a confirmed booking.
 Only search_campsites is available. You cannot access tests/oracles, files,
 network URLs, databases, credentials, approval or finalisation tools.
 If the tool offers no valid campsite, do not invent an alternative.
+"""
+
+
+DAILY_SYSTEM_PROMPT = SYSTEM_PROMPT + """
+For this protocol, proposal also requires daily_plan (date, activity_id only).
+Read match_facts and onsite_activities. Explain the selected site's concrete
+advantages and limitations against confirmed requirements and other candidates;
+shared matching criteria alone are not a unique advantage. Cite only tool facts.
+If the chosen site has activities, supply exactly one listed activity for each
+occupied date, in date order; rotate suitable options rather than inventing one.
+If it has no activities, return daily_plan: [] and acknowledge the data limit.
+The departure day is not an occupied night. Never invent an activity, route,
+opening time, transport duration, booking, equipment, cost or approval. The host
+schedules suggested onsite afternoon blocks and validates source identities.
+All activities remain subject to formal safety checks and on-site conditions.
 """
 
 
@@ -83,11 +98,20 @@ class PlanningCoordinator:
         self.dataset, self.client = dataset, client
 
     @property
+    def detailed(self):
+        return getattr(self.dataset, 'planning_reference', None) is not None
+
+    @property
+    def protocol(self):
+        return (DAILY_SYSTEM_PROMPT, DETAILED_ACTION, DETAILED_TOOL_VERSION) if self.detailed else (SYSTEM_PROMPT, ACTION, TOOL_VERSION)
+
+    @property
     def identity(self):
-        prompt = SYSTEM_PROMPT + canonical(ACTION.json_schema())
+        system_prompt, action_schema, tool_version = self.protocol
+        prompt = system_prompt + canonical(action_schema.json_schema())
         values = {
-            'coordinator_version': COORDINATOR_VERSION,
-            'validation_version': VALIDATION_VERSION, 'tool_version': TOOL_VERSION,
+            'coordinator_version': 'planning-coordinator-daily-1' if self.detailed else COORDINATOR_VERSION,
+            'validation_version': DETAILED_VALIDATION_VERSION if self.detailed else VALIDATION_VERSION, 'tool_version': tool_version,
             'prompt_sha256': digest(prompt), 'model_client': self.client.identity,
         }
         return {**values, 'configuration_fingerprint': digest(canonical(values))}
@@ -144,8 +168,9 @@ class PlanningCoordinator:
             payload['revision_feedback'] = input.feedback.strip()
             payload['previous_itinerary'] = input.previous_version.content.model_dump(mode='json',
                 include={'selected_campsite_ids', 'itinerary_entries'})
+        system_prompt, action_schema, tool_version = self.protocol
         messages = [
-            {'role': 'system', 'content': SYSTEM_PROMPT + '\nACTION_SCHEMA=' + canonical(ACTION.json_schema())},
+            {'role': 'system', 'content': system_prompt + '\nACTION_SCHEMA=' + canonical(action_schema.json_schema())},
             {'role': 'user', 'content': canonical(payload)},
         ]
         calls, hashes, served, usage = [], [], [], {}
@@ -159,7 +184,7 @@ class PlanningCoordinator:
                 served.append(completion.served_model)
             for key, value in completion.usage.items():
                 usage[key] = usage.get(key, 0) + value
-            action = parse_action(completion.content)
+            action = parse_action(completion.content, detailed=self.detailed)
             if isinstance(action, RequirementsChangeAction):
                 changes = action.requested_requirement_changes.model_dump(exclude_unset=True)
                 confirmed = input.confirmed_requirements.model_dump()
@@ -175,7 +200,7 @@ class PlanningCoordinator:
                 return PlanningOutcome(itinerary, PlanningTrace(
                     requested_model=self.client.settings.model, served_models=served,
                     configuration_fingerprint=identity['configuration_fingerprint'],
-                    prompt_sha256=identity['prompt_sha256'], tool_version=TOOL_VERSION,
+                    prompt_sha256=identity['prompt_sha256'], tool_version=tool_version,
                     turns=turn, http_attempts=attempts, elapsed_ms=int((time.monotonic() - started) * 1000),
                     tool_calls=calls, candidate_ids=list(tools.exposed_ids),
                     selected_campsite_id=action.proposal.campsite_id,

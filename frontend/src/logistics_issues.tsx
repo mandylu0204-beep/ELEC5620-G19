@@ -114,7 +114,7 @@ export function LogisticsIssues({items,onSafety,disabled=false,summary=false,onG
       <h3>{item.item_key==='tent'?'帐篷总住宿容量需要核对':item.item_key&&equipmentLabel(item.item_key)!==item.item_key?equipmentLabel(item.item_key)+' · '+title:title}</h3>
       <p><strong>问题：</strong>{item.item_key==='tent'&&item.tent_capacity?tentSummary(item.tent_capacity):title}</p>
       <p><strong>影响：</strong>本次确认资料与检查仍有缺项，暂不能保存最终方案。</p><p><strong>处理：</strong>{body}</p>
-      <CookingPreparationPanel value={item.cooking_preparation}/>
+      <CookingPreparationPanel value={item.cooking_preparation} attention/>
       {item.item_key!=='tent'&&(item.current!=null||['DISTANCE','VEHICLE_COUNT','TRANSPORT_MODE'].includes(item.code))&&<p className="muted">本次采用：{item.code==='OVER_BUDGET'?`AUD ${(Number(item.current)/100).toFixed(2)}`:factText(item.current)}</p>}
       {item.item_key!=='tent'&&item.required!=null&&<p className="muted">此行程需要：{item.code==='OVER_BUDGET'?`预算 AUD ${(Number(item.required)/100).toFixed(2)}`:factText(item.required)}</p>}
       {!!item.cost_impacts?.length&&<div className="clarifications" aria-label="关联费用"><strong>关联费用，不是另一项无关任务</strong>{item.cost_impacts.map((cost,index)=><p key={index}>{equipmentLabel(cost.item_key)}补缺费用暂无法估算：系统暂无适用单价，完整总费用仍未知。若实际已备齐，采用新资料重新检查后不再需要估算这项补缺费用；不能把未知费用当作零元。</p>)}</div>}

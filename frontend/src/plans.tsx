@@ -3,7 +3,7 @@ import { RevisionComparison, type RevisionComparisonData } from './revision_comp
 import { SafetyAdvisoryPanel } from './safety_advisory_panel';
 import type { SafetyAudit } from './safety_advisory';
 import { LogisticsIssues, type LogisticsIssue } from './logistics_issues';
-import { CookingPreparationPanel, type CookingPreparation } from './cooking_preparation';
+import { CookingPreparationPanel, canHideCookingPreparation, type CookingPreparation } from './cooking_preparation';
 import { logisticsQuestions, needsMealChoice } from './logistics_guidance';
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
@@ -18,9 +18,8 @@ import { PROFILE_SAVED_NOTICE, chineseProse, type TentCapacity } from './display
 import { LogisticsPlanPanel, type LogisticsAudit } from './logistics_plan';
 import { blockerText, checkNames, safetyCondition, planRowState } from './plan_language';
 import { SafetyInformation } from './safety_information';
-import { itineraryText } from './user_terms';
+import { DailyItinerary } from './daily_itinerary';
 import { campName } from './campsite_names';
-import { CampsiteDetails } from './campsite_details';
 import { TripPreparation, type PreparationSummary } from './trip_preparation';
 export { campName } from './campsite_names';
 import type { TripCoverage } from './trip_coverage';
@@ -132,9 +131,11 @@ export function PlansPage(){
   const {data:seriesData,error,refresh}=useSavedRead<{trip_series:TripSeriesCardData[];independent_plans:PlanRow[]}>('/trip-series',seriesActive);
   const refreshSeries=refresh;
   const rows=seriesData?.independent_plans.filter(row=>!deleted.has(row.plan_id))??[];
-  return <><div className="page-heading"><span className="eyebrow">方案总览</span><h1>我的露营方案</h1><p>查看安排、处理待确认事项，保存你的最终方案。</p></div>{error&&<p className="error-box" role="alert">{error}</p>}<button className="secondary-button" onClick={refresh}>刷新方案</button>
+  return <><div className="page-heading"><span className="eyebrow">方案总览</span><h1>我的露营方案</h1><p>查看安排、处理待确认事项，保存你的最终方案。</p></div>{error&&<p className="error-box" role="alert">{error}</p>}<div className="plan-list-actions">
+      <button className="secondary-button" onClick={refresh}>刷新方案</button>
+      <Link className="secondary-button" to="/profile">新建独立出行 ↗</Link>
+    </div>
     {deleteError&&<p className="error-box" role="alert">{deleteError}</p>}
-    <Link className="secondary-button" to="/profile">新建独立出行 ↗</Link>
     {seriesDelete&&<section className="error-box" role="alert"><p>删除整次出行及全部方案？页面将不能再读取其历史和最终记录；服务端审计内部保留。</p><button disabled={!!deleting} onClick={removeSeries}>确认删除整次出行</button><button disabled={!!deleting} onClick={()=>setSeriesDelete(null)}>取消</button></section>}
     {seriesData&&confirmDelete&&!rows.some(row=>row.plan_id===confirmDelete)&&<section className="error-box" role="alert"><p>删除选中的方案？删除历史不会改变当前方案；删除当前方案后不会自动恢复历史方案。</p><button disabled={!!deleting} onClick={()=>void removePlan(confirmDelete)}>确认删除选中方案</button><button disabled={!!deleting} onClick={()=>setConfirmDelete(null)}>取消</button></section>}
     <div className="plan-cards">{seriesData?.trip_series.map(value=><TripSeriesCard key={value.trip_series_id} value={value} busy={!!deleting} onDeletePlan={setConfirmDelete} onDeleteSeries={()=>setSeriesDelete(value)}/>)}</div>
@@ -225,6 +226,8 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
   const mealUnknown=needsMealChoice(logistics?.clarifications??[]);
   const logisticsIssues=data.logistics_issues??[];
   const cookingPreparation=(data as PlanDetail&{cooking_preparation?:CookingPreparation|null}).cooking_preparation;
+  const cookingAttention=!!data.current_inputs_error||logisticsIssues.some(item=>['camping_stove','fuel_canister'].includes(item.item_key??'')||item.code==='COOKING_ARRANGEMENT')
+    ||!!logistics?.gear_checklist.some(item=>['camping_stove','fuel_canister'].includes(item.item_key)&&item.essential&&(item.missing_quantity==null||Number(item.missing_quantity)>0));
   if(logisticsIssues.length)['LOGISTICS_INCOMPLETE','COSTS_INCOMPLETE','ESSENTIAL_GEAR_MISSING','TRANSPORT_UNAVAILABLE'].forEach(code=>hiddenCodes.add(code));
   const warnings = [...new Set(rawWarnings.filter(item=>!hiddenCodes.has(item.code)).map(item=>roadClosed&&item.code==='ROAD_UNAVAILABLE'?'通往营地的道路关闭，需要更换可通行的营地。':mealUnknown&&['LOGISTICS_INCOMPLETE','COSTS_INCOMPLETE'].includes(item.code)?'请先选择用餐方式，才能确定餐食费用及烹饪装备。':item.code==='LOGISTICS_INCOMPLETE'&&weatherOnlyLogistics?'缺少适用的天气资料，装备检查仍有待确认。':blockerText(item.code)))];
   const overBudget = logistics?.budget_difference_cents != null && logistics.budget_difference_cents > 0;
@@ -263,7 +266,6 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       </dl>
     </header>
     {error&&<p className="error-box" role="alert">读取更新失败：{error}</p>}
-    {!review&&!snapshot&&run?.is_active&&(!data.trip_series||data.trip_series.is_current)&&!['PENDING','RUNNING','FAILED'].includes(run.status)&&requirements&&<ReplanFromProfile key={data.plan.plan_id} source={{plan_id:data.plan.plan_id,expected_series_revision:data.trip_series?.series_revision??0,expected_current_version_id:data.plan.current_version_id,expected_version_revision:data.current_version_revision??null,expected_active_run_id:run!.run_id,expected_run_revision:run!.revision}} previousProfile={confirmed!.profile_snapshot} refreshSource={refresh}/>}
     {!review&&!snapshot&&<CheckFeedback data={data}/>}
     {!snapshot&&candidatePreview&&<div className="mode-notice">正在预览新方案，原方案仍是当前安排。<Link className="text-link" to={'/plans/'+data.plan.plan_id}>返回当前方案 ↗</Link></div>}
     {!snapshot&&!candidatePreview&&run&&(!run.is_active||data.trip_series?.is_current===false)&&<div className="mode-notice"><span>正在查看历史方案，评估属于当时的资料与证据，不是本次更新后的检查。</span>{data.trip_series?.is_current===false?data.trip_series.current_plan_id&&<Link className="secondary-button" to={'/plans/'+data.trip_series.current_plan_id}>查看本次出行当前方案</Link>:current&&<button className="secondary-button" onClick={current}>查看当前方案</button>}</div>}
@@ -288,8 +290,8 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       {hasSafetyIssue&&<button className="secondary-button" onClick={()=>{const gear=onlyPreparationBlocked&&!qualityIssues.length;setSection(gear?'gear':'safety');tabRefs.current[gear?1:3]?.focus();}}>{onlyPreparationBlocked&&!qualityIssues.length?'查看装备与交通':'查看安全信息'}</button>}
     </section>}
     {review&&data.current_inputs_error&&<div className="mode-notice"><strong>检查结果待更新</strong><p>这份方案的检查依据暂时无法与当前资料核对，更新检查后才能继续审核。</p><details><summary>查看系统详情</summary><p>{data.current_inputs_error}</p></details></div>}
-    {cookingPreparation&&!logisticsIssues.some(item=>item.cooking_preparation)&&<div className="panel">
-      <CookingPreparationPanel value={cookingPreparation}/>
+    {cookingPreparation&&(!canHideCookingPreparation(cookingPreparation)||cookingAttention)&&!logisticsIssues.some(item=>item.cooking_preparation)&&<div className="panel">
+      <CookingPreparationPanel value={cookingPreparation} attention={cookingAttention}/>
       {!snapshot&&!review&&run?.is_active&&data.trip_series?.is_current!==false&&!['PENDING','RUNNING'].includes(run.status)&&
         <Link className="text-link" to={'/profile?plan_id='+encodeURIComponent(data.plan.plan_id)+'&focus=equipment.camping_stove'}>一起核对炉具与燃料资料 ↗</Link>}
     </div>}
@@ -308,19 +310,15 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       </button>)}
     </div>
     <div {...pane('itinerary')}>
-      {version&&<PlanningExplanationPanel value={data.planning_explanation} currentRunId={run?.run_id} siteName={title} reasons={recommendation?.candidates.find(item=>version.content.selected_campsite_ids.includes(item.campsite_id))?.reasons??[]} uncertainties={recommendation?.candidates.find(item=>version.content.selected_campsite_ids.includes(item.campsite_id))?.material_uncertainties??[]}/>}
+      {version&&!noMatch&&version.content.selected_campsite_ids.map(id=><PlanningExplanationPanel key={id} siteId={id} catalogueId={data.campsite_catalogue_id} value={data.planning_explanation?.selected_campsite_id===id?data.planning_explanation:null} currentRunId={run?.run_id} siteName={campName(id)} reasons={recommendation?.candidates.find(item=>item.campsite_id===id)?.reasons??[]} uncertainties={recommendation?.candidates.find(item=>item.campsite_id===id)?.material_uncertainties??[]}/>)}
       {noMatch?data.recommendation_guidance?<NearMatches value={data.recommendation_guidance} planId={data.plan.plan_id} readOnly={snapshot||review||!run?.is_active||data.trip_series?.is_current===false}/>:<section className="panel"><h2>没有满足需求的营地</h2><p>请在“记录”中查看被排除营地的理由，调整条件并重新确认需求。</p></section>:<section className="panel itinerary-panel"><div className="section-title"><span className="eyebrow">行程安排</span><h2>行程安排</h2></div>
         {version?<><div className="itinerary-camps">{version.content.selected_campsite_ids.map(id=><span key={id}>{campName(id)}</span>)}</div>
           {run?.operation==='REASSESS'&&<p className="muted">行程保持不变。{!snapshot&&!review&&'本轮检查进度和结果见上方。'}{logisticsAudit&&'装备与预算建议可在对应页面查看。'}</p>}
-          <p className="mode-notice">以下时间为建议时间／待确认，不是已核实的入住、退房或交通时刻，请另行核实实际安排。</p>{version.content.itinerary_entries.length?<ol className="plan-timeline">{version.content.itinerary_entries.map((entry,index)=><li key={index}>
-            <div className="timeline-time"><span>{label(entry.entry_kind)}</span><time>{time(entry.start_at)}</time><small>建议时间／待确认</small></div>
-            <div className="timeline-content"><h3>{entry.campsite_id?campName(entry.campsite_id):label(entry.entry_kind)}</h3><p>{chineseProse(itineraryText(entry.description))??'此项为建议行程，具体活动与安排待确认。'}</p>{!chineseProse(itineraryText(entry.description))&&<details><summary>查看保存的行程描述原文</summary><p>{entry.description}</p></details>}<small>至 {time(entry.end_at)}</small></div>
-          </li>)}</ol>:<p className="muted">没有提供行程条目。</p>}
+          <p className="mode-notice">以下时间为建议时间／待确认，不是已核实的入住、退房或交通时刻，请另行核实实际安排。</p>{version.content.itinerary_entries.length?<DailyItinerary entries={version.content.itinerary_entries} time={time} label={label}/>:<p className="muted">没有提供行程条目。</p>}
 
         </>:<div className="plan-empty"><span aria-hidden="true">⌁</span><h3>行程正在准备中</h3><p>{run?.status==='FAILED'?'先处理上方的执行问题，再继续规划。':'规划完成后，可在这里查看露营安排。'}</p></div>}
       </section>}
       {version&&!noMatch&&<TripPreparation value={data.preparation_summary}/>}
-      {version&&!noMatch&&version.content.selected_campsite_ids.map(id=><CampsiteDetails key={id} id={id} catalogueId={data.campsite_catalogue_id}/>)}
       {recommendation&&!noMatch&&<details className="panel recommendation-panel"><summary>比较其他推荐营地 <span>{recommendation.candidates.length} 个</span></summary>
         <ol className="candidate-list">{recommendation.candidates.map(item=><li key={item.campsite_id}><h3>#{item.rank} · {campName(item.campsite_id)}</h3><ul>{item.reasons.map((reason,index)=><li key={index}>{chineseProse(reason)??'该项理由未提供中文说明，请查看原始记录。'}</li>)}</ul>{item.material_uncertainties.map((uncertainty,index)=><p className="muted" key={index}>尚不确定：{chineseProse(uncertainty)??'详情见保存的原文记录。'}</p>)}<details><summary>查看该营地推荐原文</summary>{[...item.reasons,...item.material_uncertainties].map((text,index)=><p key={index}>{text}</p>)}</details></li>)}</ol>
       </details>}
