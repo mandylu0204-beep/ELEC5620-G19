@@ -18,6 +18,7 @@ const {LogisticsIssues}=await server.ssrLoadModule('/src/logistics_issues.tsx');
 const {TripCoveragePanel}=await server.ssrLoadModule('/src/trip_coverage.tsx');
 const {SafetyInformation}=await server.ssrLoadModule('/src/safety_information.tsx');
 const {PlanView,NewPlanPrompt,TripSeriesCard}=await server.ssrLoadModule('/src/plans.tsx');
+const {FinalPlanNavigation}=await server.ssrLoadModule('/src/finals.tsx');
 const {DailyItinerary}=await server.ssrLoadModule('/src/daily_itinerary.tsx');
 const {selectionPresentation}=await server.ssrLoadModule('/src/campsite_selection.ts');
 const {cataloguePlace,CampsiteArrivalDetails}=await server.ssrLoadModule('/src/campsite_details.tsx');
@@ -717,6 +718,33 @@ test('current plan omits the redundant adjustment card while retaining next step
   assert.match(html,/修改行程或更新检查/);
   assert.deepEqual(value,before);
 });
+test('current final snapshot offers a guarded update route while historical finals only link to current state',()=>{
+  const current=routed(FinalPlanNavigation,{planId:'plan / one',isCurrent:true});
+  assert.match(current,/更新本次出行 ↗/);assert.match(current,/href="\/plans\/plan%20%2F%20one\/update"/);
+  const historical=routed(FinalPlanNavigation,{planId:'plan',isCurrent:false});
+  assert.match(historical,/href="\/plans\/plan"/);assert.doesNotMatch(historical,/更新本次出行|\/update/);
+});
+
+test('saved current plan retains successor navigation without reopening its immutable final',()=>{
+  const value=planFixture();value.run.is_active=true;value.version.status='FINALISED';
+  value.plan.current_version_id='version';value.plan.final_version_id='version';
+  value.last_final={plan_id:'plan',final_id:'saved-final',is_current:true,run_id:'run',plan_version_id:'version'};
+  value.finalisation_available=false;value.revision_available=false;value.reassessment_available=false;
+  const before=structuredClone(value);
+  const html=renderPlan(value);
+  assert.match(html,/最终方案已保存，仍可更新本次出行/);
+  assert.match(html,/href="\/plans\/plan\/update"/);
+  assert.match(html,/修改露营资料 ↗/);
+  assert.match(html,/新方案需要重新检查和确认保存/);
+  assert.doesNotMatch(html,/修改行程或更新检查/);
+  for(const options of [{snapshot:true},{review:true}])
+    assert.doesNotMatch(renderPlan(value,options),/最终方案已保存，仍可更新本次出行|调整本次需求并核对 ↗|修改露营资料 ↗/);
+  for(const patch of [{run:{...value.run,is_active:false}},{trip_series:{is_current:false,current_plan_id:'successor'}},
+      {run:{...value.run,status:'RUNNING'}},{revision_comparison:comparisonFixture()}])
+    assert.doesNotMatch(renderPlan({...value,...patch}),/最终方案已保存，仍可更新本次出行|调整本次需求并核对 ↗|修改露营资料 ↗/);
+  assert.deepEqual(value,before);
+});
+
 test('plan budget action follows revision capability and is absent from historical, final and review views',()=>{
   const value=planFixture();value.run.is_active=true;value.revision_available=true;value.reassessment_available=true;
   value.current_version_revision=1;value.logistics_issues=[budgetIssue];
@@ -1018,7 +1046,14 @@ test('saved simulated activities show their specific titles without inventing co
   const before=structuredClone(entries);
   const html=render(DailyItinerary,{entries,time:x=>x,label:x=>x});
   assert.match(html,/<h4>营位自然观察与趣味摄影<\/h4>/);
-  for(const text of ['The Basin','模拟活动建议','在营位内观察色彩和形状','建议时间／待确认'])assert.ok(html.includes(text),text);
+  for(const text of ['The Basin','在营位内观察色彩和形状','建议时间／待确认','须以正式安全检查和现场条件为准'])assert.ok(html.includes(text),text);
+  assert.doesNotMatch(html,/模拟活动建议/);
+  const data=planFixture();data.version.content.itinerary_entries=entries;
+  for(const options of [{},{snapshot:true},{review:true}]){
+    const page=renderPlan(data,options);
+    assert.match(page,/营位自然观察与趣味摄影/);assert.doesNotMatch(page,/模拟活动建议/);
+    assert.match(page,/须以正式安全检查和现场条件为准/);
+  }
   assert.deepEqual(entries,before);
   const old=render(DailyItinerary,{entries:[{...base,description:'Synthetic rest and free-time block; no additional activities are assumed.'}],time:x=>x,label:x=>x});
   assert.doesNotMatch(old,/营位自然观察与趣味摄影|模拟活动建议/);

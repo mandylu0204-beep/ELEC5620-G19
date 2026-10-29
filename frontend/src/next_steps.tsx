@@ -7,6 +7,8 @@ import { tripUpdatePath } from './trip_update';
 export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}) {
   const run=data.run;
   if(!run?.is_active||data.trip_series?.is_current===false||['PENDING','RUNNING','FAILED'].includes(run.status))return null;
+  // A pending candidate must be selected or kept before opening a successor.
+  if(data.revision_comparison&&!data.revision_comparison.decision)return null;
   const reasons=new Set(data.eligibility?.blocking_reasons.map(item=>item.code));
   const review=data.reviews.at(-1);
   const safety=data.assessments.find(item=>item.kind==='SAFETY')?.result;
@@ -23,8 +25,10 @@ export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}
       : '当前无法核对已有检查结果，暂不能确认保存。你的行程和已有结果仍然保留，请在服务恢复后再检查。';
   }else if(data.recommendations?.result.search_outcome==='NO_MATCH'){
     title='可以参考最接近的营地';description='下方会列出最接近的营地及未满足的条件。参考差异调整预算、日期或必须条件，再重新确认需求。';
-  }else if(data.version?.status==='FINALISED')return null;
-  else if(data.finalisation_available&&data.eligibility?.eligible){
+  }else if(data.version?.status==='FINALISED'){
+    title='最终方案已保存，仍可更新本次出行';
+    description='需要修改日期、人数、预算或露营资料时，可核对本次更新并重新确认。已保存的最终方案会保留，新方案需要重新检查和确认保存。';
+  }else if(data.finalisation_available&&data.eligibility?.eligible){
     title=review?.decision==='APPROVE'?'审核已通过，待你确认保存':'方案已生成，待你确认保存';
     description='核对行程、费用、装备和安全信息，在页面下方勾选确认后保存最终方案。';
   }else if(roadClosed||reasons.has('ROAD_CLOSED')||reasons.has('CAMPSITE_CLOSED')||reasons.has('FIRE_PROHIBITED')){

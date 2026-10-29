@@ -16,11 +16,14 @@ export function DailyItinerary({entries,time,label}:{entries:SavedEntry[];time:(
       const separator=text?.indexOf('：')??-1;
       const namedActivity=entry.entry_kind==='ACTIVITY'&&!!text?.endsWith(simulatedActivityMarker)&&separator>0&&separator<=80;
       const activityTitle=namedActivity?text!.slice(0,separator):null;
-      const description=namedActivity?text!.slice(separator+1):text;
+      // Keep the saved provenance untouched; avoid repeating its internal marker on cards.
+      const description=namedActivity
+        ?text!.slice(separator+1,-simulatedActivityMarker.length)+'（须以正式安全检查和现场条件为准。）'
+        :text;
       return <li key={i}>
       <div className="timeline-time"><span>{label(entry.entry_kind)}</span><time>{time(entry.start_at)}</time><small>建议时间／待确认</small></div>
       <div className="timeline-content"><h4>{activityTitle??(entry.campsite_id?campName(entry.campsite_id):label(entry.entry_kind))}</h4>
-        {activityTitle&&entry.campsite_id&&<p className="muted">{campName(entry.campsite_id)} · 模拟活动建议</p>}
+        {activityTitle&&entry.campsite_id&&<p className="muted">{campName(entry.campsite_id)}</p>}
         <p>{description??'此项为建议行程，具体活动与安排待确认。'}</p>
         {!text&&<details><summary>查看保存的行程描述原文</summary><p>{entry.description}</p></details>}
         <small>至 {time(entry.end_at)}</small>
