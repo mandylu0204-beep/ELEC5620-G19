@@ -75,6 +75,11 @@ class WorkflowConfiguration:
                 raise failure(ErrorCode.STALE_CONTEXT, 'The minimal transport policy requires a v2 dataset.')
             self._context = self._context.model_copy(update={
                 'rules_version': self._context.rules_version + '/' + transport_policy})
+        from ..adapters.planning_reference import POLICY_KEY as PLANNING_KEY, checked_policy as planning_policy
+        planning_details = planning_policy(base.selection_config.get(PLANNING_KEY))
+        if planning_details is not None:
+            self._context = self._context.model_copy(update={
+                'rules_version': self._context.rules_version + '/' + planning_details})
         self._scenarios = tuple(selected)
         from ..llm.safety_feedback import POLICY_KEY as FEEDBACK_KEY, checked_policy as feedback_policy
         action_feedback = feedback_policy(base.selection_config.get(FEEDBACK_KEY))

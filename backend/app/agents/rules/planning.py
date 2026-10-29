@@ -1,4 +1,5 @@
 from datetime import datetime, time, timedelta
+from decimal import Decimal
 
 from ...contracts.dto import (
     CampsiteCandidate, ExcludedCandidate, ItineraryEntry, ItineraryResult,
@@ -88,6 +89,8 @@ def recommend(dataset, input) -> RecommendCampsitesResult:
             excluded.append(ExcludedCandidate(campsite_id=campsite.campsite_id, reasons=reasons))
             continue
         score, matches, uncertainties = 0, ['Registered synthetic region, capacity and known hard constraints match.'], []
+        if getattr(dataset, 'planning_reference', None) is not None:
+            matches = [fact['text'] for fact in match_facts(campsite, requirements, profile)]
         for preference in requirements.preferences:
             normalized = preference.strip().casefold()
             feature = SOFT_FEATURES.get(normalized)
@@ -109,6 +112,10 @@ def recommend(dataset, input) -> RecommendCampsitesResult:
             uncertainties.append('Campsite fee is unknown.')
         if profile.transport.transport_type is None:
             uncertainties.append('Transport type is not confirmed.')
+        if getattr(dataset, 'planning_reference', None) is not None:
+            from ...adapters.planning_reference import available_activities
+            if not available_activities(dataset, campsite.campsite_id, requirements):
+                uncertainties.append('这处营地在本次日期暂无适用的活动资料；仅提供住宿与休息草稿，不编造活动。')
         uncertainties.append('Recommendation is not booking availability or safety clearance.')
         ranked.append(((-score, campsite.nightly_fee_cents is None, campsite.nightly_fee_cents or 0, campsite.campsite_id), campsite, matches, uncertainties))
     ranked.sort(key=lambda item: item[0])
@@ -163,11 +170,19 @@ def itinerary(dataset, input) -> ItineraryResult:
             raise input_failure('Unsupported revision feedback; use structured, reconfirmed requirements.', 'feedback')
     campsite = dataset.get_campsite(viable[0].campsite_id)
     entries = camp_entries(campsite, requirements)
+    from ...adapters.planning_reference import available_activities, daily_entries
+    activities = available_activities(dataset, campsite.campsite_id, requirements)
+    activity_refs = []
+    if activities:
+        from types import SimpleNamespace
+        choices = [SimpleNamespace(date=requirements.start_date + timedelta(days=i),
+            activity_id=activities[i % len(activities)].activity_id) for i in range(requirements.duration_nights)]
+        entries, activity_refs = daily_entries(dataset, campsite, requirements, choices)
     result = ItineraryResult(
         itinerary_entries=entries, selected_campsite_ids=[campsite.campsite_id],
         revision_reason=input.feedback or ('Deterministic draft revision.' if input.previous_version else 'Initial deterministic draft.'),
         requested_requirement_changes=changes,
-        **artifact(input.demo_context, [campsite.source_ref],
+        **artifact(input.demo_context, [campsite.source_ref, *activity_refs],
                    assumptions=['Sydney-local draft times are placeholders, not verified check-in or travel times.'],
                    uncertainties=['Transport, supplies, booking and safety still require assessment.', *(['Proposed preference changes require user confirmation before execution.'] if changes else [])]),
     )
@@ -186,3 +201,41 @@ def camp_entries(campsite, requirements):
         if offset < requirements.duration_nights - 1:
             entries.append(ItineraryEntry(entry_kind='ACTIVITY', start_at=end, end_at=datetime.combine(day + timedelta(days=1), time(17), TRIP_ZONE), campsite_id=campsite.campsite_id, description=REST_DESCRIPTION))
     return entries
+
+
+def match_facts(campsite, requirements, profile):
+    """Host facts from the same confirmed input; never model-authored proof."""
+    facts = []
+    def add(code, expected, actual, text):
+        facts.append({'code': code, 'expected': expected, 'actual': actual,
+            'text': text, 'source_ref': campsite.source_ref.model_dump(mode='json')})
+    add('REGION', requirements.destination, campsite.region, f'目的地区域：{campsite.region}，与本次选择一致。')
+    add('GROUP_CAPACITY', profile.group_size, campsite.max_group_size,
+        f'同行人数：本次 {profile.group_size} 人，登记人数上限 {campsite.max_group_size} 人。')
+    mode = profile.transport.transport_type
+    if mode == 'PUBLIC_TRANSPORT':
+        add('TRANSPORT', mode, campsite.public_transport_access,
+            '交通：资料登记支持公共交通抵达；实际往返班次及最后接驳仍需确认。')
+    elif mode == 'CAR':
+        add('TRANSPORT', mode, vehicle_arrival_supported(campsite),
+            '交通：资料登记支持车辆抵达。' if campsite.vehicle_access is True
+            else '交通：可驾车抵达停车处，之后需搬运装备步行进入营位；车辆不能直接进入营位。')
+    fields = {**{key:value for key,value in HARD_FEATURES.items()}, 'step-free path':'step_free_path',
+        'wheelchair access':'wheelchair_accessible', 'wheelchair-accessible toilet':'wheelchair_accessible'}
+    names = {'toilets':'厕所','showers':'淋浴','potable_water':'饮用水','fire_allowed':'用火',
+        'pets_allowed':'宠物同行','wheelchair_accessible':'无障碍设施','step_free_path':'无台阶通道',
+        'vehicle_access':'车辆进入营地','public_transport_access':'公共交通抵达'}
+    for condition in [*requirements.mandatory_constraints, *profile.accessibility_requirements]:
+        field = fields.get(condition)
+        if field:
+            actual = getattr(campsite, field)
+            add('REQUIRED_'+field, True, actual, f'必须条件：{names[field]}，登记信息为'+('支持。' if actual is True else '不支持。' if actual is False else '未知。'))
+    for field in ('toilets','showers','potable_water'):
+        actual = getattr(campsite, field)
+        if actual is not None:
+            add('FACILITY_'+field, None, actual, f'营地配套：{names[field]}'+('已登记提供。' if actual else '未提供，需另作安排。'))
+    if campsite.nightly_fee_cents is not None:
+        total = campsite.nightly_fee_cents * requirements.duration_nights
+        add('CAMPSITE_COST', requirements.budget_cents, total,
+            f'住宿费用：每晚 AUD {Decimal(campsite.nightly_fee_cents)/100:.2f}，{requirements.duration_nights} 晚合计 AUD {Decimal(total)/100:.2f}；仅为营地费，完整费用仍需检查。')
+    return facts

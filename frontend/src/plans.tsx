@@ -17,9 +17,8 @@ import { PROFILE_SAVED_NOTICE, chineseProse, type TentCapacity } from './display
 import { LogisticsPlanPanel, type LogisticsAudit } from './logistics_plan';
 import { blockerText, checkNames, safetyCondition, planRowState } from './plan_language';
 import { SafetyInformation } from './safety_information';
-import { itineraryText } from './user_terms';
+import { DailyItinerary } from './daily_itinerary';
 import { campName } from './campsite_names';
-import { CampsiteDetails } from './campsite_details';
 import { TripPreparation, type PreparationSummary } from './trip_preparation';
 export { campName } from './campsite_names';
 import type { TripCoverage } from './trip_coverage';
@@ -303,19 +302,15 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       </button>)}
     </div>
     <div {...pane('itinerary')}>
-      {version&&<PlanningExplanationPanel value={data.planning_explanation} currentRunId={run?.run_id} siteName={title} reasons={recommendation?.candidates.find(item=>version.content.selected_campsite_ids.includes(item.campsite_id))?.reasons??[]} uncertainties={recommendation?.candidates.find(item=>version.content.selected_campsite_ids.includes(item.campsite_id))?.material_uncertainties??[]}/>}
+      {version&&!noMatch&&version.content.selected_campsite_ids.map(id=><PlanningExplanationPanel key={id} siteId={id} catalogueId={data.campsite_catalogue_id} value={data.planning_explanation?.selected_campsite_id===id?data.planning_explanation:null} currentRunId={run?.run_id} siteName={campName(id)} reasons={recommendation?.candidates.find(item=>item.campsite_id===id)?.reasons??[]} uncertainties={recommendation?.candidates.find(item=>item.campsite_id===id)?.material_uncertainties??[]}/>)}
       {noMatch?data.recommendation_guidance?<NearMatches value={data.recommendation_guidance} planId={data.plan.plan_id} readOnly={snapshot||review||!run?.is_active||data.trip_series?.is_current===false}/>:<section className="panel"><h2>没有满足需求的营地</h2><p>请在“记录”中查看被排除营地的理由，调整条件并重新确认需求。</p></section>:<section className="panel itinerary-panel"><div className="section-title"><span className="eyebrow">行程安排</span><h2>行程安排</h2></div>
         {version?<><div className="itinerary-camps">{version.content.selected_campsite_ids.map(id=><span key={id}>{campName(id)}</span>)}</div>
           {run?.operation==='REASSESS'&&<p className="muted">行程保持不变。{!snapshot&&!review&&'本轮检查进度和结果见上方。'}{logisticsAudit&&'装备与预算建议可在对应页面查看。'}</p>}
-          <p className="mode-notice">以下时间为建议时间／待确认，不是已核实的入住、退房或交通时刻，请另行核实实际安排。</p>{version.content.itinerary_entries.length?<ol className="plan-timeline">{version.content.itinerary_entries.map((entry,index)=><li key={index}>
-            <div className="timeline-time"><span>{label(entry.entry_kind)}</span><time>{time(entry.start_at)}</time><small>建议时间／待确认</small></div>
-            <div className="timeline-content"><h3>{entry.campsite_id?campName(entry.campsite_id):label(entry.entry_kind)}</h3><p>{chineseProse(itineraryText(entry.description))??'此项为建议行程，具体活动与安排待确认。'}</p>{!chineseProse(itineraryText(entry.description))&&<details><summary>查看保存的行程描述原文</summary><p>{entry.description}</p></details>}<small>至 {time(entry.end_at)}</small></div>
-          </li>)}</ol>:<p className="muted">没有提供行程条目。</p>}
+          <p className="mode-notice">以下时间为建议时间／待确认，不是已核实的入住、退房或交通时刻，请另行核实实际安排。</p>{version.content.itinerary_entries.length?<DailyItinerary entries={version.content.itinerary_entries} time={time} label={label}/>:<p className="muted">没有提供行程条目。</p>}
 
         </>:<div className="plan-empty"><span aria-hidden="true">⌁</span><h3>行程正在准备中</h3><p>{run?.status==='FAILED'?'先处理上方的执行问题，再继续规划。':'规划完成后，可在这里查看露营安排。'}</p></div>}
       </section>}
       {version&&!noMatch&&<TripPreparation value={data.preparation_summary}/>}
-      {version&&!noMatch&&version.content.selected_campsite_ids.map(id=><CampsiteDetails key={id} id={id} catalogueId={data.campsite_catalogue_id}/>)}
       {recommendation&&!noMatch&&<details className="panel recommendation-panel"><summary>比较其他推荐营地 <span>{recommendation.candidates.length} 个</span></summary>
         <ol className="candidate-list">{recommendation.candidates.map(item=><li key={item.campsite_id}><h3>#{item.rank} · {campName(item.campsite_id)}</h3><ul>{item.reasons.map((reason,index)=><li key={index}>{chineseProse(reason)??'该项理由未提供中文说明，请查看原始记录。'}</li>)}</ul>{item.material_uncertainties.map((uncertainty,index)=><p className="muted" key={index}>尚不确定：{chineseProse(uncertainty)??'详情见保存的原文记录。'}</p>)}<details><summary>查看该营地推荐原文</summary>{[...item.reasons,...item.material_uncertainties].map((text,index)=><p key={index}>{text}</p>)}</details></li>)}</ol>
       </details>}

@@ -50,10 +50,12 @@ def assess(dataset, input, *, expected_mode=ExecutionMode.DETERMINISTIC_DEMO) ->
         and not re.search(r'\b(?:no|without|avoid|remove)\s+(?:a\s+)?(?:campfires?|bonfires?|open fire)\b', entry.description.casefold())
         for entry in input.saved_itinerary.itinerary_entries
     )
+    from ...adapters.planning_reference import known_activity
     unknown_activities = [
         entry.description for entry in input.saved_itinerary.itinerary_entries
         if not (entry.entry_kind == 'CAMP' and entry.description == camp_description(dataset.get_campsite(entry.campsite_id)))
         and not (entry.entry_kind == 'ACTIVITY' and entry.description == REST_DESCRIPTION)
+        and not known_activity(dataset, entry, input.saved_itinerary, requirements)
     ]
     if unknown_activities:
         hazards.extend(f'Unclassified activity/travel requires human review: {description}' for description in unknown_activities)

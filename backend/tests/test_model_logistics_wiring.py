@@ -80,6 +80,12 @@ def mock_roles(monkeypatch, *, settings=None):
                 first = date.fromisoformat(req['start_date'])
                 action = final_action(campsite_id=site, nights=[(first + timedelta(days=i)).isoformat()
                     for i in range(req['duration_nights'])])
+                tool = json.loads(messages[-1]['content'][12:])
+                if 'daily_scope' in tool:
+                    selected = next(item for item in tool['candidates'] if item['campsite_id'] == site)
+                    activities = selected['onsite_activities']
+                    action['proposal']['daily_plan'] = [{'date':night,'activity_id':activities[i % len(activities)]['activity_id']}
+                        for i,night in enumerate(action['proposal']['nights'])] if activities else []
         return httpx.Response(200, json=completion(action, model='offline-two-role-test'))
     settings = settings or model_settings()
     class ActiveClient(CampusModelClient):
