@@ -95,8 +95,10 @@ class PlanningDispatcher:
             return
         with self.state.database.transaction(write=False) as connection:
             rows = [dict(row) for row in connection.execute("""SELECT r.id AS run_id,r.status,u.*
-                FROM runs r JOIN plans p ON p.active_run_id=r.id JOIN users u ON u.id=p.owner_id
-                WHERE r.status IN ('PENDING','RUNNING') AND u.role='CAMPER'""")]
+                FROM runs r JOIN plans p ON p.id=r.plan_id JOIN users u ON u.id=p.owner_id
+                WHERE (p.active_run_id=r.id OR EXISTS(SELECT 1 FROM revision_proposals q
+                    WHERE q.plan_id=p.id AND q.candidate_run_id=r.id AND q.decision IS NULL))
+                    AND p.deleted_at IS NULL AND r.status IN ('PENDING','RUNNING') AND u.role='CAMPER'""")]
         for row in rows:
             user = User(row['id'], row['username'], row['display_name'], row['role'])
             if row['status'] == 'PENDING':

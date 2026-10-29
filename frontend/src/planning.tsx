@@ -15,12 +15,19 @@ export function revealRevisionPanel(id:string,find:(id:string)=>HTMLElement|null
   return true;
 }
 
+export function preservedRevisionNotice(reason:unknown):string|null {
+  if(!(reason instanceof ApiFailure)||reason.envelope.error.code!=='INPUT_INVALID')return null;
+  return ['NO_CHEAPER_CAMPSITE','CAMPSITE_FEE_UNKNOWN'].includes(reason.envelope.error.context?.revision_outcome)
+    ?reason.message:null;
+}
+
 export function ChangePlanning({ data, refresh, choice, onChoiceChange }: { data: PlanDetail; refresh: () => void;choice:string;onChoiceChange:(choice:string)=>void }) {
   const { session, reload } = useSession();
   const navigate = useNavigate();
   const [feedback, setFeedback] = useState('');
   const [busy, setBusy] = useState<'revise'|'reassess'|null>(null);
   const [error, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const command = useRef<{ payload: string; key: string } | null>(null);
   if (!data.run?.is_active || (!data.revision_available && !data.reassessment_available)) return null;
   async function submit(operation: 'revise' | 'reassess') {
@@ -32,9 +39,9 @@ export function ChangePlanning({ data, refresh, choice, onChoiceChange }: { data
       expected_run_revision: data.run.revision, ...(operation === 'revise' ? { feedback: text } : {}) };
     const payload = JSON.stringify({ operation, ...body });
     if (command.current?.payload !== payload) command.current = { payload, key: crypto.randomUUID() };
-    setBusy(operation); setError('');
+    setBusy(operation); setError(''); setNotice('');
     try {
-      await privateApi('/plans/' + data.plan.plan_id + '/' + operation, {
+      await privateApi('/plans/' + data.plan.plan_id + '/' + (operation==='revise'?'revision-proposals':operation), {
         method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CampMate-Client': '1', 'X-CSRF-Token': session.csrf_token },
         body: JSON.stringify({ ...body, command_key: command.current.key }),
       });
@@ -43,20 +50,23 @@ export function ChangePlanning({ data, refresh, choice, onChoiceChange }: { data
       navigate('/plans/' + data.plan.plan_id);
       refresh();
     } catch (reason) {
-      setError(reason instanceof ApiFailure ? `${reason.message}（追踪号 ${reason.envelope.trace_id}）` : '提交结果尚未确认。请刷新记录，或再次提交同一次操作。');
+      const preserved=preservedRevisionNotice(reason);
+      if(preserved)setNotice(preserved);
+      else setError(reason instanceof ApiFailure ? `${reason.message}（追踪号 ${reason.envelope.trace_id}）` : '提交结果尚未确认。请刷新记录，或再次提交同一次操作。');
       if (reason instanceof ApiFailure && reason.envelope.error.code === 'UNAUTHENTICATED') reload();
     } finally { setBusy(null); }
   }
   return <section className="panel planning-change"><h2>调整方案与重新检查</h2>
-    <p>修改方案生成新版本；重新检查保留当前行程，更新装备、费用与安全结果；资料仍不适用时，需要调整方案。</p>
+    <p>新方案生成后，可对比并选择是否采用。重新检查会保留当前行程。</p>
     <p className="muted">人数、日期、预算或露营资料有变化？请重新确认需求。</p>
     <label htmlFor="revision-choice">修改目标</label><select id="revision-choice" value={choice} disabled={!!busy} onChange={event => onChoiceChange(event.target.value)}>
       <option value="change campsite">更换营地</option><option value="cheaper campsite">寻找费用更低的营地</option><option value="custom">填写其他修改意见</option>
     </select>
     {choice==='cheaper campsite'&&<p className="mode-notice">保留预算 {data.confirmed_context?.requirements.budget_cents==null?'（金额待读取）':`AUD ${(data.confirmed_context.requirements.budget_cents/100).toFixed(2)}`}，尝试寻找更便宜的营地。总费用仍可能超出预算。</p>}
     {choice === 'custom' && <><label htmlFor="revision-feedback">修改意见</label><textarea id="revision-feedback" value={feedback} maxLength={4000} disabled={!!busy} onChange={event => setFeedback(event.target.value)} /></>}
-    <div className="plan-actions"><button className="primary-button" disabled={!!busy || !data.revision_available} onClick={() => void submit('revise')}>{busy==='revise' ? '正在提交修改…' : choice==='cheaper campsite'?'确认保持预算并修订方案':'修改方案'}</button>
+    <div className="plan-actions"><button className="primary-button" disabled={!!busy || !data.revision_available} onClick={() => void submit('revise')}>{busy==='revise' ? '正在生成待选方案…' : choice==='cheaper campsite'?'寻找更便宜的营地':'生成待选方案'}</button>
       <button className="secondary-button" disabled={!!busy || !data.reassessment_available} onClick={() => void submit('reassess')}>{busy==='reassess'?'正在启动检查…':'保留行程，重新检查'}</button></div>
+    {notice && <p className="mode-notice" role="status">{notice}</p>}
     {error && <p className="error-box" role="alert">{error}</p>}
   </section>;
 }

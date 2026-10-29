@@ -11,6 +11,7 @@ from .storage.finalisation import FinaliseInput
 from .storage.repository import Repository
 from .application.presentation import plan_response, request_response
 from .storage.trip_series import TripSeriesService, SuccessorInput, DeleteSeriesInput
+from .storage.revision_choices import ChoiceInput
 
 router = APIRouter(prefix='/api/v1')
 
@@ -79,19 +80,34 @@ class RevisePlanningInput(NewEvaluationInput):
         return value.strip()
 
 
-async def new_evaluation(plan_id, body, request, user, operation):
+async def new_evaluation(plan_id, body, request, user, operation, *, revision_selection=False):
     state = request.app.state
     with state.database.transaction(write=False) as connection:
         plan = dict(Repository.own_plan(connection, user, plan_id))
     state.dispatcher.require_available()
     state.runtime.resolve().require_operation(operation)
     snapshot = state.runtime.resolve(feedback=body.feedback if operation == 'REVISE' else None)
+    revision_check = None
+    if operation == 'REVISE':
+        from .application.revision_preflight import CHEAPER_GOALS, require_cheaper_campsite
+        if body.feedback.strip().casefold() in CHEAPER_GOALS:
+            def revision_check(context, previous_content):
+                snapshot.require_operation(operation, context.requirements)
+                if context.requirements.start_date < snapshot.demo.demo_today:
+                    raise ContractFailure(ContractError(code=ErrorCode.INPUT_INVALID,
+                        message='出行日期已过去，请调整日期并重新确认需求。'))
+                dataset = getattr(snapshot.agent, 'dataset', None)
+                if dataset is None:
+                    raise ContractFailure(ContractError(code=ErrorCode.ADAPTER_FAILURE,
+                        message='暂时无法比较营地费用，原方案已保留。'))
+                require_cheaper_campsite(dataset, context, previous_content)
     scope = state.workflows.start(user, plan['request_id'], snapshot.demo, snapshot.dataset,
         command_key=body.command_key, plan_id=plan_id, operation=operation,
         expected_current_version_id=body.expected_current_version_id,
         expected_active_run_id=body.expected_active_run_id,
         expected_version_revision=body.expected_version_revision,
-        expected_run_revision=body.expected_run_revision)
+        expected_run_revision=body.expected_run_revision, revision_check=revision_check,
+        revision_selection=revision_selection)
     state.dispatcher.enqueue(user, scope.run_id)
     return {'plan_id': scope.plan_id, 'run_id': scope.run_id}
 
@@ -104,6 +120,17 @@ async def revise_planning(plan_id: str, body: RevisePlanningInput, request: Requ
 @router.post('/plans/{plan_id}/reassess', status_code=202)
 async def reassess_planning(plan_id: str, body: NewEvaluationInput, request: Request, user: User = Depends(writing_user)):
     return await new_evaluation(plan_id, body, request, user, 'REASSESS')
+
+
+@router.post('/plans/{plan_id}/revision-proposals', status_code=202)
+async def propose_revision(plan_id: str, body: RevisePlanningInput, request: Request, user: User = Depends(writing_user)):
+    return await new_evaluation(plan_id, body, request, user, 'REVISE', revision_selection=True)
+
+
+@router.post('/plans/{plan_id}/revision-proposals/{proposal_id}/decision')
+def choose_revision(plan_id: str, proposal_id: str, body: ChoiceInput, request: Request, user: User = Depends(writing_user)):
+    from .storage.revision_choices import RevisionChoices
+    return RevisionChoices(request.app.state.database, context_guard=request.app.state.runtime.validate_scope).choose(user, plan_id, proposal_id, body)
 
 
 @router.post('/requests/{request_id}/plan', status_code=202)
@@ -200,6 +227,20 @@ def retry_fields(request, user, data):
         data['recommendation_guidance'] = guidance(data, dataset, metadata_note=note)
     if data.get('trip_series') and not data['trip_series']['is_current']:
         data['retry_available'] = data['revision_available'] = data['reassessment_available'] = data['finalisation_available'] = False
+    if user.role == 'CAMPER':
+        from .storage.revision_choices import RevisionChoices
+        comparison = RevisionChoices(state.database).view(user, data['plan']['plan_id'])
+        if comparison and data.get('run') and data['run']['run_id'] not in {
+                comparison['before']['run']['run_id'], comparison['after']['run']['run_id']}:
+            comparison = None
+        if comparison:
+            data['revision_comparison'] = comparison
+        if comparison and not comparison['decision']:
+            data['retry_available'] = data['revision_available'] = data['reassessment_available'] = data['finalisation_available'] = False
+            if data.get('trip_series') and not data['trip_series']['is_current']:
+                comparison['can_adopt'] = comparison['can_keep'] = False
+            if data.get('current_inputs_error'):
+                comparison['can_adopt'] = False
     return data
 
 
@@ -228,7 +269,7 @@ def run_progress(run_id: str, request: Request, response: Response, user: User =
     response.headers['Cache-Control'] = 'no-store'
     state = request.app.state
     data = state.plan_queries.progress(user, run_id)  # Authorize before lease access.
-    if data['run']['is_active'] and data['run']['status'] == 'RUNNING':
+    if (data['run']['is_active'] or data.get('revision_proposal_id')) and data['run']['status'] == 'RUNNING':
         # Keep the existing expired-worker lease guard. No runtime/data/model
         # resolution or business eligibility is needed to report persisted state.
         state.dispatcher.expire_if_needed(user, run_id)

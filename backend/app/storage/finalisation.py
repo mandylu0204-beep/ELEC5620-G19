@@ -70,6 +70,8 @@ class FinalisationService:
             run = connection.execute('SELECT * FROM runs WHERE id=?', (plan['active_run_id'],)).fetchone()
             from .trip_series import require_current
             require_current(connection, plan)
+            from .revision_choices import require_decided
+            require_decided(connection, plan_id)
             if not run or body.version_context.plan_id != plan_id:
                 fail(ErrorCode.STALE_CONTEXT, '最终化上下文已变化，请刷新。')
             scope = RunScope.model_validate_json(run['scope'])

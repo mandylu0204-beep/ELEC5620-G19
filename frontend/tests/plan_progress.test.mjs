@@ -21,3 +21,18 @@ test('terminal, superseded and mismatched progress require a full independently 
 test('older progress cannot roll back the displayed revision',()=>{
  const saved=detail();assert.equal(mergeProgress(saved,progress({revision:2})),saved);
 });
+
+test('candidate polling updates only proposal progress while original selected artifacts remain intact',()=>{
+ const value={...detail(),run:{...detail().run,status:'SUCCEEDED'},revision_comparison:{proposal_id:'proposal',decision:null,
+   after:{run:{run_id:'candidate',status:'PENDING',stage:'RECOMMENDING',revision:0}}}};
+ assert.equal(progressPath(value),'/runs/candidate/progress');
+ const update={...progress({run_id:'candidate',is_active:false}),revision_proposal_id:'proposal'};
+ const merged=mergeProgress(value,update);
+ assert.equal(merged.run,value.run);assert.equal(merged.version,value.version);assert.equal(merged.plan,value.plan);
+ assert.equal(merged.revision_comparison.after.run.stage,'ROUTING');
+ assert.equal(merged.finalisation_available,false);
+ assert.equal(mergeProgress(value,{...update,revision_proposal_id:'different-proposal'}),null);
+ assert.equal(mergeProgress(value,{...update,active_run_id:'another-selected-run'}),null);
+ assert.equal(mergeProgress(value,progress()),null);
+ assert.equal(mergeProgress(value,{...update,run:{...update.run,status:'SUCCEEDED'}}),null);
+});
