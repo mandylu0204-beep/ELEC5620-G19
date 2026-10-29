@@ -31,7 +31,7 @@ const {GroupSizeField,EquipmentUnitField,addEquipment,changeEquipmentCategory,fi
 const {VehicleFields}=await server.ssrLoadModule('/src/vehicle_fields.tsx');
 const {SessionProvider,LoginPage}=await server.ssrLoadModule('/src/session.tsx');
 const {RegisterPage}=await server.ssrLoadModule('/src/register.tsx');
-const {CookingPreparationPanel,cookingDraft}=await server.ssrLoadModule('/src/cooking_preparation.tsx');
+const {CookingPreparationPanel,cookingDraft,canHideCookingPreparation}=await server.ssrLoadModule('/src/cooking_preparation.tsx');
 const {TripPreparation}=await server.ssrLoadModule('/src/trip_preparation.tsx');
 const {NearMatches}=await server.ssrLoadModule('/src/near_matches.tsx');
 const {prepareProfileEquipment}=await server.ssrLoadModule('/src/vehicle_profile.ts');
@@ -776,6 +776,59 @@ test('specific matching facts remain separate from model opinion and survive his
   assert.deepEqual(data,before);
 });
 
+
+const registeredCooking={...preparation,items:[
+  {item_key:'camping_stove',recorded:true,entered_quantity:1,confirmed_quantity:1,unit_valid:true},
+  {item_key:'fuel_canister',recorded:true,entered_quantity:2,confirmed_quantity:2,unit_valid:true}]};
+test('complete cooking registration renders no reminder or completed-state message',()=>{
+  const before=structuredClone(registeredCooking);
+  assert.equal(canHideCookingPreparation(registeredCooking),true);
+  const html=render(CookingPreparationPanel,{value:registeredCooking});
+  assert.equal(html,'');
+  assert.deepEqual(registeredCooking,before);
+});
+
+test('missing, zero, unconfirmed, invalid and duplicate cooking rows cannot be hidden',()=>{
+  const badRows=[{entered_quantity:null,confirmed_quantity:null},{entered_quantity:0,confirmed_quantity:0},
+    {confirmed_quantity:null},{unit_valid:false},{recorded:false}];
+  for(const patch of badRows){
+    const value={...registeredCooking,items:[registeredCooking.items[0],{...registeredCooking.items[1],...patch}]};
+    assert.equal(canHideCookingPreparation(value),false);
+    assert.match(render(CookingPreparationPanel,{value}),/<section class="clarifications"/);
+  }
+  for(const value of [{...registeredCooking,items:[registeredCooking.items[0],registeredCooking.items[0]]},
+    {...registeredCooking,calculation_status:'UNAVAILABLE'},
+    {...registeredCooking,calculation_status:'UNKNOWN_FUTURE_STATUS'},
+    {...registeredCooking,applicable:false},
+    {...registeredCooking,required_fuel_quantity:'4',fuel_gap:'2'},
+    {...registeredCooking,required_fuel_quantity:'2',fuel_gap:null}])assert.equal(canHideCookingPreparation(value),false);
+});
+
+test('edits, saved formal issues and errors reopen registered cooking even after a zero-gap preview',()=>{
+  const preview={...registeredCooking,required_fuel_quantity:'2',fuel_gap:'0',calculation_status:'DRAFT_ESTIMATE'};
+  assert.equal(render(CookingPreparationPanel,{value:registeredCooking,preview}),'');
+  for(const patch of [{stale:true},{unsaved:true},{attention:true},{busy:true},{error:'更新失败'}]){
+    const html=render(CookingPreparationPanel,{value:registeredCooking,preview,...patch});
+    assert.match(html,/<section class="clarifications"/);assert.doesNotMatch(html,/class="cooking-registration"/);
+  }
+  const stale=render(CookingPreparationPanel,{value:registeredCooking,preview,stale:true});
+  assert.match(stale,/资料已修改/);assert.doesNotMatch(stale,/还缺 0 个/);
+  assert.match(render(CookingPreparationPanel,{value:registeredCooking,preview,unsaved:true}),/本页修改尚未保存/);
+});
+
+test('formal cooking gaps stay visible while complete records leave no empty panel or edit link',()=>{
+  const value={...planFixture(),cooking_preparation:registeredCooking};
+  for(const options of [{},{snapshot:true},{review:true}]){
+    const html=renderPlan(value,options);
+    assert.equal(html,renderPlan(planFixture(),options));
+    assert.doesNotMatch(html,/烹饪装备已登记|查看或修改烹饪装备|一起核对炉具与燃料资料 ↗/);
+  }
+  const blocked=structuredClone(value);
+  blocked.assessments[0].result.gear_checklist.push({item_key:'fuel_canister',required_quantity:'4',available_quantity:'2',missing_quantity:'2',unit:'item',capacity_requirement:null,arrangement_status:'UNCONFIRMED',essential:true});
+  const html=renderPlan(blocked);
+  assert.match(html,/本次保存的检查仍有烹饪相关待办/);assert.doesNotMatch(html,/class="cooking-registration"/);
+  assert.equal(blocked.assessments[0].result.gear_checklist.at(-1).missing_quantity,'2');
+});
 
 test('selected campsite merges matching facts, facilities, cost and arrival without duplicating facilities',()=>{
   const reasons=['目的地区域：Sydney & Surrounds，与本次选择一致。',

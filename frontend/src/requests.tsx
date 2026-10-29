@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ApiFailure, type PreviewResult, type Requirements } from './api';
 import { integer, lines, ProfileSummary, PublicTransportNotice, SystemPreparationNotice, type Profile } from './profile';
-import { CookingPreparationPanel, type CookingPreparation } from './cooking_preparation';
+import { CookingPreparationPanel, canHideCookingPreparation, type CookingPreparation } from './cooking_preparation';
 import { privateApi, useSession } from './session';
 import { TripFlow, FieldHint } from './trip_flow';
 import { canonicalTerms, termLabel } from './user_terms';
@@ -300,8 +300,8 @@ export function RequestDetail() {
           {updating&&record.source_requirements&&requirements&&<RequirementsChangePreview before={record.source_requirements} after={requirements}/>}
           <div className="request-profile-overview"><h3>本次采用的露营资料</h3><div><span>小组人数<strong>{profile?.group_size??'未知'} 人</strong></span><span>登记装备<strong>{profile?profile.equipment.filter(item=>!['vehicle','charged_phone',...(systemPreparation?['transport_itinerary','fire_free_meal_plan']:[])].includes(item.item_key)).length:'未知'} 项</strong></span></div><details><summary>查看同行、交通与装备明细</summary><ProfileSummary profile={profile} systemPreparation={systemPreparation}/></details></div>
           {systemPreparation?<SystemPreparationNotice mode={profile?.transport.transport_type??''}/>:profile?.transport.transport_type==='PUBLIC_TRANSPORT'&&<PublicTransportNotice/>}
-          <CookingPreparationPanel value={record.cooking_preparation}/>
-          {record.cooking_preparation&&!record.planning_plan_id&&<Link className="text-link" to={'/profile?request_id='+encodeURIComponent(record.request_id)+'&focus=equipment.camping_stove'}>补充烹饪装备 ↗</Link>}
+          <CookingPreparationPanel value={record.cooking_preparation} stale={dirty}/>
+          {record.cooking_preparation&&!record.planning_plan_id&&(!canHideCookingPreparation(record.cooking_preparation)||dirty)&&<Link className="text-link" to={'/profile?request_id='+encodeURIComponent(record.request_id)+'&focus=equipment.camping_stove'}>补充烹饪装备 ↗</Link>}
           {record.summary?.uncertainties.filter(item=>item!=='This output is not a confirmation event.').map((item,index)=><p className="muted" key={index}>{item}</p>)}
         </>:<div className="summary-placeholder"><span aria-hidden="true">⌁</span><h3>先生成需求摘要</h3><p>摘要会展示日期、预算、同行资料和需要补充的信息。</p></div>}
         {record.error&&<p className="error-box" role="alert">{record.error.message}</p>}

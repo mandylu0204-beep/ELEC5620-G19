@@ -2,7 +2,7 @@ import { failureGuidance } from './failure_guidance';
 import { SafetyAdvisoryPanel } from './safety_advisory_panel';
 import type { SafetyAudit } from './safety_advisory';
 import { LogisticsIssues, type LogisticsIssue } from './logistics_issues';
-import { CookingPreparationPanel, type CookingPreparation } from './cooking_preparation';
+import { CookingPreparationPanel, canHideCookingPreparation, type CookingPreparation } from './cooking_preparation';
 import { logisticsQuestions, needsMealChoice } from './logistics_guidance';
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
@@ -221,6 +221,8 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
   const mealUnknown=needsMealChoice(logistics?.clarifications??[]);
   const logisticsIssues=data.logistics_issues??[];
   const cookingPreparation=(data as PlanDetail&{cooking_preparation?:CookingPreparation|null}).cooking_preparation;
+  const cookingAttention=!!data.current_inputs_error||logisticsIssues.some(item=>['camping_stove','fuel_canister'].includes(item.item_key??'')||item.code==='COOKING_ARRANGEMENT')
+    ||!!logistics?.gear_checklist.some(item=>['camping_stove','fuel_canister'].includes(item.item_key)&&item.essential&&(item.missing_quantity==null||Number(item.missing_quantity)>0));
   if(logisticsIssues.length)['LOGISTICS_INCOMPLETE','COSTS_INCOMPLETE','ESSENTIAL_GEAR_MISSING','TRANSPORT_UNAVAILABLE'].forEach(code=>hiddenCodes.add(code));
   const warnings = [...new Set(rawWarnings.filter(item=>!hiddenCodes.has(item.code)).map(item=>roadClosed&&item.code==='ROAD_UNAVAILABLE'?'通往营地的道路关闭，需要更换可通行的营地。':mealUnknown&&['LOGISTICS_INCOMPLETE','COSTS_INCOMPLETE'].includes(item.code)?'请先选择用餐方式，才能确定餐食费用及烹饪装备。':item.code==='LOGISTICS_INCOMPLETE'&&weatherOnlyLogistics?'缺少适用的天气资料，装备检查仍有待确认。':blockerText(item.code)))];
   const overBudget = logistics?.budget_difference_cents != null && logistics.budget_difference_cents > 0;
@@ -282,8 +284,8 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       {hasSafetyIssue&&<button className="secondary-button" onClick={()=>{const gear=onlyPreparationBlocked&&!qualityIssues.length;setSection(gear?'gear':'safety');tabRefs.current[gear?1:3]?.focus();}}>{onlyPreparationBlocked&&!qualityIssues.length?'查看装备与交通':'查看安全信息'}</button>}
     </section>}
     {review&&data.current_inputs_error&&<div className="mode-notice"><strong>检查结果待更新</strong><p>这份方案的检查依据暂时无法与当前资料核对，更新检查后才能继续审核。</p><details><summary>查看系统详情</summary><p>{data.current_inputs_error}</p></details></div>}
-    {cookingPreparation&&!logisticsIssues.some(item=>item.cooking_preparation)&&<div className="panel">
-      <CookingPreparationPanel value={cookingPreparation}/>
+    {cookingPreparation&&(!canHideCookingPreparation(cookingPreparation)||cookingAttention)&&!logisticsIssues.some(item=>item.cooking_preparation)&&<div className="panel">
+      <CookingPreparationPanel value={cookingPreparation} attention={cookingAttention}/>
       {!snapshot&&!review&&run?.is_active&&data.trip_series?.is_current!==false&&!['PENDING','RUNNING'].includes(run.status)&&
         <Link className="text-link" to={'/profile?plan_id='+encodeURIComponent(data.plan.plan_id)+'&focus=equipment.camping_stove'}>一起核对炉具与燃料资料 ↗</Link>}
     </div>}
