@@ -262,7 +262,6 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       </dl>
     </header>
     {error&&<p className="error-box" role="alert">读取更新失败：{error}</p>}
-    {!review&&!snapshot&&run?.is_active&&(!data.trip_series||data.trip_series.is_current)&&!['PENDING','RUNNING','FAILED'].includes(run.status)&&requirements&&<ReplanFromProfile key={data.plan.plan_id} source={{plan_id:data.plan.plan_id,expected_series_revision:data.trip_series?.series_revision??0,expected_current_version_id:data.plan.current_version_id,expected_version_revision:data.current_version_revision??null,expected_active_run_id:run!.run_id,expected_run_revision:run!.revision}} previousProfile={confirmed!.profile_snapshot} refreshSource={refresh}/>}
     {!review&&!snapshot&&<CheckFeedback data={data}/>}
     {!snapshot&&run&&(!run.is_active||data.trip_series?.is_current===false)&&<div className="mode-notice"><span>正在查看历史方案，评估属于当时的资料与证据，不是本次更新后的检查。</span>{data.trip_series?.is_current===false?data.trip_series.current_plan_id&&<Link className="secondary-button" to={'/plans/'+data.trip_series.current_plan_id}>查看本次出行当前方案</Link>:current&&<button className="secondary-button" onClick={current}>查看当前方案</button>}</div>}
     {failure&&<section className="panel error-box" role="alert" aria-label="本次执行的恢复说明"><h2>{failure.title}</h2>

@@ -635,6 +635,23 @@ function planFixture(){
     tent_capacity:tent,logistics_issues:[],can_view_model_diagnostics:false};
 }
 const renderPlan=(data,options={})=>renderToStaticMarkup(h(MemoryRouter,null,h(SessionProvider,null,h(PlanView,{data,error:'',refresh(){},...options}))));
+test('current plan omits the redundant adjustment card while retaining next steps and change controls',()=>{
+  const value=planFixture();
+  value.run.is_active=true;
+  value.version.status='ELIGIBLE_FOR_FINALISATION';
+  value.finalisation_available=true;
+  value.eligibility={eligible:true,blocking_reasons:[],review_required:false,valid_review_id:null};
+  value.revision_available=true;value.reassessment_available=true;
+  const before=structuredClone(value);
+  const html=renderPlan(value);
+  assert.doesNotMatch(html,/aria-label="调整露营方案"|<h2>调整露营方案<\/h2>|修改需求与资料 ↗/);
+  assert.match(html,/方案已生成，待你确认保存/);
+  assert.match(html,/调整本次需求并核对 ↗/);
+  assert.match(html,/href="\/plans\/plan\/update"/);
+  assert.match(html,/修改露营资料 ↗/);
+  assert.match(html,/修改行程或更新检查/);
+  assert.deepEqual(value,before);
+});
 test('plan budget action follows revision capability and is absent from historical, final and review views',()=>{
   const value=planFixture();value.run.is_active=true;value.revision_available=true;value.reassessment_available=true;
   value.current_version_revision=1;value.logistics_issues=[budgetIssue];
