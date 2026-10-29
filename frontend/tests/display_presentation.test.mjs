@@ -518,6 +518,68 @@ test('condition cards require concrete facts, inspect all evidence and preserve 
   assert.equal(safetyRegulations('Campfires and solid fuel burners prohibited; gas/electric barbecues provided'),'禁止营火及固体燃料炉具；提供燃气或电烧烤设施');
 });
 
+test('known adverse weather remains explicit without changing coverage or official assessment state',()=>{
+  const dates={start_date:'2026-10-28',end_date:'2026-10-30'};
+  for(const [summary,title] of [
+    ['Synthetic extreme heat expected.','预计出现极端高温'],
+    ['Strong wind in synthetic forecast.','预计出现强风'],
+    ['Strong wind in this synthetic scenario.','预计出现强风'],
+    ['Heavy rain in synthetic forecast.','预计出现大雨'],
+    ['Heavy rain in synthetic conditions.','预计出现大雨'],
+    ['Cold synthetic forecast.','预计天气寒冷'],
+  ]){
+    const evidence=safetyEvidence('WEATHER',{summary});
+    const state=safetyCondition('WEATHER','AVAILABLE',[evidence],dates);
+    assert.equal(state.title,title);assert.equal(state.attention,true);
+    for(const status of ['MISSING','STALE','CONFLICTING']){
+      const unavailable=safetyCondition('WEATHER',status,[{...evidence,status}],dates);
+      assert.equal(unavailable.attention,true);assert.notEqual(unavailable.title,title);
+    }
+    assert.equal(safetyCondition('WEATHER','AVAILABLE',[{...evidence,valid_to:'2026-10-29'}],dates).title,'待确认');
+    const mixed=safetyCondition('WEATHER','AVAILABLE',[evidence,safetyEvidence('WEATHER',{summary:'Unrecognised forecast.'})],dates);
+    assert.equal(mixed.title,title+'；其他天气信息待确认');assert.equal(mixed.attention,true);
+  }
+});
+
+test('saved safety-09 heat remains visible to camper, historical, final and reviewer views without exposing diagnostics',()=>{
+  const rows=JSON.parse(readFileSync(new URL('../../data/synthetic_demo_v2/data/runtime_safety_evidence.json',import.meta.url),'utf8'));
+  const row=rows.find(item=>item.safety_case_id==='safety-09');
+  assert.equal(row.weather.summary,'Synthetic extreme heat expected.');
+  const data=planFixture();
+  Object.assign(data.confirmed_context.requirements,{start_date:'2026-10-28',end_date:'2026-10-30',duration_nights:2,duration_days:3});
+  const safety={outcome:'REVIEW',risk_level:'HIGH',confidence:'HIGH',requires_human_review:true,
+    data_quality:{WEATHER:'AVAILABLE'},evidence:[safetyEvidence('WEATHER',{summary:row.weather.summary,valid_from:row.weather.valid_from,valid_to:row.weather.valid_until})],
+    mandatory_blockers:[],hazards:[row.campsite_id+': '+row.weather.summary],unresolved_conflicts:[],recommended_actions:['private-rule-action']};
+  data.assessments.push({assessment_id:'safety',kind:'SAFETY',version_context:data.version.version_context,result:safety});
+  const before=structuredClone(data);
+  // is_active=false is the saved historical-run path; snapshot=true is also
+  // used by FinalPage after its authorised final-snapshot read.
+  for(const [options,active] of [[{},true],[{},false],[{snapshot:true},false],[{review:true},true]]){
+    const page={...data,run:{...data.run,is_active:active}};
+    const html=renderPlan(page,options);
+    assert.match(html,/预计出现极端高温/);assert.match(html,/查看保存的风险说明原文/);
+    assert.ok(html.includes(row.campsite_id+': '+row.weather.summary));
+    if(!options.review)assert.doesNotMatch(html,/完整检查说明|private-rule-action|模型运行诊断/);
+  }
+  assert.deepEqual(data,before);
+});
+
+test('untranslated safety and hazard originals survive escaped without source or diagnostic disclosure',()=>{
+  const summary='Synthetic forecast: <img src=x onerror=alert(1)> unusual weather.';
+  const hazards=['demo-site-a: unknown synthetic hazard.','demo-site-b: another synthetic hazard.'];
+  const value={outcome:'REVIEW',risk_level:'UNKNOWN',confidence:'UNKNOWN',requires_human_review:true,
+    data_quality:{WEATHER:'MISSING'},evidence:[safetyEvidence('WEATHER',{status:'MISSING',summary})],
+    mandatory_blockers:[],hazards,unresolved_conflicts:['private-conflict'],recommended_actions:['private-rule-action']};
+  const props={value,summary:'安全信息待确认',approved:false,review:false,outdated:true,blockers:null,notes:null,
+    rawWarnings:[{code:'INTERNAL_CODE',message:'private-diagnostic'}],sources:()=>h('p',null,'private-source-record'),label:x=>x};
+  const before=structuredClone(value),html=render(SafetyInformation,props);
+  assert.match(html,/查看保存的安全说明原文/);assert.match(html,/&lt;img src=x onerror=alert\(1\)&gt;/);
+  assert.doesNotMatch(html,/<img|INTERNAL_CODE|private-diagnostic|private-source-record|private-conflict|private-rule-action|完整检查说明/);
+  for(const hazard of hazards)assert.ok(html.includes(hazard));
+  assert.equal((html.match(/查看保存的风险说明原文/g)||[]).length,2);
+  assert.deepEqual(value,before);
+});
+
 test('safety page folds useful rules, omits coverage explanations and restricts diagnostics to review',()=>{
   const value={outcome:'REVISION',risk_level:'LOW',confidence:'HIGH',requires_human_review:false,
     data_quality:{ROAD:'AVAILABLE',FIRE:'AVAILABLE',WEATHER:'AVAILABLE',RESTRICTION:'AVAILABLE'},

@@ -5,6 +5,23 @@ export type CheckEvidence={kind:string;summary:string|null;source_date:string|nu
 type Dates={start_date?:string|null;end_date?:string|null};
 export const checkNames:Record<string,string>={WEATHER:'天气预估',FIRE:'营火规定',ROAD:'道路通行',RESTRICTION:'营地规定'};
 
+// Exact saved descriptions only: display labels do not calculate official risk.
+const WEATHER_DESCRIPTIONS:Record<string,{title:string;attention:boolean}>={
+  'Mild synthetic conditions.':{title:'天气温和',attention:false},
+  'Estimated mild conditions.':{title:'天气温和',attention:false},
+  'Dry synthetic conditions.':{title:'天气干燥',attention:false},
+  'Estimated dry conditions.':{title:'天气干燥',attention:false},
+  'No adverse synthetic weather.':{title:'未注明恶劣天气',attention:false},
+  'No adverse weather estimated.':{title:'未注明恶劣天气',attention:false},
+  'Synthetic extreme heat expected.':{title:'预计出现极端高温',attention:true},
+  'Strong wind in synthetic forecast.':{title:'预计出现强风',attention:true},
+  'Strong wind in this synthetic scenario.':{title:'预计出现强风',attention:true},
+  'Heavy rain in synthetic forecast.':{title:'预计出现大雨',attention:true},
+  'Heavy rain in synthetic conditions.':{title:'预计出现大雨',attention:true},
+  'Cold synthetic forecast.':{title:'预计天气寒冷',attention:true},
+};
+const weatherDescription=(text:string|null)=>text&&Object.hasOwn(WEATHER_DESCRIPTIONS,text)?WEATHER_DESCRIPTIONS[text]:null;
+
 export function evidenceState(item:CheckEvidence,dates?:Dates|null){
   if(item.status==='CONFLICTING')return {title:'资料有冲突',detail:'现有资料的说明不一致，暂时无法确认。'};
   if(item.status==='STALE')return {title:'资料需要更新',detail:'此前资料已过期，需要更新后再检查。'};
@@ -43,11 +60,13 @@ export function safetyCondition(kind:string,status:string,evidence:CheckEvidence
     return matching.every(item=>item.road_state==='OPEN')?{title:'道路可通行',detail:'出发前留意临时封路通知。',attention:false}:pending();
   }
   if(kind==='WEATHER'){
-    const descriptions=matching.map(item=>{
-      const text=safetySummary(item.summary);
-      return text?.startsWith('天气预估：')?text:null;
-    });
-    return descriptions.every(Boolean)?{title:[...new Set(descriptions)].map(text=>text!.replace(/^天气预估：|。$/g,'')).join('、'),detail:'临近出发时再次查看天气。',attention:false}:pending('天气待确认');
+    const descriptions=matching.map(item=>weatherDescription(item.summary));
+    const known=descriptions.filter((item):item is {title:string;attention:boolean}=>item!==null);
+    if(!known.length)return pending('天气待确认');
+    const unknown=known.length!==descriptions.length;
+    const attention=unknown||known.some(item=>item.attention);
+    return {title:[...new Set(known.map(item=>item.title))].join('、')+(unknown?'；其他天气信息待确认':''),
+      detail:attention?'请核对下方风险说明，并在出发前重新检查天气。':'临近出发时再次查看天气。',attention};
   }
   if(kind==='FIRE'){
     if(matching.some(item=>item.summary==='Synthetic comprehensive no-fire restriction.'))return {title:'禁止使用明火',detail:'请使用符合营地规定的用餐安排。',attention:true};
@@ -89,19 +108,19 @@ export function blockerText(code:string){
 
 export function safetySummary(text:string|null){
   if(!text)return null;
-  return ({'Mild synthetic conditions.':'天气预估：天气温和。','Dry synthetic conditions.':'天气预估：天气干燥。',
-    'No adverse synthetic weather.':'天气预估：未注明恶劣天气。','No synthetic fire restriction.':'现有资料未注明额外营火限制。',
+  const weather=weatherDescription(text);
+  if(weather)return '天气预估：'+weather.title+'。';
+  return ({'No synthetic fire restriction.':'现有资料未注明额外营火限制。',
     'Synthetic comprehensive no-fire restriction.':'现有资料规定禁止使用明火。','Closed road access.':'道路通行关闭。',
-    'Estimated mild conditions.':'天气预估：天气温和。','Estimated dry conditions.':'天气预估：天气干燥。',
     'No additional fire restriction recorded.':'现有资料未注明额外营火限制。',
-    'No adverse weather estimated.':'天气预估：未注明恶劣天气。'} as Record<string,string>)[text]??null;
+  } as Record<string,string>)[text]??null;
 }
 
 export function safetyRegulations(text:string|null){
   if(!text)return null;
   if(text==='No synthetic campsite restrictions reported.')return '未注明额外营地规定。';
   // Translate known source clauses exactly; preserve unfamiliar real restrictions.
-  // Legacy fixture prose belongs in the review record, not the trip instructions.
+  // Untranslated legacy prose is preserved in the safety panel's business-record fallback.
   if(/synthetic|demo/i.test(text))return null;
   const clauses:Record<string,string>={
     'Advance booking required':'需提前预订','same-day bookings not accepted':'不接受当天预订',
