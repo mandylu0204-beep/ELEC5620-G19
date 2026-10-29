@@ -85,10 +85,10 @@ test('missing, duplicated or unknown priorities and actions fail closed',()=>{
   }
 });
 
-test('user page labels unverified advice but never renders internal trace or association fields',()=>{
+test('user page keeps the advice heading without the removed disclaimer, original summary or diagnostic fields',()=>{
   const html=render();
   assert.match(html,/AI 安全准备建议/);
-  assert.match(html,/未经人工核实/);
+  assert.doesNotMatch(html,/AI 参考建议|未经人工核实|查看已保存的模型总结原文|Check the registered conditions before departure/);
   for(const hidden of ['private-run','private-version','private-safety','private-logistics','private-input-hash',
     'private-audit','private-attempt','private-model','total_tokens','fact_refs','\/baseline\/'])assert.ok(!html.includes(hidden),hidden);
   assert.ok(!html.includes('<button')&&!html.includes('<a '));
@@ -106,15 +106,15 @@ test('outdated and historical suggestions retain explicit context',()=>{
   assert.match(render(fixture(),{historical:true}),/对应当时保存的行程与检查资料/);
 });
 
-test('additional and informational advice remain available without overwhelming the initial view',()=>{
+test('additional action groups remain available while informational advice is omitted',()=>{
   const value=fixture();
   for(const [i,action_code] of ['RESOLVE_LOGISTICS','CONFIRM_ACTIVITY_DETAILS','REQUEST_HUMAN_REVIEW'].entries())
     value.plan.findings.push({...value.plan.findings[0],finding_key:'extra-'+i,action_code});
-  value.plan.findings.push({...value.plan.findings[0],finding_key:'information',action_code:'ACKNOWLEDGE_INFORMATION'});
+  value.plan.findings.push({...value.plan.findings[0],finding_key:'information',action_code:'ACKNOWLEDGE_INFORMATION',action_unverified:'Informational-only text.'});
   value.plan.action_priority=value.plan.findings.map(item=>item.finding_key);
   const html=render(value);
   assert.match(html,/其余建议类别（2）/);
-  assert.match(html,/出行注意事项（1）/);
+  assert.doesNotMatch(html,/出行注意事项|Informational-only text/);
   assert.match(html,/<ol[^>]*start="4"/);
 });
 
@@ -134,7 +134,7 @@ test('equipment advice has one shared heading and distinct visible original bull
   assert.deepEqual(value,before);
 });
 
-test('informational advice has one section, not repeated titles and per-item toggles',()=>{
+test('informational advice stays in the saved audit but renders no section or empty card',()=>{
   const value=fixture();value.advice_format='single-advice-v1';
   const texts=['Campfires prohibited; use provided barbecues only.',
     'Road is currently open; no action needed at this time.',
@@ -142,10 +142,10 @@ test('informational advice has one section, not repeated titles and per-item tog
   value.plan.findings=texts.map((text,index)=>({finding_key:'info-'+index,fact_refs:[],action_code:'ACKNOWLEDGE_INFORMATION',
     interpretation_unverified:text,action_unverified:text}));
   value.plan.action_priority=value.plan.findings.map(item=>item.finding_key);
-  const html=render(value);
-  assert.equal(html.split('出行注意事项（4）').length-1,1);
-  assert.doesNotMatch(html,/了解出行注意事项|请按此事项准备|查看已保存的模型建议原文/);
-  for(const text of texts)assert.equal(html.split(text).length-1,1,text);
+  const before=structuredClone(value);
+  assert.equal(render(value),'');
+  assert.equal(safetyAdvice(value,binding).items.length,4);
+  assert.deepEqual(value,before);
 });
 
 test('groups use validated codes and retain first-priority category order and member order',()=>{

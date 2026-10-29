@@ -19,9 +19,9 @@ export function ProfileAdoptionPreview({before,after,revision,sourceRevision}:{b
 }
 
 export function ReplanFromProfile({source}:{source:SuccessorSource;previousProfile:Profile;refreshSource:()=>void}) {
-  return <section className="panel replan-panel" aria-label="使用最新资料重新规划">
-    <h2>更新本次出行</h2><p>资料与需求修改使用同一个核对入口，仍归于这次出行。仅保存不会开始检查；确认后会重新规划，营地和行程可能改变。原检查与最终记录保留。</p>
-    <Link className="primary-button" to={tripUpdatePath(source.plan_id)}>核对修改并更新本次出行 ↗</Link>
+  return <section className="panel replan-panel" aria-label="调整露营方案">
+    <h2>调整露营方案</h2><p>修改出行需求，或使用最新露营资料重新规划。</p>
+    <Link className="primary-button" to={tripUpdatePath(source.plan_id)}>修改需求与资料 ↗</Link>
   </section>;
 }
 

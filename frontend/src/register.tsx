@@ -8,7 +8,7 @@ import { passwordChecks } from './password_policy';
 export function RegisterPage(){
   const {session}=useSession();const location=useLocation();const navigate=useNavigate();
   const locked=useRef(false);const [busy,setBusy]=useState(false);const [error,setError]=useState('');
-  const [username,setUsername]=useState('');const [name,setName]=useState('');
+  const [username,setUsername]=useState('');
   const [password,setPassword]=useState('');const [confirmation,setConfirmation]=useState('');
   const checks=passwordChecks(password);const validPassword=checks.every(item=>item.met);
   if(session)return <Navigate to={loginReturnPath(location.state?.returnTo,session.user.role)} replace/>;
@@ -20,7 +20,7 @@ export function RegisterPage(){
     try{
       const result=await privateApi<{user:{username:string}}>('/auth/register',{method:'POST',
         headers:{'Content-Type':'application/json','X-CampMate-Client':'1'},
-        body:JSON.stringify({username:username.trim(),display_name:name.trim(),password})});
+        body:JSON.stringify({username:username.trim(),display_name:username.trim(),password})});
       setPassword('');setConfirmation('');
       navigate('/login',{replace:true,state:{registeredUsername:result.user.username,returnTo:location.state?.returnTo??'/profile'}});
     }catch(reason){setError(reason instanceof ApiFailure?reason.message:'注册结果暂未确认，请检查连接；如账号已创建，可直接登录。');}
@@ -28,7 +28,6 @@ export function RegisterPage(){
   }
   return <><div className="page-heading"><span className="eyebrow">加入露营伙伴</span><h1>开启你的露营计划。</h1><p>创建账户，保存专属于你的资料与行程。</p></div>
     <section className="panel registration-panel"><h2>注册账户</h2><form onSubmit={submit}><fieldset disabled={busy}>
-      <label htmlFor="register-name">昵称 <span className="required-mark">必填</span></label><input id="register-name" autoComplete="nickname" required maxLength={80} value={name} onChange={event=>setName(event.target.value)}/>
       <label htmlFor="register-username">用户名 <span className="required-mark">必填</span></label><input id="register-username" autoComplete="username" required minLength={3} maxLength={32} pattern="[A-Za-z0-9][A-Za-z0-9_.\-]{2,31}" aria-describedby="register-username-hint" value={username} onChange={event=>setUsername(event.target.value)}/>
       <p id="register-username-hint" className="field-hint">3–32 位英文字母、数字、点、下划线或短横线，以字母或数字开头；不区分大小写。</p>
       <label htmlFor="register-password">密码 <span className="required-mark">必填</span></label><input id="register-password" type="password" autoComplete="new-password" required minLength={8} maxLength={256} aria-describedby="register-password-hint" value={password} onChange={event=>{setPassword(event.target.value);setError('');}}/>

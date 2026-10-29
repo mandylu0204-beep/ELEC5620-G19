@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { equipmentLabel } from './profile';
+import { equipmentLabel, fixedEquipmentUnit } from './profile';
 import { logisticsDestinations } from './logistics_navigation';
 import { tentSummary, type TentCapacity } from './display_facts';
 import { CookingPreparationPanel,type CookingPreparation } from './cooking_preparation';
@@ -42,17 +42,74 @@ function factText(value:unknown):string {
   return Object.entries(row).filter(([key,v])=>v!=null&&names[key]).map(([key,v])=>`${names[key]}：${factText(v)}`).join('；')||'未知';
 }
 
+type EquipmentRecord={quantity?:unknown;unit?:string;capacity_persons?:unknown;confirmed?:boolean};
+function quantity(value:unknown):string|null {
+  const text=typeof value==='number'&&Number.isFinite(value)?String(value):typeof value==='string'?value:'';
+  return /^\d+(?:\.\d+)?$/.test(text)?text.replace(/\.0+$/,''):null;
+}
+function equipmentCopy(item:LogisticsIssue){
+  const name=equipmentLabel(item.item_key!);
+  const current=(item.current??{}) as {records?:EquipmentRecord[];available_quantity?:unknown;unit?:string};
+  const required=(item.required??{}) as {quantity?:unknown;missing_quantity?:unknown;capacity_persons?:unknown};
+  const records=Array.isArray(current.records)?current.records:[];
+  const unit=current.unit??fixedEquipmentUnit(item.item_key!);
+  const suffix=unit==='item'?({sleeping_mat:'张',sleeping_bag:'条',fuel_canister:'罐',first_aid_kit:'包',warm_layers:'件'} as Record<string,string>)[item.item_key!]??'件'
+    :({litre:'升',portion:'份',vehicle:'辆',set:'套',plan:'份计划',person_space:'人容量'} as Record<string,string>)[unit??'']??'';
+  const needed=quantity(required.quantity),available=quantity(current.available_quantity),missing=quantity(required.missing_quantity);
+  const positive=(value:string|null)=>value!==null&&/[1-9]/.test(value);
+  if(item.item_key==='tent'){
+    const tent=item.tent_capacity;
+    const gap=quantity(tent?.missing_person_spaces??(unit==='person_space'?required.missing_quantity:null));
+    const capacity=quantity(tent?.required_person_spaces??required.capacity_persons);
+    const assessed=quantity(tent?.assessed_capacity??current.available_quantity);
+    return {title:positive(gap)?`帐篷还缺 ${gap} 人住宿容量`:'帐篷容量待确认',
+      detail:`${capacity!==null?`本次需要 ${capacity} 人住宿容量`:'本次所需住宿容量待确认'}，${assessed!==null?`已确认可用 ${assessed} 人。`:'可用容量尚未确定。'}`,
+      hint:'请填写帐篷数量、每顶可住人数，并确认本次可用。',action:'补充帐篷资料'};
+  }
+  if(item.item_key==='vehicle'||['VEHICLE_DETAILS','VEHICLE_COUNT','TRANSPORT_CAPACITY'].includes(item.code)){
+    const people=quantity(required.capacity_persons);
+    return {title:unit==='person_space'&&positive(missing)?`车辆还缺 ${missing} 个座位`:'车辆安排待确认',
+      detail:`${people!==null?`本次需容纳 ${people} 人。`:''}请填写车辆数量和每辆载客人数（含驾驶员），并确认本次可用。`,hint:null,action:'补充交通安排'};
+  }
+  const unconfirmed=records.some(record=>record.confirmed!==true);
+  return {title:positive(missing)?`${name}还缺 ${missing} ${suffix}`:needed===null?`${name}所需数量待确认`:`请补充${name}资料`,
+    detail:`${needed!==null?`本次需要 ${needed} ${suffix}`:'本次所需数量尚未确定'}，${!records.length?'目前尚未登记。':available!==null?`已确认可用 ${available} ${suffix}。`:'可用数量尚未确定。'}`,
+    hint:positive(missing)?unconfirmed?'请确认已登记的物品本次是否可用。':null:'请核对数量、单位，并确认本次可用。',action:`补充${name}`};
+}
+
+function EquipmentIssue({item,disabled}:{item:LogisticsIssue;disabled:boolean}){
+  const copy=equipmentCopy(item);
+  return <article className="logistics-todo">
+    <h3>{copy.title}</h3><p>{copy.detail}</p>{copy.hint&&<p className="muted">{copy.hint}</p>}
+    {!!item.cost_impacts?.length&&<p className="muted">{[...new Set(item.cost_impacts.map(cost=>equipmentLabel(cost.item_key)))].join('、')}费用待确认，完整总费用暂无法估算。</p>}
+    {!!item.pending_checks?.length&&<p className="muted">补充后再核对：{[...new Set(item.pending_checks.map(check=>equipmentLabel(check.item_key)))].join('、')}，所需数量待确认。</p>}
+    {!disabled&&<div className="plan-actions">
+      {item.action_url&&<Link className="text-link" to={item.action_url}>{copy.action} ↗</Link>}
+      {item.arrangement_action_url&&<Link className="text-link" to={item.arrangement_action_url}>调整用餐方式 ↗</Link>}
+    </div>}
+  </article>;
+}
+
 export function LogisticsIssues({items,onSafety,disabled=false,summary=false,onGear,onRevisionRequested}:{items:LogisticsIssue[];onSafety:()=>void;disabled?:boolean;summary?:boolean;onGear?:()=>void;onRevisionRequested?:(goal:'cheaper campsite')=>void}) {
   if(!items.length)return null;
-  if(summary)return <section aria-label="装备问题摘要"><h3>装备与交通问题</h3><ul>{items.map(item=><li key={item.issue_id}>
-    {item.item_key==='tent'&&item.tent_capacity?tentSummary(item.tent_capacity):(COPY[item.code]??COPY.UNCLASSIFIED)[0]} → 暂不能保存最终方案 → {(COPY[item.code]??COPY.UNCLASSIFIED)[1]}
-  </li>)}</ul><button type="button" className="secondary-button" onClick={onGear}>查看装备问题与补充入口</button></section>;
+  if(summary){
+    const groups=new Map<string,LogisticsIssue[]>();
+    items.forEach(item=>{const key=item.item_key??item.field??item.code;groups.set(key,[...(groups.get(key)??[]),item]);});
+    return <section aria-label="装备问题摘要"><h3>还有 {groups.size} 项准备需要完善</h3>
+      <ul>{[...groups].map(([key,issues])=>{const item=issues[0];return <li key={key}>
+        <strong>{item.item_key?equipmentLabel(item.item_key):(COPY[item.code]??COPY.UNCLASSIFIED)[0]}</strong>
+        {item.item_key==='tent'&&item.tent_capacity?`：${tentSummary(item.tent_capacity)}`:''}
+      </li>;})}</ul>
+      {onGear&&<button type="button" className="secondary-button" onClick={onGear}>查看并补充装备 ↗</button>}
+    </section>;
+  }
   const destinations=logisticsDestinations(items);
   return <section className="panel logistics-todos" aria-label="具体待办事项"><div className="logistics-todos-heading"><h2>逐项处理这些问题</h2>
     {!disabled&&<div className="logistics-todos-actions">{destinations.profile&&<Link className="secondary-button" to={destinations.profile}>前往对应资料 ↗</Link>}{destinations.request&&<Link className="secondary-button" to={destinations.request}>调整露营需求 ↗</Link>}{destinations.safety&&<button className="secondary-button" onClick={onSafety}>查看安全信息</button>}</div>}</div>
-    <p>先处理可确认的资料，再核对关联装备和费用。保存后请核对本次更新并明确启动检查；旧检查不会因填写表单而自动通过。</p>
+    <p>补充资料后，核对修改并更新方案。</p>
     {disabled&&<p className="muted">当前为历史记录或检查尚未结束，这里只展示当时的缺项。</p>}
-    {items.map(item=>{const [title,body]=COPY[item.code]??COPY.UNCLASSIFIED;return <article className="logistics-todo" key={item.issue_id}>
+    {items.map(item=>{if((item.item_key&&['EQUIPMENT_SHORTAGE','EQUIPMENT_DETAILS'].includes(item.code))||['VEHICLE_DETAILS','VEHICLE_COUNT','TRANSPORT_CAPACITY'].includes(item.code))return <EquipmentIssue key={item.issue_id} item={item} disabled={disabled}/>;
+      const [title,body]=COPY[item.code]??COPY.UNCLASSIFIED;return <article className="logistics-todo" key={item.issue_id}>
       <span className="tag">{item.code==='OVER_BUDGET'?'需要调整安排':item.category==='USER_INPUT'?'需要补充信息':item.category==='EQUIPMENT_GAP'?'需要调整安排':'系统资料问题'}</span>
       <h3>{item.item_key==='tent'?'帐篷总住宿容量需要核对':item.item_key&&equipmentLabel(item.item_key)!==item.item_key?equipmentLabel(item.item_key)+' · '+title:title}</h3>
       <p><strong>问题：</strong>{item.item_key==='tent'&&item.tent_capacity?tentSummary(item.tent_capacity):title}</p>

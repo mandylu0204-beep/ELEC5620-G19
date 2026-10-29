@@ -53,7 +53,7 @@ export function ChangePlanning({ data, refresh, choice, onChoiceChange }: { data
     <label htmlFor="revision-choice">修改目标</label><select id="revision-choice" value={choice} disabled={!!busy} onChange={event => onChoiceChange(event.target.value)}>
       <option value="change campsite">更换营地</option><option value="cheaper campsite">寻找费用更低的营地</option><option value="custom">填写其他修改意见</option>
     </select>
-    {choice==='cheaper campsite'&&<p className="mode-notice">本次保留已确认预算 {data.confirmed_context?.requirements.budget_cents==null?'（金额待读取）':`AUD ${(data.confirmed_context.requirements.budget_cents/100).toFixed(2)}`}。尝试寻找单晚营地费更低的营地，并重新计算交通、餐食、装备与安全结果；更便宜的营地不保证整份方案在预算内。{data.confirmed_context?.demo_context?.mode==='agent'?'点击确认后才会调用规划模型生成新版本。':'点击确认后才会生成新版本。'}</p>}
+    {choice==='cheaper campsite'&&<p className="mode-notice">保留预算 {data.confirmed_context?.requirements.budget_cents==null?'（金额待读取）':`AUD ${(data.confirmed_context.requirements.budget_cents/100).toFixed(2)}`}，尝试寻找更便宜的营地。总费用仍可能超出预算。</p>}
     {choice === 'custom' && <><label htmlFor="revision-feedback">修改意见</label><textarea id="revision-feedback" value={feedback} maxLength={4000} disabled={!!busy} onChange={event => setFeedback(event.target.value)} /></>}
     <div className="plan-actions"><button className="primary-button" disabled={!!busy || !data.revision_available} onClick={() => void submit('revise')}>{busy==='revise' ? '正在提交修改…' : choice==='cheaper campsite'?'确认保持预算并修订方案':'修改方案'}</button>
       <button className="secondary-button" disabled={!!busy || !data.reassessment_available} onClick={() => void submit('reassess')}>{busy==='reassess'?'正在启动检查…':'保留行程，重新检查'}</button></div>

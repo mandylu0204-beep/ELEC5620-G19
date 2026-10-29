@@ -6,7 +6,7 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {MemoryRouter} from 'react-router-dom';
 import {createServer} from 'vite';
 import {changedSections,discardMessage,tentSummary,PROFILE_SAVED_NOTICE,chineseProse} from '../src/display_facts.ts';
-import {evidenceState,planRowState} from '../src/plan_language.ts';
+import {evidenceState,planRowState,safetyCondition,safetyRegulations} from '../src/plan_language.ts';
 
 // Vite only transforms modules in middleware mode: no HTTP listener, browser,
 // app database, personal env file or model client is started by these tests.
@@ -16,6 +16,7 @@ after(()=>server.close());
 const panels=await server.ssrLoadModule('/src/display_panels.tsx');
 const {LogisticsIssues}=await server.ssrLoadModule('/src/logistics_issues.tsx');
 const {TripCoveragePanel}=await server.ssrLoadModule('/src/trip_coverage.tsx');
+const {SafetyInformation}=await server.ssrLoadModule('/src/safety_information.tsx');
 const {PlanView,NewPlanPrompt,TripSeriesCard}=await server.ssrLoadModule('/src/plans.tsx');
 const {ChangePlanning,revealRevisionPanel}=await server.ssrLoadModule('/src/planning.tsx');
 const {ProfileAdoptionPreview}=await server.ssrLoadModule('/src/replan.tsx');
@@ -133,7 +134,7 @@ test('cheaper revision confirmation preserves the displayed budget and explains 
     data,refresh(){},choice:'cheaper campsite',onChoiceChange(){},
   }))));
   assert.match(html,/<option value="cheaper campsite" selected=""/);
-  for(const text of ['AUD 300.00','单晚营地费更低','不保证整份方案在预算内','点击确认后才会调用规划模型','确认保持预算并修订方案'])assert.ok(html.includes(text),text);
+  for(const text of ['保留预算 AUD 300.00','尝试寻找更便宜的营地','总费用仍可能超出预算','确认保持预算并修订方案'])assert.ok(html.includes(text),text);
   assert.deepEqual(data,before);
 });
 test('transport choices follow backend capabilities, retain unsupported history and never promise live timetable checks',()=>{
@@ -196,8 +197,8 @@ const preparation={scope:'PREPARATION_ONLY',official_assessment:false,fuel_price
   items:['camping_stove','fuel_canister'].map(item_key=>({item_key,recorded:false,entered_quantity:null,confirmed_quantity:null,unit_valid:true}))};
 test('first cooking preparation names both items without declaring an inactive fuel rule unnecessary or passed',()=>{
   const html=render(CookingPreparationPanel,{value:preparation});
-  for(const phrase of ['露营炉具','燃料罐','不是正式评估','不等于本次无需燃料','这不等于已经超预算','不要为通过检查虚填'])assert.ok(html.includes(phrase),phrase);
-  assert.doesNotMatch(html,/检查通过|确认已解决|href=|<button/);
+  for(const phrase of ['烹饪装备准备','露营炉具','燃料罐','尚未填写数量'])assert.ok(html.includes(phrase),phrase);
+  assert.doesNotMatch(html,/检查通过|确认已解决|href=|<button|规则预检查|系统报价资料|虚填|不调用模型|燃料费用待确认/);
   const issue=routed(LogisticsIssues,{items:[{issue_id:'cooking_method',code:'COOKING_ARRANGEMENT',category:'USER_INPUT',target:'REQUEST',
     cooking_preparation:preparation,alternate_action_url:'/profile?plan_id=p&focus=equipment.camping_stove'}],onSafety(){}});
   assert.match(issue,/一起核对炉具与燃料资料/);assert.match(issue,/燃料罐/);
@@ -205,19 +206,23 @@ test('first cooking preparation names both items without declaring an inactive f
 test('draft check is explicit and expires on edit; zero estimated gap cannot grant a formal pass',()=>{
   const value={...preparation,required_fuel_quantity:'2',fuel_gap:'0',calculation_status:'DRAFT_ESTIMATE'};
   const html=render(CookingPreparationPanel,{value:preparation,preview:value,onCheck(){}});
-  assert.match(html,/预估需要燃料罐 2 个/);assert.match(html,/预估缺口 0 个/);
-  assert.match(html,/不调用模型/);assert.doesNotMatch(html,/检查通过|已解决/);
+  assert.match(html,/预计需要燃料罐 2 个/);assert.match(html,/还缺 0 个/);
+  assert.match(html,/更新准备情况/);assert.doesNotMatch(html,/检查通过|已解决|燃料费用待确认/);
   const stale=render(CookingPreparationPanel,{value:preparation,preview:value,stale:true,onCheck(){}});
-  assert.match(stale,/上次预检查已过期/);assert.doesNotMatch(stale,/预估需要燃料罐 2 个/);
+  assert.match(stale,/资料已修改，请更新准备情况/);assert.doesNotMatch(stale,/预计需要燃料罐 2 个/);
   const unknown=render(CookingPreparationPanel,{value:preparation,preview:{...preparation,calculation_status:'WAITING_FOR_STOVE',example:{stove_quantity:1,fuel_quantity:'2'}}});
-  assert.match(unknown,/规则示例/);assert.match(unknown,/填 0 也不表示/);assert.match(unknown,/不是你已拥有/);
+  assert.match(unknown,/请先填写可用炉具数量/);assert.doesNotMatch(unknown,/规则示例|预计需要燃料罐|检查通过/);
+  const shortage=render(CookingPreparationPanel,{value:preparation,preview:{...value,fuel_gap:'1'}});
+  assert.match(shortage,/燃料费用待确认/);assert.match(shortage,/还缺 1 个/);
+  const invalid=render(CookingPreparationPanel,{value:{...preparation,items:[{...preparation.items[0],recorded:true,unit_valid:false}]}});
+  assert.match(invalid,/请核对数量单位/);
 });
 test('cooking preparation survives final/history rendering without offering an active profile update',()=>{
   const data={...planFixture(),cooking_preparation:preparation};
   const history=routed(PlanView,{data,error:'',refresh(){},snapshot:true});
-  assert.match(history,/炉具和配套燃料一起核对/);assert.doesNotMatch(history,/一起核对炉具与燃料资料 ↗/);
+  assert.match(history,/烹饪装备准备/);assert.doesNotMatch(history,/一起核对炉具与燃料资料 ↗/);
   const reviewer=routed(PlanView,{data,error:'',refresh(){},review:true});
-  assert.match(reviewer,/炉具和配套燃料一起核对/);assert.doesNotMatch(reviewer,/一起核对炉具与燃料资料 ↗/);
+  assert.match(reviewer,/烹饪装备准备/);assert.doesNotMatch(reviewer,/一起核对炉具与燃料资料 ↗/);
 });
 test('cooking candidate preserves unknowns, units, duplicates and confirmation; names never decide item type',()=>{
   const rows=[gear({item_key:'camping_stove',label:'燃料罐',quantity:'',confirmed:false}),gear({item_key:'fuel_canister',quantity:'2',unit:'set'}),gear()];
@@ -231,17 +236,55 @@ test('fuel task explains its own missing quote and offers real correction paths,
     current:{records:[],available_quantity:'0'},required:{quantity:'3',missing_quantity:'3'},target:'PROFILE',action_url:'/profile?plan_id=owned-plan&focus=equipment.fuel_canister.quantity',
     arrangement_action_url:'/plans/owned-plan/update?focus=request-meal',cost_impacts:[{code:'PRICE_DATA',item_key:'fuel_canister',category:'ADDITIONAL_GEAR',unit_price_cents:null}]};
   const html=routed(LogisticsIssues,{items:[item],onSafety(){}});
-  assert.match(html,/燃料罐 · 必要装备数量不足/);assert.match(html,/燃料罐补缺费用暂无法估算/);
-  assert.match(html,/不是另一项无关任务/);assert.match(html,/核对燃料罐资料/);assert.match(html,/调整本次用餐方式/);
-  assert.match(html,/不能把未知费用当作零元/);assert.doesNotMatch(html,/<h3>系统缺少适用报价/);
+  assert.match(html,/燃料罐还缺 3 罐/);assert.match(html,/燃料罐费用待确认，完整总费用暂无法估算/);
+  assert.match(html,/补充燃料罐/);assert.match(html,/调整用餐方式/);
+  assert.doesNotMatch(html,/必要装备数量不足|问题：|影响：|处理：|不是另一项无关任务|<h3>系统缺少适用报价/);
   const history=routed(LogisticsIssues,{items:[item],disabled:true,onSafety(){}});
   assert.doesNotMatch(history,/href=/);assert.match(history,/只展示当时的缺项/);
 });
 test('dependent checks remain visible before quantities are known and source-only problems have no fake link',()=>{
   const html=routed(LogisticsIssues,{items:[{issue_id:'stove',code:'EQUIPMENT_DETAILS',category:'USER_INPUT',item_key:'camping_stove',target:'PROFILE',action_url:'/profile?focus=equipment.camping_stove',pending_checks:[{item_key:'fuel_canister',status:'WAITING_FOR_INPUT'}]}],onSafety(){}});
-  assert.match(html,/后续尚待明确：燃料罐/);assert.match(html,/暂不能确定具体需求/);
+  assert.match(html,/补充后再核对：燃料罐/);assert.match(html,/所需数量待确认/);
   const price=routed(LogisticsIssues,{items:[{issue_id:'price.fuel',code:'PRICE_DATA',category:'DATA_GAP',item_key:'fuel_canister',target:'OPERATOR',action_url:null}],onSafety(){}});
   assert.match(price,/燃料罐 · 系统缺少适用报价/);assert.doesNotMatch(price,/href=|<button/);
+});
+
+test('equipment task names the saved shortage and a single correction link without repeated instructions',()=>{
+  const item={issue_id:'equipment.sleeping_mat',code:'EQUIPMENT_SHORTAGE',category:'EQUIPMENT_GAP',field:'equipment.sleeping_mat.quantity',item_key:'sleeping_mat',
+    current:{records:[],available_quantity:'0',unit:'item'},required:{quantity:'2',missing_quantity:'2'},target:'PROFILE',action_url:'/profile?focus=equipment.sleeping_mat.quantity'};
+  const before=structuredClone(item);
+  const html=routed(LogisticsIssues,{items:[item],onSafety(){}});
+  assert.match(html,/<h3>睡垫还缺 2 张<\/h3>/);assert.match(html,/本次需要 2 张，目前尚未登记。/);
+  const card=html.slice(html.indexOf('<article'));
+  assert.equal((card.match(/<a /g)||[]).length,1);assert.match(card,/补充睡垫 ↗/);
+  assert.match(card,/href="\/profile\?focus=equipment.sleeping_mat.quantity"/);
+  assert.doesNotMatch(card,/需要调整安排|必要装备数量不足|问题：|影响：|处理：|本次采用|此行程需要/);
+  assert.deepEqual(item,before);
+  assert.doesNotMatch(routed(LogisticsIssues,{items:[item],disabled:true,onSafety(){}}),/href=|<button/);
+});
+
+test('unknown equipment quantity is never zero and unconfirmed stock is not available stock',()=>{
+  const item={issue_id:'mat',code:'EQUIPMENT_DETAILS',item_key:'sleeping_mat',target:'PROFILE',action_url:'/profile',
+    current:{records:[{quantity:null,unit:'item',confirmed:false}],available_quantity:null,unit:'item'},required:{quantity:'2',missing_quantity:null}};
+  const unknown=routed(LogisticsIssues,{items:[item],onSafety(){}});
+  assert.match(unknown,/本次需要 2 张，可用数量尚未确定/);assert.doesNotMatch(unknown,/还缺 0|可用 0|还缺 2/);
+  const unconfirmed=routed(LogisticsIssues,{items:[{...item,code:'EQUIPMENT_SHORTAGE',
+    current:{...item.current,records:[{quantity:2,unit:'item',confirmed:false}],available_quantity:'0'},required:{quantity:'2',missing_quantity:'2'}}],onSafety(){}});
+  assert.match(unconfirmed,/已确认可用 0 张/);assert.match(unconfirmed,/请确认已登记的物品本次是否可用/);
+  assert.doesNotMatch(unconfirmed,/已确认可用 2/);
+});
+
+test('compact tent and vehicle tasks preserve person capacity and the seat-filling hint',()=>{
+  const base={issue_id:'tent',code:'EQUIPMENT_DETAILS',item_key:'tent',target:'PROFILE',action_url:'/profile',tent_capacity:tent};
+  const html=routed(LogisticsIssues,{items:[base],onSafety(){}});
+  assert.match(html,/帐篷还缺 1 人住宿容量/);assert.match(html,/每顶可住人数/);assert.doesNotMatch(html,/还缺 1 顶/);
+  const vehicle=routed(LogisticsIssues,{items:[{...base,item_key:'vehicle',code:'VEHICLE_DETAILS',tent_capacity:undefined,
+    current:{unit:'person_space'},required:{capacity_persons:3,missing_quantity:'1'}}],onSafety(){}});
+  assert.match(vehicle,/车辆还缺 1 个座位/);assert.match(vehicle,/本次需容纳 3 人/);
+  assert.match(vehicle,/每辆载客人数（含驾驶员）/);assert.match(vehicle,/补充交通安排/);
+  const water=routed(LogisticsIssues,{items:[{...base,item_key:'drinking_water',code:'EQUIPMENT_SHORTAGE',tent_capacity:undefined,
+    current:{records:[],unit:'litre',available_quantity:'0'},required:{quantity:'4.5',missing_quantity:'4.5'}}],onSafety(){}});
+  assert.match(water,/饮用水还缺 4\.5 升/);assert.doesNotMatch(water,/4\.5 件/);
 });
 test('update summary shows actual requirement differences and request history stays collapsed',()=>{
   const before=planFixture().confirmed_context.requirements;
@@ -250,7 +293,8 @@ test('update summary shows actual requirement differences and request history st
   assert.match(html,/小组预算/);assert.match(html,/AUD 400\.00/);assert.match(html,/自行烹饪/);assert.match(html,/不代表正式检查通过/);
   const history=routed(RequestHistory,{rows:[{request_id:'update',raw_text:'本次露营',status:'DRAFT',trip_series_id:'trip'}],deleting:null,selected:null,onSelect(){},onDelete(){},onCancel(){}});
   assert.match(history,/<details class="panel request-history">/);assert.doesNotMatch(history,/<details[^>]*open/);
-  assert.match(history,/本次出行更新/);assert.match(history,/不代表新增了一次独立出行/);
+  assert.match(history,/本次出行更新/);assert.match(history,/已保存的需求/);
+  assert.doesNotMatch(history,/不代表新增了一次独立出行|同系列的更新方案/);
 });
 test('historical approval copy cannot imply permission to save the current successor',()=>{
   assert.match(historicalReviewNotice('HISTORY'),/不授权当前方案/);
@@ -431,14 +475,81 @@ test('safety reuses structured equipment issue and routes back to equipment with
   const item={issue_id:'equipment.tent',code:'EQUIPMENT_SHORTAGE',category:'EQUIPMENT_GAP',item_key:'tent',
     field:'equipment.tent.quantity',target:'PROFILE',action_url:'/profile',current:{records:[]},required:{quantity:'3'},tent_capacity:tent};
   const text=routed(LogisticsIssues,{items:[item],summary:true,onSafety(){},onGear(){}});
-  assert.match(text,/缺少 1 人住宿容量/);assert.match(text,/暂不能保存最终方案/);assert.match(text,/查看装备问题与补充入口/);
+  assert.match(text,/缺少 1 人住宿容量/);assert.match(text,/还有 1 项准备需要完善/);assert.match(text,/查看并补充装备/);
   assert.doesNotMatch(text,/所需数量：3|3 顶帐篷/);
 });
 test('weather shows missing dates, actions, next recheck and never claims overall safety',()=>{
   const value={checked_on:'2026-10-21',next_weather_check_on:'2026-10-25',issues:[{campsite_id:'demo-river-flat',kind:'WEATHER',code:'NOT_YET_OBSERVED',requested_range:{start:'2026-11-01',end:'2026-11-02'},uncovered_ranges:[{start:'2026-11-01',end:'2026-11-02'}],available_ranges:[]}],alternative_dates:[],alternative_campsites:[]};
   const text=routed(TripCoveragePanel,{value,requestId:'request'});
-  for(const expected of ['2026-11-01 至 2026-11-02','2026-10-25','影响：','处理：','不能据此确认整段行程安全'])assert.ok(text.includes(expected),expected);
+  for(const expected of ['2026-11-01 至 2026-11-02','2026-10-25','重新检查天气','待确认日期'])assert.ok(text.includes(expected),expected);
+  assert.doesNotMatch(text,/资料覆盖|检查通过|天气温和/);
   assert.equal(evidenceState({status:'AVAILABLE',valid_from:'2026-10-01',valid_to:'2026-11-01',source_refs:[]},{start_date:'2026-10-21',end_date:'2026-10-22'}).title,'资料覆盖本次日期');
+});
+
+test('safety preparation summary groups repeated issues by item and keeps distinct equipment',()=>{
+  const base={issue_id:'tent.quantity',code:'EQUIPMENT_SHORTAGE',item_key:'tent',field:'equipment.tent.quantity',tent_capacity:tent};
+  const items=[base,{...base,issue_id:'tent.confirmed',code:'EQUIPMENT_DETAILS'},
+    {...base,issue_id:'water',item_key:'drinking_water',field:'equipment.drinking_water',tent_capacity:undefined}];
+  const before=structuredClone(items);
+  const text=routed(LogisticsIssues,{items,summary:true,onSafety(){},onGear(){}});
+  assert.match(text,/还有 2 项准备需要完善/);assert.equal((text.match(/<li>/g)||[]).length,2);
+  assert.match(text,/饮用水/);assert.match(text,/缺少 1 人住宿容量/);
+  assert.equal((text.match(/<button/g)||[]).length,1);
+  assert.doesNotMatch(text,/→|拟购买或借用|暂不能保存最终方案/);assert.deepEqual(items,before);
+});
+
+const safetyEvidence=(kind,extra={})=>({kind,status:'AVAILABLE',summary:null,road_state:null,source_date:'2026-10-20',
+  valid_from:'2026-10-20',valid_to:'2026-11-30',source_refs:[],...extra});
+test('condition cards require concrete facts, inspect all evidence and preserve closures and uncertainty',()=>{
+  const dates={start_date:'2026-10-22',end_date:'2026-10-24'};
+  const open=safetyEvidence('ROAD',{road_state:'OPEN'});
+  assert.equal(safetyCondition('ROAD','AVAILABLE',[open],dates).title,'道路可通行');
+  assert.equal(safetyCondition('ROAD','AVAILABLE',[open,{...open,road_state:'CLOSED'}],dates).title,'道路关闭');
+  assert.equal(safetyCondition('ROAD','AVAILABLE',[open,{...open,valid_to:'2026-10-23'}],dates).title,'待确认');
+  assert.equal(safetyCondition('ROAD','AVAILABLE',[{...open,road_state:'UNKNOWN'}],dates).title,'待确认');
+  assert.equal(safetyCondition('ROAD','CONFLICTING',[open],dates).attention,true);
+  assert.equal(safetyCondition('WEATHER','AVAILABLE',[safetyEvidence('WEATHER',{summary:'Unrecognised forecast.'})],dates).title,'天气待确认');
+  assert.equal(safetyCondition('WEATHER','MISSING',[safetyEvidence('WEATHER',{summary:'Mild synthetic conditions.'})],dates).title,'待确认');
+  assert.equal(safetyCondition('WEATHER','AVAILABLE',[safetyEvidence('WEATHER',{summary:'Mild synthetic conditions.'})],dates).title,'天气温和');
+  const fire=safetyCondition('FIRE','AVAILABLE',[safetyEvidence('FIRE',{summary:'No synthetic fire restriction.'})],dates);
+  assert.equal(fire.title,'未注明额外限制');assert.doesNotMatch(fire.title,/允许|通过/);
+  assert.equal(safetyCondition('FIRE','AVAILABLE',[],dates,['FIRE_PROHIBITED']).attention,true);
+  assert.equal(safetyCondition('RESTRICTION','AVAILABLE',[],dates,['CAMPSITE_CLOSED']).title,'营地关闭');
+  assert.equal(safetyRegulations('Campfires and solid fuel burners prohibited; gas/electric barbecues provided'),'禁止营火及固体燃料炉具；提供燃气或电烧烤设施');
+});
+
+test('safety page folds useful rules, omits coverage explanations and restricts diagnostics to review',()=>{
+  const value={outcome:'REVISION',risk_level:'LOW',confidence:'HIGH',requires_human_review:false,
+    data_quality:{ROAD:'AVAILABLE',FIRE:'AVAILABLE',WEATHER:'AVAILABLE',RESTRICTION:'AVAILABLE'},
+    evidence:[safetyEvidence('ROAD',{road_state:'OPEN'}),safetyEvidence('FIRE',{summary:'No synthetic fire restriction.'}),
+      safetyEvidence('WEATHER',{summary:'Mild synthetic conditions.'}),safetyEvidence('RESTRICTION',{summary:'Bring all drinking water; Keep noise down after 10pm'})],
+    mandatory_blockers:[],hazards:[],unresolved_conflicts:[],recommended_actions:['private-rule-action']};
+  const props={value,summary:'装备与交通准备待完善',approved:false,review:false,outdated:false,blockers:null,notes:null,
+    rawWarnings:[{code:'INTERNAL_CODE',message:'internal-diagnostic'}],sources:()=>h('p',null,'private-source-record'),label:x=>x,
+    coverage:{issues:[]},requestId:'request'};
+  const html=render(SafetyInformation,props);
+  for(const text of ['道路可通行','天气温和','未注明额外限制','自备全部饮用水','晚上 10 点后保持安静'])assert.ok(html.includes(text),text);
+  assert.match(html,/<details class="artifact-notes"><summary>查看安全详情与营地规定/);
+  assert.doesNotMatch(html,/资料覆盖|最终资格|接下来可以怎么做|synthetic|完整检查说明|INTERNAL_CODE|private-source-record|private-rule-action|internal-diagnostic/);
+  const reviewer=render(SafetyInformation,{...props,review:true});
+  assert.match(reviewer,/INTERNAL_CODE/);assert.match(reviewer,/private-source-record/);
+  assert.equal(render(TripCoveragePanel,{value:{issues:[]}}),'');
+});
+
+test('plan explains preparation-only blockers without disguising a road closure as a gear issue',()=>{
+  const value=planFixture();
+  const safety={outcome:'REVISION',risk_level:'LOW',confidence:'HIGH',requires_human_review:false,
+    data_quality:{},evidence:[],mandatory_blockers:[{code:'ESSENTIAL_GEAR_MISSING',message:'internal-gear-detail',source_refs:[]}],
+    hazards:[],unresolved_conflicts:[],recommended_actions:[]};
+  value.assessments.push({assessment_id:'safety',kind:'SAFETY',version_context:value.version.version_context,result:safety});
+  const html=renderPlan(value);
+  assert.match(html,/装备与交通准备待完善/);assert.match(html,/查看装备与交通/);
+  assert.doesNotMatch(html,/internal-gear-detail/);
+  safety.evidence=[safetyEvidence('ROAD',{road_state:'CLOSED'})];
+  safety.mandatory_blockers.push({code:'ROAD_CLOSED',message:'internal-road-detail',source_refs:[]});
+  const closed=renderPlan(value);
+  assert.match(closed,/道路关闭，需要调整方案/);assert.match(closed,/查看安全信息/);
+  assert.doesNotMatch(closed,/装备与交通准备待完善|internal-road-detail/);
 });
 test('new pending checks override old successful display and completed issues have distinct labels',()=>{
   const row={run_status:'RUNNING',stage:'ASSESSING_SAFETY',version_status:'FINALISED',display_status:'FINALISED'};
@@ -554,8 +665,9 @@ test('login and profile no longer offer sample credentials or sample-filled pers
   assert.doesNotMatch(profile,/已核实拥有<\/label>/);
 });
 test('required fields have visible text badges without making optional profile facts mandatory',()=>{
-  for(const [Page,ids] of [[RegisterPage,['register-name','register-username','register-password','register-confirmation']]]){
+  for(const [Page,ids] of [[RegisterPage,['register-username','register-password','register-confirmation']]]){
     const html=renderToStaticMarkup(h(MemoryRouter,null,h(SessionProvider,null,h(Page))));
+    assert.doesNotMatch(html,/register-name|昵称/);
     for(const id of ids){
       assert.ok(html.includes(`<label for="${id}">`),id);
       assert.match(html.split(`<label for="${id}">`)[1].split('</label>')[0],/class="required-mark">必填/);

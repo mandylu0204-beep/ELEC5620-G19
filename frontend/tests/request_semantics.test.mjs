@@ -59,9 +59,9 @@ test('saved explicit input round-trips without translating, canonicalizing or lo
 test('summary shows interpreted meanings separately from facts and keeps unknown preferences visible',()=>{
   const html=renderToStaticMarkup(h(RequestMeaningSummary,{requirements:requirements({
     preferences:['quiet','ready-to-eat meals','Near a shaded walking trail'],mandatory_constraints:['showers','no_fires']})}));
-  for(const phrase of ['需求理解结果','偏好','必须满足的条件','安静','即食餐食','淋浴','不生火','Near a shaded walking trail','有无遗漏'])
+  for(const phrase of ['需求理解结果','偏好','必须满足的条件','安静','即食餐食','淋浴','不生火','Near a shaded walking trail'])
     assert.ok(html.includes(phrase),phrase);
-  assert.doesNotMatch(html,/检查通过|营地已确认|<input|<button/);
+  assert.doesNotMatch(html,/有无遗漏|旧版原文|检查通过|营地已确认|<input|<button/);
 });
 
 test('unresolved hard requirement is not presented as no requirement',()=>{
