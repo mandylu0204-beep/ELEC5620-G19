@@ -267,6 +267,34 @@ CREATE TRIGGER no_delete_requirement_help_command BEFORE DELETE ON requirement_h
 """
 
 
+MIGRATION_13 = """
+CREATE TABLE revision_proposals(
+ id TEXT PRIMARY KEY,plan_id TEXT NOT NULL REFERENCES plans(id),
+ base_run_id TEXT NOT NULL,base_version_id TEXT NOT NULL,
+ base_run_revision INTEGER NOT NULL,base_version_revision INTEGER NOT NULL,
+ candidate_run_id TEXT NOT NULL UNIQUE,decision TEXT CHECK(decision IN ('ADOPT','KEEP')),
+ revision INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL,
+ FOREIGN KEY(plan_id,base_run_id) REFERENCES runs(plan_id,id),
+ FOREIGN KEY(plan_id,candidate_run_id) REFERENCES runs(plan_id,id),
+ FOREIGN KEY(plan_id,base_version_id) REFERENCES versions(plan_id,id));
+CREATE UNIQUE INDEX one_pending_revision ON revision_proposals(plan_id) WHERE decision IS NULL;
+CREATE TABLE revision_choice_commands(
+ owner_id TEXT NOT NULL REFERENCES users(id),command_key TEXT NOT NULL,
+ input_hash TEXT NOT NULL,result TEXT NOT NULL,PRIMARY KEY(owner_id,command_key));
+CREATE TRIGGER immutable_revision_origin BEFORE UPDATE OF plan_id,base_run_id,base_version_id,
+ base_run_revision,base_version_revision,candidate_run_id,created_at ON revision_proposals
+ BEGIN SELECT RAISE(ABORT, 'immutable revision origin'); END;
+CREATE TRIGGER immutable_revision_decision BEFORE UPDATE ON revision_proposals
+ WHEN OLD.decision IS NOT NULL BEGIN SELECT RAISE(ABORT, 'immutable revision decision'); END;
+CREATE TRIGGER no_delete_revision_proposal BEFORE DELETE ON revision_proposals
+ BEGIN SELECT RAISE(ABORT, 'immutable revision proposal'); END;
+CREATE TRIGGER immutable_revision_choice BEFORE UPDATE ON revision_choice_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable revision choice'); END;
+CREATE TRIGGER no_delete_revision_choice BEFORE DELETE ON revision_choice_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable revision choice'); END;
+"""
+
+
 def execute_migration(connection, script):
     statement = ''
     for line in script.splitlines():
@@ -340,7 +368,11 @@ class Database:
                 execute_migration(connection, MIGRATION_12)
                 connection.execute("INSERT INTO schema_migrations VALUES(12, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
                 versions.append(12)
-            if versions != list(range(1, 13)):
+            if versions == list(range(1, 13)):
+                execute_migration(connection, MIGRATION_13)
+                connection.execute("INSERT INTO schema_migrations VALUES(13, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
+                versions.append(13)
+            if versions != list(range(1, 14)):
                 raise RuntimeError('Unsupported database schema version')
 
     @contextmanager
@@ -376,6 +408,6 @@ class Database:
         try:
             with self.transaction(write=False) as connection:
                 versions = [row[0] for row in connection.execute('SELECT version FROM schema_migrations ORDER BY version')]
-            return versions == list(range(1, 13))
+            return versions == list(range(1, 14))
         except ContractFailure:
             return False

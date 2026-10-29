@@ -21,7 +21,9 @@ const {PlanView,NewPlanPrompt,TripSeriesCard}=await server.ssrLoadModule('/src/p
 const {DailyItinerary}=await server.ssrLoadModule('/src/daily_itinerary.tsx');
 const {selectionPresentation}=await server.ssrLoadModule('/src/campsite_selection.ts');
 const {cataloguePlace,CampsiteArrivalDetails}=await server.ssrLoadModule('/src/campsite_details.tsx');
-const {ChangePlanning,revealRevisionPanel}=await server.ssrLoadModule('/src/planning.tsx');
+const {ChangePlanning,revealRevisionPanel,preservedRevisionNotice}=await server.ssrLoadModule('/src/planning.tsx');
+const {ApiFailure:PlanningApiFailure}=await server.ssrLoadModule('/src/api.ts');
+const {RevisionComparison,savingsText}=await server.ssrLoadModule('/src/revision_comparison.tsx');
 const {ProfileAdoptionPreview}=await server.ssrLoadModule('/src/replan.tsx');
 const {RequirementsChangePreview,RequestHistory}=await server.ssrLoadModule('/src/requests.tsx');
 const {historicalReviewNotice}=await server.ssrLoadModule('/src/reviews.tsx');
@@ -137,8 +139,71 @@ test('cheaper revision confirmation preserves the displayed budget and explains 
     data,refresh(){},choice:'cheaper campsite',onChoiceChange(){},
   }))));
   assert.match(html,/<option value="cheaper campsite" selected=""/);
-  for(const text of ['保留预算 AUD 300.00','尝试寻找更便宜的营地','总费用仍可能超出预算','确认保持预算并修订方案'])assert.ok(html.includes(text),text);
+  for(const text of ['保留预算 AUD 300.00','尝试寻找更便宜的营地','总费用仍可能超出预算','寻找更便宜的营地','可对比并选择是否采用'])assert.ok(html.includes(text),text);
   assert.deepEqual(data,before);
+});
+
+test('no cheaper campsite becomes a preservation notice while auth, stale and model errors remain errors',()=>{
+  const envelope={error:{code:'INPUT_INVALID',message:'未找到符合当前条件的更便宜营地，原方案已保留。',
+    context:{revision_outcome:'NO_CHEAPER_CAMPSITE'}},trace_id:'test'};
+  assert.equal(preservedRevisionNotice(new PlanningApiFailure(envelope)),envelope.error.message);
+  assert.equal(preservedRevisionNotice(new PlanningApiFailure({...envelope,error:{...envelope.error,
+    context:{revision_outcome:'CAMPSITE_FEE_UNKNOWN'}}})),envelope.error.message);
+  for(const code of ['UNAUTHENTICATED','STALE_CONTEXT','VERSION_CONFLICT','CONTRACT_INVALID','AGENT_FAILURE'])
+    assert.equal(preservedRevisionNotice(new PlanningApiFailure({...envelope,error:{...envelope.error,code}})),null);
+  assert.equal(preservedRevisionNotice(new Error('Connection lost')),null);
+  assert.equal(preservedRevisionNotice(new PlanningApiFailure({...envelope,error:{...envelope.error,context:{}}})),null);
+});
+
+const comparisonFixture=()=>({proposal_id:'proposal',revision:0,decision:null,status:'READY',can_adopt:true,can_keep:true,
+  before:{run:{run_id:'old-run',status:'SUCCEEDED',stage:'COMPLETED',revision:5},version_id:'old-version',version_number:1,
+    campsite_ids:['lane-cove'],duration_nights:2,nightly_fee_cents:9500,camp_fee_cents:19000,total_cents:40000},
+  after:{run:{run_id:'new-run',status:'SUCCEEDED',stage:'COMPLETED',revision:5},version_id:'new-version',version_number:2,
+    campsite_ids:['bonnie-vale'],duration_nights:2,nightly_fee_cents:8500,camp_fee_cents:17000,total_cents:42000},
+  camp_saving_cents:2000,total_saving_cents:-2000});
+const renderComparison=props=>renderToStaticMarkup(h(MemoryRouter,null,h(SessionProvider,null,h(RevisionComparison,props))));
+
+test('revision comparison distinguishes campsite savings from higher total cost and offers explicit selection',()=>{
+  const value=comparisonFixture();const before=structuredClone(value);
+  const html=renderComparison({value,planId:'plan',refresh(){}});
+  for(const text of ['Lane Cove','Bonnie Vale','AUD 95.00','AUD 85.00','AUD 190.00','AUD 170.00',
+    '营地费预计节省 AUD 20.00','总费用预计增加 AUD 20.00','采用新方案','保留原方案'])assert.ok(html.includes(text),text);
+  assert.match(html,/href="\/plans\/plan\?run_id=new-run"/);
+  assert.match(html,/全部费用估算/);assert.deepEqual(value,before);
+  assert.equal(savingsText(0,'总费用'),'总费用没有变化');
+});
+
+test('unknown totals are not zero savings; pending, failed and historical comparisons cannot adopt prematurely',()=>{
+  const props={planId:'plan',refresh(){}};
+  const value=comparisonFixture();value.after.total_cents=null;value.total_saving_cents=null;
+  const unknown=renderComparison({...props,value});
+  assert.match(unknown,/总费用暂无法比较/);assert.doesNotMatch(unknown,/总费用预计节省 AUD 0\.00/);
+  const pending=renderComparison({...props,value:{...value,status:'GENERATING',can_adopt:false,can_keep:false}});
+  assert.match(pending,/原方案仍保留为当前方案/);assert.equal((pending.match(/disabled=""/g)||[]).length,2);
+  const failed=renderComparison({...props,value:{...value,status:'FAILED',can_adopt:false}});
+  assert.match(failed,/原方案不受影响/);assert.match(failed,/<button[^>]*disabled=""[^>]*>采用新方案/);
+  for(const extra of [{readOnly:true},{value:{...value,decision:'KEEP',status:'KEEP'}}])
+    assert.doesNotMatch(renderComparison({...props,value,...extra}),/<button/);
+});
+
+test('selected original stays visible while the save panel waits for a pending revision choice',()=>{
+  const value=planFixture();value.run.is_active=true;
+  value.revision_comparison=comparisonFixture();
+  value.finalisation_available=false;value.revision_available=false;value.reassessment_available=false;
+  const html=renderPlan(value);
+  assert.match(html,/Demo River Flat/);assert.match(html,/选择适合你的方案/);
+  assert.doesNotMatch(html,/class="panel plan-save"/);
+});
+
+test('an unselected candidate detail is labelled a preview rather than an unrelated historical plan',()=>{
+  const value=planFixture();const comparison=comparisonFixture();value.revision_comparison=comparison;
+  value.run={...value.run,...comparison.after.run,is_active:false};
+  value.plan.active_run_id=comparison.before.run.run_id;value.plan.current_version_id=comparison.before.version_id;
+  value.version.version_context={...value.version.version_context,run_id:comparison.after.run.run_id,plan_version_id:comparison.after.version_id};
+  value.assessments[0].version_context=value.version.version_context;
+  const html=renderPlan(value);
+  assert.match(html,/待选新方案/);assert.match(html,/正在预览新方案，原方案仍是当前安排/);
+  assert.doesNotMatch(html,/正在查看历史方案/);assert.match(html,/返回当前方案/);
 });
 test('transport choices follow backend capabilities, retain unsupported history and never promise live timetable checks',()=>{
   const props={value:'PUBLIC_TRANSPORT',supported:['CAR','PUBLIC_TRANSPORT'],onChange(){},error:''};

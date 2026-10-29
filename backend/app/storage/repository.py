@@ -102,7 +102,7 @@ class Repository:
         with self.db.transaction() as connection:
             connection.execute('INSERT INTO requests VALUES(?,?,?,?,?,?,?,?)', (context.request_id, user.id, raw_text, 'CONFIRMED', 1, encode(context.requirements), encode(context), now()))
 
-    def begin_run(self, user: User, request_id: str, demo: DemoContext, dataset: DatasetContext, *, plan_id=None, operation='PLAN', expected_current_version_id=None, command_key=None, expected_active_run_id=None, expected_request_revision=None, single_plan=False, expected_version_revision=None, expected_run_revision=None):
+    def begin_run(self, user: User, request_id: str, demo: DemoContext, dataset: DatasetContext, *, plan_id=None, operation='PLAN', expected_current_version_id=None, command_key=None, expected_active_run_id=None, expected_request_revision=None, single_plan=False, expected_version_revision=None, expected_run_revision=None, revision_check=None, revision_selection=False):
         """Only trusted A workflow services call this; no B-supplied RunScope accepted."""
         require_role(user, 'CAMPER')
         if operation not in {'PLAN', 'REVISE', 'REASSESS'}:
@@ -113,7 +113,11 @@ class Repository:
             'expected_current_version_id': expected_current_version_id, 'expected_active_run_id': expected_active_run_id,
             'expected_request_revision': expected_request_revision, 'single_plan': single_plan,
             'expected_version_revision': expected_version_revision, 'expected_run_revision': expected_run_revision,
-            'demo': demo.model_dump(mode='json'), 'dataset': dataset.model_dump(mode='json')})
+            'demo': demo.model_dump(mode='json'), 'dataset': dataset.model_dump(mode='json'),
+            **({'revision_selection': True} if revision_selection else {})})
+        if revision_selection and (operation != 'REVISE' or plan_id is None
+                or expected_run_revision is None or expected_version_revision is None):
+            fail(ErrorCode.INPUT_INVALID, '只有已有方案的修订可以生成待选版本。')
         new_plan = plan_id is None
         with self.db.transaction() as connection:
             if command_key is not None:
@@ -151,6 +155,8 @@ class Repository:
                 plan = self.own_plan(connection, user, plan_id)
                 from .trip_series import require_current
                 require_current(connection, plan)
+                from .revision_choices import require_decided
+                require_decided(connection, plan_id)
                 if command_key is not None and plan['active_run_id'] != expected_active_run_id:
                     fail(ErrorCode.STALE_CONTEXT, '当前运行已变化，请刷新后启动新任务。')
                 if expected_run_revision is not None:
@@ -165,11 +171,31 @@ class Repository:
                 restart_before_version = operation == 'PLAN' and command_key is not None and plan['current_version_id'] is None and expected_current_version_id is None
                 if not restart_before_version and (operation == 'PLAN' or plan['current_version_id'] != expected_current_version_id or expected_current_version_id is None):
                     fail(ErrorCode.VERSION_CONFLICT, '当前版本已变化。')
+                if revision_selection and not connection.execute('''SELECT 1 FROM runs r JOIN run_versions rv ON rv.run_id=r.id
+                    WHERE r.id=? AND r.plan_id=? AND rv.version_id=? AND r.status='SUCCEEDED' AND r.stage='COMPLETED' ''',
+                    (plan['active_run_id'], plan_id, plan['current_version_id'])).fetchone():
+                    fail(ErrorCode.INVALID_STATE, '当前方案尚未完成检查，请先继续原任务，或查看历史中已完成的方案。')
+                if operation == 'REVISE' and revision_check is not None:
+                    # Run after ownership, idempotency and revision guards, before
+                    # any pointer, status, receipt or assessment can be changed.
+                    version = connection.execute('SELECT content FROM versions WHERE id=? AND plan_id=?',
+                        (expected_current_version_id, plan_id)).fetchone()
+                    if not version:
+                        fail(ErrorCode.VERSION_CONFLICT, '当前版本已变化。')
+                    revision_check(context, json.loads(version['content']))
                 if plan['active_run_id']:
                     connection.execute("UPDATE runs SET status='SUPERSEDED',revision=revision+1 WHERE id=? AND status IN ('PENDING','RUNNING')", (plan['active_run_id'],))
             scope = RunScope(command_id=uuid4().hex, run_id=uuid4().hex, plan_id=plan_id, request_id=request_id, operation=operation, expected_current_version_id=expected_current_version_id, demo_context=demo, dataset_context=dataset, write_keys={name: uuid4().hex for name in ('recommendations','version','logistics','safety','route')})
             connection.execute('INSERT INTO runs VALUES(?,?,?,?,?,?,?,?,?,?)', (scope.run_id, plan_id, request_id, encode(scope), encode(context), 'PENDING', 'RECOMMENDING', 0, None, now()))
-            connection.execute('UPDATE plans SET active_run_id=?,request_id=? WHERE id=?', (scope.run_id, request_id, plan_id))
+            if revision_selection:
+                base_run = connection.execute('SELECT revision FROM runs WHERE id=?', (plan['active_run_id'],)).fetchone()
+                base_version = connection.execute('SELECT revision FROM versions WHERE id=?', (plan['current_version_id'],)).fetchone()
+                connection.execute('''INSERT INTO revision_proposals(id,plan_id,base_run_id,base_version_id,
+                    base_run_revision,base_version_revision,candidate_run_id,created_at) VALUES(?,?,?,?,?,?,?,?)''',
+                    (uuid4().hex, plan_id, plan['active_run_id'], plan['current_version_id'],
+                     base_run['revision'], base_version['revision'], scope.run_id, now()))
+            else:
+                connection.execute('UPDATE plans SET active_run_id=?,request_id=? WHERE id=?', (scope.run_id, request_id, plan_id))
             if new_plan:
                 from .trip_series import register_plan
                 register_plan(connection, user, request_id, plan_id, scope.run_id)

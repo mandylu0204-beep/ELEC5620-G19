@@ -48,6 +48,7 @@ class ReviewService:
                 JOIN run_versions rv ON rv.run_id=r.id AND rv.version_id=v.id
                 JOIN users u ON u.id=p.owner_id
                 WHERE p.deleted_at IS NULL AND v.status IN ('ESCALATED','BLOCKED','REVISION_REQUIRED') AND r.status='SUCCEEDED'
+                AND NOT EXISTS (SELECT 1 FROM revision_proposals q WHERE q.plan_id=p.id AND q.decision IS NULL)
                 AND NOT EXISTS (SELECT 1 FROM plan_series_members m JOIN trip_series s ON s.id=m.series_id
                     WHERE m.plan_id=p.id AND (s.deleted_at IS NOT NULL OR s.current_plan_id IS NOT p.id))
                 AND NOT EXISTS (SELECT 1 FROM reviews h WHERE h.run_id=r.id AND h.version_id=v.id)
@@ -125,6 +126,8 @@ class ReviewService:
                 fail(ErrorCode.NOT_FOUND, '方案不存在。')
             from .trip_series import require_current
             require_current(connection, plan)
+            from .revision_choices import require_decided
+            require_decided(connection, plan_id)
             run = connection.execute('SELECT * FROM runs WHERE id=?', (plan['active_run_id'],)).fetchone()
             if not run or body.version_context.plan_id != plan_id:
                 fail(ErrorCode.STALE_CONTEXT, '审核上下文已变化，请刷新。')

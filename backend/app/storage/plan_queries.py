@@ -170,6 +170,10 @@ class PlanQueries:
                 (run_id, user.id)).fetchone()
             if not row:
                 fail(ErrorCode.NOT_FOUND, '运行不存在。')
+            from .revision_choices import candidate_for
+            plan = connection.execute('SELECT * FROM plans WHERE id=?', (row['plan_id'],)).fetchone()
+            proposal = candidate_for(connection, plan, run_id)
             return {'plan_id': row['plan_id'], 'active_run_id': row['active_run_id'],
+                'revision_proposal_id': proposal['id'] if proposal else None,
                 'run': {key: row[key] for key in ('run_id', 'status', 'stage', 'revision')}
                     | {'is_active': row['active_run_id'] == row['run_id']}}

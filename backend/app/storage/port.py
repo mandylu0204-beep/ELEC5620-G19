@@ -35,9 +35,12 @@ class SqlitePersistencePort:
         run = connection.execute('SELECT * FROM runs WHERE id=? AND plan_id=?', (self.scope.run_id, self.scope.plan_id)).fetchone()
         if not plan or not run:
             fail(ErrorCode.NOT_FOUND, '运行不存在。')
-        if run['scope'] != encode(self.scope) or plan['active_run_id'] != self.scope.run_id:
+        from .revision_choices import candidate_for, execution_active
+        if run['scope'] != encode(self.scope) or (plan['active_run_id'] != self.scope.run_id and not candidate_for(connection, plan, self.scope.run_id)):
             fail(ErrorCode.STALE_CONTEXT, '运行已被新任务取代，请刷新。')
         if writing or execution:
+            if not execution_active(connection, plan, self.scope.run_id):
+                fail(ErrorCode.INVALID_STATE, '请先完成待选方案的选择。')
             from .trip_series import require_current
             require_current(connection, plan)
             if plan['deleted_at']:
@@ -52,7 +55,8 @@ class SqlitePersistencePort:
     def context(self, connection, context: VersionContext):
         plan, run = self.active(connection)
         stored = Repository.stored_version(connection, self.scope)
-        if stored.version_context != context or plan['current_version_id'] != context.plan_version_id:
+        from .revision_choices import version_current
+        if stored.version_context != context or not version_current(connection, plan, self.scope.run_id, context.plan_version_id):
             fail(ErrorCode.STALE_CONTEXT, '版本或输入证据已变化，请刷新。')
         return plan, run, stored
 
@@ -124,7 +128,9 @@ class SqlitePersistencePort:
             connection.execute('INSERT INTO versions VALUES(?,?,?,?,?,?,?)', (version_id, self.scope.plan_id, number, encode(content), 'ASSESSING', 0, now()))
             confirmed = ConfirmedContext.model_validate_json(run['confirmed_context'])
             Repository.bind_version(connection, self.scope, confirmed, version_id, content.model_dump(mode='json'))
-            connection.execute('UPDATE plans SET current_version_id=? WHERE id=?', (version_id, self.scope.plan_id))
+            from .revision_choices import candidate_for
+            if not candidate_for(connection, plan, self.scope.run_id):
+                connection.execute('UPDATE plans SET current_version_id=? WHERE id=?', (version_id, self.scope.plan_id))
             version = Repository.stored_version(connection, self.scope)
             if trace is not None:
                 connection.execute('INSERT INTO model_planning_traces VALUES(?,?,?,?,?,?,?,?,?,?)',

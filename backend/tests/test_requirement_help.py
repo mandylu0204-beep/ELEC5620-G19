@@ -169,13 +169,13 @@ def test_upgrade_from_eleven_preserves_profile_payload_revision_and_is_repeatabl
     app,client,headers=web;database=app.state.database
     with database.transaction() as db:
         before=[tuple(row) for row in db.execute('SELECT * FROM profiles')]
-        for table in ['requirement_help_events','requirement_help_commands','requirement_help_tasks']:
+        for table in ['revision_choice_commands','revision_proposals','requirement_help_events','requirement_help_commands','requirement_help_tasks']:
             db.execute('DROP TABLE '+table)
-        db.execute('DELETE FROM schema_migrations WHERE version=12')
+        db.execute('DELETE FROM schema_migrations WHERE version>=12')
     database.initialize();database.initialize()
     with database.transaction(write=False) as db:
         assert [tuple(row) for row in db.execute('SELECT * FROM profiles')]==before
-        assert [row[0] for row in db.execute('SELECT version FROM schema_migrations ORDER BY version')]==list(range(1,13))
+        assert [row[0] for row in db.execute('SELECT version FROM schema_migrations ORDER BY version')]==list(range(1,14))
     assert database.ready()
 
 

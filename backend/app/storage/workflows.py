@@ -89,13 +89,14 @@ class WorkflowService:
     def start(self, user, request_id, demo, dataset, *, command_key, plan_id=None,
               operation='PLAN', expected_current_version_id=None, expected_active_run_id=None,
               expected_request_revision=None, single_plan=False,
-              expected_version_revision=None, expected_run_revision=None):
+              expected_version_revision=None, expected_run_revision=None, revision_check=None, revision_selection=False):
         self.command_key(command_key)
         return self.repository.begin_run(user, request_id, demo, dataset, plan_id=plan_id,
             operation=operation, expected_current_version_id=expected_current_version_id,
             expected_active_run_id=expected_active_run_id, command_key=command_key,
             expected_request_revision=expected_request_revision, single_plan=single_plan,
-            expected_version_revision=expected_version_revision, expected_run_revision=expected_run_revision)
+            expected_version_revision=expected_version_revision, expected_run_revision=expected_run_revision,
+            revision_check=revision_check, revision_selection=revision_selection)
 
     def fail_dispatch(self, user, run_id, error, *, attempt=None):
         """A can record execution failure even when current data no longer matches.
@@ -125,7 +126,8 @@ class WorkflowService:
         plan = self.repository.own_plan(connection, user, row['plan_id'])
         from .trip_series import require_current
         require_current(connection, plan)
-        if plan['active_run_id'] != run_id:
+        from .revision_choices import execution_active
+        if not execution_active(connection, plan, run_id):
             fail(ErrorCode.STALE_CONTEXT, '运行已被新任务取代。')
         return plan, row, RunScope.model_validate_json(row['scope'])
 
@@ -137,7 +139,8 @@ class WorkflowService:
         if binding:
             version = Repository.stored_version(connection, scope)
             load_audits(connection, scope, version)
-            if plan['current_version_id'] != version.version_context.plan_version_id or Repository.input_fingerprint(scope, confirmed, version.content.model_dump(mode='json')) != binding['fingerprint']:
+            from .revision_choices import version_current
+            if not version_current(connection, plan, scope.run_id, version.version_context.plan_version_id) or Repository.input_fingerprint(scope, confirmed, version.content.model_dump(mode='json')) != binding['fingerprint']:
                 fail(ErrorCode.STALE_CONTEXT, '版本或 fingerprint 已变化，不能恢复旧运行。')
         elif plan['current_version_id'] != scope.expected_current_version_id:
             fail(ErrorCode.STALE_CONTEXT, '当前版本已变化，不能恢复旧运行。')

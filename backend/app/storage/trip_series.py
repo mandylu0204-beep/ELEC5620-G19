@@ -47,6 +47,8 @@ def require_current(connection, plan):
 
 def source_unchanged(connection, plan, context):
     series = require_current(connection, plan)
+    from .revision_choices import require_decided
+    require_decided(connection, plan['id'])
     if (series['revision'] if series else 0) != context['expected_series_revision']:
         fail(ErrorCode.VERSION_CONFLICT, '出行已更新，请重新载入后继预览。')
     run = connection.execute('SELECT revision,status FROM runs WHERE id=? AND plan_id=?',
