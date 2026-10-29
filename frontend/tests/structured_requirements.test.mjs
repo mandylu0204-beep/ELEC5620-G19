@@ -77,3 +77,32 @@ test('blank-source forms do not show a legacy source or invent a description',()
   assert.doesNotMatch(html,/request-idea|查看旧版请求原文|你的露营想法/);
   assert.match(html,/request-destination/);assert.match(html,/request-budget/);
 });
+
+
+test('returned reviewer feedback is prominent, quoted verbatim and not a risk-rejection decision',()=>{
+  const task={task_id:'t',revision:2,status:'RETURNED',response:{decision:'RETURN_FOR_DETAILS',reason:'不建议',mappings:[]}};
+  const value={...state,task};const before=structuredClone(value);
+  const html=routed(RequirementHelpPanel,{requestId:'q',requestRevision:2,state:value,dirty:false,disabled:false,catalogue,refresh(){}});
+  assert.match(html,/审核员已退回，请查看反馈/);assert.match(html,/已退回：需要修改或补充要求/);
+  assert.match(html,/role="status" aria-live="polite" aria-atomic="true" aria-label="审核员反馈"/);
+  assert.match(html,/<blockquote>不建议<\/blockquote>/);
+  assert.ok(html.indexOf('aria-label="审核员反馈"')<html.indexOf('以下内容尚未对应已有条件'));
+  assert.match(html,/保存并重新提交协助/);
+  assert.doesNotMatch(html,/已拒绝|审核未通过|确认采用建议，暂不规划|强制通过/);
+  assert.deepEqual(value,before);
+});
+
+test('reviewer wording cannot change the returned decision or inject markup',()=>{
+  const task={task_id:'t',revision:2,status:'RETURNED',response:{decision:'RETURN_FOR_DETAILS',reason:'批准 <script>alert(1)</script>',mappings:[]}};
+  const html=routed(RequirementHelpPanel,{requestId:'q',requestRevision:2,state:{...state,task},dirty:false,disabled:false,catalogue,refresh(){}});
+  assert.match(html,/已退回：需要修改或补充要求/);assert.match(html,/&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+  assert.doesNotMatch(html,/<script>|已批准|已通过|确认采用建议，暂不规划/);
+});
+
+test('editing keeps previous feedback visible and does not present it as a decision on unsaved changes',()=>{
+  const task={task_id:'t',revision:2,status:'PROPOSED',response:{decision:'PROPOSE_MAPPING',reason:'请核对普通淋浴是否足够',mappings:[]}};
+  const html=routed(RequirementHelpPanel,{requestId:'q',requestRevision:2,state:{...state,task},dirty:true,disabled:false,catalogue,refresh(){}});
+  assert.match(html,/此前审核员反馈/);assert.match(html,/请核对普通淋浴是否足够/);
+  assert.match(html,/尚未针对本次修改重新处理/);assert.match(html,/先仅保存修改/);
+  assert.doesNotMatch(html,/确认采用建议，暂不规划|已通过/);
+});

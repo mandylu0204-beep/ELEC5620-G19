@@ -282,13 +282,14 @@ export function RequestDetail() {
         <div className="section-title"><span className="eyebrow">出行详情</span><h2>填写与补充</h2></div>
         <form onSubmit={saveAndAnalyse}><RequestFields draft={draft} set={change} regions={context?.supported_destinations??[]} catalogue={context?.requirement_choices} disabled={busy}/>
           <div className="request-action"><p id="analyse-hint" className="action-hint" role="status">{busy?'正在生成摘要…':!context?contextError?'暂时无法读取支持范围，请重新打开页面。':'正在读取支持范围…':!dirty&&record.requirement_help?.needed?'其他要求需要先完成需求协助，或调整为已有选项。':dirty?null:'生成摘要，查看安排与需要补充的信息。'}</p>
-            <button className="primary-button" disabled={busy||!context||!dirty&&record.requirement_help?.needed===true} aria-describedby="analyse-hint">{busy?'正在处理…':dirty?'保存修改并生成摘要':record.status==='ANALYSING'?'重新保存并生成摘要':'生成需求摘要'} <span>↗</span></button>
-            <button type="button" className="secondary-button" disabled={busy||!dirty} onClick={saveOnly}>仅保存草稿，暂不生成摘要</button>
+            <div className="request-action-buttons">
+              <Link className="secondary-button request-back-button" to={'/profile?request_id='+encodeURIComponent(record.request_id)}><span aria-hidden="true">←</span> 返回上一页</Link>
+              <button type="submit" className="primary-button" disabled={busy||!context||!dirty&&record.requirement_help?.needed===true} aria-describedby="analyse-hint">{busy?'正在处理…':dirty?'保存修改并生成摘要':record.status==='ANALYSING'?'重新保存并生成摘要':'生成需求摘要'} <span>↗</span></button>
+              <button type="button" className="secondary-button" disabled={busy||!dirty} onClick={saveOnly}>仅保存草稿，暂不生成摘要</button>
+              <DiscardChanges sections={unsavedSections} busy={busy} onDiscard={()=>setRefresh(value=>value+1)}/>
+            </div>
           </div></form>
         <RequirementHelpPanel requestId={record.request_id} requestRevision={record.revision} state={record.requirement_help??null} dirty={dirty} disabled={busy} catalogue={context?.requirement_choices} refresh={()=>setRefresh(value=>value+1)}/>
-        <div className="editor-secondary"><DiscardChanges sections={unsavedSections} busy={busy} onDiscard={()=>setRefresh(value=>value+1)}/>
-          <Link className="text-link" to={'/profile?request_id='+encodeURIComponent(record.request_id)}>修改露营资料 ↗</Link>
-        </div>
       </section>}
       <section className={'panel confirmation-panel'+(confirmed?' confirmed-summary':'')}><div className="section-title"><span className="eyebrow">{confirmed?'准备开始规划':'核对与确认'}</span><h2>{confirmed?'已确认的安排':'待确认摘要'}</h2></div>
         {!confirmed&&<div className={'confirmation-status'+(record.status==='AWAITING_CONFIRMATION'&&!dirty?' confirmation-ready':'')}><span aria-hidden="true">{record.status==='AWAITING_CONFIRMATION'&&!dirty?'✓':'○'}</span><p id="confirmation-hint" role="status">{confirmationHint}</p></div>}

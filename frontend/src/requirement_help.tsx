@@ -23,6 +23,7 @@ export function RequirementHelpPanel({requestId,requestRevision,state,dirty,disa
   const {session}=useSession();const [busy,setBusy]=useState(false);const [error,setError]=useState('');
   if(!state?.needed)return null;
   const task=state.task;
+  const returned=task?.status==='RETURNED';
   async function act(operation:'create'|'adopt'){
     if(!session||!state||busy||disabled||dirty)return;
     setBusy(true);setError('');
@@ -35,12 +36,20 @@ export function RequirementHelpPanel({requestId,requestRevision,state,dirty,disa
       refresh();
     }catch(reason){setError(message(reason));}finally{setBusy(false);}
   }
-  return <section className="requirement-help-panel" aria-label="规划前需求协助"><h3>{task?statuses[task.status]:'其他要求需要先明确'}</h3>
+  return <section className={'requirement-help-panel'+(returned?' requirement-help-returned':'')} aria-label="规划前需求协助"><h3>{returned?'审核员已退回，请查看反馈':task?statuses[task.status]:'其他要求需要先明确'}</h3>
+    {task?.response&&<div className={'requirement-help-feedback'+(returned?' requirement-help-feedback-returned':'')} role="status" aria-live="polite" aria-atomic="true" aria-label="审核员反馈">
+      <p className="requirement-help-feedback-label">{dirty?'此前审核员反馈':'审核员反馈'}</p>
+      <h4>{returned?'已退回：需要修改或补充要求':task.status==='PROPOSED'?'已提出条件对应建议，等待你确认':'已保存的协助意见'}</h4>
+      <blockquote>{task.response.reason}</blockquote>
+      {task.response.mappings.length>0&&<ul>{task.response.mappings.map(item=><li key={item.field+item.index}>{item.original} → {catalogue?.fields[item.field]?.find(choice=>choice.value===item.canonical)?.label??item.canonical}</li>)}</ul>}
+      {dirty?<p>你已修改表单。以上反馈针对上次保存的内容，尚未针对本次修改重新处理。</p>
+        :returned?<p>请先查看审核员的具体意见，再修改或补充相关要求、保存并重新提交协助。若意见指出系统暂不支持，仅改写文字不能补齐支持能力。</p>
+        :task.status==='PROPOSED'&&<p>这是条件对应建议，尚未采用。请核对后再确认，不代表方案已经通过。</p>}
+    </div>}
     <p>以下内容尚未对应已有条件，本次不会自动忽略，也不会因为人工处理就认定营地满足或安全通过。</p>
     <ul>{state.items.map(item=><li key={item.field+item.index}>{titles[item.field]}：{item.text}</li>)}</ul>
     {dirty?<p role="status">请先仅保存修改，再提交当前版本的需求协助。</p>:!task?<button type="button" className="secondary-button" disabled={busy||disabled} onClick={()=>act('create')}>提交人工协助（不调用模型）</button>:<>
       {task.status==='PENDING'&&<p role="status">审核员将提出已有条件的映射建议，或说明需要补充的内容。你仍可修改要求；修改后原任务将失效。</p>}
-      {task.response&&<><p>{task.response.reason}</p>{task.response.mappings.length>0&&<ul>{task.response.mappings.map(item=><li key={item.field+item.index}>{item.original} → {catalogue?.fields[item.field]?.find(choice=>choice.value===item.canonical)?.label??item.canonical}</li>)}</ul>}</>}
       {task.status==='PROPOSED'&&<><p>确认采用会替换以上要求，涉及同行需求时也会保存新的个人资料 revision。之后仍需重新生成并确认摘要，不会自动开始规划。</p><button type="button" className="secondary-button" disabled={busy||disabled} onClick={()=>act('adopt')}>确认采用建议，暂不规划</button></>}
     </>}
     <button type="button" className="text-button" disabled={busy||disabled} onClick={refresh}>刷新协助状态</button>

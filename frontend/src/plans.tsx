@@ -130,9 +130,11 @@ export function PlansPage(){
   const {data:seriesData,error,refresh}=useSavedRead<{trip_series:TripSeriesCardData[];independent_plans:PlanRow[]}>('/trip-series',seriesActive);
   const refreshSeries=refresh;
   const rows=seriesData?.independent_plans.filter(row=>!deleted.has(row.plan_id))??[];
-  return <><div className="page-heading"><span className="eyebrow">方案总览</span><h1>我的露营方案</h1><p>查看安排、处理待确认事项，保存你的最终方案。</p></div>{error&&<p className="error-box" role="alert">{error}</p>}<button className="secondary-button" onClick={refresh}>刷新方案</button>
+  return <><div className="page-heading"><span className="eyebrow">方案总览</span><h1>我的露营方案</h1><p>查看安排、处理待确认事项，保存你的最终方案。</p></div>{error&&<p className="error-box" role="alert">{error}</p>}<div className="plan-list-actions">
+      <button className="secondary-button" onClick={refresh}>刷新方案</button>
+      <Link className="secondary-button" to="/profile">新建独立出行 ↗</Link>
+    </div>
     {deleteError&&<p className="error-box" role="alert">{deleteError}</p>}
-    <Link className="secondary-button" to="/profile">新建独立出行 ↗</Link>
     {seriesDelete&&<section className="error-box" role="alert"><p>删除整次出行及全部方案？页面将不能再读取其历史和最终记录；服务端审计内部保留。</p><button disabled={!!deleting} onClick={removeSeries}>确认删除整次出行</button><button disabled={!!deleting} onClick={()=>setSeriesDelete(null)}>取消</button></section>}
     {seriesData&&confirmDelete&&!rows.some(row=>row.plan_id===confirmDelete)&&<section className="error-box" role="alert"><p>删除选中的方案？删除历史不会改变当前方案；删除当前方案后不会自动恢复历史方案。</p><button disabled={!!deleting} onClick={()=>void removePlan(confirmDelete)}>确认删除选中方案</button><button disabled={!!deleting} onClick={()=>setConfirmDelete(null)}>取消</button></section>}
     <div className="plan-cards">{seriesData?.trip_series.map(value=><TripSeriesCard key={value.trip_series_id} value={value} busy={!!deleting} onDeletePlan={setConfirmDelete} onDeleteSeries={()=>setSeriesDelete(value)}/>)}</div>
