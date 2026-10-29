@@ -3,6 +3,7 @@ import asyncio
 from dataclasses import replace
 from datetime import date, timedelta
 from copy import deepcopy
+from functools import wraps
 import json
 from threading import Event
 
@@ -211,10 +212,46 @@ def wrap_port(monkeypatch, transform):
         def __getattr__(self, name): return getattr(self.agent, name)
         async def orchestrate(self, input, port):
             return await self.agent.orchestrate(input, transform(port))
-    def factory(settings, descriptor):
-        binding = original(settings, descriptor)
+    @wraps(original)
+    def factory(settings, descriptor, **options):
+        binding = original(settings, descriptor, **options)
         return replace(binding, agent=Wrapped(binding.agent))
     monkeypatch.setitem(DATASET_AGENT_FACTORIES, KEY, factory)
+
+
+def test_port_wrapper_preserves_registered_factory_and_parsed_snapshots(tmp_path, monkeypatch):
+    from app.adapters.synthetic_dataset_v2 import SyntheticDatasetV2Adapter
+
+    requests, _ = mock_roles(monkeypatch)
+    original = DATASET_AGENT_FACTORIES[KEY]
+    parse = SyntheticDatasetV2Adapter._parse
+    options_seen, contexts, parse_calls = [], [], []
+
+    @wraps(original)
+    def observed(settings, descriptor, **options):
+        options_seen.append(options)
+        binding = original(settings, descriptor, **options)
+        contexts.append(binding.context)
+        return binding
+
+    @wraps(parse)
+    def counted_parse(self, *args, **kwargs):
+        parse_calls.append(1)
+        return parse(self, *args, **kwargs)
+
+    monkeypatch.setitem(DATASET_AGENT_FACTORIES, KEY, observed)
+    monkeypatch.setattr(SyntheticDatasetV2Adapter, '_parse', counted_parse)
+    wrap_port(monkeypatch, lambda port: port)
+    app = application(tmp_path)
+    current = app.state.runtime.resolve()
+
+    assert len(options_seen) == 2
+    assert all(set(options) == {'parsed_snapshots', 'snapshot_key'} for options in options_seen)
+    assert all(options['parsed_snapshots'] is app.state.runtime._parsed_snapshots for options in options_seen)
+    assert options_seen[0]['snapshot_key'] == options_seen[1]['snapshot_key']
+    assert contexts[0] == contexts[1] == current.dataset
+    assert len(parse_calls) == 1
+    assert not requests
 
 
 @pytest.mark.parametrize('method,after,expected_logistics', [
