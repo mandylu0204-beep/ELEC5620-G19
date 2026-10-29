@@ -10,6 +10,7 @@ export function SafetyInformation({value,requirements,summary,approved,review,ou
   coverage?:TripCoverage|null;requestId?:string;planId?:string;readOnly?:boolean;advisory?:ReactNode}){
   if(!value)return <section className="panel"><h2>出行安全信息</h2><p>规划完成后，会在这里显示安全检查。</p></section>;
   const codes=value.mandatory_blockers.map(item=>item.code);
+  const hazards=[...new Set(value.hazards)].map(original=>({original,text:safetySummary(original)??safetyRegulations(original)}));
   const states=Object.keys(checkNames).map(kind=>({kind,...safetyCondition(kind,value.data_quality[kind]??'MISSING',value.evidence,requirements,codes)}));
   return <section className="panel"><div className="section-title"><span className="eyebrow">出发前核对</span><h2>出行安全信息</h2></div>
     <div className="safety-summary"><strong>{summary}</strong>{(review||['HIGH','MEDIUM','UNKNOWN'].includes(value.risk_level))&&<span>{value.risk_level==='UNKNOWN'?'风险待确认':'风险：'+label(value.risk_level)}</span>}{review&&<span>判断依据完整度：{label(value.confidence)}</span>}</div>
@@ -20,9 +21,12 @@ export function SafetyInformation({value,requirements,summary,approved,review,ou
     {value.requires_human_review&&!approved&&!value.mandatory_blockers.length&&<p>请等待审核员核对后再确认方案。</p>}
     {advisory}
     {(value.evidence.length>0||value.hazards.length>0)&&<details className="artifact-notes"><summary>查看安全详情与营地规定</summary>
-      {value.hazards.length>0&&<><h3>需要留意的风险</h3><ul>{[...new Set(value.hazards.map(text=>safetySummary(text)??safetyRegulations(text)??'存在需要核实的风险，请在出发前重新检查。'))].map(text=><li key={text}>{text}</li>)}</ul></>}
+      {hazards.length>0&&<><h3>需要留意的风险</h3><ul>{hazards.map(({original,text})=><li key={original}>{text??'存在需要核实的风险，请查看保存的说明。'}
+        {!text&&<details><summary>查看保存的风险说明原文</summary><p>{original}</p></details>}
+      </li>)}</ul></>}
       {value.evidence.map((item,index)=>{const state=safetyCondition(item.kind,item.status,[item],requirements);const text=safetySummary(item.summary)??safetyRegulations(item.summary);return <article className="evidence-item" key={index}><h3>{checkNames[item.kind]??'安全信息'} · {state.title}</h3>
         {text&&<p>{text}</p>}
+        {!review&&!text&&item.summary&&<details><summary>查看保存的安全说明原文</summary><p>{item.summary}</p></details>}
         {review&&<details className="source-details"><summary>查看资料来源与原文</summary>{item.summary&&<p>{item.summary}</p>}{sources(item.source_refs)}</details>}
       </article>;})}
     </details>}
