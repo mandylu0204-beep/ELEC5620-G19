@@ -61,11 +61,13 @@ test('transport selection omits unknown choices and yellow explanatory notices w
   assert.doesNotMatch(html,/尚未明确|class="mode-notice"|自行核对去程|固定模拟出发地/);
   assert.doesNotMatch(html,/<option value="CAR" selected/);
 });
-test('saved preparation distinguishes synthetic group kilometres, transport allowance and departure checks',()=>{
+test('saved preparation keeps trip figures without technical explanatory prose',()=>{
   const value={system_preparation:true,transport_type:'CAR',origin_label:'悉尼市区（固定模拟出发地）',
-    access_and_capacity:true,estimated_total_vehicle_km:'200',vehicle_count:2,estimated_transport_cents:7600,meal_mode:'SELF_CATERED',source_refs:[]};
+    access_and_capacity:true,estimated_total_vehicle_km:'200',vehicle_count:2,estimated_transport_cents:7600,meal_mode:'SELF_CATERED',source_refs:[{dataset_file:'transport-reference',record_id:'transport-test',provenance:{source_date:'2026-10-28'}}]};
   const before=structuredClone(value);const html=render(TripPreparation,{value});
-  for(const text of ['200 km','2 辆','76.00','不是用户希望的行程长度','不是实测道路距离','核对炉具、燃料和炊具'])assert.ok(html.includes(text),text);
+  for(const text of ['200 km','2 辆','76.00','核对炉具、燃料和炊具'])assert.ok(html.includes(text),text);
+  assert.match(html,/出发地：悉尼市区。/);
+  assert.doesNotMatch(html,/固定模拟出发地|累计里程由版本化距离表|用餐安排仍须遵守正式装备检查|模拟距离来源|transport-test/);
   assert.deepEqual(value,before);
   const transit=render(TripPreparation,{value:{...value,transport_type:'PUBLIC_TRANSPORT',estimated_transport_cents:null}});
   assert.match(transit,/未知，不能按零费用处理/);assert.match(transit,/去程、返程末班/);

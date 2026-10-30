@@ -320,7 +320,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       </section>}
       {version&&!noMatch&&<TripPreparation value={data.preparation_summary}/>}
       {recommendation&&!noMatch&&<details className="panel recommendation-panel"><summary>比较其他推荐营地 <span>{recommendation.candidates.length} 个</span></summary>
-        <ol className="candidate-list">{recommendation.candidates.map(item=><li key={item.campsite_id}><h3>#{item.rank} · {campName(item.campsite_id)}</h3><ul>{item.reasons.map((reason,index)=><li key={index}>{chineseProse(reason)??'该项理由未提供中文说明，请查看原始记录。'}</li>)}</ul>{item.material_uncertainties.map((uncertainty,index)=><p className="muted" key={index}>尚不确定：{chineseProse(uncertainty)??'详情见保存的原文记录。'}</p>)}<details><summary>查看该营地推荐原文</summary>{[...item.reasons,...item.material_uncertainties].map((text,index)=><p key={index}>{text}</p>)}</details></li>)}</ol>
+        <ol className="candidate-list">{recommendation.candidates.map(item=><li key={item.campsite_id}><h3>#{item.rank} · {campName(item.campsite_id)}</h3><ul>{item.reasons.map((reason,index)=><li key={index}>{chineseProse(reason)??reason}</li>)}</ul>{item.material_uncertainties.map((uncertainty,index)=><p className="muted" key={index}>尚不确定：{chineseProse(uncertainty)??uncertainty}</p>)}</li>)}</ol>
       </details>}
     </div>
     <div {...pane('gear')}><section className="panel"><div className="section-title"><span className="eyebrow">出发准备</span><h2>装备与物流</h2></div>

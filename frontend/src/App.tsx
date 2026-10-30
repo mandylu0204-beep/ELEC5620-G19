@@ -45,9 +45,11 @@ function AppContent() {
       <div className="sidebar-caption">你的露营伙伴</div>
       <nav aria-label="主导航">
         <NavLink to="/" end><span>◫</span>首页</NavLink>
-        <NavLink to="/profile"><span>◎</span>露营资料</NavLink>
-        <NavLink to="/request"><span>↗</span>露营请求</NavLink>
-        <NavLink to="/plans"><span>≋</span>方案与历史</NavLink>
+        {session?.user.role !== 'FOUNDER' && <>
+          <NavLink to="/profile"><span>◎</span>露营资料</NavLink>
+          <NavLink to="/request"><span>↗</span>露营请求</NavLink>
+          <NavLink to="/plans"><span>≋</span>方案与历史</NavLink>
+        </>}
         {session?.user.role === 'FOUNDER' && <><NavLink to="/review"><span>◇</span>人工审核</NavLink><NavLink to="/requirement-help"><span>?</span>需求协助</NavLink></>}
       </nav>
       <div className="sidebar-note"><span className="eyebrow">规划下一次出行</span><p>从清晰的需求开始，<br />让每一步都有依据。</p></div>
