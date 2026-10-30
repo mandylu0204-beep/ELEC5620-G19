@@ -72,6 +72,9 @@ class ReviewService:
                 approval = approval_required([{'kind': key, 'result': value} for key, value in assessments.items()], current_eligibility)
                 if approval == assistance:
                     continue
+                from .review_assistance import saved_notes
+                notes = saved_notes(connection,item['plan_id'],item['run_id'],item['plan_version_id'])
+                item['last_assistance'] = {key:notes[-1][key] for key in ['decision','problem','next_action','recheck_on']} if notes else None
                 item['task_kind'] = 'ASSISTANCE' if assistance else 'RISK_APPROVAL'
                 item['review_policy_version'] = REVIEW_POLICY_VERSION
                 route = connection.execute(
@@ -96,18 +99,19 @@ class ReviewService:
                 result.append(item)
             return result
 
-    def detail(self, user, plan_id):
-        data = PlanQueries(self.db).detail(user, plan_id, review=True)
+    def detail(self, user, plan_id, run_id=None):
+        data = PlanQueries(self.db).detail(user, plan_id, run_id, review=True)
         with self.db.transaction(write=False) as connection:
             owner = connection.execute('SELECT u.display_name FROM users u JOIN plans p ON p.owner_id=u.id WHERE p.id=?', (plan_id,)).fetchone()
         data['owner_display_name'] = owner['display_name'] if owner else None
         if not data['version'] or not data['route'] or data['run']['status'] != 'SUCCEEDED':
             fail(ErrorCode.INVALID_STATE, '当前运行尚未完成评估和路由，请等待。')
-        if data['version']['status'] not in {'ESCALATED','BLOCKED','REVISION_REQUIRED'} and not data['reviews']:
+        if data['version']['status'] not in {'ESCALATED','BLOCKED','REVISION_REQUIRED'} and not data['reviews'] and not data.get('review_assistance_notes'):
             fail(ErrorCode.FORBIDDEN, '此方案不属于人工审核范围。')
-        data['review_available'] = not data['reviews'] and approval_required(data['assessments'], data['eligibility'])
+        historical = not data['run']['is_active'] or bool(data.get('trip_series') and not data['trip_series']['is_current'])
+        data['review_available'] = not historical and not data['reviews'] and approval_required(data['assessments'], data['eligibility'])
         data['review_policy_version'] = REVIEW_POLICY_VERSION
-        data['review_scope'] = 'HISTORY' if data.get('trip_series') and not data['trip_series']['is_current'] else 'APPROVAL' if data['review_available'] else 'CORRECTION'
+        data['review_scope'] = 'HISTORY' if historical else 'APPROVAL' if data['review_available'] else 'CORRECTION'
         if self.context_guard is not None:
             with self.db.transaction(write=False) as connection:
                 run = connection.execute('SELECT scope FROM runs WHERE id=?', (data['run']['run_id'],)).fetchone()
@@ -116,6 +120,10 @@ class ReviewService:
             except ContractFailure as exc:
                 data['review_available'] = False
                 data['current_inputs_error'] = exc.error.message
+        from .revision_choices import pending
+        with self.db.transaction(write=False) as connection:
+            choosing = pending(connection,plan_id) is not None
+        data['assistance_available'] = not historical and not choosing and not data['reviews'] and not data['review_available'] and data['version']['status'] in {'ESCALATED','BLOCKED','REVISION_REQUIRED'}
         return data
 
     def submit(self, user, plan_id, body: ReviewInput):

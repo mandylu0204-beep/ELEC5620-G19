@@ -148,3 +148,28 @@ select{width:100%;height:41px;border:1px solid #dce1d4;border-radius:5px;color:#
 .timeline-time{flex-wrap:wrap}
 .timeline-time>time,.timeline-time>small{display:block}
 .timeline-time>small{flex-basis:100%}
+
+.assistance-feedback{display:grid;grid-template-columns:64px minmax(0,1fr);gap:6px 14px;margin:12px 0;font-size:13px}
+.assistance-feedback dt{font-weight:600}.assistance-feedback dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.human-assistance-notes{border-color:#d8bd8a;background:#fff9ed}.human-assistance-notes h3{font-size:16px}
+.review-assistance-form{margin-top:20px;border-top:1px solid var(--line);padding-top:14px}
+.review-assistance-form textarea{min-height:72px}.review-assistance-form h3{font-size:16px}
+.review-revision-source{padding:12px 16px;background:#fff9ed;border:1px solid #d8bd8a;border-radius:6px;margin:14px 0}
+.review-revision-source h3{font-size:14px;margin:0 0 8px}.review-revision-source blockquote,.review-history-row blockquote{margin:8px 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.review-history-row{padding:14px 0;border-bottom:1px solid var(--line)}.review-history-row h3{font-size:15px}
+.final-pdf-download{display:inline-block}.final-pdf-download .error-box{margin:8px 0}
+
+.campsite-selection .requirements-comparison th:first-child{width:26%}
+.campsite-selection .requirements-comparison th:last-child,.campsite-selection .requirements-comparison td:last-child{width:105px;white-space:nowrap}
+.confirmed-requirements h3{font-size:14px;margin:18px 0 8px}
+.confirmed-requirements ul{font-size:13px;padding-left:20px;line-height:1.8}
+
+/* Unified check status: persisted results and live progress stay separate. */
+.logistics-problem-details>summary{cursor:pointer;font-weight:600}
+.modify-paths{padding:.8rem 0;border-bottom:1px solid #d9e2d3}.finalise-panel form>.secondary-button{margin-left:.8rem}
+@media(max-width:650px){.finalise-panel form>.secondary-button{margin-left:0;margin-top:.7rem}}
+
+.equipment-add-bottom{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;margin-top:16px;border:1px dashed #c8d5be;border-radius:9px;background:#f6f9f2;color:#486842;cursor:pointer}
+.equipment-add-bottom span{font-size:28px;font-weight:400;line-height:1}
+.equipment-add-bottom:hover:not(:disabled){background:#edf3e7;border-color:#8da87d}
+.equipment-add-bottom:focus-visible{outline:2px solid #486842;outline-offset:3px}

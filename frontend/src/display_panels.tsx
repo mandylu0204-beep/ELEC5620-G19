@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { chineseProse, discardMessage, tentSummary, type TentCapacity } from './display_facts';
 import { ModelTracePanel, type ModelTrace } from './model_trace';
-import { selectionPresentation } from './campsite_selection';
+import { selectionPresentation,selectedRequirementsPresentation,type SelectedRequirements } from './campsite_selection';
 import { cataloguePlace, additionalFacilities, CampsiteArrivalDetails } from './campsite_details';
 
 export function TentCapacityPanel({value}:{value:TentCapacity|null|undefined}){
@@ -24,15 +24,19 @@ export function DiscardChanges({sections,busy=false,onDiscard}:{sections:string[
 }
 
 export type PlanningExplanation={source_run_id:string;selected_campsite_id:string;decision_summary_unverified:string};
-export function PlanningExplanationPanel({value,currentRunId,siteName,siteId,catalogueId,reasons,uncertainties}:{value?:PlanningExplanation|null;currentRunId?:string;siteName:string;siteId?:string;catalogueId?:string;reasons:string[];uncertainties:string[]}){
-  const {rows,costs}=selectionPresentation(reasons);
+export function PlanningExplanationPanel({value,currentRunId,siteName,siteId,catalogueId,reasons,uncertainties,requirements,accessibility}:{value?:PlanningExplanation|null;currentRunId?:string;siteName:string;siteId?:string;catalogueId?:string;reasons:string[];uncertainties:string[];requirements?:SelectedRequirements;accessibility?:string[]}){
   const place=cataloguePlace(siteId,catalogueId);
-  const extra=additionalFacilities(place,rows);
+  const hasChoices=!!requirements&&Array.isArray(requirements.preferences)&&Array.isArray(requirements.mandatory_constraints);
+  const selected=hasChoices?selectedRequirementsPresentation(reasons,requirements,place,accessibility):null;
+  const {rows,costs}=selected??selectionPresentation(reasons);
+  const savedExtra=selected?.extra??[];
+  const extra=[...savedExtra,...additionalFacilities(place,[...rows,...savedExtra]).filter(row=>!selected||!rows.some(chosen=>chosen.facility===row.facility))];
   const visibleUncertainties=[...new Set(uncertainties.map(text=>chineseProse(text)).filter((text):text is string=>text!==null))];
   return <section className="panel campsite-selection" aria-label="营地选择与待确认事项"><h2>选择 {siteName} 的原因</h2>
-    {rows.length>0&&<div className="table-scroll"><table><caption>与本次需求的匹配</caption><thead><tr><th>核对项目</th><th>已保存的筛选依据</th></tr></thead><tbody>
-      {rows.map((row,index)=><tr key={index}><th scope="row">{row.label}{row.required&&<small className="selection-required">本次必须条件</small>}</th><td>{row.detail}</td></tr>)}
+    {rows.length>0&&<div className="table-scroll"><table className={hasChoices?'requirements-comparison':undefined}><caption>与本次需求的匹配</caption><thead><tr><th>核对项目</th><th>{hasChoices?'本方案绑定的资料依据':'已保存的筛选依据'}</th>{hasChoices&&<th>匹配结果</th>}</tr></thead><tbody>
+      {rows.map((row,index)=><tr key={index}><th scope="row">{row.label}{row.kind?<small className="selection-required">{row.kind}</small>:row.required&&<small className="selection-required">本次必须条件</small>}</th><td>{row.detail}</td>{hasChoices&&<td>{row.result??'基础信息'}</td>}</tr>)}
     </tbody></table></div>}
+    {hasChoices&&<p className="muted">逐项比较本方案已确认的要求与绑定资料。偏好未满足不等于必须条件不满足；这里的资料符合不代表预订、安全或最终保存已通过。</p>}
     {!rows.length&&<p className="muted">未提供可直接展示的具体筛选依据；如有原始选择记录，可在下方展开查看。</p>}
     {extra.length>0&&<div className="selection-facilities"><h3>其他营地配套</h3><dl>{extra.map(row=><div key={row.facility}><dt>{row.label}</dt><dd>{row.detail}</dd></div>)}</dl></div>}
     {costs.length>0&&<div className="selection-cost"><h3>营地费用</h3>{costs.map(text=><p key={text}>{text}</p>)}<p className="muted">完整出行费用及预算检查请查看“费用与预算”。</p></div>}

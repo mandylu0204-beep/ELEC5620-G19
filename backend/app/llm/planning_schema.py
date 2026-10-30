@@ -1,4 +1,5 @@
 """Internal model-output protocol; shared contracts/schema 1.0 are untouched."""
+from ..contracts.revision_feedback import revision_goal
 from datetime import date, timedelta
 import re
 from typing import Annotated, Literal
@@ -109,7 +110,7 @@ def validated_itinerary(dataset, input, proposal, exposed_ids):
             raise ValueError('Hard campsite constraints are not satisfied')
         if input.previous_version is not None:
             previous = input.previous_version.content
-            feedback = input.feedback.strip().casefold()
+            feedback = revision_goal(input.feedback)
             if feedback in {'change campsite', '更换营地'} and proposal.campsite_id in previous.selected_campsite_ids:
                 raise ValueError('The requested campsite change was not made')
             if feedback in {'cheaper campsite', '更便宜的营地'}:

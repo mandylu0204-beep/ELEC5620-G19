@@ -25,7 +25,8 @@ def test_progress_does_not_resolve_runtime_or_read_full_artifacts(progress_clien
     assert response.status_code==200
     assert response.headers['cache-control']=='no-store'
     data=response.json()
-    assert set(data)=={'plan_id','active_run_id','run'}
+    assert set(data)=={'plan_id','active_run_id','revision_proposal_id','run'}
+    assert data['revision_proposal_id'] is None
     assert set(data['run'])=={'run_id','status','stage','revision','is_active'}
     assert data['run']['status']=='RUNNING' and data['run']['is_active']
     assert data['plan_id']==scope.plan_id

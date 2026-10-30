@@ -1,7 +1,7 @@
 """Pre-planning interpretation assistance. No approvals, model calls or facts invented."""
 import json
 from uuid import uuid4
-from pydantic import Field, StrictInt, field_validator
+from pydantic import Field, StrictInt, field_validator, model_validator
 from typing import Literal
 from ..auth import fail, require_role
 from ..contracts.base import ContractModel
@@ -25,7 +25,10 @@ class HelpMapping(ContractModel):
 class HelpDecision(ContractModel):
     expected_revision: StrictInt = Field(ge=1)
     command_key: str = Field(min_length=16,max_length=128)
-    decision: Literal['PROPOSE_MAPPING','RETURN_FOR_DETAILS']
+    decision: Literal['PROPOSE_MAPPING','RETURN_FOR_DETAILS','UNSUPPORTED']
+    feedback_version: Literal['structured-help-feedback-1']|None=None
+    problem: str|None=Field(default=None,min_length=1,max_length=2000)
+    next_action: str|None=Field(default=None,min_length=1,max_length=2000)
     reason: str = Field(min_length=1,max_length=4000)
     mappings: list[HelpMapping] = Field(default_factory=list,max_length=256)
 
@@ -34,6 +37,13 @@ class HelpDecision(ContractModel):
     def meaningful(cls,value):
         if not value.strip():raise ValueError('请说明判断理由。')
         return value.strip()
+
+    @model_validator(mode='after')
+    def complete_feedback(self):
+        if self.decision=='UNSUPPORTED' or self.feedback_version is not None and self.decision=='RETURN_FOR_DETAILS':
+            if not self.problem or not self.problem.strip() or not self.next_action or not self.next_action.strip():
+                raise ValueError('请填写具体问题及用户下一步。')
+        return self
 
 class HelpAdopt(HelpCreate):
     expected_task_revision: StrictInt = Field(ge=1)
@@ -65,7 +75,7 @@ class RequirementHelp:
 
     @staticmethod
     def _task(connection,user,task_id):
-        row=connection.execute('SELECT t.* FROM requirement_help_tasks t JOIN requests q ON q.id=t.request_id WHERE t.id=? AND NOT EXISTS(SELECT 1 FROM deleted_requests d WHERE d.request_id=q.id)',(task_id,)).fetchone()
+        row=connection.execute('SELECT t.* FROM requirement_help_tasks t JOIN requests q ON q.id=t.request_id WHERE t.id=? AND NOT EXISTS(SELECT 1 FROM deleted_requests d WHERE d.request_id=q.id) AND NOT EXISTS(SELECT 1 FROM successor_requests o JOIN trip_series s ON s.id=o.series_id LEFT JOIN plans p ON p.id=o.predecessor_plan_id WHERE o.request_id=q.id AND (s.deleted_at IS NOT NULL OR p.deleted_at IS NOT NULL))',(task_id,)).fetchone()
         if not row or user.role not in {'CAMPER','FOUNDER'} or (user.role=='CAMPER' and row['owner_id']!=user.id):
             fail(ErrorCode.NOT_FOUND,'需求协助记录不存在。')
         return row
@@ -130,8 +140,23 @@ class RequirementHelp:
                 result=_public(self._task(connection,user,task_id))
             return self._save(connection,user,body.command_key,'create',payload,result['task_id'],result)
 
-    def queue(self,user):
+    def queue(self,user,*,history=False):
         require_role(user,'FOUNDER')
+        if history:
+            with self.db.transaction(write=False) as connection:
+                rows=connection.execute('''SELECT t.* FROM requirement_help_tasks t JOIN requests q ON q.id=t.request_id
+                    WHERE NOT EXISTS(SELECT 1 FROM deleted_requests d WHERE d.request_id=q.id)
+                    AND NOT EXISTS(SELECT 1 FROM successor_requests o JOIN trip_series s ON s.id=o.series_id
+                        LEFT JOIN plans p ON p.id=o.predecessor_plan_id WHERE o.request_id=q.id
+                        AND (s.deleted_at IS NOT NULL OR p.deleted_at IS NOT NULL))
+                    ORDER BY t.created_at DESC,t.id DESC''').fetchall()
+                result=[]
+                for row in rows:
+                    value=_public(row)
+                    try:self._current(connection,row);value['current']=True
+                    except ContractFailure:value['current']=False
+                    result.append(value)
+                return result
         with self.db.transaction(write=False) as connection:
             rows=connection.execute("""SELECT t.* FROM requirement_help_tasks t JOIN requests q ON q.id=t.request_id
                 LEFT JOIN profiles p ON p.owner_id=t.owner_id WHERE t.status='PENDING' AND q.status NOT IN ('CONFIRMED','ANALYSING')
@@ -152,7 +177,7 @@ class RequirementHelp:
             return value
 
     def decide(self,user,task_id,body):
-        require_role(user,'FOUNDER');payload={'task_id':task_id,**body.model_dump(mode='json')}
+        require_role(user,'FOUNDER');payload={'task_id':task_id,**body.model_dump(mode='json',exclude_none=True)}
         with self.db.transaction() as connection:
             task=self._task(connection,user,task_id)
             old=self._receipt(connection,user,body.command_key,'decide',payload)
@@ -166,7 +191,9 @@ class RequirementHelp:
                 if any(item.canonical not in LABELS[item.field] for item in body.mappings):fail(ErrorCode.INVALID_STATE,'只能建议该类别已有的可验证条件，不能直接批准其他要求。')
             elif body.mappings:fail(ErrorCode.INVALID_STATE,'退回补充不能同时提交映射。')
             response={'decision':body.decision,'reason':body.reason,'mappings':[item.model_dump(mode='json') for item in body.mappings],
-                'reviewer_id':user.id,'reviewed_at':now()}
+                'reviewer_id':user.id,'reviewed_at':now(),
+                **({'feedback_version':body.feedback_version,'problem':body.problem.strip() if body.problem else None,
+                    'next_action':body.next_action.strip() if body.next_action else None} if body.feedback_version or body.decision=='UNSUPPORTED' else {})}
             status='PROPOSED' if body.decision=='PROPOSE_MAPPING' else 'RETURNED'
             connection.execute('UPDATE requirement_help_tasks SET status=?,revision=revision+1,response=? WHERE id=?',(status,encode(response),task_id))
             return self._save(connection,user,body.command_key,'decide',payload,task_id,_public(self._task(connection,user,task_id)))

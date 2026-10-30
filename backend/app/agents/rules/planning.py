@@ -1,5 +1,6 @@
 from datetime import datetime, time, timedelta
 from decimal import Decimal
+from ...contracts.revision_feedback import revision_goal
 
 from ...contracts.dto import (
     CampsiteCandidate, ExcludedCandidate, ItineraryEntry, ItineraryResult,
@@ -142,7 +143,7 @@ def itinerary(dataset, input) -> ItineraryResult:
     if not viable:
         raise input_failure('No supplied candidate satisfies the confirmed hard constraints.', 'recommendations')
     viable.sort(key=lambda item: (item.rank, item.campsite_id))
-    feedback = (input.feedback or '').strip().casefold()
+    feedback = revision_goal(input.feedback)
     changes = None
     if input.previous_version is not None:
         validate_itinerary(dataset, input.previous_version.content, requirements)

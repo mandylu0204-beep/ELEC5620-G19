@@ -295,6 +295,29 @@ CREATE TRIGGER no_delete_revision_choice BEFORE DELETE ON revision_choice_comman
 """
 
 
+MIGRATION_14 = """
+CREATE TABLE review_assistance_notes(
+ id TEXT PRIMARY KEY,plan_id TEXT NOT NULL REFERENCES plans(id),
+ run_id TEXT NOT NULL,version_id TEXT NOT NULL,actor_id TEXT NOT NULL REFERENCES users(id),
+ payload TEXT NOT NULL,created_at TEXT NOT NULL,
+ FOREIGN KEY(plan_id,run_id) REFERENCES runs(plan_id,id),
+ FOREIGN KEY(plan_id,version_id) REFERENCES versions(plan_id,id));
+CREATE INDEX review_assistance_context ON review_assistance_notes(plan_id,run_id,version_id);
+CREATE TABLE review_assistance_commands(
+ actor_id TEXT NOT NULL REFERENCES users(id),command_key TEXT NOT NULL,input_hash TEXT NOT NULL,
+ note_id TEXT NOT NULL REFERENCES review_assistance_notes(id),result TEXT NOT NULL,
+ PRIMARY KEY(actor_id,command_key));
+CREATE TRIGGER immutable_review_assistance_note BEFORE UPDATE ON review_assistance_notes
+ BEGIN SELECT RAISE(ABORT, 'immutable review assistance note'); END;
+CREATE TRIGGER no_delete_review_assistance_note BEFORE DELETE ON review_assistance_notes
+ BEGIN SELECT RAISE(ABORT, 'immutable review assistance note'); END;
+CREATE TRIGGER immutable_review_assistance_command BEFORE UPDATE ON review_assistance_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable review assistance command'); END;
+CREATE TRIGGER no_delete_review_assistance_command BEFORE DELETE ON review_assistance_commands
+ BEGIN SELECT RAISE(ABORT, 'immutable review assistance command'); END;
+"""
+
+
 def execute_migration(connection, script):
     statement = ''
     for line in script.splitlines():
@@ -372,7 +395,11 @@ class Database:
                 execute_migration(connection, MIGRATION_13)
                 connection.execute("INSERT INTO schema_migrations VALUES(13, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
                 versions.append(13)
-            if versions != list(range(1, 14)):
+            if versions == list(range(1, 14)):
+                execute_migration(connection, MIGRATION_14)
+                connection.execute("INSERT INTO schema_migrations VALUES(14, strftime('%Y-%m-%dT%H:%M:%fZ','now'))")
+                versions.append(14)
+            if versions != list(range(1, 15)):
                 raise RuntimeError('Unsupported database schema version')
 
     @contextmanager
@@ -408,6 +435,6 @@ class Database:
         try:
             with self.transaction(write=False) as connection:
                 versions = [row[0] for row in connection.execute('SELECT version FROM schema_migrations ORDER BY version')]
-            return versions == list(range(1, 14))
+            return versions == list(range(1, 15))
         except ContractFailure:
             return False

@@ -96,6 +96,9 @@ def test_migration_preserves_existing_schema_12_history(tmp_path):
     database = Database(tmp_path/'migration.sqlite3')
     database.initialize()
     with database.transaction() as db:
+        db.execute('DROP TABLE review_assistance_commands')
+        db.execute('DROP TABLE review_assistance_notes')
+        db.execute('DELETE FROM schema_migrations WHERE version=14')
         db.execute('DROP TABLE revision_choice_commands')
         db.execute('DROP TABLE revision_proposals')
         db.execute('DELETE FROM schema_migrations WHERE version=13')

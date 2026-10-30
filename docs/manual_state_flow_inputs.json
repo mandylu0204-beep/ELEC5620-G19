@@ -1,0 +1,1360 @@
+{
+  "description": "Manual test inputs only; no outcomes, saved IDs or model answers are injected. Controlled demo dates/settings are isolated per case. Use the web form to save profile, then draft, inspect summary and explicitly confirm.",
+  "source": "docs/demo/v2_inputs.json for existing sealed scenarios; no sealed data changes.",
+  "cases": [
+    {
+      "id": "normal",
+      "settings": {
+        "execution_mode": "deterministic_demo",
+        "planning_enabled": true,
+        "dataset_path": "data/synthetic_demo_v2",
+        "demo_today": "2026-11-05",
+        "workflow_safety_case_ids": [
+          "safety-15"
+        ],
+        "dataset_scenario_files": [],
+        "dataset_selection": {
+          "demo_input": "normal"
+        },
+        "clock_mode": "fixed",
+        "synthetic_evidence_mode": "sealed",
+        "database_path": "var/manual-state-normal.sqlite3",
+        "logistics_execution": "rules",
+        "safety_execution": "rules"
+      },
+      "request": {
+        "raw_text": "Two people in CampMate Demo Region from 2026-11-06 for two nights, AUD 320. We want quiet and ready-to-eat meals.",
+        "explicit_fields": {
+          "destination": "CampMate Demo Region",
+          "start_date": "2026-11-06",
+          "duration_nights": 2,
+          "budget_cents": 32000,
+          "preferences": [
+            "quiet",
+            "ready-to-eat meals"
+          ],
+          "mandatory_constraints": []
+        }
+      },
+      "raw_text_zh": "我们两个人计划在 CampMate Demo Region 露营，2026年11月6日出发，住两晚，总预算320澳元，希望安静，采用即食餐食。",
+      "profile": {
+        "group_size": 2,
+        "experience_level": "INTERMEDIATE",
+        "has_children": false,
+        "children_count": 0,
+        "equipment": [
+          {
+            "item_key": "tent",
+            "label": "Confirmed synthetic tent",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true,
+            "capacity_persons": 2
+          },
+          {
+            "item_key": "groundsheet",
+            "label": "Confirmed synthetic groundsheet",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_bag",
+            "label": "Confirmed synthetic sleeping_bag",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_mat",
+            "label": "Confirmed synthetic sleeping_mat",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "warm_layers",
+            "label": "Confirmed synthetic warm_layers",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "rain_jacket",
+            "label": "Confirmed synthetic rain_jacket",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "windproof_outer_layer",
+            "label": "Confirmed synthetic windproof_outer_layer",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "first_aid_kit",
+            "label": "Confirmed synthetic first_aid_kit",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "torch",
+            "label": "Confirmed synthetic torch",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "charged_phone",
+            "label": "Confirmed synthetic charged_phone",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "meal_supplies",
+            "label": "Confirmed synthetic meal_supplies",
+            "quantity": 18,
+            "unit": "portion",
+            "confirmed": true
+          },
+          {
+            "item_key": "drinking_water",
+            "label": "Confirmed synthetic drinking_water",
+            "quantity": 12,
+            "unit": "litre",
+            "confirmed": true
+          },
+          {
+            "item_key": "vehicle",
+            "label": "Confirmed synthetic vehicle",
+            "quantity": 1,
+            "unit": "vehicle",
+            "confirmed": true,
+            "capacity_persons": 2
+          }
+        ],
+        "transport": {
+          "transport_type": "CAR",
+          "vehicle_count": 1,
+          "estimated_km": "100"
+        }
+      }
+    },
+    {
+      "id": "budget_revision",
+      "settings": {
+        "execution_mode": "deterministic_demo",
+        "planning_enabled": true,
+        "dataset_path": "data/synthetic_demo_v2",
+        "demo_today": "2026-10-26",
+        "workflow_safety_case_ids": [
+          "safety-16",
+          "safety-17"
+        ],
+        "dataset_scenario_files": [],
+        "dataset_selection": {
+          "demo_input": "budget_revision"
+        },
+        "clock_mode": "fixed",
+        "synthetic_evidence_mode": "sealed",
+        "database_path": "var/manual-state-budget_revision.sqlite3",
+        "logistics_execution": "rules",
+        "safety_execution": "rules"
+      },
+      "request": {
+        "raw_text": "Two people in CampMate Demo Region from 2026-10-27 for two nights, AUD 245. We want quiet and ready-to-eat meals.",
+        "explicit_fields": {
+          "destination": "CampMate Demo Region",
+          "start_date": "2026-10-27",
+          "duration_nights": 2,
+          "budget_cents": 24500,
+          "preferences": [
+            "quiet",
+            "ready-to-eat meals"
+          ],
+          "mandatory_constraints": []
+        }
+      },
+      "revision_feedback": "cheaper campsite",
+      "raw_text_zh": "我们两个人计划在 CampMate Demo Region 露营，2026年10月27日出发，住两晚，总预算245澳元，希望安静，采用即食餐食。",
+      "profile": {
+        "group_size": 2,
+        "experience_level": "INTERMEDIATE",
+        "has_children": false,
+        "children_count": 0,
+        "equipment": [
+          {
+            "item_key": "tent",
+            "label": "Confirmed synthetic tent",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true,
+            "capacity_persons": 2
+          },
+          {
+            "item_key": "groundsheet",
+            "label": "Confirmed synthetic groundsheet",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_bag",
+            "label": "Confirmed synthetic sleeping_bag",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_mat",
+            "label": "Confirmed synthetic sleeping_mat",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "warm_layers",
+            "label": "Confirmed synthetic warm_layers",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "rain_jacket",
+            "label": "Confirmed synthetic rain_jacket",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "windproof_outer_layer",
+            "label": "Confirmed synthetic windproof_outer_layer",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "first_aid_kit",
+            "label": "Confirmed synthetic first_aid_kit",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "torch",
+            "label": "Confirmed synthetic torch",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "charged_phone",
+            "label": "Confirmed synthetic charged_phone",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "meal_supplies",
+            "label": "Confirmed synthetic meal_supplies",
+            "quantity": 18,
+            "unit": "portion",
+            "confirmed": true
+          },
+          {
+            "item_key": "drinking_water",
+            "label": "Confirmed synthetic drinking_water",
+            "quantity": 12,
+            "unit": "litre",
+            "confirmed": true
+          },
+          {
+            "item_key": "vehicle",
+            "label": "Confirmed synthetic vehicle",
+            "quantity": 1,
+            "unit": "vehicle",
+            "confirmed": true,
+            "capacity_persons": 2
+          }
+        ],
+        "transport": {
+          "transport_type": "CAR",
+          "vehicle_count": 1,
+          "estimated_km": "100"
+        }
+      }
+    },
+    {
+      "id": "missing_evidence",
+      "settings": {
+        "execution_mode": "deterministic_demo",
+        "planning_enabled": true,
+        "dataset_path": "data/synthetic_demo_v2",
+        "demo_today": "2026-10-20",
+        "workflow_safety_case_ids": [
+          "safety-02"
+        ],
+        "dataset_scenario_files": [],
+        "dataset_selection": {
+          "demo_input": "missing_evidence"
+        },
+        "clock_mode": "fixed",
+        "synthetic_evidence_mode": "sealed",
+        "database_path": "var/manual-state-missing_evidence.sqlite3",
+        "logistics_execution": "rules",
+        "safety_execution": "rules"
+      },
+      "request": {
+        "raw_text": "Two people in CampMate Demo Region from 2026-10-21 for two nights, AUD 320. We want ready-to-eat meals. Must have showers.",
+        "explicit_fields": {
+          "destination": "CampMate Demo Region",
+          "start_date": "2026-10-21",
+          "duration_nights": 2,
+          "budget_cents": 32000,
+          "preferences": [
+            "ready-to-eat meals"
+          ],
+          "mandatory_constraints": [
+            "showers"
+          ]
+        }
+      },
+      "raw_text_zh": "我们两个人计划在 CampMate Demo Region 露营，2026年10月21日出发，住两晚，总预算320澳元，采用即食餐食，必须有淋浴。",
+      "profile": {
+        "group_size": 2,
+        "experience_level": "INTERMEDIATE",
+        "has_children": false,
+        "children_count": 0,
+        "equipment": [
+          {
+            "item_key": "tent",
+            "label": "Confirmed synthetic tent",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true,
+            "capacity_persons": 2
+          },
+          {
+            "item_key": "groundsheet",
+            "label": "Confirmed synthetic groundsheet",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_bag",
+            "label": "Confirmed synthetic sleeping_bag",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_mat",
+            "label": "Confirmed synthetic sleeping_mat",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "warm_layers",
+            "label": "Confirmed synthetic warm_layers",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "rain_jacket",
+            "label": "Confirmed synthetic rain_jacket",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "windproof_outer_layer",
+            "label": "Confirmed synthetic windproof_outer_layer",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "first_aid_kit",
+            "label": "Confirmed synthetic first_aid_kit",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "torch",
+            "label": "Confirmed synthetic torch",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "charged_phone",
+            "label": "Confirmed synthetic charged_phone",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "meal_supplies",
+            "label": "Confirmed synthetic meal_supplies",
+            "quantity": 18,
+            "unit": "portion",
+            "confirmed": true
+          },
+          {
+            "item_key": "drinking_water",
+            "label": "Confirmed synthetic drinking_water",
+            "quantity": 12,
+            "unit": "litre",
+            "confirmed": true
+          },
+          {
+            "item_key": "vehicle",
+            "label": "Confirmed synthetic vehicle",
+            "quantity": 1,
+            "unit": "vehicle",
+            "confirmed": true,
+            "capacity_persons": 2
+          }
+        ],
+        "transport": {
+          "transport_type": "CAR",
+          "vehicle_count": 1,
+          "estimated_km": "100"
+        }
+      }
+    },
+    {
+      "id": "road_closure",
+      "settings": {
+        "execution_mode": "deterministic_demo",
+        "planning_enabled": true,
+        "dataset_path": "data/synthetic_demo_v2",
+        "demo_today": "2027-04-09",
+        "workflow_safety_case_ids": [
+          "safety-18"
+        ],
+        "dataset_scenario_files": [],
+        "dataset_selection": {
+          "demo_input": "road_closure"
+        },
+        "clock_mode": "fixed",
+        "synthetic_evidence_mode": "sealed",
+        "database_path": "var/manual-state-road_closure.sqlite3",
+        "logistics_execution": "rules",
+        "safety_execution": "rules"
+      },
+      "request": {
+        "raw_text": "Two people in CampMate Demo Region from 2027-04-10 for two nights, AUD 320. We want ready-to-eat meals.",
+        "explicit_fields": {
+          "destination": "CampMate Demo Region",
+          "start_date": "2027-04-10",
+          "duration_nights": 2,
+          "budget_cents": 32000,
+          "preferences": [
+            "ready-to-eat meals"
+          ],
+          "mandatory_constraints": []
+        }
+      },
+      "raw_text_zh": "我们两个人计划在 CampMate Demo Region 露营，2027年4月10日出发，住两晚，总预算320澳元，采用即食餐食。",
+      "profile": {
+        "group_size": 2,
+        "experience_level": "INTERMEDIATE",
+        "has_children": false,
+        "children_count": 0,
+        "equipment": [
+          {
+            "item_key": "tent",
+            "label": "Confirmed synthetic tent",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true,
+            "capacity_persons": 2
+          },
+          {
+            "item_key": "groundsheet",
+            "label": "Confirmed synthetic groundsheet",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_bag",
+            "label": "Confirmed synthetic sleeping_bag",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_mat",
+            "label": "Confirmed synthetic sleeping_mat",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "warm_layers",
+            "label": "Confirmed synthetic warm_layers",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "rain_jacket",
+            "label": "Confirmed synthetic rain_jacket",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "windproof_outer_layer",
+            "label": "Confirmed synthetic windproof_outer_layer",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "first_aid_kit",
+            "label": "Confirmed synthetic first_aid_kit",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "torch",
+            "label": "Confirmed synthetic torch",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "charged_phone",
+            "label": "Confirmed synthetic charged_phone",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "meal_supplies",
+            "label": "Confirmed synthetic meal_supplies",
+            "quantity": 18,
+            "unit": "portion",
+            "confirmed": true
+          },
+          {
+            "item_key": "drinking_water",
+            "label": "Confirmed synthetic drinking_water",
+            "quantity": 12,
+            "unit": "litre",
+            "confirmed": true
+          },
+          {
+            "item_key": "vehicle",
+            "label": "Confirmed synthetic vehicle",
+            "quantity": 1,
+            "unit": "vehicle",
+            "confirmed": true,
+            "capacity_persons": 2
+          }
+        ],
+        "transport": {
+          "transport_type": "CAR",
+          "vehicle_count": 1,
+          "estimated_km": "100"
+        }
+      }
+    },
+    {
+      "id": "conflict_revision",
+      "settings": {
+        "execution_mode": "deterministic_demo",
+        "planning_enabled": true,
+        "dataset_path": "data/synthetic_demo_v2",
+        "demo_today": "2026-10-26",
+        "workflow_safety_case_ids": [
+          "safety-14",
+          "safety-08"
+        ],
+        "dataset_scenario_files": [],
+        "dataset_selection": {
+          "demo_input": "conflict_revision"
+        },
+        "clock_mode": "fixed",
+        "synthetic_evidence_mode": "sealed",
+        "database_path": "var/manual-state-conflict_revision.sqlite3",
+        "logistics_execution": "rules",
+        "safety_execution": "rules"
+      },
+      "request": {
+        "raw_text": "Two people in CampMate Demo Region from 2026-10-27 for two nights, AUD 400. We want ready-to-eat meals. Must have showers.",
+        "explicit_fields": {
+          "destination": "CampMate Demo Region",
+          "start_date": "2026-10-27",
+          "duration_nights": 2,
+          "budget_cents": 40000,
+          "preferences": [
+            "ready-to-eat meals"
+          ],
+          "mandatory_constraints": [
+            "showers"
+          ]
+        }
+      },
+      "revision_feedback": "change campsite",
+      "raw_text_zh": "我们两个人计划在 CampMate Demo Region 露营，2026年10月27日出发，住两晚，总预算400澳元，采用即食餐食，必须有淋浴。",
+      "profile": {
+        "group_size": 2,
+        "experience_level": "INTERMEDIATE",
+        "has_children": false,
+        "children_count": 0,
+        "equipment": [
+          {
+            "item_key": "tent",
+            "label": "Confirmed synthetic tent",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true,
+            "capacity_persons": 2
+          },
+          {
+            "item_key": "groundsheet",
+            "label": "Confirmed synthetic groundsheet",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_bag",
+            "label": "Confirmed synthetic sleeping_bag",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_mat",
+            "label": "Confirmed synthetic sleeping_mat",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "warm_layers",
+            "label": "Confirmed synthetic warm_layers",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "rain_jacket",
+            "label": "Confirmed synthetic rain_jacket",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "windproof_outer_layer",
+            "label": "Confirmed synthetic windproof_outer_layer",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "first_aid_kit",
+            "label": "Confirmed synthetic first_aid_kit",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "torch",
+            "label": "Confirmed synthetic torch",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "charged_phone",
+            "label": "Confirmed synthetic charged_phone",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "meal_supplies",
+            "label": "Confirmed synthetic meal_supplies",
+            "quantity": 18,
+            "unit": "portion",
+            "confirmed": true
+          },
+          {
+            "item_key": "drinking_water",
+            "label": "Confirmed synthetic drinking_water",
+            "quantity": 12,
+            "unit": "litre",
+            "confirmed": true
+          },
+          {
+            "item_key": "vehicle",
+            "label": "Confirmed synthetic vehicle",
+            "quantity": 1,
+            "unit": "vehicle",
+            "confirmed": true,
+            "capacity_persons": 2
+          }
+        ],
+        "transport": {
+          "transport_type": "CAR",
+          "vehicle_count": 1,
+          "estimated_km": "100"
+        }
+      }
+    },
+    {
+      "id": "no_match",
+      "settings": {
+        "execution_mode": "deterministic_demo",
+        "planning_enabled": true,
+        "dataset_path": "data/synthetic_demo_v2",
+        "demo_today": "2026-11-05",
+        "workflow_safety_case_ids": [
+          "safety-15"
+        ],
+        "dataset_scenario_files": [],
+        "dataset_selection": {
+          "demo_input": "no_match"
+        },
+        "clock_mode": "fixed",
+        "synthetic_evidence_mode": "sealed",
+        "database_path": "var/manual-state-no_match.sqlite3",
+        "logistics_execution": "rules",
+        "safety_execution": "rules"
+      },
+      "request": {
+        "raw_text": "Two people in CampMate Demo Region from 2026-11-06 for two nights, AUD 1. We want ready-to-eat meals.",
+        "explicit_fields": {
+          "destination": "CampMate Demo Region",
+          "start_date": "2026-11-06",
+          "duration_nights": 2,
+          "budget_cents": 100,
+          "preferences": [
+            "ready-to-eat meals"
+          ],
+          "mandatory_constraints": []
+        }
+      },
+      "raw_text_zh": "我们两个人计划在 CampMate Demo Region 露营，2026年11月6日出发，住两晚，总预算1澳元，采用即食餐食。",
+      "profile": {
+        "group_size": 2,
+        "experience_level": "INTERMEDIATE",
+        "has_children": false,
+        "children_count": 0,
+        "equipment": [
+          {
+            "item_key": "tent",
+            "label": "Confirmed synthetic tent",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true,
+            "capacity_persons": 2
+          },
+          {
+            "item_key": "groundsheet",
+            "label": "Confirmed synthetic groundsheet",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_bag",
+            "label": "Confirmed synthetic sleeping_bag",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_mat",
+            "label": "Confirmed synthetic sleeping_mat",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "warm_layers",
+            "label": "Confirmed synthetic warm_layers",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "rain_jacket",
+            "label": "Confirmed synthetic rain_jacket",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "windproof_outer_layer",
+            "label": "Confirmed synthetic windproof_outer_layer",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "first_aid_kit",
+            "label": "Confirmed synthetic first_aid_kit",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "torch",
+            "label": "Confirmed synthetic torch",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "charged_phone",
+            "label": "Confirmed synthetic charged_phone",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "meal_supplies",
+            "label": "Confirmed synthetic meal_supplies",
+            "quantity": 18,
+            "unit": "portion",
+            "confirmed": true
+          },
+          {
+            "item_key": "drinking_water",
+            "label": "Confirmed synthetic drinking_water",
+            "quantity": 12,
+            "unit": "litre",
+            "confirmed": true
+          },
+          {
+            "item_key": "vehicle",
+            "label": "Confirmed synthetic vehicle",
+            "quantity": 1,
+            "unit": "vehicle",
+            "confirmed": true,
+            "capacity_persons": 2
+          }
+        ],
+        "transport": {
+          "transport_type": "CAR",
+          "vehicle_count": 1,
+          "estimated_km": "100"
+        }
+      }
+    },
+    {
+      "id": "equipment_shortage",
+      "settings": {
+        "execution_mode": "deterministic_demo",
+        "planning_enabled": true,
+        "dataset_path": "data/synthetic_demo_v2",
+        "demo_today": "2026-11-05",
+        "workflow_safety_case_ids": [
+          "safety-15"
+        ],
+        "dataset_scenario_files": [],
+        "dataset_selection": {
+          "demo_input": "normal"
+        },
+        "clock_mode": "fixed",
+        "synthetic_evidence_mode": "sealed",
+        "database_path": "var/manual-state-equipment-shortage.sqlite3",
+        "logistics_execution": "rules",
+        "safety_execution": "rules"
+      },
+      "request": {
+        "raw_text": "Two people in CampMate Demo Region from 2026-11-06 for two nights, AUD 320. We want quiet and ready-to-eat meals.",
+        "explicit_fields": {
+          "destination": "CampMate Demo Region",
+          "start_date": "2026-11-06",
+          "duration_nights": 2,
+          "budget_cents": 32000,
+          "preferences": [
+            "quiet",
+            "ready-to-eat meals"
+          ],
+          "mandatory_constraints": []
+        }
+      },
+      "raw_text_zh": "我们两个人计划在 CampMate Demo Region 露营，2026年11月6日出发，住两晚，总预算320澳元，希望安静，采用即食餐食。",
+      "profile": {
+        "group_size": 2,
+        "experience_level": "INTERMEDIATE",
+        "has_children": false,
+        "children_count": 0,
+        "equipment": [
+          {
+            "item_key": "tent",
+            "label": "Confirmed synthetic tent",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true,
+            "capacity_persons": 1
+          },
+          {
+            "item_key": "groundsheet",
+            "label": "Confirmed synthetic groundsheet",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_bag",
+            "label": "Confirmed synthetic sleeping_bag",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_mat",
+            "label": "Confirmed synthetic sleeping_mat",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "warm_layers",
+            "label": "Confirmed synthetic warm_layers",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "rain_jacket",
+            "label": "Confirmed synthetic rain_jacket",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "windproof_outer_layer",
+            "label": "Confirmed synthetic windproof_outer_layer",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "torch",
+            "label": "Confirmed synthetic torch",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "charged_phone",
+            "label": "Confirmed synthetic charged_phone",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "meal_supplies",
+            "label": "Confirmed synthetic meal_supplies",
+            "quantity": 18,
+            "unit": "portion",
+            "confirmed": true
+          },
+          {
+            "item_key": "drinking_water",
+            "label": "Confirmed synthetic drinking_water",
+            "quantity": 12,
+            "unit": "litre",
+            "confirmed": true
+          },
+          {
+            "item_key": "vehicle",
+            "label": "Confirmed synthetic vehicle",
+            "quantity": 1,
+            "unit": "vehicle",
+            "confirmed": true,
+            "capacity_persons": 2
+          }
+        ],
+        "transport": {
+          "transport_type": "CAR",
+          "vehicle_count": 1,
+          "estimated_km": "100"
+        }
+      }
+    },
+    {
+      "id": "future_weather",
+      "settings": {
+        "execution_mode": "deterministic_demo",
+        "planning_enabled": true,
+        "dataset_path": "data/sydney_surrounds_v2_2",
+        "demo_today": "2026-10-30",
+        "workflow_safety_case_ids": [],
+        "dataset_scenario_files": [],
+        "dataset_selection": {},
+        "clock_mode": "fixed",
+        "synthetic_evidence_mode": "rolling",
+        "database_path": "var/manual-state-future-weather.sqlite3",
+        "logistics_execution": "rules",
+        "safety_execution": "rules"
+      },
+      "request": {
+        "raw_text": "Two people in Sydney & Surrounds from 2026-11-20 for two nights, AUD 1000. Ready-to-eat meals.",
+        "explicit_fields": {
+          "destination": "Sydney & Surrounds",
+          "start_date": "2026-11-20",
+          "duration_nights": 2,
+          "budget_cents": 100000,
+          "preferences": [
+            "ready-to-eat meals"
+          ],
+          "mandatory_constraints": []
+        }
+      },
+      "raw_text_zh": "我们两个人计划在悉尼及周边露营，2026年11月20日出发，住两晚，总预算1000澳元，采用即食餐食。",
+      "profile": {
+        "group_size": 2,
+        "experience_level": "INTERMEDIATE",
+        "has_children": false,
+        "children_count": 0,
+        "equipment": [
+          {
+            "item_key": "tent",
+            "label": "Confirmed synthetic tent",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true,
+            "capacity_persons": 2
+          },
+          {
+            "item_key": "groundsheet",
+            "label": "Confirmed synthetic groundsheet",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_bag",
+            "label": "Confirmed synthetic sleeping_bag",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_mat",
+            "label": "Confirmed synthetic sleeping_mat",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "warm_layers",
+            "label": "Confirmed synthetic warm_layers",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "rain_jacket",
+            "label": "Confirmed synthetic rain_jacket",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "windproof_outer_layer",
+            "label": "Confirmed synthetic windproof_outer_layer",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "first_aid_kit",
+            "label": "Confirmed synthetic first_aid_kit",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "torch",
+            "label": "Confirmed synthetic torch",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "charged_phone",
+            "label": "Confirmed synthetic charged_phone",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "meal_supplies",
+            "label": "Confirmed synthetic meal_supplies",
+            "quantity": 18,
+            "unit": "portion",
+            "confirmed": true
+          },
+          {
+            "item_key": "drinking_water",
+            "label": "Confirmed synthetic drinking_water",
+            "quantity": 12,
+            "unit": "litre",
+            "confirmed": true
+          },
+          {
+            "item_key": "vehicle",
+            "label": "Confirmed synthetic vehicle",
+            "quantity": 1,
+            "unit": "vehicle",
+            "confirmed": true,
+            "capacity_persons": 2
+          }
+        ],
+        "transport": {
+          "transport_type": "CAR",
+          "vehicle_count": 1,
+          "estimated_km": "100"
+        }
+      }
+    },
+    {
+      "id": "high_risk",
+      "settings": {
+        "execution_mode": "deterministic_demo",
+        "planning_enabled": true,
+        "dataset_path": "data/sydney_surrounds_v2_2",
+        "demo_today": "2026-10-30",
+        "workflow_safety_case_ids": [],
+        "dataset_scenario_files": [],
+        "dataset_selection": {},
+        "clock_mode": "fixed",
+        "synthetic_evidence_mode": "rolling",
+        "database_path": "var/manual-state-high-risk.sqlite3",
+        "logistics_execution": "rules",
+        "safety_execution": "rules"
+      },
+      "request": {
+        "raw_text": "Two people in Sydney & Surrounds from 2026-11-01 for two nights, AUD 1000. Ready-to-eat meals. Must have showers. Must have wheelchair access. Must have public transport access.",
+        "explicit_fields": {
+          "destination": "Sydney & Surrounds",
+          "start_date": "2026-11-01",
+          "duration_nights": 2,
+          "budget_cents": 100000,
+          "preferences": [
+            "quiet",
+            "showers",
+            "ready-to-eat meals"
+          ],
+          "mandatory_constraints": [
+            "showers",
+            "wheelchair_accessible",
+            "public_transport_access"
+          ]
+        }
+      },
+      "raw_text_zh": "我们两个人计划在悉尼及周边露营，2026年11月1日出发，住两晚，总预算1000澳元，采用即食餐食。必须有淋浴。必须轮椅通行。必须公共交通可达。",
+      "profile": {
+        "group_size": 2,
+        "experience_level": "INTERMEDIATE",
+        "has_children": false,
+        "children_count": 0,
+        "equipment": [
+          {
+            "item_key": "tent",
+            "label": "Confirmed synthetic tent",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true,
+            "capacity_persons": 2
+          },
+          {
+            "item_key": "groundsheet",
+            "label": "Confirmed synthetic groundsheet",
+            "quantity": 1,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_bag",
+            "label": "Confirmed synthetic sleeping_bag",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "sleeping_mat",
+            "label": "Confirmed synthetic sleeping_mat",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "warm_layers",
+            "label": "Confirmed synthetic warm_layers",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "rain_jacket",
+            "label": "Confirmed synthetic rain_jacket",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "windproof_outer_layer",
+            "label": "Confirmed synthetic windproof_outer_layer",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "first_aid_kit",
+            "label": "Confirmed synthetic first_aid_kit",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "torch",
+            "label": "Confirmed synthetic torch",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "charged_phone",
+            "label": "Confirmed synthetic charged_phone",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "meal_supplies",
+            "label": "Confirmed synthetic meal_supplies",
+            "quantity": 18,
+            "unit": "portion",
+            "confirmed": true
+          },
+          {
+            "item_key": "drinking_water",
+            "label": "Confirmed synthetic drinking_water",
+            "quantity": 30,
+            "unit": "litre",
+            "confirmed": true
+          },
+          {
+            "item_key": "vehicle",
+            "label": "Confirmed synthetic vehicle",
+            "quantity": 1,
+            "unit": "vehicle",
+            "confirmed": true,
+            "capacity_persons": 2
+          },
+          {
+            "item_key": "sun_hat",
+            "label": "sun_hat",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "warm_liner",
+            "label": "warm_liner",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "offline_map",
+            "label": "offline_map",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "power_bank",
+            "label": "power_bank",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "whistle",
+            "label": "whistle",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "emergency_contact_card",
+            "label": "emergency_contact_card",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "hand_sanitiser",
+            "label": "hand_sanitiser",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "toilet_kit",
+            "label": "toilet_kit",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          },
+          {
+            "item_key": "tent_repair_kit",
+            "label": "tent_repair_kit",
+            "quantity": 2,
+            "unit": "item",
+            "confirmed": true
+          }
+        ],
+        "transport": {
+          "transport_type": "CAR",
+          "vehicle_count": 1,
+          "estimated_km": "100"
+        }
+      }
+    }
+  ],
+  "review_notes": {
+    "APPROVE": "已核对当前版本的天气、道路、营地规定和准备安排，资料完整且覆盖行程，无未解决硬性限制；批准本次记录所示风险。",
+    "REQUEST_REVISION": "请保留已确认预算，换一个风险较低且可通行的营地；修改后重新检查。",
+    "REJECT": "当前安排不宜继续，请调整日期或营地后重新检查。",
+    "WAITING_EVIDENCE": {
+      "problem": "天气资料未覆盖全部出行日期。",
+      "reason": "当前无法据此完成安全判断。",
+      "next_action": "临近出发、资料更新后保留行程重新检查；也可调整日期。"
+    },
+    "NEEDS_CAMPER_INPUT": {
+      "problem": "必要装备的数量或容量尚不足。",
+      "reason": "现有记录不能支持此次同行人数。",
+      "next_action": "登记实际可用的装备数量和容量，重新核对需求并检查。"
+    },
+    "UNSUPPORTED": {
+      "problem": "请求包含现有资料无法核实的安排。",
+      "reason": "当前目录和规则未覆盖该安排。",
+      "next_action": "改选现有支持条件，或保留草稿等待支持；本意见不代表批准。"
+    }
+  }
+}

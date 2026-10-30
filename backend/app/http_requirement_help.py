@@ -12,8 +12,8 @@ def create(request_id:str,body:HelpCreate,request:Request,user:User=Depends(writ
     return service(request).create(user,request_id,body)
 
 @router.get('/requirement-help')
-def queue(request:Request,user:User=Depends(current_user)):
-    return {'tasks':service(request).queue(user)}
+def queue(request:Request,history:bool=False,user:User=Depends(current_user)):
+    return {'tasks':service(request).queue(user,history=history)}
 
 @router.get('/requirement-help/{task_id}')
 def read(task_id:str,request:Request,user:User=Depends(current_user)):

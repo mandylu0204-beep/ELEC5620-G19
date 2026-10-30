@@ -70,6 +70,7 @@ class NewEvaluationInput(CommandInput):
 
 
 class RevisePlanningInput(NewEvaluationInput):
+    source_review_id: str | None = Field(default=None,min_length=1,max_length=128)
     feedback: str = Field(min_length=1, max_length=4000)
 
     @field_validator('feedback')
@@ -86,7 +87,11 @@ async def new_evaluation(plan_id, body, request, user, operation, *, revision_se
         plan = dict(Repository.own_plan(connection, user, plan_id))
     state.dispatcher.require_available()
     state.runtime.resolve().require_operation(operation)
-    snapshot = state.runtime.resolve(feedback=body.feedback if operation == 'REVISE' else None)
+    feedback = body.feedback if operation == 'REVISE' else None
+    if operation == 'REVISE' and body.source_review_id:
+        from .storage.review_followup import revision_feedback
+        feedback = revision_feedback(state.database,user,plan_id,body)
+    snapshot = state.runtime.resolve(feedback=feedback)
     revision_check = None
     if operation == 'REVISE':
         from .application.revision_preflight import CHEAPER_GOALS, require_cheaper_campsite
@@ -275,3 +280,17 @@ def run_progress(run_id: str, request: Request, response: Response, user: User =
         state.dispatcher.expire_if_needed(user, run_id)
         data = state.plan_queries.progress(user, run_id)
     return data
+
+
+@router.get('/plans/{plan_id}/finals/{final_id}/pdf')
+def final_pdf(plan_id:str,final_id:str,request:Request,user:User=Depends(current_user)):
+    # The original owner/deletion/integrity checks run before any rendering.
+    data=plan_response(request.app.state.finalisation.detail(user,plan_id,final_id),user)
+    from .application.final_pdf import render_final_pdf
+    try:payload=render_final_pdf(data['final_record'],is_current=data['is_current'])
+    except Exception:
+        from .auth import fail
+        fail(ErrorCode.ADAPTER_FAILURE,'PDF 导出未完成，已保存的最终方案不受影响，请重试。')
+    return Response(payload,media_type='application/pdf',headers={
+        'Content-Disposition':'attachment; filename="campmate-final-'+final_id+'.pdf"',
+        'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})

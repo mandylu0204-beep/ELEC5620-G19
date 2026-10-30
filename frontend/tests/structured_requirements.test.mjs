@@ -106,3 +106,14 @@ test('editing keeps previous feedback visible and does not present it as a decis
   assert.match(html,/尚未针对本次修改重新处理/);assert.match(html,/先仅保存修改/);
   assert.doesNotMatch(html,/确认采用建议，暂不规划|已通过/);
 });
+
+
+test('unsupported assistance gives a distinct next step and never offers adoption or rewriting as a solution',()=>{
+  const item={field:'mandatory_constraints',index:0,text:'需要私人泳池'};
+  const state={needed:true,items:[item],profile_revision:1,task:{task_id:'unsupported',request_id:'request',request_revision:1,profile_revision:1,status:'RETURNED',revision:2,created_at:'2026-10-30',snapshot:{raw_text:'',items:[item]},response:{decision:'UNSUPPORTED',reason:'没有相应验证资料。',problem:'私人泳池不在可验证目录。',next_action:'调整为已有条件或保留草稿。',mappings:[]}}};
+  const before=structuredClone(state);
+  const html=routed(RequirementHelpPanel,{requestId:'request',requestRevision:1,state,dirty:false,disabled:false,refresh(){}});
+  for(const text of ['当前系统暂不支持此要求','私人泳池不在可验证目录','你的下一步','调整为已有条件或保留草稿','不会自动忽略原要求'])assert.ok(html.includes(text),text);
+  assert.doesNotMatch(html,/确认采用建议|已退回：需要修改或补充要求|系统已批准/);
+  assert.deepEqual(state,before);
+});

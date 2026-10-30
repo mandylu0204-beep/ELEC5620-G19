@@ -1,10 +1,11 @@
+import {planCheckState} from './plan_check_state';
 import { needsMealChoice } from './logistics_guidance';
 import { Link } from 'react-router-dom';
 import type { PlanDetail } from './plans';
 import { tripUpdatePath } from './trip_update';
 
 // Navigation guidance only; all operations remain controlled by server flags.
-export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}) {
+export function NextSteps({data,onRecheck,onReviewRevision}:{data:PlanDetail;onRecheck?:()=>void;onReviewRevision?:()=>void}) {
   const run=data.run;
   if(!run?.is_active||data.trip_series?.is_current===false||['PENDING','RUNNING','FAILED'].includes(run.status))return null;
   // A pending candidate must be selected or kept before opening a successor.
@@ -48,11 +49,15 @@ export function NextSteps({data,onRecheck}:{data:PlanDetail;onRecheck?:()=>void}
   }else if(reasons.size===1&&reasons.has('REVIEW_REQUIRED')){
     title='等待审核员处理';description='这份方案需要人工核对风险，审核完成后可继续。';
   }
-  return <section className="panel next-steps" aria-label="接下来怎么做"><h2>{title}</h2><p>{description}</p>
+  const state=planCheckState(data);
+  if(state.kind==='cancelled')return null;
+  const heading=state.kind==='adjustment'?'下一步':state.kind==='review'?'等待人工审核':title;
+  return <section className="panel next-steps" aria-label="接下来怎么做"><h2>{heading}</h2><p>{description}</p>
     {data.current_inputs_error&&<>{data.current_inputs_state==='CHANGED'&&<p className="muted">重新检查保留当前行程；若资料仍缺失或不适用，问题仍会保留。</p>}
       {data.reassessment_available&&onRecheck?<button className="secondary-button" onClick={onRecheck}>前往重新检查 ↓</button>:<p className="muted">当前暂不能启动检查，原行程已保留。</p>}
       <details className="source-details"><summary>查看系统详情</summary><p>{data.current_inputs_error}</p></details></>}
     {review&&<div className="clarifications"><strong>审核理由</strong><p>{review.reason}</p></div>}
+    {onReviewRevision&&<button type="button" className="primary-button" onClick={onReviewRevision}>按审核意见准备修改 ↓</button>}
     <div className="plan-actions"><Link className="text-link" to={tripUpdatePath(data.plan.plan_id)}>调整本次需求并核对 ↗</Link><Link className="text-link" to={'/profile?plan_id='+encodeURIComponent(data.plan.plan_id)+'&request_id='+encodeURIComponent(data.plan.request_id)}>修改露营资料 ↗</Link></div>
   </section>;
 }

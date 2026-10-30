@@ -19,8 +19,11 @@ const {TripCoveragePanel}=await server.ssrLoadModule('/src/trip_coverage.tsx');
 const {SafetyInformation}=await server.ssrLoadModule('/src/safety_information.tsx');
 const {PlanView,NewPlanPrompt,TripSeriesCard}=await server.ssrLoadModule('/src/plans.tsx');
 const {FinalPlanNavigation}=await server.ssrLoadModule('/src/finals.tsx');
+const {revisionReview}=await server.ssrLoadModule('/src/review_revision.ts');
+const {AssistanceNotes,ReviewAssistanceForm}=await server.ssrLoadModule('/src/review_assistance.tsx');
+const {FinalPdfDownload}=await server.ssrLoadModule('/src/final_pdf.tsx');
 const {DailyItinerary}=await server.ssrLoadModule('/src/daily_itinerary.tsx');
-const {selectionPresentation}=await server.ssrLoadModule('/src/campsite_selection.ts');
+const {selectionPresentation,selectedRequirementsPresentation}=await server.ssrLoadModule('/src/campsite_selection.ts');
 const {cataloguePlace,CampsiteArrivalDetails}=await server.ssrLoadModule('/src/campsite_details.tsx');
 const {ChangePlanning,revealRevisionPanel,preservedRevisionNotice}=await server.ssrLoadModule('/src/planning.tsx');
 const {ApiFailure:PlanningApiFailure}=await server.ssrLoadModule('/src/api.ts');
@@ -686,8 +689,8 @@ test('plan explains preparation-only blockers without disguising a road closure 
 });
 test('new pending checks override old successful display and completed issues have distinct labels',()=>{
   const row={run_status:'RUNNING',stage:'ASSESSING_SAFETY',version_status:'FINALISED',display_status:'FINALISED'};
-  assert.equal(planRowState(row),'正在准备方案');
-  for(const [key,label] of Object.entries({NEEDS_USER_INPUT:'需要用户补充',NEEDS_REVISION:'需要修改方案',AWAITING_REVIEW:'等待人工审核',CANNOT_RELEASE:'需要调整方案'}))
+  assert.equal(planRowState(row),'检查未完成');
+  for(const [key,label] of Object.entries({NEEDS_USER_INPUT:'需要调整方案',NEEDS_REVISION:'需要调整方案',AWAITING_REVIEW:'等待人工审核',CANNOT_RELEASE:'需要调整方案'}))
     assert.equal(planRowState({...row,run_status:'SUCCEEDED',display_status:key}),label);
 });
 
@@ -709,15 +712,18 @@ test('current plan omits the redundant adjustment card while retaining next step
   value.version.status='ELIGIBLE_FOR_FINALISATION';
   value.finalisation_available=true;
   value.eligibility={eligible:true,blocking_reasons:[],review_required:false,valid_review_id:null};
+  value.assessments[0].result.outcome='PASSED';
+  value.assessments[0].result.gear_checklist=[];
+  value.assessments.push({assessment_id:'safe',kind:'SAFETY',version_context:value.version.version_context,result:{outcome:'PASSED',requires_human_review:false,risk_level:'LOW',confidence:'HIGH',data_quality:{},evidence:[],hazards:[],recommended_actions:[],mandatory_blockers:[],unresolved_conflicts:[]}});
   value.revision_available=true;value.reassessment_available=true;
   const before=structuredClone(value);
   const html=renderPlan(value);
-  assert.doesNotMatch(html,/aria-label="调整露营方案"|<h2>调整露营方案<\/h2>|修改需求与资料 ↗/);
-  assert.match(html,/方案已生成，待你确认保存/);
-  assert.match(html,/调整本次需求并核对 ↗/);
+  assert.doesNotMatch(html,/aria-label="调整露营方案"|<h2>调整露营方案<\/h2>/);
+  assert.match(html,/待确认/);
+  assert.match(html,/修改方案并重新评估/);
   assert.match(html,/href="\/plans\/plan\/update"/);
-  assert.match(html,/修改露营资料 ↗/);
-  assert.match(html,/修改行程或更新检查/);
+  assert.match(html,/修改需求与资料并重新确认 ↗/);
+  assert.match(html,/修改方案/);
   assert.deepEqual(value,before);
 });
 test('current final snapshot offers a guarded update route while historical finals only link to current state',()=>{
@@ -738,7 +744,7 @@ test('saved current plan retains successor navigation without reopening its immu
   assert.match(html,/href="\/plans\/plan\/update"/);
   assert.match(html,/修改露营资料 ↗/);
   assert.match(html,/新方案需要重新检查和确认保存/);
-  assert.doesNotMatch(html,/修改行程或更新检查/);
+  assert.doesNotMatch(html,/修改方案/);
   for(const options of [{snapshot:true},{review:true}])
     assert.doesNotMatch(renderPlan(value,options),/最终方案已保存，仍可更新本次出行|调整本次需求并核对 ↗|修改露营资料 ↗/);
   for(const patch of [{run:{...value.run,is_active:false}},{trip_series:{is_current:false,current_plan_id:'successor'}},
@@ -752,7 +758,7 @@ test('plan budget action follows revision capability and is absent from historic
   value.current_version_revision=1;value.logistics_issues=[budgetIssue];
   value.assessments[0].result.total_cents=34600;value.assessments[0].result.budget_difference_cents=4600;
   const html=renderPlan(value);
-  assert.match(html,/保持预算，寻找更低费用方案/);assert.match(html,/修改行程或更新检查/);
+  assert.match(html,/保持预算，寻找更低费用方案/);assert.match(html,/修改方案/);
   const forbidden=structuredClone(value);forbidden.revision_available=false;forbidden.display_status='NEEDS_REVISION';
   assert.doesNotMatch(renderPlan(forbidden),/保持预算，寻找更低费用方案/);
   for(const options of [{snapshot:true},{review:true}])
@@ -1059,4 +1065,139 @@ test('saved simulated activities show their specific titles without inventing co
   assert.deepEqual(entries,before);
   const old=render(DailyItinerary,{entries:[{...base,description:'Synthetic rest and free-time block; no additional activities are assumed.'}],time:x=>x,label:x=>x});
   assert.doesNotMatch(old,/营位自然观察与趣味摄影|模拟活动建议/);
+});
+
+
+test('review revision preparation requires the active exact reviewed context and never treats approval as instructions',()=>{
+  const data=planFixture();data.revision_available=true;data.run.is_active=true;data.plan.current_version_id=data.version.version_context.plan_version_id;
+  const review={review_id:'review-source',decision:'REQUEST_REVISION',reason:'请更换营地，保留已确认预算。',reviewer_user_id:'founder',version_context:{...data.version.version_context}};
+  data.reviews=[review];const before=structuredClone(data);
+  assert.equal(revisionReview(data),review);
+  for(const patch of [{revision_available:false},{run:{...data.run,is_active:false}},{trip_series:{is_current:false}},
+      {reviews:[{...review,decision:'APPROVE'}]},{reviews:[{...review,version_context:{...review.version_context,run_id:'old'}}]},
+      {reviews:[{...review,version_context:{...review.version_context,input_fingerprint:'different'}}]}])assert.equal(revisionReview({...data,...patch}),null);
+  const html=renderPlan(data);
+  assert.match(html,/按审核意见准备修改/);assert.match(html,/采用这条审核意见/);assert.match(html,/请更换营地，保留已确认预算/);
+  assert.deepEqual(data,before);
+});
+
+test('assistance feedback is visible but cannot clear assessments or offer approval',()=>{
+  const note={note_id:'n1',plan_id:'plan',run_id:'run',plan_version_id:'version',assessment_ids:['log','safe'],reviewer_user_id:'founder',decision:'WAITING_EVIDENCE',problem:'缺少天气日期。',reason:'资料不能覆盖全部日期。',next_action:'等来源更新后重新检查。',recheck_on:'2026-11-01',created_at:'2026-10-30',is_approval:false};
+  const notes=[note,{...note,note_id:'n2',decision:'UNSUPPORTED',problem:'<img src=x onerror=alert(1)>',reason:'此限定没有已登记数据。',next_action:'调整为已有条件或保留草稿。',recheck_on:null}];
+  const before=structuredClone(notes);
+  const html=render(AssistanceNotes,{notes,historical:true});
+  for(const text of ['此前结果的人工处理记录','不是批准','当前系统暂不支持','下一步','调整为已有条件或保留草稿','此前处理意见','2026-11-01'])assert.ok(html.includes(text),text);
+  assert.doesNotMatch(html,/<img|<button|检查通过|保存最终方案/);assert.match(html,/&lt;img/);
+  assert.deepEqual(notes,before);
+});
+
+test('assistance form uses an explicit server flag and keeps mandatory restriction decisions separate',()=>{
+  const data=planFixture();
+  const show=value=>renderToStaticMarkup(h(MemoryRouter,null,h(SessionProvider,null,h(ReviewAssistanceForm,{data:value,refresh(){}}))));
+  assert.equal(show(data),'');
+  const html=show({...data,assistance_available:true});
+  for(const text of ['记录处理意见（不可审批）','具体问题','判断依据','用户下一步','等待资料后再检查','当前系统暂不支持'])assert.ok(html.includes(text),text);
+  assert.match(html,/disabled=""[^>]*>保存处理意见/);assert.doesNotMatch(html,/>批准<|>拒绝</);
+});
+
+test('PDF download is an explicit action for an already saved final and does not issue a request during render',()=>{
+  const html=render(FinalPdfDownload,{planId:'plan',finalId:'saved-final'});
+  assert.match(html,/>下载已保存方案 PDF</);assert.doesNotMatch(html,/<a |<iframe|自动|模型/);
+});
+
+
+
+test('selected preference and hard requirements all receive explicit results while other facilities move below',()=>{
+  const place=cataloguePlace('lane-cove','sydney-surrounds-2.2-2026-10-23');
+  const requirements={preferences:['quiet','pets'],mandatory_constraints:['toilets','showers']};
+  const reasons=['目的地区域：Sydney & Surrounds，与本次选择一致。','同行人数：本次 4 人，登记人数上限 4 人。',
+    '必须条件：厕所，登记信息为支持。','必须条件：淋浴，登记信息为支持。',
+    '营地配套：厕所已登记提供。','营地配套：淋浴已登记提供。','营地配套：饮用水已登记提供。'];
+  const before=structuredClone({place,requirements,reasons});
+  const projected=selectedRequirementsPresentation(reasons,requirements,place);
+  assert.deepEqual(projected.rows.filter(row=>row.kind).map(row=>[row.label,row.kind,row.result]),[
+    ['厕所','必须条件','资料符合'],['淋浴','必须条件','资料符合'],['安静的环境','偏好','待核实'],['允许携带宠物','偏好','未满足']]);
+  assert.equal(projected.rows.some(row=>row.facility==='potable_water'),false);
+  assert.equal(projected.extra[0].facility,'potable_water');
+  const html=render(panels.PlanningExplanationPanel,{siteName:'Lane Cove',siteId:'lane-cove',catalogueId:'sydney-surrounds-2.2-2026-10-23',requirements,reasons,uncertainties:[]});
+  const table=html.match(/<table[^>]*>.*?<\/table>/s)[0];
+  for(const text of ['厕所','淋浴','安静的环境','允许携带宠物','营地资料登记不允许普通宠物','待核实','未满足'])assert.ok(table.includes(text),text);
+  assert.doesNotMatch(table,/饮用水/);
+  assert.match(html,/<h3>其他营地配套<\/h3>.*?<dt>饮用水<\/dt>/s);
+  assert.deepEqual({place,requirements,reasons},before);
+});
+
+test('selected same facility merges categories while unknown, conflicting and unsupported choices never become satisfied',()=>{
+  const requirements={preferences:['toilets','pets','quiet','保留旧的未知偏好'],mandatory_constraints:['toilets','walk_in_only','no_fires']};
+  const facts=['必须条件：厕所，登记信息为支持。','营地配套：厕所未提供，需另作安排。'];
+  const value=selectedRequirementsPresentation(facts,requirements,null,['step-free path']);
+  const toilet=value.rows.filter(row=>row.facility==='toilets');assert.equal(toilet.length,1);
+  assert.equal(toilet[0].kind,'必须条件 · 偏好');assert.equal(toilet[0].result,'资料冲突');
+  for(const name of ['允许携带宠物','安静的环境','保留旧的未知偏好','仅可步行进入','无台阶通道']){
+    assert.equal(value.rows.find(row=>row.label===name).result,'待核实',name);
+  }
+  assert.equal(value.rows.find(row=>row.label==='不生火').result,'另见专项检查');
+  assert.equal(value.extra.length,0);
+});
+
+test('old catalogue versions cannot borrow new static facts and saved positive facts remain readable',()=>{
+  const requirements={preferences:['pets','quiet'],mandatory_constraints:['showers']};
+  const html=render(panels.PlanningExplanationPanel,{siteName:'Old site',siteId:'lane-cove',catalogueId:'old-version',requirements,reasons:['必须条件：淋浴，登记信息为支持。'],uncertainties:[]});
+  assert.match(html,/淋浴.*?资料符合/s);
+  assert.match(html,/允许携带宠物.*?待核实/s);
+  assert.match(html,/安静的环境.*?待核实/s);
+  assert.doesNotMatch(html,/不允许普通宠物|其他营地配套|到达方式与注意事项/);
+  const legacy=render(panels.PlanningExplanationPanel,{siteName:'Missing lists',requirements:{},reasons:['必须条件：厕所，登记信息为支持。'],uncertainties:[]});
+  assert.match(legacy,/本次必须条件/);assert.doesNotMatch(legacy,/逐项比较/);
+});
+
+test('every offered preference and mandatory condition is retained, including meals and safety-only intent',()=>{
+  const requirements={preferences:['quiet','toilets','showers','potable water','public transport','wheelchair accessible','campfire','pets','self-catered meals'],
+    mandatory_constraints:['toilets','showers','potable_water','wheelchair_accessible','fire_allowed','no_fires','pets_allowed','vehicle_access','public_transport_access','walk_in_only']};
+  const value=selectedRequirementsPresentation([],requirements,cataloguePlace('the-basin','sydney-surrounds-2.2-2026-10-23'));
+  for(const name of ['厕所','淋浴','饮用水','轮椅通行','允许用火','不生火','允许携带宠物','车辆可达','公共交通可达','仅可步行进入','安静的环境','自行烹饪'])
+    assert.ok(value.rows.some(row=>row.label===name),name);
+  assert.equal(value.rows.find(row=>row.label==='自行烹饪').result,'另见专项检查');
+  assert.equal(value.rows.find(row=>row.label==='车辆可达').result,'未满足');
+  assert.equal(value.rows.find(row=>row.label==='轮椅通行').result,'待核实');
+});
+
+test('selected facilities stay in the main table even when saved and catalogue facts conflict',()=>{
+  const props={siteName:'Bents Basin',siteId:'bents-basin',catalogueId:'sydney-surrounds-2.2-2026-10-23',
+    requirements:{preferences:['potable water'],mandatory_constraints:[]},reasons:['营地配套：饮用水已登记提供。'],uncertainties:[]};
+  const html=render(panels.PlanningExplanationPanel,props);
+  const table=html.match(/<table[^>]*>.*?<\/table>/s)[0];assert.match(table,/资料冲突/);
+  const extra=html.match(/<h3>其他营地配套<\/h3>(.*?)<\/dl>/s)?.[1]??'';
+  assert.doesNotMatch(extra,/饮用水/);
+});
+
+test('current, historical, final and reviewer views show confirmed choices without mutating or authorising outcomes',()=>{
+  const data=planFixture();data.campsite_catalogue_id='sydney-surrounds-2.2-2026-10-23';
+  data.confirmed_context.requirements.preferences=['quiet','pets'];data.confirmed_context.requirements.mandatory_constraints=['toilets','showers'];
+  data.confirmed_context.profile_snapshot.accessibility_requirements=['step-free path'];
+  data.version.content.selected_campsite_ids=['lane-cove'];
+  data.recommendations={result:{search_outcome:'MATCHES',excluded_candidates:[],candidates:[{campsite_id:'lane-cove',rank:1,reasons:[],material_uncertainties:[]}]}};
+  const before=structuredClone(data);
+  for(const options of [{},{review:true},{snapshot:true}]){
+    const html=renderPlan(data,options);
+    for(const text of ['本方案已确认的完整要求','本次已确认的偏好与用餐方式','本次必须满足的条件','本次同行特殊需求','安静','携带宠物','无台阶通道','本方案采用的确认快照','未满足','待核实'])assert.ok(html.includes(text),text);
+    const accessRow=html.match(/<tr><th scope="row">无台阶通道(?:(?!<\/tr>)[\s\S])*<\/tr>/)[0];
+    assert.match(accessRow,/待核实/);assert.doesNotMatch(accessRow,/资料符合/);
+  }
+  assert.deepEqual(data,before);
+  data.run.is_active=false;assert.match(renderPlan(data),/本方案已确认的完整要求/);
+  data.confirmed_context.requirements.preferences=['<img src=x onerror=alert(1)>'];
+  const escaped=renderPlan(data);assert.match(escaped,/&lt;img/);assert.doesNotMatch(escaped,/<img/);
+  assert.deepEqual(before.eligibility,null);assert.equal(data.finalisation_available,false);
+  assert.deepEqual(before.confirmed_context.requirements.preferences,['quiet','pets']);
+});
+
+
+
+test('unknown historic choice names that shadow JavaScript properties stay literal and unverified',()=>{
+  const requirements={preferences:['__proto__','constructor','toString'],mandatory_constraints:[]};
+  const rows=selectedRequirementsPresentation([],requirements,null).rows;
+  assert.deepEqual(rows.map(row=>[row.label,row.result]),requirements.preferences.map(value=>[value,'待核实']));
+  const data=planFixture();data.confirmed_context.requirements={...data.confirmed_context.requirements,...requirements};
+  const html=renderPlan(data);for(const name of requirements.preferences)assert.ok(html.includes(name));
 });

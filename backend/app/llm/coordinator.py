@@ -1,4 +1,5 @@
 """First model role: bounded JSON tool loop, then validated shared itinerary."""
+from ..contracts.revision_feedback import linked_payload,model_feedback_text
 from dataclasses import dataclass
 import hashlib
 import json
@@ -114,6 +115,10 @@ class PlanningCoordinator:
             'validation_version': DETAILED_VALIDATION_VERSION if self.detailed else VALIDATION_VERSION, 'tool_version': tool_version,
             'prompt_sha256': digest(prompt), 'model_client': self.client.identity,
         }
+        feedback=self.dataset.context.selection_config.get('a_revision_feedback','')
+        if linked_payload(feedback):
+            values['coordinator_version'] += '-review-feedback-1'
+            values['validation_version'] += '-review-feedback-1'
         return {**values, 'configuration_fingerprint': digest(canonical(values))}
 
     @property
@@ -142,7 +147,8 @@ class PlanningCoordinator:
         if input.confirmed_requirements.start_date < input.demo_context.demo_today:
             raise model_failure('确认行程早于固定演示日期。', code=ErrorCode.INPUT_INVALID)
         revision = input.previous_version is not None
-        if revision != (input.feedback is not None) or (revision and (not input.feedback.strip() or len(input.feedback) > 4000)):
+        feedback=model_feedback_text(input.feedback)
+        if revision != (input.feedback is not None) or (revision and (not feedback or len(feedback) > 4000)):
             raise model_failure('模型修订必须同时提供原版本和非空修改意见（最多4000字符）。', code=ErrorCode.INPUT_INVALID)
         if revision:
             if (input.previous_version.content.execution_mode != ExecutionMode.AGENT
@@ -165,7 +171,7 @@ class PlanningCoordinator:
         }
         if revision:
             # No stored IDs, original approval, trace or workflow keys in prompts.
-            payload['revision_feedback'] = input.feedback.strip()
+            payload['revision_feedback'] = feedback
             payload['previous_itinerary'] = input.previous_version.content.model_dump(mode='json',
                 include={'selected_campsite_ids', 'itinerary_entries'})
         system_prompt, action_schema, tool_version = self.protocol

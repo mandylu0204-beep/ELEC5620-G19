@@ -81,16 +81,17 @@ export function safetyCondition(kind:string,status:string,evidence:CheckEvidence
 }
 
 export function planRowState(row:{run_status:string|null;stage:string|null;version_status:string|null;search_outcome?:string|null;display_status?:string|null}){
-  if(row.run_status==='PENDING')return '等待开始规划';
-  if(row.run_status==='RUNNING')return '正在准备方案';
-  if(row.run_status==='FAILED')return '规划未完成';
-  if(row.run_status==='CANCELLED')return '已取消规划';
-  if(row.search_outcome==='NO_MATCH')return '未找到满足条件的营地';
-  const display:Record<string,string>={NEEDS_USER_INPUT:'需要用户补充',NEEDS_EVIDENCE:'需要补齐检查资料',NEEDS_REVISION:'需要修改方案',AWAITING_REVIEW:'等待人工审核',CANNOT_RELEASE:'需要调整方案'};
+  if(row.run_status==='PENDING')return '检查未完成';
+  if(row.run_status==='RUNNING')return '检查未完成';
+  if(row.run_status==='FAILED')return '检查未完成';
+  if(row.run_status==='CANCELLED')return '已取消检查';
+  if(row.run_status==='SUPERSEDED')return '历史方案';
+  if(row.search_outcome==='NO_MATCH')return '需要调整方案';
+  const display:Record<string,string>={NEEDS_USER_INPUT:'需要调整方案',NEEDS_EVIDENCE:'需要调整方案',NEEDS_REVISION:'需要调整方案',AWAITING_REVIEW:'等待人工审核',CANNOT_RELEASE:'需要调整方案'};
   if(row.display_status&&display[row.display_status])return display[row.display_status];
-  return ({FINALISED:'最终方案已保存',BLOCKED:'方案有待完善',REVISION_REQUIRED:'需要调整方案',
-    ESCALATED:'等待审核员处理',ELIGIBLE_FOR_FINALISATION:'方案已生成，待确认保存',ASSESSING:'正在检查方案',
-    REJECTED:'审核未通过',DRAFT:'方案草稿'} as Record<string,string>)[row.version_status??'']??'本次尚未生成行程';
+  return ({FINALISED:'最终方案已保存',BLOCKED:'需要调整方案',REVISION_REQUIRED:'需要调整方案',
+    ESCALATED:'等待人工审核',ELIGIBLE_FOR_FINALISATION:'待确认',ASSESSING:'检查未完成',
+    REJECTED:'需要调整方案',DRAFT:'检查未完成'} as Record<string,string>)[row.version_status??'']??'检查未完成';
 }
 
 export function blockerText(code:string){

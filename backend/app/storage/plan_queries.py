@@ -135,6 +135,8 @@ class PlanQueries:
                     if result['selected_final']:
                         stored['status'] = 'FINALISED'
                 result['version'] = stored
+                from .review_assistance import saved_notes
+                result['review_assistance_notes'] = saved_notes(connection,plan_id,run['id'],binding['version_id'])
                 result['model_planning_trace'] = load_model_trace(connection, scope, version)
                 result['model_assessment_audits'] = load_audits(connection, scope, version)
                 result['assessments'] = [StoredAssessment.model_validate_json(row['payload']).model_dump(mode='json')

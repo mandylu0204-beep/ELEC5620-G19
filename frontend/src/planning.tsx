@@ -1,10 +1,11 @@
 import { failureGuidance } from './failure_guidance';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ApiFailure } from './api';
 import type { PlanDetail } from './plans';
 import { privateApi, useSession } from './session';
 import { tripUpdatePath } from './trip_update';
+import {revisionReview} from './review_revision';
 
 export function revealRevisionPanel(id:string,find:(id:string)=>HTMLElement|null=id=>document.getElementById(id)){
   const panel=find(id);
@@ -21,10 +22,14 @@ export function preservedRevisionNotice(reason:unknown):string|null {
     ?reason.message:null;
 }
 
-export function ChangePlanning({ data, refresh, choice, onChoiceChange }: { data: PlanDetail; refresh: () => void;choice:string;onChoiceChange:(choice:string)=>void }) {
+export function ChangePlanning({ data, refresh, choice, onChoiceChange,reviewRequest=0 }: { reviewRequest?:number;data: PlanDetail; refresh: () => void;choice:string;onChoiceChange:(choice:string)=>void }) {
   const { session, reload } = useSession();
   const navigate = useNavigate();
   const [feedback, setFeedback] = useState('');
+  const [sourceReviewId,setSourceReviewId]=useState<string|null>(null);
+  const reviewSource=revisionReview(data);
+  function useReview(){if(reviewSource){onChoiceChange('custom');setFeedback(reviewSource.reason);setSourceReviewId(reviewSource.review_id);}}
+  useEffect(()=>{if(reviewRequest>0)useReview();},[reviewRequest]);
   const [busy, setBusy] = useState<'revise'|'reassess'|null>(null);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
@@ -36,7 +41,7 @@ export function ChangePlanning({ data, refresh, choice, onChoiceChange }: { data
     if (operation === 'revise' && !text) { setError('请填写修改意见。'); return; }
     const body = { expected_current_version_id: data.plan.current_version_id,
       expected_active_run_id: data.run.run_id, expected_version_revision: data.current_version_revision,
-      expected_run_revision: data.run.revision, ...(operation === 'revise' ? { feedback: text } : {}) };
+      expected_run_revision: data.run.revision, ...(operation === 'revise' ? { feedback: text,...(choice==='custom'&&sourceReviewId?{source_review_id:sourceReviewId}:{}) } : {}) };
     const payload = JSON.stringify({ operation, ...body });
     if (command.current?.payload !== payload) command.current = { payload, key: crypto.randomUUID() };
     setBusy(operation); setError(''); setNotice('');
@@ -58,7 +63,9 @@ export function ChangePlanning({ data, refresh, choice, onChoiceChange }: { data
   }
   return <section className="panel planning-change"><h2>调整方案与重新检查</h2>
     <p>新方案生成后，可对比并选择是否采用。重新检查会保留当前行程。</p>
-    <p className="muted">人数、日期、预算或露营资料有变化？请重新确认需求。</p>
+    <div className="modify-paths"><h3>修改需求或资料</h3><p>人数、日期、预算、必须条件或已有装备有变化时，先核对并重新确认。</p><Link className="text-link" to={tripUpdatePath(data.plan.plan_id)}>修改需求与资料并重新确认 ↗</Link></div>
+    <h3>修改行程安排</h3><p>保留已确认需求，生成待选方案后对比选择；若只更新检查依据，请使用下方重新检查。</p>
+    {reviewSource&&<div className="review-revision-source"><h3>审核员要求修改</h3><blockquote>{reviewSource.reason}</blockquote><button type="button" className="secondary-button" disabled={!!busy} onClick={useReview}>采用这条审核意见</button>{sourceReviewId&&<p>已关联原审核记录；核对修改意见后，点击生成待选方案才会执行模型。</p>}</div>}
     <label htmlFor="revision-choice">修改目标</label><select id="revision-choice" value={choice} disabled={!!busy} onChange={event => onChoiceChange(event.target.value)}>
       <option value="change campsite">更换营地</option><option value="cheaper campsite">寻找费用更低的营地</option><option value="custom">填写其他修改意见</option>
     </select>
