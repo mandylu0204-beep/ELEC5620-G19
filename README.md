@@ -1,182 +1,177 @@
 # CampMate AI
 
-ELEC5620 Stage 2 · React + TypeScript / FastAPI / SQLite。
+ELEC5620 Stage 2 — a local web application with a React/TypeScript frontend,
+FastAPI backend and SQLite database. This is a web project, not an Android/iOS
+application; no mobile build is required for this source package.
 
-悉尼及周边的新资料入口：`python scripts/sydney.py`（使用项目虚拟环境）。它使用独立的 `data/sydney_surrounds_v2_2`、当前悉尼日期和本地规则；10 个营地名称、设施和交通资料来自官方页面，费用为参考估算，动态条件仍使用模拟资料。启动、来源、历史兼容和验证范围见 [悉尼营地资料](docs/sydney_catalogue.md)。不会覆盖个人环境文件或旧数据库。
+Campers register/sign in, save group/equipment/transport details, confirm
+requirements, generate plans, compare revisions, update checks, obtain human
+review, save final plans and export PDFs. Founder accounts handle review and
+request assistance. Access is scoped by user and role.
 
-当前 A26 已集成独立 `synthetic_demo_v2_1`（2.1.0）：根据行程和实际营地自动匹配资料，显示覆盖缺口与查证过的调整建议，重新检查具有持久化反馈。校园模型正常规划、换营地修订、同版本重评、浏览器最终保存与资料不足守卫已验证，见 [真实验收](docs/a26_trip_live_acceptance.md)。**启动新数据和模型模式请先按 [VS Code 当前运行步骤](docs/vscode_current_run.md)**；默认 stub、个人环境文件及旧包不自动改写。以下 A16～A19 与四个 v2 场景保留历史适用范围，不能当作最新运行能力限制。
+Planning, logistics and safety model roles are integrated. Logistics proposes
+supply choices while code calculates quantities/costs. Model safety provides
+advice alongside the authoritative deterministic assessment. Missing facts,
+hard blockers, identity checks and approval guards remain enforced.
 
-A18提供无匹配时的“最接近的营地”对照：直接展示3个营地、未满足/未核实条件、预算差额与调整建议，修改后仍需用户确认。使用方法及接口边界见 [营地比较](docs/near_match_guidance.md)，已完整保留到 A19 集成中。
+## Install from the submitted source
 
-A19 整合 B 的模型修订和同版本重评：修订生成新版本及 trace，重评复用原行程和原生成 trace、只生成新评估；同时保留 A18 营地比较。顶部说明按后端能力显示。真实校园模型修订、浏览器最终保存、零模型调用重评、重启历史回读、用户隔离、缺失证据守卫和受控保存恢复已通过，见 [A19 验收](docs/model_revision_reassessment_live_acceptance.md)。全量669项通过，44项因Windows symlink特权跳过。接口见 [B 交接](docs/model_revision_reassessment_handoff.md)。下方 A16 PLAN-only 内容为历史验收范围。
+Install Python **3.12** and Node.js **22.12+**, including npm, before the on-site
+demonstration. Initial dependency installation requires network access. Open the
+extracted `campmate_app` folder. No private GitHub access or existing database
+is required.
 
-已实现登录、资料/需求确认、规划启动/重试、进度与产物展示、人工审核、修订/重新评估、最终快照与历史回读。B 的 synthetic_demo_v2 Adapter 和真实规则流程已接入 main；A-14 补齐前端资料取值和装备录入，通过四个场景的真实浏览器验收。A-15 增加异常引导、审核状态自动回读及需求复制后重新确认，并验证冲突修订/无匹配两个额外v2场景。默认仍为 stub、规划禁用；使用下方演示入口明确启用 v2，不自动回退 v1。工厂约定见 [Agent 运行配置接入](docs/agent_runtime_handoff.md)。
-
-> This prototype uses synthetic demonstration data. It must not be used for real trip planning, campsite availability, or safety decisions.
-
-A-16 已接入 B 的校园 HybridPlanningAgent：行程调用模型，其余步骤使用规则；仅支持首次 PLAN。调用 trace 与版本原子保存，并保留到最终快照。638项检查通过；正常场景的真实校园HTTP/浏览器流程、最终保存、服务重启回读和用户隔离已通过，见 [真实校园验收](docs/campus_live_browser_acceptance.md)。完整A14–A16和B组件已合入main（9996e74），远端CI通过。A17另验证真实模型超预算、证据缺失、封路守卫及受控保存失败恢复，见 [异常验收](docs/campus_exception_acceptance.md)。实际接口、明确启用方式及给B的交接见 [校园模型接线](docs/campus_model_wiring.md)。
-
-最终提交须满足 [Canvas 下载后演示验收](docs/canvas_submission.md)：下载 ZIP 后无需访问私有 GitHub 或使用作者电脑的配置，按随包说明可完成完整规则演示。四个 v2 规则场景已在本机真实浏览器验证，最新版干净 ZIP 安装、实际 Canvas 下载及另一台电脑复核仍待完成。校园模型模式另需校园凭据与网络可达，不能把离线规则演示当作模型验收。
-
-## 安装与启动
-
-测试环境：Windows、Python 3.12.14、Node.js 22.20.0。使用 Python 3.12 与 Node.js 22.12+；其他版本尚未做完整部署验证。依赖下载需要网络；规则模式使用本地 synthetic 数据，明确启用校园模型后规划需要连接校园代理。
-
-在项目根目录打开 PowerShell：
-
-```powershell
-.\scripts\setup.ps1
-.\scripts\start.ps1
-```
-
-首次 setup 建立 `.venv`、安装后端锁定依赖及前端 `npm ci`、从 `.env.example` 创建 `.env`。如需指定 Python，使用 `scripts/setup.ps1 -PythonExecutable '你的 Python 可执行文件路径'`。本机原有 Python 3.13 创建虚拟环境失败，本次使用 Codex 提供的 Python 3.12.14 建立了 `.venv`；环境目录不会提交 Git，换电脑应重新安装。
-
-打开 [前端预览](http://127.0.0.1:5173) 与 [API 文档](http://127.0.0.1:8000/docs)。两个服务只监听 127.0.0.1。启动终端按 Ctrl+C 停止两个子服务；后端修改后需重启，前端支持 Vite 热更新。端口被占用时脚本会退出，不终止已有进程：
+Windows PowerShell:
 
 ```powershell
-.\scripts\start.ps1 -BackendPort 8001 -FrontendPort 5174
+py -3.12 scripts/setup.py
 ```
 
-若 PowerShell 禁止运行 `.ps1`，已安装依赖后可直接使用 Python 启动，不需修改系统执行策略：
+macOS/Linux:
+
+```sh
+python3.12 scripts/setup.py
+```
+
+Setup creates `.venv`, installs `backend/requirements.lock`, installs the local
+backend package, runs `npm ci` and creates `.env` from `.env.example` only if
+missing. No PowerShell execution policy change is needed. Do not copy a virtual
+environment or `node_modules` from another checkout.
+
+## Start all three model roles
+
+Copy `config/campus_llm.example` to `.env.llm.local` in the project root and enter
+your own campus API key there. Keep it out of Git, Canvas, screenshots and
+reports. Connect to the campus network or USYD VPN. Prepare this local secret
+configuration separately from the source ZIP.
+
+Windows, from the project root:
 
 ```powershell
-.\.venv\Scripts\python.exe scripts\dev.py
-# 自定义端口：
-.\.venv\Scripts\python.exe scripts\dev.py --backend-port 8001 --frontend-port 5174
+$env:ELEC5620_MAX_COMPLETION_TOKENS = "4096"
+$env:ELEC5620_REASONING_EFFORT = "low"
+.\.venv\Scripts\python.exe scripts/sydney.py --mode agent --logistics model --safety model --safety-protocol compact
 ```
 
-首次安装也有 Python 入口：`py -3.12 scripts/setup.py`（或使用 Python 3.12 完整路径）。源码包、校验与隔离启动检查见 [部署准备](docs/deployment_preparation.md)。安装器使用锁文件，不覆盖已有 `.env`。
+macOS/Linux:
 
-Linux/macOS 可分别创建 venv、按 `backend/requirements.lock` 安装依赖、在 backend 执行 `pip install --no-deps -e .`，在 frontend 执行 `npm ci`，再以该 venv 的 Python 运行 `scripts/dev.py`。此流程有 CI 配置，尚未在另一台电脑或 Linux 上实际执行。
+```sh
+export ELEC5620_MAX_COMPLETION_TOKENS=4096
+export ELEC5620_REASONING_EFFORT=low
+.venv/bin/python scripts/sydney.py --mode agent --logistics model --safety model --safety-protocol compact
+```
 
-## 四个 v2 演示场景
+Open **http://127.0.0.1:5173**. API docs: http://127.0.0.1:8000/docs.
+Services bind to loopback only. Ctrl+C stops both. Restart after backend edits;
+refresh after frontend updates. If ports are occupied, append
+`--backend-port 8001 --frontend-port 5174`. No existing process is stopped.
 
-完成安装后，从项目根目录启动正常场景：
+The Sydney launcher selects data **2.2.0**, the current Sydney date, rolling
+evidence, `var/sydney/campmate.sqlite3` and `var/sydney/daily-snapshots`. Empty
+databases are created/migrated automatically; normal restarts retain them.
+Running `dev.py` alone retains configured defaults (stub unless overridden),
+so use the explicit Sydney command for the full application.
+
+Model actions consume campus requests. Health/readiness is not a model probe.
+Do not repeatedly submit failed runs; inspect the saved error/recovery options.
+External service availability and quota are not guaranteed. A model failure
+is not converted into rule success.
+
+## Rules-only startup
+
+For installation checks without campus credentials or model calls:
 
 ```powershell
-.\.venv\Scripts\python.exe scripts/demo.py --case normal
+.\.venv\Scripts\python.exe scripts/sydney.py
 ```
 
-打开 http://127.0.0.1:5173，登录、载入并明确保存演示资料，再填写和确认露营请求。脚本使用随包输入的固定时钟及独立数据库，不编辑个人 .env 或预先生成成功方案。其他场景为 budget_revision、missing_evidence、road_closure。每次停止服务、退出账户后切换场景；完整输入、浏览器步骤和结果见 [v2 演示指南](docs/demo/v2_browser_demo.md)。首次安装需要网络；业务演示无需 API key。
+On macOS/Linux use `.venv/bin/python`. Rules results do not establish model
+acceptance. Use the independent database/cache described in the rehearsal guide
+for controlled tests; do not replace a saved execution's configuration identity.
 
-额外可选 conflict_revision 和 no_match，见 [异常流程与审核后操作](docs/demo/a15_exception_flow.md)。高风险审核的独立v1夹具测试不代表正式v2高风险场景已交付；模型接入也不因规则演示通过而自动完成。
+## Accounts and walkthrough
 
-## 配置
+| Role | Username | Public local demonstration password |
+|---|---|---|
+| Camper A | `camper.a` | `CampMate-A-2026!` |
+| Camper B | `camper.b` | `CampMate-B-2026!` |
+| Founder/reviewer | `founder` | `CampMate-Founder-2026!` |
 
-在 `.env` 使用 `.env.example` 中的变量。相对路径以项目根目录为基准，不依赖当前终端目录。
+These are intentionally public local accounts, not campus credentials. New users
+can register Camper accounts. Profiles start empty; no successful plan,
+assessment or approval is preloaded.
 
-| 配置 | 默认值 | 作用 |
-| --- | --- | --- |
-| CAMPMATE_EXECUTION_MODE | stub | deterministic_demo 已注册 v1/v2 规则；agent 已注册 v2/2.1 Hybrid，支持 PLAN/REVISE/REASSESS，不自动回退 |
-| CAMPMATE_PLANNING_ENABLED | false | 明确开启后才能启动/修订/重新评估；演示脚本按场景开启 |
-| CAMPMATE_CLOCK_MODE | current | 正常运行读取悉尼当天日期；fixed 用于固定日期测试和指定演示 |
-| CAMPMATE_DEMO_TODAY | 2026-10-08 | 仅在 fixed 模式下作为检查日期；旧配置中单独存在此项不会冻结正常日期 |
-| CAMPMATE_SYNTHETIC_EVIDENCE_MODE | auto | current + v2.1 使用每日模拟快照；其他组合使用 sealed 原包；不查询真实天气 |
-| CAMPMATE_SNAPSHOT_CACHE_PATH | var/daily-snapshots | 独立、可校验的每日模拟快照；不覆盖 data 下的封存数据包 |
-| CAMPMATE_DATASET_PATH | data/synthetic_demo | 原始包的完整副本；业务源文件在其 data 子目录 |
-| CAMPMATE_DATASET_SCENARIO_FILES | [] | 已选数据包 data/scenarios 下的独立运行输入 JSON；摘要纳入确认/run 上下文 |
-| CAMPMATE_DATASET_SELECTION | {} | 服务器场景选用项；JSON 对象，纳入上下文，不能作为测试预期 |
-| CAMPMATE_DATABASE_PATH | var/campmate.sqlite3 | 启动时创建及迁移，重启保留；不提交 Git |
-| CAMPMATE_SEED_DEMO_ACCOUNTS | true | seed 三个演示账号；false 只关闭新增 seed，不删除已有账号 |
-| CAMPMATE_SESSION_HOURS | 8 | 服务器会话有效小时，系统时间计算 |
-| CAMPMATE_SECURE_COOKIES | false | 本地 HTTP；HTTPS 部署时设为 true |
+1. Camper A saves group, available equipment and transport.
+2. Enter destination, dates, meals, budget and required conditions.
+3. Generate/review the summary, acknowledge it and start planning.
+4. Inspect itinerary, equipment, costs and safety. Use specific correction links
+   for missing details. Profile edits require a new confirmation/check.
+5. High risk with complete information can enter Founder review. Approval cannot
+   waive hard blockers or missing evidence.
+6. Founder reviews the exact current assessments. Camper A then acknowledges
+   and saves the final plan. Check history/PDF and restart readback.
 
-正常日期、每日模拟资料、跨天恢复与重新检查的行为见
-[日期与资料快照说明](docs/current_date_and_daily_snapshots.md)。
+For **4 November 2026**, use the complete
+[Bonnie Vale request/rehearsal guide](docs/demo/bonnie_vale_review_request.md).
+It uses 5–7 November, two adults, AUD 1000 and verified inventory. The heavy-rain
+event applies to the **4 November checking snapshot**, not every date. Earlier
+rehearsal uses a fixed application date and independent database/cache; do not
+change the computer clock. The guide explains possible alternative campsite
+selection and a normal revision to Bonnie Vale.
 
-## 本地演示登录
+If browser translation changes page nodes and rendering fails, disable automatic
+translation for CampMate and reload. The recovery panel does not automatically
+resubmit a model action.
 
-打开前端 `/login`，使用公开的 synthetic 演示凭据：
+## Data and services
 
-| 角色 | 用户名 | 密码 |
-| --- | --- | --- |
-| Camper A | camper.a | CampMate-A-2026! |
-| Camper B | camper.b | CampMate-B-2026! |
-| Founder | founder | CampMate-Founder-2026! |
+Campsite names, documented facilities/access and permanent restrictions derive
+from official sources in the sealed `data/sydney_surrounds_v2_2` catalogue.
+Weather and changing fire/road conditions are **synthetic, finite demonstration
+inputs**; costs are reference allowances, not live quotes. No live forecast,
+transit timetable, booking inventory or real route API is queried. Explain this
+scope to the tutor. Do not use this prototype for real trip safety/availability.
+Source provenance remains in the dataset and audits.
 
-刷新页面会恢复登录；退出撤销服务器会话。Camper 只能读取自己的资料和方案，Founder 只能通过审核接口取得当前审核索引。数据库只存密码哈希。默认资料为空，不把原始数据中的 Profile ID 当成登录账号。启动脚本只监听 127.0.0.1；当前为本地演示版本。
+The model endpoint and public parameters are in `config/campus_llm.example`.
+Local credentials and campus connectivity must be available on the demo computer.
 
-## 当前页面与接口
+## Checks and source delivery
 
-- 项目概览：根据实际后端状态显示 source readability、数据库迁移与当前入口是否可用。
-- 露营资料 `/profile`：查看和编辑人数、经验、儿童、装备数量/容量、交通及无障碍需求；未知值保留为 null。
-- 露营请求 `/request`：保存草稿、生成摘要、澄清冲突、勾选确认并保存快照；从已保存列表恢复。两晚对应三天，日期冲突先澄清。启用对应模式与工厂后，确认页面可以开始规划并进入保存进度。
-- 开发预览 `/dev/request-preview`：`POST /api/v1/dev/interpret`，仅回显字段，不保存请求。
-- 登录：`POST /auth/login`、`GET /auth/me`、`POST /auth/logout` 管理会话。
-- Profile：`GET/PUT /profile`；Requests：`GET/POST /requests`、`GET/PATCH /requests/{id}`、`POST /requests/{id}/interpret`、`POST /requests/{id}/confirm`（均在 `/api/v1` 下）。
-- Plans：`/plans` 与 `/plans/{id}` 展示自己已保存的运行、推荐、行程、装备、费用和安全证据；活动运行自动读取保存进度，可选择历史 run。接口为 `GET /plans/{id}`、`GET /runs/{id}`，详见 [进度与产物展示](docs/plan_display.md)。
-- Review `/review`、`/review/{plan_id}`：Founder 查看当前审核依据，提交带理由的批准、拒绝或修订要求。批准后重算 eligibility，不自动最终化。详见 [人工审核流程](docs/founder_review.md)。
-- 最终保存：Camper 在当前方案中阅读并确认后保存；`/plans/{id}/finals/{final_id}` 展示不可覆盖的完整快照，明确区分当前与历史最终方案。详见 [最终化与历史](docs/finalisation.md)。
-- `GET /api/v1/health/live`：进程可响应。
-- `GET /api/v1/health/ready`：开发基础依赖、业务表迁移与数据包身份/输入摘要可验证；不表示完整业务规则或工作流已实现。
-- `GET /api/v1/meta`：演示模式、时钟、来源标签、disclaimer 与实际功能开关。
+See [Canvas submission](docs/canvas_submission.md) and
+[packaging/clean deployment](docs/deployment_preparation.md). Historical reports
+apply only to their own source/environment and do not prove this final ZIP was
+installed or tested from Canvas.
 
-请求预览是 loopback 开发工具；正式请求由登录后的 `/requests` 接口保存。审核使用 GET/POST `/api/v1/review/{plan_id}`；最终保存使用 POST `/api/v1/plans/{plan_id}/finalise`，快照回读使用 GET `/api/v1/plans/{plan_id}/finals/{final_id}`。规划执行、失败重试、修订与重新评估已接通。写入要求 X-CampMate-Client: 1，已登录写入另要求 X-CSRF-Token；浏览器自动携带 HttpOnly 会话 Cookie。确认要求匹配 revision、明确 acknowledged=true 和幂等 command_key，资料或数据变化后需重新生成摘要。详见 [资料与请求流程](docs/profile_request_flow.md)。
-
-## 文件位置与 B 接入
+Using the project virtual environment:
 
 ```text
-backend/app/contracts/      DTO、枚举、异常、AgentPort/PersistencePort
-backend/app/agents/stub.py  A 开发支架；B 可在 agents 下新增实际实现
-backend/app/application/agent_registry.py  通过模式注册 AgentPort 工厂
-backend/app/main.py         FastAPI 与健康/预览路由
-backend/app/auth.py         密码哈希、演示 seed、会话认证
-backend/app/http_accounts.py 登录、资料、列表及角色检查
-backend/app/http_requests.py 请求保存、摘要生成及明确确认
-backend/app/http_plans.py   已保存运行与方案详情读取
-backend/app/application/request_rules.py A 侧字段规范化与数据上下文
-backend/app/storage/        SQLite 迁移、Repository 与持久化端口
-frontend/src/              页面、路由、样式与 HTTP 调用
-data/synthetic_demo/        原始 10 个数据文件的完整副本
-data/synthetic_demo_v2/     当前定稿 2.0.0 / 2026-10-12 修订版
-data/synthetic_demo_v2_1/   独立 2.1.0；按行程、实际营地与检查日期匹配资料
-docs/demo/                 四套显式输入与浏览器复现步骤
-scripts/                   安装、启动、检查脚本
-docs/                      冻结设计、导出 schema 与实施证据
+python scripts/check.py                 # broad backend/frontend checks
+python scripts/package.py              # checkout: committed source ZIP + SHA-256
+python scripts/package.py --verify PATH_TO_ZIP
+python scripts/smoke.py                 # isolated rules HTTP deployment check
 ```
 
-A 提供的 DTO 是按基线形成的参考实现，B 首版 schema 需核对字段与规则。六个入口已在 AgentPort 定义；PersistencePort 已有按 owner/run 绑定的 SQLite 实现。A 登记 run 后向 B 传递受限端口，不让 B 创建审核或最终记录。实际绑定方式、限制与待对齐项见 [登录与存储说明](docs/storage_and_accounts.md)。B 通过 registry 注册 deterministic_demo 工厂；LLM 接入仍使用 synthetic 业务源及同一契约。
+From `backend`, `python -m app.export_contracts --check` verifies shared schema.
+The smoke uses no campus model or personal database and is not JavaScript/browser
+or live-model acceptance. No cloud CI is necessary for local submission checks.
 
-v2 的来源标识与运行输入摘要说明见 [数据上下文交接](docs/dataset_context_handoff.md)。当前默认仍为原 v1，v2 已随源码包含并通过 Adapter 接入。实际包版本由 manifest/来源识别，浏览器验收范围见 [实施状态](docs/implementation_status.md)。
+## Layout
 
-共同定义见 [端口代码](backend/app/contracts/ports.py) 和 [设计说明](docs/shared_contracts_spec.md)。[contracts.schema.json](docs/contracts.schema.json) 同时导出 validation 与 serialization schema；Decimal 数量输入和输出使用字符串，金额使用整数 cents。schema 更新后重新导出：
-
-```powershell
-Set-Location backend
-..\.venv\Scripts\python.exe -m app.export_contracts
+```text
+backend/app/              API, auth, agents, rules, SQLite, PDF
+backend/app/contracts/    shared schema 1.0
+backend/app/assets/fonts/ PDF fonts and license
+backend/tests/            offline tests
+frontend/src/             React application
+frontend/browser-tests/   isolated DOM regression
+data/                    sealed catalogue and versioned synthetic weather
+scripts/                  setup, startup, tests, packaging
+docs/demo/               repeatable input and walkthrough
 ```
 
-原始 `expected_*` 及风险/置信度标注属于测试 oracle，不得直接作为 Agent 输入或成功输出。stub 不提供推荐、行程、物流、安全或 orchestrate 的成功结果。
-
-## 检查及实施证据
-
-从项目根目录运行：
-
-```powershell
-.\scripts\check.ps1
-```
-
-PowerShell 脚本被禁止时可运行 `.\.venv\Scripts\python.exe scripts\check.py`。
-
-检查后端契约与 HTTP、导出 schema 是否同步，以及 TypeScript 和 Vite 生产构建。测试临时目录限制在项目 `var` 下，避免清理源码。当前实际结果、截图及限制见 [实施状态](docs/implementation_status.md)。此前 A-05 的 GitHub CI 已执行；A-06 至 A-09 的 CI 结果以功能分支 PR 检查为准。本机检查不能替代 B 的规则测试和端到端验收。
-
-## GitHub
-
-私有协作仓库：[LyraWangDev/ELEC5620-G19](https://github.com/LyraWangDev/ELEC5620-G19)。A-06 至 A-09 已通过 [PR #1](https://github.com/LyraWangDev/ELEC5620-G19/pull/1) 合并至 main（d83f3ba），该历史提交的 CI 已通过 129 项测试。2026-10-11 按用户授权，将 A-10 部署准备、Canvas 验收清单、v2 独立复核和数据上下文接入准备直接合并发布到 main，不创建新 PR。A-10 本地最终检查通过 149 项测试、schema 与前端构建；远端结果以 [main 的 CI](https://github.com/LyraWangDev/ELEC5620-G19/actions/workflows/ci.yml?query=branch%3Amain) 对应提交为准。协作步骤见 [贡献说明](CONTRIBUTING.md)，当前验证与限制见 [实施状态](docs/implementation_status.md)。
-
-上传范围为项目根目录的源码、文档、synthetic 数据、schema、锁文件和 CI。`.venv`、node_modules、`.env`、数据库、构建目录和日志已忽略。克隆后需在自己的电脑安装依赖并创建本地数据库；GitHub 仓库保存源码，服务仍按安装与启动说明在本地运行。
-
-后续修改建议使用分支和 Pull Request：
-
-```powershell
-git switch -c YOUR_FEATURE_BRANCH
-git add .
-git commit -m "Describe the change"
-git push -u origin YOUR_FEATURE_BRANCH
-```
-
-## 参考与后续任务
-
-源码打包、Python 安装入口与隔离 HTTP 部署检查见 [部署准备](docs/deployment_preparation.md)。真实 B v2 规则已完成 HTTP 和本机浏览器联调；下一步验证最新版提交包的干净安装。启动回执、执行租约、迟到任务拒绝和恢复 checkpoint 见 [运行恢复交接](docs/run_recovery.md)。任务与验收见 [开发 A 清单](docs/developer_a_backlog.md)。
-
-实现参考：[React 构建说明](https://react.dev/learn/build-a-react-app-from-scratch)、[Vite 入门](https://vite.dev/guide/)、[FastAPI 测试](https://fastapi.tiangolo.com/tutorial/testing/)、[Pydantic 标准类型](https://docs.pydantic.dev/latest/api/standard_library_types/)。CI 的 checkout、Python 和 Node 设置采用官方示例的 v7 调用形式：[checkout](https://github.com/actions/checkout)、[setup-python](https://github.com/actions/setup-python)、[setup-node](https://github.com/actions/setup-node)。
+The ZIP excludes Git metadata, keys/environment files, databases/sessions,
+runtime logs/caches, installed dependencies and untracked local diagnostics.
+Old datasets/validators remain for archived replay compatibility. User-facing
+text and these entry-point instructions are English; historical development
+records/comments may retain their original language.

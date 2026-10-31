@@ -1,0 +1,152 @@
+{
+  "description": "Synthetic inputs for an isolated rehearsal, not saved success records.",
+  "checking_date": "2026-11-04",
+  "profile": {
+    "group_size": 2,
+    "experience_level": "INTERMEDIATE",
+    "has_children": false,
+    "children_count": 0,
+    "accessibility_requirements": [],
+    "transport": {
+      "transport_type": "CAR",
+      "vehicle_count": 1,
+      "estimated_km": null,
+      "assumptions": []
+    },
+    "equipment": [
+      {
+        "item_key": "tent",
+        "label": "Tent",
+        "quantity": 1,
+        "unit": "item",
+        "capacity_persons": 2,
+        "confirmed": true
+      },
+      {
+        "item_key": "groundsheet",
+        "label": "Groundsheet",
+        "quantity": 1,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": true
+      },
+      {
+        "item_key": "tent_repair_kit",
+        "label": "Tent Repair Kit",
+        "quantity": 1,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": true
+      },
+      {
+        "item_key": "sleeping_bag",
+        "label": "Sleeping Bag",
+        "quantity": 2,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": true
+      },
+      {
+        "item_key": "sleeping_mat",
+        "label": "Sleeping Mat",
+        "quantity": 2,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": true
+      },
+      {
+        "item_key": "warm_liner",
+        "label": "Warm Liner",
+        "quantity": 2,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": true
+      },
+      {
+        "item_key": "warm_layers",
+        "label": "Warm Layers",
+        "quantity": 2,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": true
+      },
+      {
+        "item_key": "rain_jacket",
+        "label": "Rain Jacket",
+        "quantity": 2,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": true
+      },
+      {
+        "item_key": "drinking_water",
+        "label": "Drinking Water",
+        "quantity": 20,
+        "unit": "litre",
+        "capacity_persons": null,
+        "confirmed": true
+      },
+      {
+        "item_key": "meal_supplies",
+        "label": "Meal Supplies",
+        "quantity": 18,
+        "unit": "portion",
+        "capacity_persons": null,
+        "confirmed": true
+      },
+      {
+        "item_key": "first_aid_kit",
+        "label": "First Aid Kit",
+        "quantity": 1,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": true
+      },
+      {
+        "item_key": "torch",
+        "label": "Torch",
+        "quantity": 2,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": true
+      },
+      {
+        "item_key": "hand_sanitiser",
+        "label": "Hand Sanitiser",
+        "quantity": 1,
+        "unit": "item",
+        "capacity_persons": null,
+        "confirmed": true
+      },
+      {
+        "item_key": "vehicle",
+        "label": "Vehicle",
+        "quantity": 1,
+        "unit": "vehicle",
+        "capacity_persons": 2,
+        "confirmed": true
+      }
+    ]
+  },
+  "request": {
+    "raw_text": "",
+    "explicit_fields": {
+      "destination": "Sydney & Surrounds",
+      "start_date": "2026-11-05",
+      "duration_nights": 2,
+      "duration_days": 3,
+      "end_date": "2026-11-07",
+      "budget_cents": 100000,
+      "preferences": [
+        "quiet",
+        "ready-to-eat meals"
+      ],
+      "mandatory_constraints": [
+        "toilets",
+        "showers",
+        "potable_water",
+        "vehicle_access"
+      ]
+    }
+  }
+}

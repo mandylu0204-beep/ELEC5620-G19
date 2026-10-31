@@ -1,4 +1,4 @@
-"""Create/verify a source ZIP from a clean committed Git tree; no runtime files."""
+"""Archive committed source with a checksum manifest; never include local files."""
 import argparse
 from datetime import datetime, timezone
 import hashlib
@@ -22,7 +22,11 @@ def safe_path(name):
         raise ValueError(f'Unsafe package path: {name}')
     if any(part in DENIED for part in path.parts):
         raise ValueError(f'Runtime/private directory in source package: {name}')
-    if any(part.startswith('.env') and part != '.env.example' for part in path.parts) or path.suffix in {'.db', '.sqlite3', '.log', '.pyc', '.pyo'}:
+    lowered = path.name.lower()
+    if (any(part.startswith('.env') and part != '.env.example' for part in path.parts)
+            or path.suffix.lower() in {'.db', '.sqlite3', '.sqlite', '.log', '.pyc', '.pyo'}
+            or any(lowered.endswith(ext+suffix) for ext in ('.db','.sqlite3','.sqlite')
+                   for suffix in ('-wal','-shm','-journal'))):
         raise ValueError(f'Runtime/private file in source package: {name}')
 
 
@@ -51,8 +55,11 @@ def create(output):
         return subprocess.check_output(['git', *args], cwd=ROOT)
     if Path(git('rev-parse', '--show-toplevel').decode().strip()).resolve() != ROOT:
         raise ValueError('Run packaging from the project repository root')
-    if git('status', '--porcelain', '--untracked-files=normal').strip():
-        raise ValueError('Commit source changes first; only a clean committed tree can be packaged')
+    # Untracked local diagnostics are not a reason to publish or delete them.
+    # git archive reads HEAD only. Tracked changes still block packaging so the
+    # deliverable cannot silently omit work a developer has just reviewed.
+    if git('status', '--porcelain', '--untracked-files=no').strip():
+        raise ValueError('Commit tracked source changes first; archive uses committed HEAD only')
     commit = git('rev-parse', 'HEAD').decode().strip()
     output = output or ROOT / 'var/releases' / f'campmate-stage2-{commit[:12]}.zip'
     output = output.resolve()
@@ -70,8 +77,13 @@ def create(output):
                 files[entry.filename[len(PREFIX):]] = hashlib.sha256(source.read(entry)).hexdigest()
     committed_at = datetime.fromtimestamp(int(git('show', '-s', '--format=%ct', commit)), timezone.utc).isoformat()
     manifest = {'format_version': 1, 'commit': commit, 'committed_at': committed_at,
-        'scope': 'A/B development source package; v1 rule runtime integrated; v2 and full demo integration pending',
-        'default_execution_mode': 'stub', 'files': dict(sorted(files.items()))}
+        'scope': 'CampMate Stage 2 source: web frontend, API, SQLite migrations, Sydney 2.2 data, '
+                 'planning/logistics/safety roles, review and final snapshots. Acceptance status '
+                 'is separate; see docs/canvas_submission.md.',
+        'default_execution_mode': 'stub',
+        'recommended_launcher': 'scripts/sydney.py',
+        'archive_source': 'committed HEAD only; untracked and ignored files excluded',
+        'files': dict(sorted(files.items()))}
     result = io.BytesIO(payload)
     with zipfile.ZipFile(result, 'a', compression=zipfile.ZIP_DEFLATED) as archive:
         archive.writestr(zipfile.ZipInfo(MANIFEST), json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2).encode())

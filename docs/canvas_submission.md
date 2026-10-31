@@ -1,31 +1,56 @@
-# Canvas 下载后演示验收
+# Canvas source submission
 
-2026-10-10 用户新增交付要求：项目上传 Canvas 后，下载并解压的提交包必须能够按随包说明完成演示。这是最终交付的必要条件，不能用开发电脑上的运行结果代替。
+## Delivery target
 
-## 当前状态
+Deploy on-site from the source attachment downloaded from Canvas. CampMate is a
+web frontend plus API, not a mobile app. Prepare Python 3.12, Node.js 22.12+ and
+network/VPN in advance; install/build the project on-site from submitted source.
+The archive must work without private GitHub access, an author's absolute path,
+existing environment, copied database or hidden harness.
 
-2026-10-12：B 的 v2 Adapter/规则已合入 main，A-14 已在本机现有开发环境通过四个真实浏览器场景、审核阻止、历史快照、重启回读和用户隔离；步骤见 [v2 演示指南](demo/v2_browser_demo.md)。尚未对最新版 ZIP 完成全新环境安装、实际 Canvas 下载或另一台电脑复核，不能标为最终提交验收通过。此前 A-10 的129项干净安装与HTTP证据仅对应当时版本。
+## Final checks
 
-## 提交包要求
+1. Freeze the final commit. Reconcile B's exact live-test source/report and any
+   later changes; do not relabel historical evidence as a new full test.
+2. Commit intended source/data/docs. Packaging blocks tracked changes and reads
+   committed HEAD only. Private untracked diagnostics stay local, not published
+   or deleted. Review new intended untracked files before committing them.
+3. Generate the ZIP and SHA-256. Include source, locks, data/weather, migration
+   code, PDF font/license and current English setup/start/demo instructions.
+   Exclude keys, environment files, sessions, SQLite/WAL, dependencies and caches.
+4. Extract to a new folder and run setup for its own `.venv` and `node_modules`.
+   Verify backend imports resolve inside that extraction. No dependency links or
+   borrowed editable installation may be used to claim a clean install.
+5. Check isolated rules HTTP workflow, schema/build and appropriate browser paths.
+   Model testing separately needs credentials/network and an agreed call budget;
+   coordinate with B rather than repeating their calls.
+6. Where practical, have a teammate deploy the same ZIP on another computer.
+   Record hash, source, OS/runtime, mode and actual results/limitations.
+7. Upload, download the actual Canvas attachment, compare SHA-256 and inspect the
+   extracted folder/instructions. Submit before the deadline.
+8. Keep the downloaded ZIP/hash and separately prepared local secret config for
+   on-site deployment. Changes after acceptance require a new release/check.
 
-- 包内包含前后端源码、锁文件、迁移、synthetic 业务数据、演示场景输入、公开演示账号说明及安装/启动/演示步骤；运行不能依赖作者电脑的绝对路径、已有数据库或未提交文件。
-- 下载者无需访问私有 GitHub 仓库，也无需使用作者的账号、个人配置或 API key。数据库从空目录自动创建；演示场景通过明确的初始化或界面操作准备。
-- 最终版本接入 B 的 deterministic_demo，实现按输入、数据和规则计算的完整演示路径。LLM 如作为另一种运行方式，其配置与依赖单独说明；规则演示的验证不能冒充 LLM 验证。
-- 明确写出操作系统、Python/Node 版本、首次安装所需网络及本地地址。当前安装器需要联网下载依赖，现有源码包不承诺离线安装；若演示环境要求离线，需另行准备并验证该平台的依赖分发方式。
-- Windows 提供直接调用 Python 的安装与启动命令，避免必须修改 PowerShell 执行策略。演示说明包含端口占用处理、停止服务和重启后回读。
-- 固定 demo_today 与数据版本随包说明，真实系统日期变化不应令已验证场景失效。synthetic 标签与来源说明可见，开发预览信息不代替业务结果。
-- 交付说明区分首次演示、保留历史的重新演示及恢复初始场景的操作；初始化不得默认覆盖已有用户数据。
+## Presentation configuration
 
-## 最终验收步骤
+- Use the README's explicit three-model startup, 4096/low and compact safety.
+  Rules remain default. Startup is not a live model probe.
+- Configure `.env.llm.local` privately; never upload it. Check VPN connectivity.
+- Empty databases are created automatically. Enter/confirm the synthetic test
+  inventory and request normally; no successful run or approval is preloaded.
+- Founder approval applies to exact current assessments. Historical approval,
+  hard blockers or missing evidence must not authorize final saving.
+- For 4 November: check date **2026-11-04**, trip **2026-11-05 to 2026-11-07**.
+  Early rehearsal uses a fixed application date, not changed OS time. See the
+  [Bonnie Vale guide](demo/bonnie_vale_review_request.md).
+- Explain to the tutor that dynamic weather/road/fire inputs and costs are
+  synthetic/reference data, while catalogue names/facilities have cited sources.
 
-1. 固定最终提交 commit，生成 ZIP 与 SHA-256；核对包内文件完整性，确保所有演示依赖已纳入交付。
-2. 上传 Canvas 后重新下载实际附件并核对 SHA-256。在新目录解压，按包内 README 安装和启动；不借用原项目的 .venv、node_modules、.env 或数据库，不通过开发人员临时修补文件才能启动。
-3. 在浏览器完成登录、Profile、需求澄清与确认、启动规划、进度与产物展示、最终保存、历史回读。真实接入 B 的运行结果必须通过正常流程，不能用预先插入的成功记录或 stub 代替。
-4. 使用随包场景演示超预算及可行修订、安全证据缺失、道路关闭；验证相应修订/审核/阻止路径，人工批准不能绕过强制 blocker。
-5. 演示 Founder 的审核操作、另一 Camper 的权限隔离，以及停止并重启后已保存方案仍可读取。按说明恢复初始场景并再次演示。
-6. 至少由另一名组员在另一台干净电脑上依照说明复核，记录下载包 hash、系统及工具版本、数据版本、运行模式、步骤、实际结果和问题。实际 Canvas 下载验收在可上传后执行；此前可用相同 ZIP 做预验收，但需明确标为预验收。
-7. 包或业务代码在验收后改变时，重新打包并对变化影响的演示步骤回归；以最终上传附件的 hash 对齐验收证据。
+## Acceptance status
 
-## 需要 B 与数据负责人共同完成
-
-B 已交付可从空数据库启动的 v2 deterministic_demo、Adapter/workflow 和四套输入，A 已完成本机浏览器联调及随包启动说明；运行输入不包含测试 oracle 的 expected_*。下一步固定完整提交并生成新 ZIP，在新目录安装依赖、按演示指南复验，再由另一位组员在另一台电脑复核。实际 Canvas 附件上传/下载及 hash 校验在可提交时执行。
+A candidate's release report must name its commit and ZIP hash. Actual Canvas
+upload/download and on-site deployment remain user/team actions until completed.
+Do not claim another-machine installation, latest-source full backend regression
+or final live-model acceptance without evidence for that source. Local rules
+smoke, browser checks and model acceptance are different scopes. Do not re-enable
+GitHub Actions against the owner's quota.
