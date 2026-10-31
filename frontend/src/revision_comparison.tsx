@@ -12,8 +12,8 @@ export type RevisionComparisonData={proposal_id:string;revision:number;decision:
   can_adopt:boolean;can_keep:boolean;camp_saving_cents:number|null;total_saving_cents:number|null};
 
 export function savingsText(value:number|null,subject:string){
-  return value===null?`${subject}暂无法比较`:value>0?`${subject}预计节省 ${aud(value)}`
-    :value<0?`${subject}预计增加 ${aud(-value)}`:`${subject}没有变化`;
+  return value===null?`${subject} cannot yet be compared`:value>0?`${subject} estimated saving ${aud(value)}`
+    :value<0?`${subject} estimated increase ${aud(-value)}`:`${subject} unchanged`;
 }
 
 export function RevisionComparison({value,planId,refresh,readOnly=false}:{value:RevisionComparisonData|null|undefined;planId:string;refresh:()=>void;readOnly?:boolean}){
@@ -24,7 +24,7 @@ export function RevisionComparison({value,planId,refresh,readOnly=false}:{value:
   useEffect(()=>setError(''),[value?.proposal_id,value?.decision]);
   if(!value)return null;
   const pending=!value.decision;
-  const safety=(outcome:string|null|undefined)=>({PASSED:'检查通过',REVIEW:'待核实',REVISION:'需要调整',BLOCKED:'条件未满足'} as Record<string,string>)[outcome??'']??'尚未完成';
+  const safety=(outcome:string|null|undefined)=>({PASSED:'Checks passed',REVIEW:'Needs verification',REVISION:'Changes needed',BLOCKED:'Conditions not met'} as Record<string,string>)[outcome??'']??'Not completed';
   const row=(title:string,field:'nightly_fee_cents'|'camp_fee_cents'|'total_cents')=><tr><th scope="row">{title}</th>
     <td>{aud(value.before[field])}</td><td>{aud(value.after[field])}</td></tr>;
   async function choose(decision:'ADOPT'|'KEEP'){
@@ -39,27 +39,27 @@ export function RevisionComparison({value,planId,refresh,readOnly=false}:{value:
         body:JSON.stringify({...body,command_key:command.current.key})});
       navigate('/plans/'+encodeURIComponent(planId));refresh();
     }catch(reason){
-      setError(reason instanceof Error?reason.message:'选择结果暂未确认，请刷新查看或重试同一次选择。');
+      setError(reason instanceof Error?reason.message:'Your selection is not yet confirmed. Refresh or retry the same selection.');
       if(reason instanceof ApiFailure&&reason.envelope.error.code==='UNAUTHENTICATED')reload();
     }finally{setBusy(false);}
   }
-  return <section className="panel revision-comparison" aria-label="新旧方案对比">
-    <div className="section-title"><span className="eyebrow">方案对比</span><h2>{value.legacy?'当前方案与上一版对比':value.decision==='ADOPT'?'已采用新方案':value.decision==='KEEP'?'已保留原方案':'选择适合你的方案'}</h2></div>
-    {value.status==='GENERATING'?<p role="status">正在生成待选方案，原方案仍保留为当前方案。</p>
-      :value.status==='FAILED'?<p role="status">新方案未完成，原方案不受影响。你可以保留原方案。</p>
-      :<><p className="revision-campsites">{value.before.campsite_ids.map(campName).join(' / ')||'原营地'} → {value.after.campsite_ids.map(campName).join(' / ')||'待确认'}</p>
-      <div className="table-scroll"><table><caption>费用估算对比</caption><thead><tr><th>对比项</th><th>原方案</th><th>新方案</th></tr></thead><tbody>
-        <tr><th scope="row">营地</th><td>{value.before.campsite_ids.map(campName).join(' / ')}</td><td>{value.after.campsite_ids.map(campName).join(' / ')||'待确认'}</td></tr>
-        {row('每晚营地费','nightly_fee_cents')}{row(`营地费合计（${value.before.duration_nights} 晚）`,'camp_fee_cents')}{row('全部费用估算','total_cents')}
-        <tr><th scope="row">安全检查</th><td>{safety(value.before.safety_outcome)}</td><td>{safety(value.after.safety_outcome)}</td></tr>
+  return <section className="panel revision-comparison" aria-label="Compare original and new plans">
+    <div className="section-title"><span className="eyebrow">Plan comparison</span><h2>{value.legacy?'Compare current and previous plans':value.decision==='ADOPT'?'New plan adopted':value.decision==='KEEP'?'Original plan retained':'Choose the plan that suits you'}</h2></div>
+    {value.status==='GENERATING'?<p role="status">Generating a proposed plan. The original remains the current plan.</p>
+      :value.status==='FAILED'?<p role="status">The new plan is incomplete. The original is unaffected and can be retained.</p>
+      :<><p className="revision-campsites">{value.before.campsite_ids.map(campName).join(' / ')||'Original campsite'} → {value.after.campsite_ids.map(campName).join(' / ')||'To be confirmed'}</p>
+      <div className="table-scroll"><table><caption>Cost estimate comparison</caption><thead><tr><th>Comparison item</th><th>Original plan</th><th>New plan</th></tr></thead><tbody>
+        <tr><th scope="row">Campsite</th><td>{value.before.campsite_ids.map(campName).join(' / ')}</td><td>{value.after.campsite_ids.map(campName).join(' / ')||'To be confirmed'}</td></tr>
+        {row('Nightly campsite fee','nightly_fee_cents')}{row(`Total campsite fee (${value.before.duration_nights} nights)`,'camp_fee_cents')}{row('Estimated total cost','total_cents')}
+        <tr><th scope="row">Safety checks</th><td>{safety(value.before.safety_outcome)}</td><td>{safety(value.after.safety_outcome)}</td></tr>
       </tbody></table></div>
-      <p><strong>{savingsText(value.camp_saving_cents,'营地费')}</strong></p><p>{savingsText(value.total_saving_cents,'总费用')}</p>
+      <p><strong>{savingsText(value.camp_saving_cents,'Campsite fee')}</strong></p><p>{savingsText(value.total_saving_cents,'Total cost')}</p>
     </>}
-    {pending&&value.status==='READY'&&<p>选择采用后，新方案才会成为当前方案。</p>}
-    {value.after.version_id&&<Link className="text-link" to={'/plans/'+encodeURIComponent(planId)+'?run_id='+encodeURIComponent(value.after.run.run_id)}>查看新方案详情 ↗</Link>}
+    {pending&&value.status==='READY'&&<p>The new plan becomes current only after you adopt it.</p>}
+    {value.after.version_id&&<Link className="text-link" to={'/plans/'+encodeURIComponent(planId)+'?run_id='+encodeURIComponent(value.after.run.run_id)}>View new plan details ↗</Link>}
     {pending&&!readOnly&&<div className="plan-actions">
-      <button className="primary-button" disabled={busy||!value.can_adopt} onClick={()=>void choose('ADOPT')}>{busy?'正在保存选择…':'采用新方案'}</button>
-      <button className="secondary-button" disabled={busy||!value.can_keep} onClick={()=>void choose('KEEP')}>保留原方案</button>
+      <button className="primary-button" disabled={busy||!value.can_adopt} onClick={()=>void choose('ADOPT')}>{busy?'Saving selection…':'Use proposed plan'}</button>
+      <button className="secondary-button" disabled={busy||!value.can_keep} onClick={()=>void choose('KEEP')}>Keep original plan</button>
     </div>}
     {error&&<p className="error-box" role="alert">{error}</p>}
   </section>;

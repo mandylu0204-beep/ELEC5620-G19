@@ -8,7 +8,7 @@ type SourcePlan={plan:{plan_id:string;current_version_id:string|null};
   run:{run_id:string;revision:number;status:string;is_active:boolean}|null};
 export function tripUpdateSource(data:SourcePlan):SuccessorSource {
   if(!data.run?.is_active||['PENDING','RUNNING'].includes(data.run.status)||data.trip_series?.is_current===false)
-    throw new Error('来源方案正在检查或已被取代。请返回本次出行，核对当前方案后再更新。');
+    throw new Error('The source plan is being checked or was superseded. Return to this trip and review its current plan before updating.');
   return {plan_id:data.plan.plan_id,expected_series_revision:data.trip_series?.series_revision??0,
     expected_current_version_id:data.plan.current_version_id,expected_version_revision:data.current_version_revision??null,
     expected_active_run_id:data.run.run_id,expected_run_revision:data.run.revision};
@@ -45,7 +45,7 @@ export async function openTripUpdate(api:Api,storage:Storage,userId:string,planI
     command=JSON.parse(saved);
     if(!command?.source||typeof command.key!=='string'||command.key.length<16||command.key.length>128||
       JSON.stringify({...command.source,expected_series_revision:undefined})!==JSON.stringify(identity))
-      throw new Error('本次更新命令无法核对，请返回来源方案；不要另建独立出行替代重试。');
+      throw new Error('This update command cannot be verified. Return to the source plan; do not create an independent trip to replace the retry.');
   }else{
     command={source,key:newKey()};storage.setItem(slot,JSON.stringify(command));
   }

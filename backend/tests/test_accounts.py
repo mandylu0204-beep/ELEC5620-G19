@@ -22,7 +22,7 @@ def test_login_cookie_csrf_logout_expiry_and_no_client_role(tmp_path):
         for username in ('unknown', 'camper.a'):
             bad = client.post('/api/v1/auth/login', headers=CLIENT_HEADER, json={'username': username, 'password': 'wrong'})
             assert bad.status_code == 401
-            assert bad.json()['error']['message'] == '用户名或密码错误。'
+            assert bad.json()['error']['message'] == 'Incorrect username or password.'
         spoofed = client.post('/api/v1/auth/login', headers=CLIENT_HEADER, json={'username': 'camper.a', 'password': 'CampMate-A-2026!', 'role': 'FOUNDER'})
         assert spoofed.status_code == 422
         session = login(client)

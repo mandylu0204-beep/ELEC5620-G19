@@ -34,12 +34,12 @@ export class ApiFailure extends Error {
 }
 async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(url, { signal });
-  if (!response.ok) throw new Error(`服务返回 HTTP ${response.status}`);
+  if (!response.ok) throw new Error(`Service response HTTP ${response.status}`);
   return response.json() as Promise<T>;
 }
 export async function loadStatus(signal?: AbortSignal): Promise<{ meta: Meta; ready: Ready }> {
   const [meta, response] = await Promise.all([getJson<Meta>('/api/v1/meta', signal), fetch('/api/v1/health/ready', { signal })]);
-  if (response.status !== 200 && response.status !== 503) throw new Error('无法读取服务就绪状态。');
+  if (response.status !== 200 && response.status !== 503) throw new Error('Could not read service readiness.');
   return { meta, ready: await response.json() as Ready };
 }
 export async function previewRequest(raw_text: string, explicit_fields: Partial<Requirements>): Promise<PreviewResult> {

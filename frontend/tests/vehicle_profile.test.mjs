@@ -3,14 +3,14 @@ import assert from 'node:assert/strict';
 import {prepareProfileEquipment,vehicleCount} from '../src/vehicle_profile.ts';
 import {profileFocusId} from '../src/profile_focus.ts';
 
-const car=(quantity,capacity='5',confirmed=false)=>({item_key:'vehicle',label:'车辆',quantity,capacity,confirmed,unit:'vehicle'});
+const car=(quantity,capacity='5',confirmed=false)=>({item_key:'vehicle',label:'Vehicles',quantity,capacity,confirmed,unit:'vehicle'});
 
 test('transport count seeds an unconfirmed vehicle draft without inventing seats or ownership',()=>{
   const rows=prepareProfileEquipment([],'CAR','2');
   assert.deepEqual(rows,[car('2','')]);
   assert.equal(vehicleCount(rows),'2');
   assert.deepEqual(prepareProfileEquipment([],'PUBLIC_TRANSPORT',''),[{
-    item_key:'transport_itinerary',label:'往返及接驳计划',quantity:'',unit:'plan',capacity:'',confirmed:false,
+    item_key:'transport_itinerary',label:'Return journey and connection plan',quantity:'',unit:'plan',capacity:'',confirmed:false,
   }]);
 });
 

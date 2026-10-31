@@ -77,7 +77,7 @@ class LogisticsToolset:
         self._costs = {f'line-{i}': line for i, line in enumerate(self.baseline.cost_breakdown)}
         if (len(self._gear) != len(self.baseline.gear_checklist)
                 or not 1 <= len(self._gear) <= 64 or not 1 <= len(self._costs) <= 128):
-            raise model_failure('规则事实的装备或费用清单超出受控范围。', code=ErrorCode.CONTRACT_INVALID)
+            raise model_failure('Rule equipment or cost lists exceed controlled bounds.', code=ErrorCode.CONTRACT_INVALID)
         self._quotes = {}
         for line_id, line in self._costs.items():
             if line.category != 'ADDITIONAL_GEAR':
@@ -85,7 +85,7 @@ class LogisticsToolset:
             key = REFERENCE_ITEMS.get(line.item_key, line.item_key)
             if key in self._gear:
                 if key in self._quotes:
-                    raise model_failure('装备费用来源存在重复关联。', code=ErrorCode.CONTRACT_INVALID)
+                    raise model_failure('Equipment-cost sources contain duplicate links.', code=ErrorCode.CONTRACT_INVALID)
                 self._quotes[key] = (line_id, line)
         for item in self.baseline.gear_checklist:
             if (item.item_key not in self._quotes and item.missing_quantity != 0
@@ -101,7 +101,7 @@ class LogisticsToolset:
                 self._costs[key] = line
                 self._quotes[item.item_key] = (key, line)
         if len(self._costs) > 128:
-            raise model_failure('方案费用清单超出受控范围。', code=ErrorCode.CONTRACT_INVALID)
+            raise model_failure('Proposal cost list exceeds controlled bounds.', code=ErrorCode.CONTRACT_INVALID)
 
     def options(self, item):
         if item.missing_quantity is None:
@@ -144,16 +144,16 @@ class LogisticsToolset:
         proposal = LogisticsProposal.model_validate(raw)
         keys = [choice.item_key for choice in proposal.gear_choices]
         if len(keys) != len(set(keys)) or set(keys) != set(self._gear):
-            raise model_failure('模型必须逐项覆盖原装备清单，不能遗漏、重复或发明物品。', code=ErrorCode.CONTRACT_INVALID)
+            raise model_failure('The model must cover every original equipment item exactly once without omissions, duplicates or invented items.', code=ErrorCode.CONTRACT_INVALID)
         if len(proposal.cost_priority) != len(set(proposal.cost_priority)) or set(proposal.cost_priority) != set(self._costs):
             raise cost_priority_failure(tuple(self._costs),proposal.cost_priority)
         if not proposal.decision_summary.strip() or any(not choice.reason.strip() for choice in proposal.gear_choices):
-            raise model_failure('模型方案说明不能为空。', code=ErrorCode.CONTRACT_INVALID)
+            raise model_failure('Model proposal explanation cannot be blank.', code=ErrorCode.CONTRACT_INVALID)
         actions, projected = [], {key: line.model_copy(deep=True) for key, line in self._costs.items()}
         for choice in proposal.gear_choices:
             item = self._gear[choice.item_key]
             if choice.method not in self.options(item):
-                raise model_failure('模型补缺方式不符合已确认数量或实际参考价格。', code=ErrorCode.CONTRACT_INVALID)
+                raise model_failure('Model gap-resolution methods do not match confirmed quantities or actual reference prices.', code=ErrorCode.CONTRACT_INVALID)
             quote = self._quotes.get(item.item_key)
             priced = choice.method in {'PROPOSE_RENTAL', 'PROPOSE_PURCHASE'}
             confirmed = choice.method == 'KEEP_CONFIRMED'
@@ -209,7 +209,7 @@ class LogisticsToolset:
             decision_summary=plan.decision_summary_unverified,
         ))
         if verified != plan:
-            raise model_failure('装备方案的数量、价格、预算或来源与确定性计算不符。', code=ErrorCode.CONTRACT_INVALID)
+            raise model_failure('Equipment proposal quantities, prices, budget or sources differ from deterministic calculations.', code=ErrorCode.CONTRACT_INVALID)
         # Preserve ALL actual stock, blocker, clarification and transport facts.
         # Proposal choices can reorder gear and change prospective gap estimates,
         # but can never turn an unresolved original verdict into PASSED.

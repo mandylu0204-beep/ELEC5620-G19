@@ -1,0 +1,19 @@
+// Exact historical host syntax only. Original records are never changed.
+const names:Record<string,string>={"\u5395\u6240": "Toilets", "\u6dcb\u6d74": "Showers", "\u996e\u7528\u6c34": "Drinking water", "\u7528\u706b": "Fire use", "\u5ba0\u7269\u540c\u884c": "Pets", "\u65e0\u969c\u788d\u8bbe\u65bd": "Accessibility facilities", "\u65e0\u53f0\u9636\u901a\u9053": "Step-free path", "\u8f66\u8f86\u8fdb\u5165\u8425\u5730": "Vehicle access to campsite", "\u516c\u5171\u4ea4\u901a\u62b5\u8fbe": "Public transport arrival"};
+const transport:Record<string,string>={"\u4ea4\u901a\uff1a\u8d44\u6599\u767b\u8bb0\u652f\u6301\u516c\u5171\u4ea4\u901a\u62b5\u8fbe\uff1b\u5b9e\u9645\u5f80\u8fd4\u73ed\u6b21\u53ca\u6700\u540e\u63a5\u9a73\u4ecd\u9700\u786e\u8ba4\u3002": "Transport: public transport access is recorded; verify actual return services and final connections.", "\u4ea4\u901a\uff1a\u8d44\u6599\u767b\u8bb0\u652f\u6301\u8f66\u8f86\u62b5\u8fbe\u3002": "Transport: registered information supports vehicle access.", "\u4ea4\u901a\uff1a\u53ef\u9a7e\u8f66\u62b5\u8fbe\u505c\u8f66\u5904\uff0c\u4e4b\u540e\u9700\u642c\u8fd0\u88c5\u5907\u6b65\u884c\u8fdb\u5165\u8425\u4f4d\uff1b\u8f66\u8f86\u4e0d\u80fd\u76f4\u63a5\u8fdb\u5165\u8425\u4f4d\u3002": "Transport: drive to the parking area, then carry equipment to the campsite on foot. Vehicles cannot enter the campsite directly."};
+const patterns=["^\u76ee\u7684\u5730\u533a\u57df\uff1a(.+)\uff0c\u4e0e\u672c\u6b21\u9009\u62e9\u4e00\u81f4\u3002$", "^\u540c\u884c\u4eba\u6570\uff1a\u672c\u6b21 (\\d+) \u4eba\uff0c\u767b\u8bb0\u4eba\u6570\u4e0a\u9650 (\\d+) \u4eba\u3002$", "^\u5fc5\u987b\u6761\u4ef6\uff1a(.+)\uff0c\u767b\u8bb0\u4fe1\u606f\u4e3a(\u652f\u6301|\u4e0d\u652f\u6301|\u672a\u77e5)\u3002$", "^\u8425\u5730\u914d\u5957\uff1a(.+?)(\u5df2\u767b\u8bb0\u63d0\u4f9b\u3002|\u672a\u63d0\u4f9b\uff0c\u9700\u53e6\u4f5c\u5b89\u6392\u3002)$", "^\u4f4f\u5bbf\u8d39\u7528\uff1a\u6bcf\u665a AUD (.+)\uff0c(\\d+) \u665a\u5408\u8ba1 AUD (.+)\uff1b\u4ec5\u4e3a\u8425\u5730\u8d39\uff0c\u5b8c\u6574\u8d39\u7528\u4ecd\u9700\u68c0\u67e5\u3002$"].map(value=>new RegExp(value,'u'));
+const states:Record<string,string>={"\u652f\u6301": "supported", "\u4e0d\u652f\u6301": "not supported", "\u672a\u77e5": "unknown"};
+export function englishSavedReason(text:string):string {
+  if(Object.hasOwn(transport,text))return transport[text];
+  let match=text.match(patterns[0]);if(match)return `Destination region: ${match[1]}, matches this selection.`;
+  match=text.match(patterns[1]);if(match)return `Group size: this trip has ${match[1]} people; recorded capacity is ${match[2]} people.`;
+  match=text.match(patterns[2]);if(match&&Object.hasOwn(names,match[1]))return `Required condition: ${names[match[1]]}; registered information: ${states[match[2]]}.`;
+  match=text.match(patterns[3]);if(match&&Object.hasOwn(names,match[1]))return `Campsite facilities: ${names[match[1]]}; ${match[2]==="\u5df2\u767b\u8bb0\u63d0\u4f9b\u3002"?'Listed as provided.':'Not provided; make alternative arrangements.'}`;
+  match=text.match(patterns[4]);if(match)return `Accommodation cost: per night AUD ${match[1]}, ${match[2]} nights total AUD ${match[3]}; Campsite fees only; full trip costs still need checking.`;
+  // Also accept previously displayed English formatting in imported fixtures.
+  match=text.match(/^Required condition:\s*(.+?)[,;]\s*(?:listed as|Recorded as|registered information:)\s*(supported|unsupported|not supported|unknown)\.$/iu);
+  if(match)return `Required condition: ${match[1]}; registered information: ${match[2].toLowerCase()==='unsupported'?'not supported':match[2].toLowerCase()}.`;
+  match=text.match(/^Campsite facilities:\s*([^;]+?)(?: (?:is|are))? (?:listed as provided|unavailable; make alternative arrangements)\.$/iu);
+  if(match)return `Campsite facilities: ${match[1]}; ${text.includes('unavailable;')?'Not provided; make alternative arrangements.':'Listed as provided.'}`;
+  return text;
+}

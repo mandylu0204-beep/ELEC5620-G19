@@ -87,7 +87,7 @@ def parse_action(text, *, detailed=False):
     try:
         return (DETAILED_ACTION if detailed else ACTION).validate_python(strict_json(stripped))
     except (ValueError, TypeError, ValidationError, RecursionError):
-        raise model_failure('模型未返回合法的规划动作 JSON；没有采纳任何行程。',
+        raise model_failure('The model did not return a valid planning action. JSON; No itinerary was adopted.',
             code=ErrorCode.CONTRACT_INVALID) from None
 
 
@@ -111,9 +111,9 @@ def validated_itinerary(dataset, input, proposal, exposed_ids):
         if input.previous_version is not None:
             previous = input.previous_version.content
             feedback = revision_goal(input.feedback)
-            if feedback in {'change campsite', '更换营地'} and proposal.campsite_id in previous.selected_campsite_ids:
+            if feedback in {'change campsite', 'Change campsite'} and proposal.campsite_id in previous.selected_campsite_ids:
                 raise ValueError('The requested campsite change was not made')
-            if feedback in {'cheaper campsite', '更便宜的营地'}:
+            if feedback in {'cheaper campsite', 'Cheaper campsite'}:
                 old_fees = [dataset.get_campsite(key).nightly_fee_cents for key in previous.selected_campsite_ids]
                 if len(old_fees) != 1 or campsite.nightly_fee_cents >= old_fees[0]:
                     raise ValueError('The requested lower campsite fee was not achieved')
@@ -138,5 +138,5 @@ def validated_itinerary(dataset, input, proposal, exposed_ids):
         validate_itinerary_content(dataset, result, input.confirmed_requirements)
         return result
     except (ValueError, TypeError, ValidationError, ContractFailure):
-        raise model_failure('模型行程不符合工具候选、确认日期或硬约束；未保存方案。',
+        raise model_failure('The model itinerary does not match tool candidates, confirmed dates or hard constraints. No plan saved.',
             code=ErrorCode.CONTRACT_INVALID) from None

@@ -36,8 +36,8 @@ def test_closest_budget_gap_is_ranked_before_soft_preference_and_never_enters_ca
     assert [item['campsite_id'] for item in value['near_matches']]==['closest','far','two-issues']
     first=value['near_matches'][0]
     assert first['campsite_subtotal_cents']==4000 and first['budget_excess_cents']==3900
-    assert first['issues'][0]['expected']=='小组总预算 AUD 1.00'
-    assert 'AUD 39.00' in first['issues'][0]['detail'] and '尚未加' in first['issues'][0]['detail']
+    assert first['issues'][0]['expected']=='Total group budget AUD 1.00'
+    assert 'AUD 39.00' in first['issues'][0]['detail'] and 'are additional' in first['issues'][0]['detail']
 
 def test_cap_limit_is_three_and_ties_are_stable_not_dataset_order():
     camps=[base_camp(campsite_id=key) for key in ['d','c','b','a']]
@@ -48,7 +48,7 @@ def test_known_missing_and_unknown_feature_remain_distinct_and_price_unknown_is_
     req=requirements(budget_cents=50000,mandatory_constraints=['showers'])
     _,value=comparison([base_camp(campsite_id='absent',showers=False),base_camp(campsite_id='unknown',showers=None,nightly_fee_cents=None)],req)
     absent,unknown=value['near_matches']
-    assert absent['issues'][0]['status']=='MISMATCH' and absent['issues'][0]['actual']=='明确不提供'
+    assert absent['issues'][0]['status']=='MISMATCH' and absent['issues'][0]['actual']=='Explicitly not provided'
     assert unknown['issues'][0]['status']=='UNVERIFIED' and unknown['campsite_subtotal_cents'] is None
     assert unknown['budget_excess_cents'] is None
 
@@ -56,9 +56,9 @@ def test_group_and_season_gaps_are_specific_without_advising_fictitious_profile_
     req=requirements(budget_cents=50000)
     _,value=comparison([base_camp(max_group_size=1,supported_seasons=['winter'])],req)
     issues={i['field']:i for i in value['near_matches'][0]['issues']}
-    assert issues['profile.group_size']['expected']=='2 人' and '差 1 人' in issues['profile.group_size']['detail']
-    assert '实际同行人数变化' in issues['profile.group_size']['suggestion']
-    assert '冬季' in issues['start_date']['actual']
+    assert issues['profile.group_size']['expected']=='2 people' and 'Capacity shortfall:  1 people' in issues['profile.group_size']['detail']
+    assert 'actual group size changes' in issues['profile.group_size']['suggestion']
+    assert 'Winter' in issues['start_date']['actual']
 
 def test_stale_metadata_uses_saved_exclusions_and_does_not_replace_old_price_or_reasons():
     data,_=comparison([base_camp()])
@@ -77,8 +77,8 @@ def test_explicit_false_accessibility_is_not_presented_as_merely_unknown():
     profile=full_profile().model_copy(update={'accessibility_requirements':['step-free path']})
     _,value=comparison([base_camp(step_free_path=False,wheelchair_accessible=True,facilities=['accessible path'])],requirements(budget_cents=50000),profile)
     issue=value['near_matches'][0]['issues'][0]
-    assert issue['status']=='MISMATCH' and issue['actual']=='明确不提供'
-    assert '保留实际无障碍需求' in issue['suggestion']
+    assert issue['status']=='MISMATCH' and issue['actual']=='Explicitly not provided'
+    assert 'Keep actual accessibility needs' in issue['suggestion']
 
 def launch_no_match(client):
     headers=sign_in(client)

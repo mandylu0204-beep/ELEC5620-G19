@@ -46,7 +46,7 @@ def test_no_verified_cheaper_matching_site_is_a_normal_preserved_outcome(kind):
         require_cheaper_campsite(dataset, confirmed, content)
     assert error.value.error.code == 'INPUT_INVALID'
     assert error.value.error.context == {'revision_outcome': 'NO_CHEAPER_CAMPSITE'}
-    assert '原方案已保留' in error.value.error.message
+    assert 'original plan is retained' in error.value.error.message
 
 
 def test_known_lower_fee_is_allowed_but_an_unknown_previous_fee_cannot_be_compared():
@@ -89,7 +89,7 @@ def test_http_no_cheaper_preserves_current_and_final_records_and_never_dispatche
         response = change(client, headers, original, 'revise', feedback='cheaper campsite')
         assert response.status_code == 422, response.text
         assert response.json()['error']['context'] == {'revision_outcome': 'NO_CHEAPER_CAMPSITE'}
-        assert '原方案已保留' in response.json()['error']['message']
+        assert 'original plan is retained' in response.json()['error']['message']
         from test_plan_changes import command
         proposal_response=client.post(path+'/revision-proposals',headers=headers,
             json=command(original,feedback='cheaper campsite'))

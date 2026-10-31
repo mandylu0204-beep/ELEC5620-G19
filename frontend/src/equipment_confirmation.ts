@@ -14,7 +14,7 @@ export function equipmentForSave<T extends QuantifiedEquipment>(rows:T[]):T[]{
 export function equipmentPayload(rows:QuantifiedEquipment[]):Equipment[]{
   const count=(value:string,minimum:number):number|null=>{
     if(value==='')return null;
-    if(!knownQuantity(value)||Number(value)<minimum)throw new Error('装备数量与容量请填写有效整数，未知可留空。');
+    if(!knownQuantity(value)||Number(value)<minimum)throw new Error('Enter valid whole numbers for equipment quantity and capacity. Leave unknown values blank.');
     return Number(value);
   };
   return equipmentForSave(rows).map(row=>({item_key:row.item_key,label:row.label.trim(),

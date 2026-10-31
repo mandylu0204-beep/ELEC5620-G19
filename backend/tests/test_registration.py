@@ -6,7 +6,7 @@ from app.config import Settings
 from app.auth import verify_password
 
 HEADERS={'X-CampMate-Client':'1'}
-INPUT={'username':'New.Camper','display_name':'新露营者','password':'A-test-password-2026'}
+INPUT={'username':'New.Camper','display_name':'New camper','password':'A-test-password-2026'}
 
 
 def test_registration_login_storage_isolation_and_restart(tmp_path):

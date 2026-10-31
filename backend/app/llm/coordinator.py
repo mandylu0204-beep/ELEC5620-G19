@@ -104,14 +104,17 @@ class PlanningCoordinator:
 
     @property
     def protocol(self):
-        return (DAILY_SYSTEM_PROMPT, DETAILED_ACTION, DETAILED_TOOL_VERSION) if self.detailed else (SYSTEM_PROMPT, ACTION, TOOL_VERSION)
+        prompt = DAILY_SYSTEM_PROMPT
+        if self.detailed and self.dataset.planning_reference.version == 'camp-activities-3':
+            prompt += '\nWrite all user-facing explanations in English. Preserve campsite proper names and quoted user requirements.\n'
+        return (prompt, DETAILED_ACTION, DETAILED_TOOL_VERSION) if self.detailed else (SYSTEM_PROMPT, ACTION, TOOL_VERSION)
 
     @property
     def identity(self):
         system_prompt, action_schema, tool_version = self.protocol
         prompt = system_prompt + canonical(action_schema.json_schema())
         values = {
-            'coordinator_version': 'planning-coordinator-daily-1' if self.detailed else COORDINATOR_VERSION,
+            'coordinator_version': ('planning-coordinator-daily-en-1' if self.dataset.planning_reference.version == 'camp-activities-3' else 'planning-coordinator-daily-1') if self.detailed else COORDINATOR_VERSION,
             'validation_version': DETAILED_VALIDATION_VERSION if self.detailed else VALIDATION_VERSION, 'tool_version': tool_version,
             'prompt_sha256': digest(prompt), 'model_client': self.client.identity,
         }
@@ -138,28 +141,28 @@ class PlanningCoordinator:
         try:
             input = ItineraryInput.model_validate(raw).model_copy(deep=True)
         except (ValueError, TypeError, ValidationError):
-            raise model_failure('模型规划输入不符合共享契约。', code=ErrorCode.CONTRACT_INVALID) from None
+            raise model_failure('Model planning input does not match the shared contract.', code=ErrorCode.CONTRACT_INVALID) from None
         if (input.demo_context.mode != ExecutionMode.AGENT
                 or input.recommendations.execution_mode != ExecutionMode.AGENT):
-            raise model_failure('真实模型规划必须明确登记为 agent 模式。', code=ErrorCode.CONTRACT_INVALID)
+            raise model_failure('Real model planning must be explicitly registered as  agent mode.', code=ErrorCode.CONTRACT_INVALID)
         if input.demo_context.dataset_version != self.dataset.context.dataset_version:
-            raise model_failure('模型输入与实际数据快照版本不同。', code=ErrorCode.STALE_CONTEXT)
+            raise model_failure('The model input and actual data snapshot versions differ.', code=ErrorCode.STALE_CONTEXT)
         if input.confirmed_requirements.start_date < input.demo_context.demo_today:
-            raise model_failure('确认行程早于固定演示日期。', code=ErrorCode.INPUT_INVALID)
+            raise model_failure('The confirmed trip starts before the fixed demonstration date.', code=ErrorCode.INPUT_INVALID)
         revision = input.previous_version is not None
         feedback=model_feedback_text(input.feedback)
         if revision != (input.feedback is not None) or (revision and (not feedback or len(feedback) > 4000)):
-            raise model_failure('模型修订必须同时提供原版本和非空修改意见（最多4000字符）。', code=ErrorCode.INPUT_INVALID)
+            raise model_failure('Model revision requires both the original version and nonempty feedback (at most 4000 characters).', code=ErrorCode.INPUT_INVALID)
         if revision:
             if (input.previous_version.content.execution_mode != ExecutionMode.AGENT
                     or input.previous_version.content.requested_requirement_changes is not None):
-                raise model_failure('原版本不是已确认的 agent 行程。', code=ErrorCode.STALE_CONTEXT)
+                raise model_failure('The original version is not a confirmed  agent  itinerary.', code=ErrorCode.STALE_CONTEXT)
             try:
                 validate_itinerary_content(self.dataset, input.previous_version.content, input.confirmed_requirements)
             except ContractFailure:
-                raise model_failure('原行程与确认需求或当前数据不一致。', code=ErrorCode.STALE_CONTEXT) from None
+                raise model_failure('The original itinerary does not match confirmed requirements or current data.', code=ErrorCode.STALE_CONTEXT) from None
         if input.confirmed_requirements.duration_nights > 30:
-            raise model_failure('首轮模型规划最多支持 30 晚。', code=ErrorCode.INPUT_INVALID)
+            raise model_failure('Initial model planning supports at most  30  nights.', code=ErrorCode.INPUT_INVALID)
         tools = CampsiteToolset(self.dataset, input)
         identity = self.identity
         # No credentials, test expectations, persistence keys or business IDs.
@@ -195,12 +198,12 @@ class PlanningCoordinator:
                 changes = action.requested_requirement_changes.model_dump(exclude_unset=True)
                 confirmed = input.confirmed_requirements.model_dump()
                 if not calls or not changes or any(value is None for value in changes.values()) or all(confirmed.get(key) == value for key, value in changes.items()):
-                    raise model_failure('需求变更提案无效；未改变确认需求或保存方案。', code=ErrorCode.CONTRACT_INVALID)
-                raise model_failure('该修改需要重新提交并确认需求；原预算、日期和约束未改变，未保存新版本。',
+                    raise model_failure('Invalid requirement-change proposal. Confirmed requirements and saved plans are unchanged.', code=ErrorCode.CONTRACT_INVALID)
+                raise model_failure('This change requires resubmitting and confirming requirements. Budget, dates and constraints are unchanged; no new version was saved.',
                     code=ErrorCode.REQUEST_NOT_CONFIRMED)
             if isinstance(action, FinalAction):
                 if not calls:
-                    raise model_failure('模型必须先请求受控营地工具，不能跳过事实读取。',
+                    raise model_failure('The model must request the controlled campsite tool first and cannot skip reading facts.',
                         code=ErrorCode.CONTRACT_INVALID)
                 itinerary = validated_itinerary(self.dataset, input, action.proposal, tools.exposed_ids)
                 return PlanningOutcome(itinerary, PlanningTrace(
@@ -216,5 +219,5 @@ class PlanningCoordinator:
             calls.append(action.name)
             messages.append({'role': 'assistant', 'content': canonical(action.model_dump(mode='json'))})
             messages.append({'role': 'user', 'content': 'TOOL_RESULT=' + canonical(tools.search_campsites())})
-        raise model_failure('模型工具循环超过上限；没有生成或保存方案。',
+        raise model_failure('Model tool loop limit exceeded. No plan was generated or saved.',
             code=ErrorCode.CONTRACT_INVALID)

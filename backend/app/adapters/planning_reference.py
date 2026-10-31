@@ -13,9 +13,11 @@ from ..contracts.errors import ContractError, ContractFailure
 
 POLICY_KEY = 'b_planning_details'
 LEGACY_POLICY_VERSION = 'camp-activities-1'
-POLICY_VERSION = 'camp-activities-2'
+PREVIOUS_POLICY_VERSION = 'camp-activities-2'
+POLICY_VERSION = 'camp-activities-3'
 LEGACY_REFERENCE_KEY = 'planning/camp_activities_v1.json'
-REFERENCE_KEY = 'planning/camp_activities_v2.json'
+REFERENCE_KEY = 'planning/camp_activities_v3.json'
+PREVIOUS_REFERENCE_KEY = 'planning/camp_activities_v2.json'
 REFERENCE_PATH = APP_ROOT / 'data' / REFERENCE_KEY
 LEGACY_REFERENCE_PATH = APP_ROOT / 'data' / LEGACY_REFERENCE_KEY
 
@@ -38,12 +40,16 @@ class Activity(BaseModel):
 
     @property
     def saved_description(self):
-        return self.title + '：' + self.description + '（模拟活动建议；须以正式安全检查和现场条件为准。）'
+        # Old catalogue bytes and saved descriptions remain replayable.
+        if any('\u3400' <= char <= '\u9fff' for char in self.title):
+            return self.title + '\uff1a' + self.description + '\uff08\u6a21\u62df\u6d3b\u52a8\u5efa\u8bae\uff1b\u987b\u4ee5\u6b63\u5f0f\u5b89\u5168\u68c0\u67e5\u548c\u73b0\u573a\u6761\u4ef6\u4e3a\u51c6\u3002\uff09'
+        return self.title + ': ' + self.description + ' (Simulated activity suggestion; subject to formal safety checks and on-site conditions.)'
+
 
 
 class Reference(BaseModel):
     model_config = ConfigDict(extra='forbid', frozen=True)
-    version: Literal['camp-activities-1', 'camp-activities-2']
+    version: Literal['camp-activities-1', 'camp-activities-2', 'camp-activities-3']
     created_on: Literal['2026-10-29']
     scope: str
     provenance: Provenance
@@ -55,21 +61,21 @@ def fail(message):
 
 
 def checked_policy(value):
-    if value not in {None, LEGACY_POLICY_VERSION, POLICY_VERSION}:
-        fail('行程资料版本不受支持，请联系项目负责人。')
+    if value not in {None, LEGACY_POLICY_VERSION, PREVIOUS_POLICY_VERSION, POLICY_VERSION}:
+        fail('Unsupported itinerary reference version. Contact the maintainer.')
     return value
 
 
 def reference_key(policy):
     checked_policy(policy)
-    return LEGACY_REFERENCE_KEY if policy == LEGACY_POLICY_VERSION else REFERENCE_KEY
+    return {LEGACY_POLICY_VERSION: LEGACY_REFERENCE_KEY, PREVIOUS_POLICY_VERSION: PREVIOUS_REFERENCE_KEY}.get(policy, REFERENCE_KEY)
 
 
 def read_reference(policy=POLICY_VERSION):
     try:
         from .synthetic_dataset import _unique_object
         checked_policy(policy)
-        path = LEGACY_REFERENCE_PATH if policy == LEGACY_POLICY_VERSION else REFERENCE_PATH
+        path = (APP_ROOT / 'data' / reference_key(policy)) if policy != POLICY_VERSION else REFERENCE_PATH
         payload = path.read_bytes()
         value = Reference.model_validate(json.loads(payload, object_pairs_hook=_unique_object))
         if (value.version != policy or value.provenance.source_type != 'SYNTHETIC' or not value.provenance.demo_only
@@ -78,7 +84,7 @@ def read_reference(policy=POLICY_VERSION):
             raise ValueError('Invalid onsite catalogue')
         return value, hashlib.sha256(payload).hexdigest()
     except (OSError, ValueError, TypeError):
-        fail('模拟活动资料缺失或无效，不能生成替代活动。')
+        fail('Simulated activity data is missing or invalid. Replacement activities cannot be generated.')
 
 
 def enabled(context):
@@ -89,12 +95,12 @@ def register_reference(context):
     if not enabled(context):
         return context
     if context.dataset_version != '2.2.0':
-        fail('新的行程资料只登记在 Sydney 2.2 数据上。')
+        fail('New itinerary reference data is registered only in  Sydney 2.2 dataset.')
     policy = context.selection_config[POLICY_KEY]
     key = reference_key(policy)
     reference, digest = read_reference(policy)
     if context.file_digests.get(key, digest) != digest:
-        fail('活动资料与本次运行登记的字节不同。')
+        fail('Activity bytes differ from those registered for this run.')
     return context.model_copy(update={'file_digests': {**context.file_digests, key: digest}}, deep=True)
 
 
@@ -107,7 +113,7 @@ def bind_reference(dataset, context):
     reference, digest = read_reference(policy)
     if (context.file_digests.get(key) != digest
             or not {row.campsite_id for row in reference.activities}.issubset({row.campsite_id for row in dataset.campsites})):
-        fail('活动资料不属于本次绑定的数据快照。')
+        fail('Activity data does not belong to the bound snapshot.')
     dataset.planning_reference = reference
 
 

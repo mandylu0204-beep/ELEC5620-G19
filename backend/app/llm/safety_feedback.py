@@ -8,7 +8,7 @@ POLICY_VERSION = 'safety-allowed-action-feedback-1'
 
 def checked_policy(value):
     if value not in {None, POLICY_VERSION}:
-        raise model_failure('安全动作反馈策略身份不受支持。', code=ErrorCode.STALE_CONTEXT)
+        raise model_failure('Unsupported safety-action feedback policy identity.', code=ErrorCode.STALE_CONTEXT)
     return value
 
 

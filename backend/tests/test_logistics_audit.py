@@ -303,7 +303,7 @@ def test_self_consistent_forged_gear_fact_is_rejected_against_server_facts(saved
 def test_utf8_limit_counts_bytes_and_never_truncates(saved):
     from app.application.logistics_audit import payload,LIMIT
     plan=saved.outcome.plan.model_dump(mode='json')
-    plan['decision_summary_unverified']='营'*LIMIT
+    plan['decision_summary_unverified']='Camp'*LIMIT
     with pytest.raises(ContractFailure) as exc: save(saved,plan=plan)
     assert exc.value.error.code=='CONTRACT_INVALID' and counts(saved)==[0,0,0]
 

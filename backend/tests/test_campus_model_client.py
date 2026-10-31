@@ -37,7 +37,7 @@ def test_proxy_request_matches_school_guide_and_uses_no_native_tool_assumptions(
     assert len(requests) == 1
 
 
-@pytest.mark.parametrize('key', ['', 'oaipxy_k_REPLACE_WITH_YOUR_KEY', 'bad\nkey', '非ASCII'])
+@pytest.mark.parametrize('key', ['', 'oaipxy_k_REPLACE_WITH_YOUR_KEY', 'bad\nkey', '\u4e2d\u6587'])
 def test_missing_or_unsafe_key_never_sends_request(key):
     def forbidden(request):
         pytest.fail('Invalid key must never leave the process')

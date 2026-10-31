@@ -18,7 +18,7 @@ def pending(connection, plan_id):
 
 def require_decided(connection, plan_id):
     if pending(connection, plan_id):
-        fail(ErrorCode.INVALID_STATE, '请先采用新方案或保留原方案，再进行其他操作。')
+        fail(ErrorCode.INVALID_STATE, 'Adopt the new plan or retain the original before other actions.')
 
 
 def candidate_for(connection, plan, run_id):
@@ -117,27 +117,27 @@ class RevisionChoices:
             require_current(db, plan)
             row = db.execute('SELECT * FROM revision_proposals WHERE id=? AND plan_id=?', (proposal_id, plan_id)).fetchone()
             if not row:
-                fail(ErrorCode.NOT_FOUND, '待选方案不存在。')
+                fail(ErrorCode.NOT_FOUND, 'Proposed plan not found.')
             key = fingerprint({'plan_id': plan_id, 'proposal_id': proposal_id, 'body': body.model_dump(mode='json')})
             receipt = db.execute('SELECT * FROM revision_choice_commands WHERE owner_id=? AND command_key=?', (user.id, body.command_key)).fetchone()
             if receipt:
                 if receipt['input_hash'] != key:
-                    fail(ErrorCode.IDEMPOTENCY_CONFLICT, '同一个提交编号不能用于不同选择。')
+                    fail(ErrorCode.IDEMPOTENCY_CONFLICT, 'The same submission key cannot be used for different choices.')
                 return json.loads(receipt['result'])
             if row['decision'] or row['revision'] != body.expected_proposal_revision or not candidate_for(db, plan, row['candidate_run_id']):
-                fail(ErrorCode.VERSION_CONFLICT, '方案或选择状态已变化，请刷新。')
+                fail(ErrorCode.VERSION_CONFLICT, 'Plan or choice status changed. Refresh.')
             base_run = db.execute('SELECT revision FROM runs WHERE id=?', (row['base_run_id'],)).fetchone()
             base_version = db.execute('SELECT revision FROM versions WHERE id=?', (row['base_version_id'],)).fetchone()
             if base_run['revision'] != row['base_run_revision'] or base_version['revision'] != row['base_version_revision']:
-                fail(ErrorCode.STALE_CONTEXT, '原方案的检查结果已变化，请刷新。')
+                fail(ErrorCode.STALE_CONTEXT, 'Original plan check results changed. Refresh.')
             run = db.execute('SELECT * FROM runs WHERE id=?', (row['candidate_run_id'],)).fetchone()
             if run['revision'] != body.expected_candidate_run_revision:
-                fail(ErrorCode.VERSION_CONFLICT, '新方案检查进度已变化，请刷新。')
+                fail(ErrorCode.VERSION_CONFLICT, 'New plan check progress changed. Refresh.')
             if run['status'] in {'PENDING','RUNNING'}:
-                fail(ErrorCode.INVALID_STATE, '请等待新方案生成结束后再选择。')
+                fail(ErrorCode.INVALID_STATE, 'Wait for new plan generation to finish before choosing.')
             if body.decision == 'ADOPT':
                 if run['status'] != 'SUCCEEDED' or run['stage'] != 'COMPLETED':
-                    fail(ErrorCode.INVALID_STATE, '新方案尚未完成，不能采用。')
+                    fail(ErrorCode.INVALID_STATE, 'The new plan is incomplete and cannot be adopted.')
                 scope = RunScope.model_validate_json(run['scope'])
                 if self.context_guard:
                     self.context_guard(scope)
@@ -148,7 +148,7 @@ class RevisionChoices:
                 load_audits(db, scope, version)
                 kinds = {r['kind'] for r in db.execute('SELECT kind FROM assessments WHERE run_id=? AND version_id=?', (run['id'], version.version_context.plan_version_id))}
                 if kinds != {'LOGISTICS','SAFETY'} or not db.execute("SELECT 1 FROM write_receipts WHERE run_id=? AND operation='route'", (run['id'],)).fetchone():
-                    fail(ErrorCode.CONTRACT_INVALID, '新方案检查记录不完整，不能采用。')
+                    fail(ErrorCode.CONTRACT_INVALID, 'New plan check records are incomplete. Adoption unavailable.')
                 db.execute('UPDATE plans SET active_run_id=?,current_version_id=? WHERE id=?',
                     (run['id'], version.version_context.plan_version_id, plan_id))
             db.execute('UPDATE revision_proposals SET decision=?,revision=revision+1 WHERE id=?', (body.decision, proposal_id))

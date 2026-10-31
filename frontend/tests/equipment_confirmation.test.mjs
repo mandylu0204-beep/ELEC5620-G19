@@ -4,9 +4,9 @@ import {equipmentForSave,equipmentPayload} from '../src/equipment_confirmation.t
 import {profileGuidance} from '../src/profile_guidance.ts';
 import {profileFocusId} from '../src/profile_focus.ts';
 
-const gear=(patch={})=>({item_key:'tent',label:'双人帐',quantity:'1',unit:'item',capacity:'2',confirmed:false,...patch});
+const gear=(patch={})=>({item_key:'tent',label:'Two-person tent',quantity:'1',unit:'item',capacity:'2',confirmed:false,...patch});
 test('explicit save confirms entered stock but does not mutate loaded facts or fill unknown capacities',()=>{
-  const rows=[gear(),gear({label:'三人帐',capacity:'3'}),gear({quantity:'1',capacity:''})];
+  const rows=[gear(),gear({label:'Three-person tent',capacity:'3'}),gear({quantity:'1',capacity:''})];
   const original=structuredClone(rows);const payload=equipmentPayload(rows);
   assert.deepEqual(rows,original);
   assert.ok(rows.every(item=>!item.confirmed));
@@ -19,9 +19,9 @@ test('zero means no stock; blank stays unknown even if a stale saved flag was tr
 test('invalid stock and capacity are never converted into an accepted profile payload',()=>{
   for(const quantity of ['-1','1.5','Infinity','NaN','9007199254740992',' ']){
     assert.equal(equipmentForSave([gear({quantity})])[0].confirmed,false);
-    assert.throws(()=>equipmentPayload([gear({quantity})]),/有效整数/);
+    assert.throws(()=>equipmentPayload([gear({quantity})]),/valid whole numbers/i);
   }
-  assert.throws(()=>equipmentPayload([gear({capacity:'0'})]),/有效整数/);
+  assert.throws(()=>equipmentPayload([gear({capacity:'0'})]),/valid whole numbers/i);
 });
 test('historical plan availability keeps its original explicit confirmation',()=>{
   for(const item_key of ['transport_itinerary','fire_free_meal_plan'])for(const confirmed of [false,true]){

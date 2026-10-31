@@ -37,7 +37,7 @@ class RecoveryPort(SqlitePersistencePort):
         if self.workflow.context_provider is not None:
             demo, dataset = self.workflow.context_provider(self.scope)
             if demo != self.scope.demo_context or dataset != self.scope.dataset_context:
-                fail(ErrorCode.STALE_CONTEXT, '本次运行的数据、模式或时钟已变化，请开启新 run。')
+                fail(ErrorCode.STALE_CONTEXT, 'Run data, mode or clock changed. Start a new  run.')
         return super().active(connection, writing=writing, execution=execution)
 
     async def load_checkpoint(self):
@@ -61,7 +61,7 @@ class RecoveryPort(SqlitePersistencePort):
             with self.db.transaction(write=False) as connection:
                 _, run = self.active(connection, writing=True)
                 if run['status'] != 'RUNNING' or error is not None:
-                    fail(ErrorCode.INVALID_STATE, '当前运行不能结束。')
+                    fail(ErrorCode.INVALID_STATE, 'The current run cannot finish.')
                 self.validate_completion(connection, RunStage(stage))
                 return RunSnapshot(run_id=self.scope.run_id, execution_mode=self.scope.demo_context.mode,
                     run_status='SUCCEEDED', stage='COMPLETED', revision=run['revision'] + 1)
@@ -84,7 +84,7 @@ class WorkflowService:
     @staticmethod
     def command_key(key):
         if not isinstance(key, str) or not key.strip() or len(key) > 128:
-            fail(ErrorCode.INPUT_INVALID, 'command_key 必须为 1 至 128 位非空字符串。')
+            fail(ErrorCode.INPUT_INVALID, 'command_key must contain 1 to 128 nonblank characters.')
 
     def start(self, user, request_id, demo, dataset, *, command_key, plan_id=None,
               operation='PLAN', expected_current_version_id=None, expected_active_run_id=None,
@@ -122,18 +122,18 @@ class WorkflowService:
         require_role(user, 'CAMPER')
         row = connection.execute('SELECT * FROM runs WHERE id=?', (run_id,)).fetchone()
         if not row:
-            fail(ErrorCode.NOT_FOUND, '运行不存在。')
+            fail(ErrorCode.NOT_FOUND, 'Run not found.')
         plan = self.repository.own_plan(connection, user, row['plan_id'])
         from .trip_series import require_current
         require_current(connection, plan)
         from .revision_choices import execution_active
         if not execution_active(connection, plan, run_id):
-            fail(ErrorCode.STALE_CONTEXT, '运行已被新任务取代。')
+            fail(ErrorCode.STALE_CONTEXT, 'Run superseded by a new task.')
         return plan, row, RunScope.model_validate_json(row['scope'])
 
     def unchanged(self, connection, plan, run, scope, demo, dataset):
         if scope.demo_context != demo or scope.dataset_context != dataset:
-            fail(ErrorCode.STALE_CONTEXT, '演示时钟、模式或数据证据已变化，请开启新 run。')
+            fail(ErrorCode.STALE_CONTEXT, 'Demo clock, mode or data evidence changed. Start a new  run.')
         confirmed = ConfirmedContext.model_validate_json(run['confirmed_context'])
         binding = connection.execute('SELECT * FROM run_versions WHERE run_id=?', (scope.run_id,)).fetchone()
         if binding:
@@ -141,9 +141,9 @@ class WorkflowService:
             load_audits(connection, scope, version)
             from .revision_choices import version_current
             if not version_current(connection, plan, scope.run_id, version.version_context.plan_version_id) or Repository.input_fingerprint(scope, confirmed, version.content.model_dump(mode='json')) != binding['fingerprint']:
-                fail(ErrorCode.STALE_CONTEXT, '版本或 fingerprint 已变化，不能恢复旧运行。')
+                fail(ErrorCode.STALE_CONTEXT, ' version or  fingerprint  changed. The old run cannot resume.')
         elif plan['current_version_id'] != scope.expected_current_version_id:
-            fail(ErrorCode.STALE_CONTEXT, '当前版本已变化，不能恢复旧运行。')
+            fail(ErrorCode.STALE_CONTEXT, 'The current version changed. The old run cannot resume.')
 
     def claim(self, user, run_id, demo, dataset):
         """One worker wins. Each claim replaces the capability of the old attempt."""
@@ -151,7 +151,7 @@ class WorkflowService:
             plan, run, scope = self.owned_active(connection, user, run_id)
             self.unchanged(connection, plan, run, scope, demo, dataset)
             if run['status'] != 'PENDING':
-                fail(ErrorCode.INVALID_STATE, '只有等待执行的运行可以领取。')
+                fail(ErrorCode.INVALID_STATE, 'Only queued runs can be claimed.')
             lease = connection.execute('SELECT * FROM run_leases WHERE run_id=?', (run_id,)).fetchone()
             attempt = Attempt(scope, uuid4().hex, lease['generation'] + 1 if lease else 1)
             connection.execute('INSERT INTO run_leases VALUES(?,?,?,?) ON CONFLICT(run_id) DO UPDATE SET attempt_id=excluded.attempt_id,generation=excluded.generation,expires_at=excluded.expires_at',
@@ -170,7 +170,7 @@ class WorkflowService:
             port = self.port(user, attempt)
             _, run = port.active(connection, writing=True)
             if run['status'] != 'RUNNING':
-                fail(ErrorCode.INVALID_STATE, '已结束的运行不能续期。')
+                fail(ErrorCode.INVALID_STATE, 'Ended runs cannot be renewed.')
             connection.execute('UPDATE run_leases SET expires_at=? WHERE run_id=? AND attempt_id=?', (self.clock() + self.lease_seconds, attempt.scope.run_id, attempt.attempt_id))
 
     def expire(self, user, run_id):
@@ -179,15 +179,15 @@ class WorkflowService:
             _, run, _ = self.owned_active(connection, user, run_id)
             lease = connection.execute('SELECT * FROM run_leases WHERE run_id=?', (run_id,)).fetchone()
             if run['status'] != 'RUNNING' or not lease or lease['expires_at'] > self.clock():
-                fail(ErrorCode.INVALID_STATE, '运行没有已过期的执行租约。')
-            error = ContractError(code='AGENT_FAILURE', message='执行进程中断或租约过期；可从已保存产物恢复。', recoverable=True, allowed_actions=['RETRY'])
+                fail(ErrorCode.INVALID_STATE, 'The run has no expired execution lease.')
+            error = ContractError(code='AGENT_FAILURE', message='Execution interrupted or lease expired. Resume from saved outputs.', recoverable=True, allowed_actions=['RETRY'])
             connection.execute("UPDATE runs SET status='FAILED',revision=revision+1,error=? WHERE id=?", (encode(error), run_id))
             connection.execute('INSERT INTO run_events(run_id,stage,status,error,created_at) VALUES(?,?,?,?,?)', (run_id, run['stage'], 'FAILED', encode(error), now()))
 
     def retry(self, user, run_id, demo, dataset, *, command_key, expected_run_revision):
         self.command_key(command_key)
         if type(expected_run_revision) is not int or expected_run_revision < 0:
-            fail(ErrorCode.INPUT_INVALID, 'expected_run_revision 必须为非负整数。')
+            fail(ErrorCode.INPUT_INVALID, 'expected_run_revision  must be a nonnegative whole number.')
         input_hash = fingerprint({'run_id': run_id, 'demo': demo.model_dump(mode='json'),
             'dataset': dataset.model_dump(mode='json'), 'expected_run_revision': expected_run_revision})
         with self.db.transaction() as connection:
@@ -196,13 +196,13 @@ class WorkflowService:
             previous = connection.execute('SELECT * FROM workflow_commands WHERE owner_id=? AND command_key=?', (user.id, command_key)).fetchone()
             if previous:
                 if previous['operation'] != 'RETRY' or previous['input_hash'] != input_hash:
-                    fail(ErrorCode.IDEMPOTENCY_CONFLICT, '同一个 key 不能重试不同内容。')
+                    fail(ErrorCode.IDEMPOTENCY_CONFLICT, 'The same key  cannot retry different content.')
                 return RunScope.model_validate_json(previous['result'])
             if expected_run_revision != run['revision']:
-                fail(ErrorCode.VERSION_CONFLICT, '运行已更新，请刷新后重试。')
+                fail(ErrorCode.VERSION_CONFLICT, 'Run updated. Refresh and retry.')
             error = ContractError.model_validate_json(run['error']) if run['error'] else None
             if run['status'] != 'FAILED' or not error or not error.recoverable:
-                fail(ErrorCode.INVALID_STATE, '只有可恢复的失败运行可以重试。')
+                fail(ErrorCode.INVALID_STATE, 'Only recoverable failed runs can be retried.')
             # Revoke old capabilities immediately, even before another worker claims.
             connection.execute('INSERT INTO run_leases VALUES(?,?,1,0) ON CONFLICT(run_id) DO UPDATE SET attempt_id=excluded.attempt_id,expires_at=0', (run_id, uuid4().hex))
             connection.execute("UPDATE runs SET status='PENDING',revision=revision+1,error=NULL WHERE id=?", (run_id,))
@@ -229,7 +229,7 @@ class WorkflowService:
                     WHERE rv.plan_id=? AND rv.version_id=? ORDER BY r.created_at DESC,r.id DESC LIMIT 1''',
                     (attempt.scope.plan_id, attempt.scope.expected_current_version_id)).fetchone()
                 if previous is None:
-                    fail(ErrorCode.STALE_CONTEXT, '原方案版本不存在。')
+                    fail(ErrorCode.STALE_CONTEXT, 'Original plan version not found.')
                 previous_version = Repository.stored_version(connection, RunScope.model_validate_json(previous['scope']))
             return {
                 'stage': run['stage'], 'run_status': run['status'],

@@ -41,8 +41,8 @@ test('compact advice is displayed once and does not invent a second explanation'
 
 test('compact advice with a localized original is not repeated inside details',()=>{
   const value=fixture();value.advice_format='single-advice-v1';
-  for(const item of value.plan.findings)item.interpretation_unverified=item.action_unverified='请在出发前核对这项安排。';
-  assert.equal(render(value).split('请在出发前核对这项安排。').length-1,2);
+  for(const item of value.plan.findings)item.interpretation_unverified=item.action_unverified='Check this arrangement before departure.';
+  assert.equal(render(value).split('Check this arrangement before departure.').length-1,2);
 });
 
 test('unknown advice formats and mismatched compact compatibility fields fail closed',()=>{
@@ -68,7 +68,7 @@ test('old run, version, assessment, dependency or fingerprint cannot be displaye
 
 test('advice follows the complete saved priority instead of array order',()=>{
   const view=safetyAdvice(fixture(),binding);
-  assert.deepEqual(view.items.map(item=>item.title),['临近出发时再检查','调整营地、日期或活动']);
+  assert.deepEqual(view.items.map(item=>item.title),['Recheck near departure','Change campsite, dates or activities']);
   const html=render();
   assert.ok(html.indexOf('Check again near departure.')<html.indexOf('Choose another accessible campsite.'));
 });
@@ -87,8 +87,9 @@ test('missing, duplicated or unknown priorities and actions fail closed',()=>{
 
 test('user page keeps the advice heading without the removed disclaimer, original summary or diagnostic fields',()=>{
   const html=render();
-  assert.match(html,/AI 安全准备建议/);
-  assert.doesNotMatch(html,/AI 参考建议|未经人工核实|查看已保存的模型总结原文|Check the registered conditions before departure/);
+  assert.match(html,/AI Safety preparation advice/i);
+  assert.match(html,/Check the registered conditions before departure/i);
+  assert.doesNotMatch(html,/AI Advisory suggestions|Not manually verified|View saved original model summary/i);
   for(const hidden of ['private-run','private-version','private-safety','private-logistics','private-input-hash',
     'private-audit','private-attempt','private-model','total_tokens','fact_refs','\/baseline\/'])assert.ok(!html.includes(hidden),hidden);
   assert.ok(!html.includes('<button')&&!html.includes('<a '));
@@ -102,8 +103,8 @@ test('model text is escaped plain text, never interpreted as markup or links',()
 });
 
 test('outdated and historical suggestions retain explicit context',()=>{
-  assert.match(render(fixture(),{outdated:true}),/请更新检查后再参考/);
-  assert.match(render(fixture(),{historical:true}),/对应当时保存的行程与检查资料/);
+  assert.match(render(fixture(),{outdated:true}),/Update checks before relying on them/i);
+  assert.match(render(fixture(),{historical:true}),/correspond to the itinerary and source information saved at that time/i);
 });
 
 test('additional action groups remain available while informational advice is omitted',()=>{
@@ -113,9 +114,9 @@ test('additional action groups remain available while informational advice is om
   value.plan.findings.push({...value.plan.findings[0],finding_key:'information',action_code:'ACKNOWLEDGE_INFORMATION',action_unverified:'Informational-only text.'});
   value.plan.action_priority=value.plan.findings.map(item=>item.finding_key);
   const html=render(value);
-  assert.match(html,/其余建议类别（2）/);
-  assert.doesNotMatch(html,/出行注意事项|Informational-only text/);
-  assert.match(html,/<ol[^>]*start="4"/);
+  assert.match(html,/Other advice categories \(2\)/i);
+  assert.doesNotMatch(html,/Trip notices|Informational-only text/i);
+  assert.match(html,/<ol[^>]*start="4"/i);
 });
 
 test('equipment advice has one shared heading and distinct visible original bullet items',()=>{
@@ -127,10 +128,10 @@ test('equipment advice has one shared heading and distinct visible original bull
     interpretation_unverified:text,action_unverified:text}));
   value.plan.action_priority=value.plan.findings.map(item=>item.finding_key);
   const before=structuredClone(value);const html=render(value);
-  assert.equal(html.split('完善装备或交通安排').length-1,1);
-  assert.match(html,/3 项/);assert.match(html,/<ul class="safety-advice-items">/);
+  assert.equal(html.split('Resolve equipment or transport arrangements').length-1,1);
+  assert.match(html,/3 items/i);assert.match(html,/<ul class="safety-advice-items">/i);
   for(const text of texts)assert.equal(html.split(text).length-1,1,text);
-  assert.doesNotMatch(html,/请按此事项准备|查看已保存的模型建议原文|其余建议类别/);
+  assert.doesNotMatch(html,/Prepare for this item|View saved original model suggestions|Other suggestion categories/i);
   assert.deepEqual(value,before);
 });
 
@@ -166,8 +167,8 @@ test('legacy separate explanations share one group toggle without duplicating vi
   const value=fixture();
   value.plan.findings[1].action_code=value.plan.findings[0].action_code='RESOLVE_LOGISTICS';
   const html=render(value);
-  assert.equal(html.split('完善装备或交通安排').length-1,1);
-  assert.equal(html.split('查看本组补充说明与保存原文').length-1,1);
+  assert.equal(html.split('Resolve equipment or transport arrangements').length-1,1);
+  assert.equal(html.split('View group details and saved originals').length-1,1);
   for(const item of value.plan.findings){
     assert.equal(html.split(item.action_unverified).length-1,1);
     assert.equal(html.split(item.interpretation_unverified).length-1,1);

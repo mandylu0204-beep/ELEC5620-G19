@@ -21,7 +21,7 @@ class SuccessorInput(ContractModel):
     @model_validator(mode='after')
     def version_pair(self):
         if (self.expected_current_version_id is None) != (self.expected_version_revision is None):
-            raise ValueError('版本 ID 和 revision 必须同时存在或同时为空。')
+            raise ValueError('Version ID and revision  must both be present or both be empty.')
         return self
 
 
@@ -39,9 +39,9 @@ def require_current(connection, plan):
     series = membership(connection, plan['id'])
     if series:
         if series['deleted_at']:
-            fail(ErrorCode.NOT_FOUND, '出行不存在。')
+            fail(ErrorCode.NOT_FOUND, 'Trip not found.')
         if series['current_plan_id'] != plan['id']:
-            fail(ErrorCode.STALE_CONTEXT, '此方案已被后继方案取代，不能修改或审批历史结果。')
+            fail(ErrorCode.STALE_CONTEXT, 'This plan was superseded by a successor. Historical results cannot be changed or approved.')
     return series
 
 
@@ -50,7 +50,7 @@ def source_unchanged(connection, plan, context):
     from .revision_choices import require_decided
     require_decided(connection, plan['id'])
     if (series['revision'] if series else 0) != context['expected_series_revision']:
-        fail(ErrorCode.VERSION_CONFLICT, '出行已更新，请重新载入后继预览。')
+        fail(ErrorCode.VERSION_CONFLICT, 'Trip updated. Reload the successor preview.')
     run = connection.execute('SELECT revision,status FROM runs WHERE id=? AND plan_id=?',
         (plan['active_run_id'], plan['id'])).fetchone()
     version = connection.execute('SELECT revision FROM versions WHERE id=? AND plan_id=?',
@@ -59,9 +59,9 @@ def source_unchanged(connection, plan, context):
             or run['revision'] != context['expected_run_revision']
             or plan['current_version_id'] != context['expected_current_version_id']
             or (version['revision'] if version else None) != context['expected_version_revision']):
-        fail(ErrorCode.STALE_CONTEXT, '来源版本或运行已变化，请重新载入预览。')
+        fail(ErrorCode.STALE_CONTEXT, 'Source version or run changed. Reload the preview.')
     if run['status'] in {'PENDING', 'RUNNING'}:
-        fail(ErrorCode.INVALID_STATE, '来源方案仍在运行，请完成后再创建后继。')
+        fail(ErrorCode.INVALID_STATE, 'The source plan is still running. Wait before creating a successor.')
     return series
 
 
@@ -71,7 +71,7 @@ def validate_successor(connection, user, request_id):
         plan = Repository.own_plan(connection, user, origin['predecessor_plan_id'])
         series = source_unchanged(connection, plan, json.loads(origin['source_context']))
         if not series or series['id'] != origin['series_id']:
-            fail(ErrorCode.STALE_CONTEXT, '来源系列身份不一致。')
+            fail(ErrorCode.STALE_CONTEXT, 'Source series identity differs.')
     return origin
 
 
@@ -114,7 +114,7 @@ class TripSeriesService:
             receipt = connection.execute('SELECT * FROM successor_commands WHERE owner_id=? AND command_key=?', (user.id, body.command_key)).fetchone()
             if receipt:
                 if receipt['input_hash'] != input_hash:
-                    fail(ErrorCode.IDEMPOTENCY_CONFLICT, '后继命令 key 不能用于不同输入。')
+                    fail(ErrorCode.IDEMPOTENCY_CONFLICT, 'Successor command  key  cannot be used for different inputs.')
                 return RequestRepository(self.db).result(connection, RequestRepository.own(connection, user, receipt['request_id']))
             series = source_unchanged(connection, source, body.model_dump(mode='json'))
             if not series:
@@ -160,7 +160,7 @@ class TripSeriesService:
         require_role(user, 'CAMPER')
         result = next((row for row in self.list(user)['trip_series'] if row['trip_series_id'] == series_id), None)
         if result is None:
-            fail(ErrorCode.NOT_FOUND, '出行不存在。')
+            fail(ErrorCode.NOT_FOUND, 'Trip not found.')
         return result
 
     def delete(self, user, series_id, body):
@@ -168,19 +168,19 @@ class TripSeriesService:
         with self.db.transaction() as connection:
             series = connection.execute('SELECT * FROM trip_series WHERE id=? AND owner_id=?', (series_id, user.id)).fetchone()
             if not series:
-                fail(ErrorCode.NOT_FOUND, '出行不存在。')
+                fail(ErrorCode.NOT_FOUND, 'Trip not found.')
             digest = fingerprint({'series_id': series_id, **body.model_dump(mode='json')})
             receipt = connection.execute('SELECT * FROM series_delete_commands WHERE owner_id=? AND command_key=?', (user.id, body.command_key)).fetchone()
             if receipt:
                 if receipt['input_hash'] != digest:
-                    fail(ErrorCode.IDEMPOTENCY_CONFLICT, '删除命令 key 不能用于不同内容。')
+                    fail(ErrorCode.IDEMPOTENCY_CONFLICT, 'Deletion command  key  cannot be used for different content.')
                 return
             if series['deleted_at']:
-                fail(ErrorCode.NOT_FOUND, '出行不存在。')
+                fail(ErrorCode.NOT_FOUND, 'Trip not found.')
             if series['revision'] != body.expected_series_revision:
-                fail(ErrorCode.VERSION_CONFLICT, '出行已更新，请重新确认删除。')
+                fail(ErrorCode.VERSION_CONFLICT, 'Trip updated. Reconfirm deletion.')
             if connection.execute("SELECT 1 FROM runs r JOIN plan_series_members m ON m.plan_id=r.plan_id WHERE m.series_id=? AND r.status IN ('PENDING','RUNNING')", (series_id,)).fetchone():
-                fail(ErrorCode.INVALID_STATE, '出行仍有活动运行，不能删除。')
+                fail(ErrorCode.INVALID_STATE, 'The trip has active runs and cannot be deleted.')
             timestamp = now()
             connection.execute('''INSERT OR IGNORE INTO deleted_requests(request_id,deleted_at)
                 SELECT request_id,? FROM plans WHERE id IN (SELECT plan_id FROM plan_series_members WHERE series_id=?)

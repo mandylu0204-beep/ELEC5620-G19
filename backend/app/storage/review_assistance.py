@@ -25,7 +25,7 @@ class AssistanceInput(ReviewInput):
     @field_validator('problem','next_action')
     @classmethod
     def meaningful(cls,value):
-        if not value.strip():raise ValueError('请填写具体问题和下一步动作。')
+        if not value.strip():raise ValueError('Enter the specific issue and next action.')
         return value.strip()
 
 
@@ -42,35 +42,35 @@ class ReviewAssistance:
         require_role(user,'FOUNDER')
         with self.db.transaction() as connection:
             plan=connection.execute('SELECT * FROM plans WHERE id=? AND deleted_at IS NULL',(plan_id,)).fetchone()
-            if not plan:fail(ErrorCode.NOT_FOUND,'方案不存在。')
+            if not plan:fail(ErrorCode.NOT_FOUND,'Plan not found.')
             require_current(connection,plan);require_decided(connection,plan_id)
             run=connection.execute('SELECT * FROM runs WHERE id=?',(plan['active_run_id'],)).fetchone()
-            if not run or body.version_context.plan_id!=plan_id:fail(ErrorCode.STALE_CONTEXT,'处理依据已变化，请刷新。')
+            if not run or body.version_context.plan_id!=plan_id:fail(ErrorCode.STALE_CONTEXT,'Assistance evidence changed. Refresh.')
             scope=RunScope.model_validate_json(run['scope'])
             port=SqlitePersistencePort(self.db,plan['owner_id'],scope)
             _,_,version=port.context(connection,body.version_context)
             assessments=port.assessments(connection,body.version_context)
             actual=sorted(item.assessment_id for item in assessments)
             if len(set(body.assessment_ids))!=2 or sorted(body.assessment_ids)!=actual:
-                fail(ErrorCode.STALE_CONTEXT,'处理记录必须绑定当前两份评估。')
+                fail(ErrorCode.STALE_CONTEXT,'Assistance records must bind both current assessments.')
             key=fingerprint({'plan_id':plan_id,**body.model_dump(mode='json')})
             receipt=connection.execute('SELECT * FROM review_assistance_commands WHERE actor_id=? AND command_key=?',(user.id,body.command_key)).fetchone()
             if receipt:
-                if receipt['input_hash']!=key:fail(ErrorCode.IDEMPOTENCY_CONFLICT,'同一命令不能用于不同处理内容。')
+                if receipt['input_hash']!=key:fail(ErrorCode.IDEMPOTENCY_CONFLICT,'The same command cannot be used for different assistance content.')
                 return json.loads(receipt['result'])
             if run['revision']!=body.expected_run_revision or version.revision!=body.expected_version_revision:
-                fail(ErrorCode.VERSION_CONFLICT,'方案或运行已变化，请刷新。')
+                fail(ErrorCode.VERSION_CONFLICT,'Plan or run changed. Refresh.')
             if run['status']!='SUCCEEDED' or version.status not in {'ESCALATED','BLOCKED','REVISION_REQUIRED'} or port.review(connection,body.version_context,actual):
-                fail(ErrorCode.INVALID_STATE,'本次结果不再接受修正协助，请刷新。')
+                fail(ErrorCode.INVALID_STATE,'This result no longer accepts corrective assistance. Refresh.')
             unavailable=False
             if self.context_guard:
                 try:self.context_guard(scope)
                 except ContractFailure:unavailable=True
             eligibility=port.decision(connection,body.version_context)[1].model_dump(mode='json')
             if not unavailable and approval_required([item.model_dump(mode='json') for item in assessments],eligibility):
-                fail(ErrorCode.INVALID_STATE,'这是风险审批任务，请使用正式审核决定。')
+                fail(ErrorCode.INVALID_STATE,'This is a risk-approval task. Use a formal review decision.')
             if body.recheck_on and body.recheck_on<scope.demo_context.demo_today:
-                fail(ErrorCode.INPUT_INVALID,'建议重查日期不能早于本次检查日期。')
+                fail(ErrorCode.INPUT_INVALID,'The suggested recheck date cannot precede this check date.')
             result={'note_id':uuid4().hex,'plan_id':plan_id,'run_id':run['id'],'plan_version_id':body.version_context.plan_version_id,
                 'assessment_ids':actual,'reviewer_user_id':user.id,'decision':body.decision,'problem':body.problem,
                 'reason':body.reason,'next_action':body.next_action,'recheck_on':body.recheck_on.isoformat() if body.recheck_on else None,

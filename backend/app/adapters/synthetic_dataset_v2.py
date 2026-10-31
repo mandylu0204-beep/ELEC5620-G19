@@ -185,7 +185,7 @@ class SyntheticDatasetV2Adapter:
                 actual[CATALOGUE_FILE] = hashlib.sha256(read_catalogue(root, _json(manifest))).hexdigest()
             actual['manifest.json'] = hashlib.sha256(manifest).hexdigest()
             if expected_context is not None and any(expected_context.file_digests.get(name) != value for name, value in actual.items()):
-                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='v2 Adapter 消费的原始字节与应用登记摘要不一致。'))
+                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='v2 Adapter Consumed original bytes differ from the registered application digest.'))
             from ..agents.rules.trip_evidence import POLICY_VERSION, TripEvidenceSelector
             from .snapshot_archive import FORMAT_VERSION
             cache_key = (FORMAT_VERSION, snapshot_key, str(root), type(self), type(self)._parse,
@@ -203,7 +203,7 @@ class SyntheticDatasetV2Adapter:
         except ContractFailure:
             raise
         except (OSError, UnicodeError, ValueError, TypeError, KeyError, ArithmeticError, csv.Error) as exc:
-            raise _fail('无法严格读取或验证已封存的 v2 业务与运行数据。', filename) from exc
+            raise _fail('Could not strictly read or validate sealed  v2  business and runtime data.', filename) from exc
 
     def _parse(self, payloads, manifest, actual, expected_context):
         parsed = {name: (_csv(payload) if name.endswith('.csv') else _json(payload)) for name, payload in payloads.items()}
@@ -247,7 +247,7 @@ class SyntheticDatasetV2Adapter:
         context = DatasetContext(dataset_version=version, file_digests=actual,
             rules_version='a-request-normalization-v1')
         if expected_context is not None and any(expected_context.file_digests.get(name) != value for name, value in actual.items()):
-            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='v2 Adapter 输入身份已变化。'))
+            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='v2 Adapter Input identity changed.'))
         dataset = SyntheticDataset(context, camps, gear, cost_records, profiles, requests, safety,
             v2_policy=policy, runtime_requests=runtime_requests,
             safety_facts={key: row.get('evidence_facts', {}) for key, row in policy['safety'].items()},

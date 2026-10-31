@@ -64,9 +64,9 @@ def test_catalogue_is_pinned_and_existing_campsite_facts_are_not_replaced(tmp_pa
     assert len(bonnie['onsite_activities'])==2
     assert any(item['code']=='GROUP_CAPACITY' and item['expected']==3 and item['actual']==4 for item in bonnie['match_facts'])
     saved=next(item for item in input.recommendations.candidates if item.campsite_id=='bonnie-vale')
-    assert any('本次 3 人' in text and '上限 4 人' in text for text in saved.reasons)
+    assert any('this trip has 3 people' in text and 'recorded capacity is 4 people' in text for text in saved.reasons)
     assert any('AUD 85.00' in text and 'AUD 170.00' in text for text in saved.reasons)
-    assert any('淋浴' in text for text in saved.reasons)
+    assert any('Showers' in text for text in saved.reasons)
     changed=tmp_path/'changed.json'
     changed.write_bytes(ref.REFERENCE_PATH.read_bytes()+b' ')
     monkeypatch.setattr(ref,'REFERENCE_PATH',changed)
@@ -101,7 +101,7 @@ def test_actual_two_turn_component_saves_bounded_source_backed_entries_and_prese
     entries=outcome.itinerary.itinerary_entries
     assert sum(row.entry_kind=='CAMP' for row in entries)==2
     assert sum(row.entry_kind=='ACTIVITY' for row in entries)==3
-    assert '离营整理' in entries[-1].description
+    assert 'Pack up and prepare for return' in entries[-1].description
     assert all(a.end_at<=b.start_at for a,b in zip(entries,entries[1:]))
     assert any(row.dataset_file==ref.REFERENCE_KEY for row in outcome.itinerary.source_refs)
     assert input.confirmed_requirements.budget_cents==100000
@@ -137,7 +137,7 @@ def test_no_activity_data_is_explicit_and_never_borrows_another_campsite(tmp_pat
     content=validated_itinerary(dataset,input,value,[row.campsite_id for row in input.recommendations.candidates])
     assert all(ref.LEGACY_REFERENCE_KEY!=row.dataset_file for row in content.source_refs)
     candidate=next(item for item in input.recommendations.candidates if item.campsite_id=='cattai')
-    assert any('暂无适用的活动资料' in text for text in candidate.material_uncertainties)
+    assert any('No applicable activity data' in text for text in candidate.material_uncertainties)
 
 
 def test_http_save_final_revision_reassessment_recovery_and_restart(tmp_path,monkeypatch):
@@ -160,7 +160,7 @@ def test_http_save_final_revision_reassessment_recovery_and_restart(tmp_path,mon
         assert initial['finalisation_available']
         raw=client.get('/api/v1/plans/'+initial['plan']['plan_id']).json()
         assert 'model_diagnostics' not in raw and 'model_planning_trace' not in raw
-        assert any('同行人数' in reason for reason in raw['recommendations']['result']['candidates'][0]['reasons'])
+        assert any('Group size' in reason for reason in raw['recommendations']['result']['candidates'][0]['reasons'])
         final=client.post('/api/v1/plans/'+initial['plan']['plan_id']+'/finalise',headers=headers,json=final_command(initial))
         assert final.status_code==200,final.text
         path='/api/v1/plans/'+initial['plan']['plan_id']+'/finals/'+final.json()['final_id']
@@ -172,7 +172,7 @@ def test_http_save_final_revision_reassessment_recovery_and_restart(tmp_path,mon
         assert response.status_code==202,response.text
         revised=wait_run(client,response.json()['run_id'],'SUCCEEDED')
         assert revised['version']['content']['selected_campsite_ids']==['lane-cove']
-        assert '营地设施熟悉' in revised['version']['content']['itinerary_entries'][0]['description']
+        assert 'Explore facilities and settle in' in revised['version']['content']['itinerary_entries'][0]['description']
         before=role_counts(calls)['PLANNING']
         response=change(client,headers,revised,key='daily-plan-reassess-command')
         assert response.status_code==202,response.text
@@ -238,7 +238,7 @@ def test_expanded_catalogue_covers_every_campsite_with_saved_bounded_daily_entri
     content=SimpleNamespace(source_refs=refs)
     for entry in entries:
         if entry.entry_kind=='ACTIVITY':
-            assert '模拟活动建议' in entry.description
+            assert 'Simulated activity suggestion' in entry.description
             assert ref.known_activity(dataset,entry,content,input.confirmed_requirements)
     wrong=entries[0].model_copy(update={'description':entries[0].description+' Extra unregistered activity.'})
     assert not ref.known_activity(dataset,wrong,content,input.confirmed_requirements)
@@ -261,9 +261,9 @@ def test_the_basin_model_uses_actual_catalogue_activities(tmp_path):
     result=asyncio.run(PlanningCoordinator(dataset,CampusModelClient(model_settings(),transport=httpx.MockTransport(respond))).plan(input))
     assert len(calls)==2
     assert result.itinerary.execution_mode=='agent'
-    assert '营位自然观察与趣味摄影' in result.itinerary.itinerary_entries[0].description
-    assert '营位故事接龙与休闲' in result.itinerary.itinerary_entries[2].description
-    assert '离营整理' in result.itinerary.itinerary_entries[-1].description
+    assert 'Nature observation and casual photography' in result.itinerary.itinerary_entries[0].description
+    assert 'Storytelling and campsite leisure' in result.itinerary.itinerary_entries[2].description
+    assert 'Pack up and prepare for return' in result.itinerary.itinerary_entries[-1].description
     assert not any('free-time block' in row.description for row in result.itinerary.itinerary_entries)
 
 

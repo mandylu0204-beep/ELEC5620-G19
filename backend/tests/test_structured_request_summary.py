@@ -9,7 +9,7 @@ from app.storage.repository import encode
 from test_requests import web,sign_in,FIELDS,confirm_body
 from test_request_interpretation_lifecycle import observed_web
 
-FIELDS_READY=FIELDS|{'preferences':['ready-to-eat meals','希望安静'],'mandatory_constraints':['需要洗澡']}
+FIELDS_READY=FIELDS|{'preferences':['ready-to-eat meals','Prefer quiet surroundings'],'mandatory_constraints':['Need showers']}
 
 def create(client,headers,fields=None,**extra):
     if fields is None:
@@ -74,7 +74,7 @@ def test_form_summary_keeps_dates_meal_conflicts_and_supported_region_guards(web
 
 
 def test_other_requirements_remain_on_assistance_path_without_source_prose(web):
-    app,client,headers=web;row=create(client,headers,FIELDS_READY|{'mandatory_constraints':['私人热水淋浴']})
+    app,client,headers=web;row=create(client,headers,FIELDS_READY|{'mandatory_constraints':['Private hot showers']})
     assert row['requirement_help']['needed']
     reply=client.post('/api/v1/requests/'+row['request_id']+'/interpret',headers=headers,json={'expected_revision':row['revision']})
     assert reply.status_code==409
@@ -98,7 +98,7 @@ def test_form_summary_private_identity_must_match_exact_saved_input(web,mutation
 
 def test_form_edit_without_source_keeps_legacy_prose_exactly(web):
     app,client,headers=web
-    legacy='需要洗澡。\n希望安静，原文需保留。'
+    legacy='Need showers.\nPrefer quietness; preserve original wording.'
     row=create(client,headers,raw_text=legacy)
     reply=client.patch('/api/v1/requests/'+row['request_id'],headers=headers,json={'expected_revision':row['revision'],'explicit_fields':FIELDS_READY})
     assert reply.status_code==200 and reply.json()['raw_text']==legacy

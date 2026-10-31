@@ -281,8 +281,8 @@ def test_maximum_findings_fixture_is_supported_without_omitting_facts(normal):
 
 def test_complete_payload_limit_counts_multibyte_bytes(normal):
     _,input,_,baseline,_=normal
-    with pytest.raises(ContractFailure):check_payload_size(input,baseline,{'extra':'界'*180000},{})
-    oversized=baseline.model_copy(update={'uncertainties':['界'*12000]})
+    with pytest.raises(ContractFailure):check_payload_size(input,baseline,{'extra':'World'*180000},{})
+    oversized=baseline.model_copy(update={'uncertainties':['World'*12000]})
     with pytest.raises(ContractFailure):SafetyToolset(input,oversized,selection=normal[-1])
 
 
@@ -292,7 +292,7 @@ def test_unregistered_short_turn_budget_fails_before_model(normal):
 
 def test_oversize_input_fails_before_any_model_request(normal):
     dataset,input,config,_,_=normal
-    itinerary=input.saved_itinerary.model_copy(update={'assumptions':['界'*50000]})
+    itinerary=input.saved_itinerary.model_copy(update={'assumptions':['World'*50000]})
     input=input.model_copy(update={'saved_itinerary':itinerary})
     agent,requests=safety_agent_fixture(dataset,config)
     with pytest.raises(ContractFailure):call(agent.assess_safety_with_trace(input))
@@ -300,7 +300,7 @@ def test_oversize_input_fails_before_any_model_request(normal):
 
 
 def test_action_byte_limit_is_not_character_count():
-    with pytest.raises(ContractFailure):parse_safety_action('界'*11000)
+    with pytest.raises(ContractFailure):parse_safety_action('World'*11000)
 
 
 def test_whole_proposal_budget_rejects_combined_field_maxima(normal):

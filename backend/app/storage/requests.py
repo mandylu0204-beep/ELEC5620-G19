@@ -72,13 +72,13 @@ class RequestRepository:
         require_role(user, 'CAMPER')
         row = connection.execute('SELECT * FROM requests WHERE id=? AND owner_id=? AND NOT EXISTS (SELECT 1 FROM deleted_requests d WHERE d.request_id=requests.id)', (request_id, user.id)).fetchone()
         if not row:
-            fail(ErrorCode.NOT_FOUND, '请求不存在。')
+            fail(ErrorCode.NOT_FOUND, 'Request not found.')
         return row
 
     @staticmethod
     def check_revision(row, expected):
         if row['revision'] != expected:
-            fail(ErrorCode.VERSION_CONFLICT, '请求摘要已变化，请刷新后再操作。')
+            fail(ErrorCode.VERSION_CONFLICT, 'Request summary changed. Refresh before continuing.')
 
     def result(self, connection, row):
         summary = connection.execute('SELECT * FROM request_summaries WHERE request_id=?', (row['id'],)).fetchone()
@@ -139,7 +139,7 @@ class RequestRepository:
         with self.db.transaction() as connection:
             row = self.own(connection, user, request_id)
             if row['status'] == 'ANALYSING':
-                fail(ErrorCode.INVALID_STATE, '请求正在生成摘要，请完成后再删除。')
+                fail(ErrorCode.INVALID_STATE, 'Summary generation in progress. Wait before deleting.')
             # Existing plans keep their immutable confirmed snapshots and history.
             connection.execute('INSERT INTO deleted_requests VALUES(?,?)', (request_id, now()))
 
@@ -150,7 +150,7 @@ class RequestRepository:
             validate_successor(connection, user, request_id)
             self.check_revision(row, expected_revision)
             if row['status'] == 'CONFIRMED':
-                fail(ErrorCode.INVALID_STATE, '已确认需求不能原地修改，请新建请求。')
+                fail(ErrorCode.INVALID_STATE, 'Confirmed requirements cannot be edited in place. Create a new request.')
             connection.execute("UPDATE requests SET raw_text=?,payload=?,status='DRAFT',revision=revision+1 WHERE id=?", (raw_text, encode(explicit.model_dump(mode='json', exclude_unset=True)), request_id))
             connection.execute('DELETE FROM request_summaries WHERE request_id=?', (request_id,))
             return self.result(connection, self.own(connection, user, request_id))
@@ -162,13 +162,13 @@ class RequestRepository:
             validate_successor(connection, user, request_id)
             self.check_revision(row, expected_revision)
             if row['status'] in {'CONFIRMED','ANALYSING'}:
-                fail(ErrorCode.INVALID_STATE, '此请求已确认或正在处理。')
+                fail(ErrorCode.INVALID_STATE, 'This request is confirmed or processing.')
             saved_profile = connection.execute('SELECT * FROM profiles WHERE owner_id=?', (user.id,)).fetchone()
             profile = ProfileSnapshot.model_validate_json(saved_profile['payload']) if saved_profile else ProfileSnapshot()
             profile_revision = saved_profile['revision'] if saved_profile else 0
             from ..application.requirement_choices import unknown_items
             if unknown_items(TripRequirements.model_validate_json(row['payload']),profile):
-                fail(ErrorCode.INVALID_STATE,'其他要求尚未对应已有条件，请先完成需求协助；本次未调用模型。')
+                fail(ErrorCode.INVALID_STATE,'Other requirements do not map to existing conditions. Complete request assistance first. No model was called.')
             revision = row['revision'] + 1
             connection.execute("UPDATE requests SET status='ANALYSING',revision=? WHERE id=?", (revision, request_id))
             connection.execute('INSERT INTO request_summaries VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(request_id) DO UPDATE SET analysis_revision=excluded.analysis_revision,profile_revision=excluded.profile_revision,profile_snapshot=excluded.profile_snapshot,demo_context=excluded.demo_context,dataset_context=excluded.dataset_context,result=NULL,error=NULL', (request_id, revision, profile_revision, encode(profile), encode(demo), encode(dataset), None, None))
@@ -180,7 +180,7 @@ class RequestRepository:
         with self.db.transaction() as connection:
             row = self.own(connection, user, request_id)
             if row['revision'] != analysis_revision or row['status'] != 'ANALYSING':
-                fail(ErrorCode.STALE_CONTEXT, '较旧的分析结果未应用；请求已修改。')
+                fail(ErrorCode.STALE_CONTEXT, 'Older analysis was not applied because the request changed.')
             saved = result.model_dump(mode='json')
             if not row['raw_text'].strip():
                 summary=connection.execute('SELECT * FROM request_summaries WHERE request_id=?',(request_id,)).fetchone()
@@ -190,17 +190,17 @@ class RequestRepository:
                         and summary['analysis_revision']==analysis_revision
                         and metadata.input_sha256==structured_fingerprint(_saved_structured_input(row,summary)))
                 except (ValidationError,ValueError,TypeError):valid=False
-                if not valid:fail(ErrorCode.STALE_CONTEXT,'结构化摘要与本次表单资料不一致，请重新生成。')
+                if not valid:fail(ErrorCode.STALE_CONTEXT,'Structured summary does not match the current form. Regenerate it.')
                 saved['structured_summary_metadata']=metadata.model_dump(mode='json')
             elif structured_metadata is not None:
-                fail(ErrorCode.STALE_CONTEXT,'旧版原文请求不能采用结构化摘要身份。')
+                fail(ErrorCode.STALE_CONTEXT,'A legacy text request cannot use a structured-summary identity.')
             if interpretation_metadata is not None:
                 metadata = RequestInterpretationMetadata.model_validate(interpretation_metadata)
                 summary = connection.execute('SELECT * FROM request_summaries WHERE request_id=?', (request_id,)).fetchone()
                 if (not summary or summary['analysis_revision'] != analysis_revision
                         or metadata.analysis_revision != analysis_revision
                         or metadata.input_sha256 != request_input_fingerprint(_saved_interpretation_input(row, summary))):
-                    fail(ErrorCode.STALE_CONTEXT, '摘要与本次需求资料不一致，请重新生成。')
+                    fail(ErrorCode.STALE_CONTEXT, 'Summary does not match the current requirements. Regenerate it.')
                 saved['interpretation_metadata'] = metadata.model_dump(mode='json')
             connection.execute('UPDATE request_summaries SET result=?,error=NULL WHERE request_id=?', (encode(saved), request_id))
             connection.execute('UPDATE requests SET status=?,revision=revision+1 WHERE id=?', (status.value, request_id))
@@ -220,19 +220,19 @@ class RequestRepository:
             receipt = connection.execute('SELECT * FROM request_confirmations WHERE owner_id=? AND command_key=?', (user.id, command_key)).fetchone()
             if receipt:
                 if receipt['request_id'] != request_id or receipt['input_hash'] != input_hash:
-                    fail(ErrorCode.IDEMPOTENCY_CONFLICT, '同一确认 key 不能提交不同请求或摘要。')
+                    fail(ErrorCode.IDEMPOTENCY_CONFLICT, 'The same confirmation  key  cannot submit different requests or summaries.')
                 return self.result(connection, row)
             from .trip_series import validate_successor
             validate_successor(connection, user, request_id)
             self.check_revision(row, expected_revision)
             if row['status'] != 'AWAITING_CONFIRMATION':
-                fail(ErrorCode.INVALID_STATE, '请先完成澄清并查看最新摘要。')
+                fail(ErrorCode.INVALID_STATE, 'Complete clarification and view the latest summary first.')
             summary = connection.execute('SELECT * FROM request_summaries WHERE request_id=?', (request_id,)).fetchone()
             profile = connection.execute('SELECT revision FROM profiles WHERE owner_id=?', (user.id,)).fetchone()
             if not summary or not profile or profile['revision'] != summary['profile_revision']:
-                fail(ErrorCode.VERSION_CONFLICT, '露营资料已修改，请重新生成摘要后确认。')
+                fail(ErrorCode.VERSION_CONFLICT, 'Camping profile changed. Regenerate the summary before confirming.')
             if summary['dataset_context'] != encode(dataset) or summary['demo_context'] != encode(demo):
-                fail(ErrorCode.STALE_CONTEXT, '数据或演示上下文已变化，请重新生成摘要。')
+                fail(ErrorCode.STALE_CONTEXT, 'Data or demo context changed. Regenerate the summary.')
             result = json.loads(summary['result'])
             if not row['raw_text'].strip():
                 try:
@@ -241,9 +241,9 @@ class RequestRepository:
                         and metadata.input_sha256==structured_fingerprint(_saved_structured_input(row,summary))
                         and 'interpretation_metadata' not in result)
                 except (ValidationError,ValueError,TypeError):valid=False
-                if not valid:fail(ErrorCode.STALE_CONTEXT,'结构化摘要身份或资料已变化，请重新生成。')
+                if not valid:fail(ErrorCode.STALE_CONTEXT,'Structured summary identity or profile changed. Regenerate it.')
             elif 'structured_summary_metadata' in result:
-                fail(ErrorCode.STALE_CONTEXT,'摘要来源不匹配，请重新生成。')
+                fail(ErrorCode.STALE_CONTEXT,'Summary source mismatch. Regenerate it.')
             if 'interpretation_metadata' in result:
                 try:
                     metadata = RequestInterpretationMetadata.model_validate(result['interpretation_metadata'])
@@ -254,10 +254,10 @@ class RequestRepository:
                 except (ValidationError, ValueError, TypeError):
                     matches = False
                 if not matches:
-                    fail(ErrorCode.STALE_CONTEXT, '需求理解结果或配置已变化，请重新生成摘要。')
+                    fail(ErrorCode.STALE_CONTEXT, 'Interpretation result or settings changed. Regenerate the summary.')
             from .requirement_help import help_state
             if help_state(connection,row)['needed']:
-                fail(ErrorCode.INVALID_STATE,'其他要求尚未明确，请先完成需求协助并重新生成摘要。')
+                fail(ErrorCode.INVALID_STATE,'Other requirements remain unclear. Complete assistance and regenerate the summary.')
             context = ConfirmedContext(request_id=request_id, confirmed_at=now(), requirements=ConfirmedRequirements.model_validate(result['extracted_requirements']), profile_snapshot=ProfileSnapshot.model_validate_json(summary['profile_snapshot']), demo_context=demo, dataset_context=dataset)
             from ..agents.rules.transport import require_supported
             require_supported(context.profile_snapshot, dataset)

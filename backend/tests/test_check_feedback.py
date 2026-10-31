@@ -108,8 +108,8 @@ def test_unavailable_service_is_distinct_from_updated_data(dataset, tmp_path, mo
     with TestClient(app) as client:
         old = start_complete(client, sign_in(client))
         def unavailable(scope):
-            # Deliberately contains "变化": classification must use the code.
-            raise ContractFailure(ContractError(code=code, message='服务变化导致暂时不可用。'))
+            # Deliberately contains "Change": classification must use the code.
+            raise ContractFailure(ContractError(code=code, message='Temporarily unavailable due to a service change.'))
         monkeypatch.setattr(app.state.runtime, 'validate_scope', unavailable)
         current = client.get('/api/v1/plans/' + old['plan']['plan_id']).json()
         assert current['current_inputs_state'] == 'UNAVAILABLE'

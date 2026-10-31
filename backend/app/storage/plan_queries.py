@@ -61,13 +61,13 @@ class PlanQueries:
                 require_role(user, 'FOUNDER')
                 plan = connection.execute('SELECT * FROM plans WHERE id=? AND deleted_at IS NULL', (plan_id,)).fetchone()
                 if not plan:
-                    fail(ErrorCode.NOT_FOUND, '方案不存在。')
+                    fail(ErrorCode.NOT_FOUND, 'Plan not found.')
             else:
                 plan = Repository.own_plan(connection, user, plan_id)
             selected = run_id if run_id is not None else plan['active_run_id']
             run = connection.execute('SELECT * FROM runs WHERE id=? AND plan_id=?', (selected, plan_id)).fetchone()
             if run_id is not None and not run:
-                fail(ErrorCode.NOT_FOUND, '运行不存在。')
+                fail(ErrorCode.NOT_FOUND, 'Run not found.')
             history = [dict(row) for row in connection.execute('''SELECT r.id AS run_id,r.status,r.stage,
                 r.created_at,rv.version_id AS plan_version_id,v.version_number
                 FROM runs r LEFT JOIN run_versions rv ON rv.run_id=r.id
@@ -157,7 +157,7 @@ class PlanQueries:
         with self.db.transaction(write=False) as connection:
             row = connection.execute('SELECT r.plan_id FROM runs r JOIN plans p ON p.id=r.plan_id WHERE r.id=? AND p.owner_id=?', (run_id, user.id)).fetchone()
             if not row:
-                fail(ErrorCode.NOT_FOUND, '运行不存在。')
+                fail(ErrorCode.NOT_FOUND, 'Run not found.')
             plan_id = row['plan_id']
         return self.detail(user, plan_id, run_id)
 
@@ -171,7 +171,7 @@ class PlanQueries:
                 WHERE r.id=? AND p.owner_id=? AND p.deleted_at IS NULL''',
                 (run_id, user.id)).fetchone()
             if not row:
-                fail(ErrorCode.NOT_FOUND, '运行不存在。')
+                fail(ErrorCode.NOT_FOUND, 'Run not found.')
             from .revision_choices import candidate_for
             plan = connection.execute('SELECT * FROM plans WHERE id=?', (row['plan_id'],)).fetchone()
             proposal = candidate_for(connection, plan, run_id)

@@ -142,7 +142,7 @@ def _sources(input):
 
 
 def _invalid():
-    return model_failure('需求解释未通过原文引用或语义协议校验；草稿未确认，请重试。', code=ErrorCode.CONTRACT_INVALID)
+    return model_failure('Request interpretation failed quote or semantic contract validation. The draft is unconfirmed. Please retry.', code=ErrorCode.CONTRACT_INVALID)
 
 
 def _context(clause, quote):
@@ -182,9 +182,9 @@ def _semantic_problem(clause, mention):
     context = _context(clause.quote, mention.quote)
     meal = _meal_mode(mention.quote)
     if clause.quote.count(mention.quote) > 1:
-        return '同一短语出现多次，否定或必须条件的范围需要核对'
+        return 'The phrase appears multiple times; review the scope of negation or required conditions'
     if mention.ambiguous or mention.strength == 'uncertain':
-        return '是偏好、必须条件，还是不需要，需要明确'
+        return 'Clarify whether this is a preference, a required condition or not needed'
     kind = 'constraint' if mention.strength == 'hard' else 'preference'
     # A positive noun quoted out of a negated sentence is not a positive alias.
     known = _known_term(context, kind)
@@ -192,22 +192,22 @@ def _semantic_problem(clause, mention):
     alias_matches = known is not None and canonical is not None and _concept(known) == _concept(canonical)
     negative = bool(_NEGATIVE.search(context))
     if mention.polarity != 'positive' and not negative:
-        return '没有找到否定或可选的原话依据，不能删去这项条件'
+        return 'No quoted negation or optional wording was found; this condition cannot be removed'
     if mention.polarity == 'positive' and negative and not alias_matches:
         if mention.canonical == 'no_fires' and not _OPTIONAL.search(context):
             pass
         elif mention.canonical == 'quiet' and _QUIET_ANTONYM.search(context):
             pass
         else:
-            return '否定或双重否定的范围需要核对，不能直接作为正向条件'
+            return 'Review negation or double-negation scope; it cannot directly become a positive condition'
     if mention.canonical == 'no_fires' and mention.polarity == 'positive' and _OPTIONAL.search(context):
-        return '不需要营火不等于禁止生火，请核对本次安排'
+        return 'Not needing a campfire does not prohibit fires. Review the arrangements'
     if not meal and clause.source == 'preferences' and mention.polarity == 'positive' and _HARD.search(context) and not negative:
-        return '这句话表达了必须条件，但填写在偏好栏中，请核对强度'
+        return 'This required condition was entered under preferences. Review its strength'
     if not meal and clause.source == 'mandatory_constraints' and _SOFT.search(context) and not _HARD.search(context):
-        return '这句话表达了偏好，但填写在必须条件栏中，请核对强度'
+        return 'This preference was entered under required conditions. Review its strength'
     if mention.polarity == 'not_required' and _HARD.search(context) and not negative:
-        return '明确的必须条件不能自动改为不需要'
+        return 'An explicit required condition cannot automatically become not needed'
     if not meal and clause.source == 'raw_text' and mention.polarity == 'positive':
         hard, soft = bool(_HARD.search(context)), bool(_SOFT.search(context))
         if not hard and not soft:
@@ -219,13 +219,13 @@ def _semantic_problem(clause, mention):
                 hard = max(cues)[1]
                 soft = not hard
                 if _NEGATIVE.search(prefix):
-                    return '并列条件的否定范围需要核对'
+                    return 'Review the scope of negation across combined conditions'
         if mention.strength == 'soft' and hard:
-            return '原话表达了必须条件，不能自动降为偏好'
+            return 'A required condition in the original text cannot automatically become a preference'
         if mention.strength == 'hard' and soft and not hard:
-            return '原话表达了偏好，不能自动升为必须条件'
+            return 'A preference in the original text cannot automatically become a required condition'
     if _UNCERTAIN.search(context):
-        return '原话仍有不确定性，请核对后再确认'
+        return 'The original wording is uncertain. Review before confirming'
     return None
 
 
@@ -311,7 +311,7 @@ def _project(dataset, input, proposal):
     def issue(field, code, message):
         if not any(item.field == field and item.code == code and item.message == message for item in errors):
             errors.append(FieldError(field=field, code=code, message=message))
-            questions.append(Clarification(field=field, question=message, reason='原话的含义必须在确认前明确。'))
+            questions.append(Clarification(field=field, question=message, reason='Clarify the original meaning before confirmation.'))
 
     def suppress_raw(canonical):
         if canonical is None:
@@ -329,11 +329,11 @@ def _project(dataset, input, proposal):
         if incomplete and not hard_scope:
             if clause.source == 'preferences':
                 lists['explicit']['preferences'].append(canonical_term(clause.quote, 'preference') or clause.quote)
-            uncertainties.append(f'已保留偏好“{clause.quote}”；目前的营地资料不能完全核实这项描述。')
+            uncertainties.append(f'Preference retained: {clause.quote}; current campsite information cannot fully verify this description.')
         if clause.unresolved or (incomplete and hard_scope):
             if clause.source == 'raw_text' and _HARD.search(clause.quote):
                 field = 'mandatory_constraints'
-            issue(field, FieldErrorCode.AMBIGUOUS, f'请明确这句话中的条件：“{clause.quote}”。')
+            issue(field, FieldErrorCode.AMBIGUOUS, f'Clarify the conditions in: {clause.quote}.')
         for mention in clause.mentions:
             meal = _meal_mode(mention.quote)
             field = 'mandatory_constraints' if mention.strength == 'hard' else 'preferences'
@@ -342,20 +342,20 @@ def _project(dataset, input, proposal):
             problem = _semantic_problem(clause, mention)
             if problem:
                 suppress_raw(mention.canonical)
-                issue(field, FieldErrorCode.AMBIGUOUS, f'请核对“{mention.quote}”：{problem}。')
+                issue(field, FieldErrorCode.AMBIGUOUS, f'Please review: {mention.quote}: {problem}.')
                 continue
             if not meal and (clause.source == 'mandatory_constraints' and mention.strength != 'hard'
                     or clause.source == 'preferences' and mention.strength != 'soft'):
-                issue(field, FieldErrorCode.CONFLICTING, f'“{mention.quote}”的语气与填写的偏好／必须条件栏不一致，请核对。')
+                issue(field, FieldErrorCode.CONFLICTING, f'"{mention.quote}": wording strength conflicts with the preference / required-condition field. Please review.')
                 continue
             target = lists['raw_text' if clause.source == 'raw_text' else 'explicit']
             canonical = mention.canonical or meal
             if canonical is None:
                 if field == 'mandatory_constraints':
-                    issue(field, FieldErrorCode.UNSUPPORTED, f'目前无法验证必须条件“{mention.quote}”，请调整或说明。')
+                    issue(field, FieldErrorCode.UNSUPPORTED, f'Cannot currently verify required condition: {mention.quote}. Adjust or clarify it.')
                 else:
                     target[field].append(mention.quote)
-                    uncertainties.append(f'已保留偏好“{mention.quote}”；目前的营地资料无法核实是否符合。')
+                    uncertainties.append(f'Preference retained: {mention.quote}; current campsite information cannot verify this match.')
                 continue
             stances.setdefault(_concept(canonical), set()).add(mention.polarity)
             if mention.polarity != 'positive':
@@ -367,14 +367,14 @@ def _project(dataset, input, proposal):
                         target['mandatory_constraints'].append('no_fires')
                     elif mention.strength == 'soft':
                         target['preferences'].append(mention.quote)
-                        uncertainties.append(f'保留否定偏好“{mention.quote}”，不把它升级为必须条件。')
+                        uncertainties.append(f'Negative preference retained: {mention.quote}; it has not been made mandatory.')
                     else:
-                        issue(field, FieldErrorCode.UNSUPPORTED, f'请明确否定条件“{mention.quote}”；目前不能将它作为正向设施要求。')
+                        issue(field, FieldErrorCode.UNSUPPORTED, f'Clarify negative condition: {mention.quote}; it cannot currently be treated as a positive facility requirement.')
                 continue
             if canonical in _MEAL_MODES:
                 if meal is None:
                     issue(field, FieldErrorCode.UNSUPPORTED,
-                        f'请核对用餐要求“{mention.quote}”中的附加条件，不能只按普通餐食处理。')
+                        f'Review meal requirement: {mention.quote}. Additional conditions cannot be treated as ordinary meals alone.')
                 else:
                     # The existing downstream meal contract is a single choice
                     # in preferences, even when that arrangement is required.
@@ -389,14 +389,14 @@ def _project(dataset, input, proposal):
                     and re.search(r'step[- ]free|无台阶|无障碍厕所|accessible toilet', context, re.I))
             if detail_unverified:
                 if field == 'mandatory_constraints':
-                    issue(field, FieldErrorCode.UNSUPPORTED, f'营地资料不能验证“{mention.quote}”中的设施细分或附加条件，请核对。')
+                    issue(field, FieldErrorCode.UNSUPPORTED, f'Campsite information cannot verify the facility details or additional conditions in: {mention.quote}. Please review.')
                 else:
                     target[field].append(mention.quote)
-                    uncertainties.append(f'目前的营地资料不能完整核实偏好“{mention.quote}”。')
+                    uncertainties.append(f'Current campsite information cannot fully verify preference: {mention.quote}.')
                 continue
             if canonical == 'no_fires' and mention.strength == 'soft':
                 target['preferences'].append(mention.quote)
-                uncertainties.append(f'保留偏好“{mention.quote}”，不把它升级为必须条件。')
+                uncertainties.append(f'Preference retained: {mention.quote}; it has not been made mandatory.')
                 continue
             kind = 'constraint' if field == 'mandatory_constraints' else 'preference'
             target[field].append(_term(canonical, kind))
@@ -404,7 +404,7 @@ def _project(dataset, input, proposal):
     for concept, polarities in stances.items():
         if 'positive' in polarities and len(polarities) > 1:
             issue('mandatory_constraints', FieldErrorCode.CONFLICTING,
-                f'原话中对“{concept}”同时表达了需要与否定／不需要，请核对。')
+                f'The original wording both requires and negates / does not need: {concept}. Please review.')
     for field in semantic_fields:
         values[field] = list(dict.fromkeys([*lists['raw_text'][field], *lists['explicit'][field]]))
     hard_concepts = {_concept(value) for value in values['mandatory_constraints']}
@@ -422,14 +422,14 @@ async def interpret_request_with_observation(dataset, client, raw):
     try:
         input = InterpretRequestInput.model_validate(raw).model_copy(deep=True)
     except (ValueError, TypeError, ValidationError):
-        raise model_failure('需求解释输入不符合共享契约。', code=ErrorCode.CONTRACT_INVALID) from None
+        raise model_failure('Request interpretation input does not match the shared contract.', code=ErrorCode.CONTRACT_INVALID) from None
     if input.demo_context.mode != ExecutionMode.AGENT:
-        raise model_failure('模型需求解释仅支持明确登记的 agent 模式。', code=ErrorCode.CONTRACT_INVALID)
+        raise model_failure('Model request interpretation only supports explicitly registered  agent mode.', code=ErrorCode.CONTRACT_INVALID)
     if input.demo_context.dataset_version != dataset.context.dataset_version:
-        raise model_failure('需求解释与数据快照版本不一致。', code=ErrorCode.STALE_CONTEXT)
+        raise model_failure('Request interpretation and data snapshot versions differ.', code=ErrorCode.STALE_CONTEXT)
     sources = _sources(input)
     if len(sources) > 256 or any(not text.strip() or len(text) > 8000 for _, _, text in sources):
-        raise model_failure('需求句数过多或包含空白条件，请精简后重试。', code=ErrorCode.INPUT_INVALID)
+        raise model_failure('Too many requirement sentences or blank conditions. Simplify and retry.', code=ErrorCode.INPUT_INVALID)
     identity = interpreter_identity(client)
     payload = {'operation': 'INTERPRET_REQUEST',
         'sources': [{'source': source, 'index': index, 'text': text} for source, index, text in sources],
@@ -443,6 +443,6 @@ async def interpret_request_with_observation(dataset, client, raw):
     proposal = _validate_proposal(completion.content, sources)
     result = _project(dataset, input, proposal)
     if interpreter_identity(client) != identity:
-        raise model_failure('需求解释配置已变化，请重新生成摘要。', code=ErrorCode.STALE_CONTEXT)
+        raise model_failure('Request interpretation settings changed. Regenerate the summary.', code=ErrorCode.STALE_CONTEXT)
     return RequestInterpretationOutcome(result, {'identity': identity,
         'usage': dict(completion.usage), 'attempts': completion.attempts})

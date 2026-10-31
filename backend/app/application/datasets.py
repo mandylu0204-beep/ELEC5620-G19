@@ -143,5 +143,5 @@ def inspect_dataset(settings):
     except (OSError, UnicodeError, ValueError, KeyError, TypeError, csv.Error) as exc:
         raise ContractFailure(ContractError(
             code=ErrorCode.ADAPTER_FAILURE,
-            message='演示数据包版本、来源或运行输入无法验证，请检查数据包与场景配置。',
+            message='Demo dataset version, sources or runtime inputs cannot be verified. Check the dataset and scenario settings.',
         )) from exc

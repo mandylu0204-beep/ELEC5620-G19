@@ -13,11 +13,11 @@ class StubAgent:
     async def interpret_request(self, input: InterpretRequestInput) -> InterpretRequestResult:
         requirements = input.explicit_fields
         required = {
-            "destination": "请明确目的地。", "start_date": "请明确开始日期。",
-            "duration_nights": "请明确露营晚数。", "budget_cents": "请明确小组预算。",
+            "destination": "Specify a destination.", "start_date": "Specify a start date.",
+            "duration_nights": "Specify the number of camping nights.", "budget_cents": "Specify the group budget.",
         }
         clarifications = [
-            Clarification(field=field, question=question, reason="Stub 不解析自然语言，仅回显明确填写的字段。")
+            Clarification(field=field, question=question, reason="Stub No natural-language parsing; explicitly entered fields are echoed only.")
             for field, question in required.items()
             if getattr(requirements, field) is None
         ]
@@ -25,13 +25,13 @@ class StubAgent:
             execution_mode=ExecutionMode.STUB,
             extracted_requirements=requirements,
             clarifications=clarifications,
-            uncertainties=["此结果来自开发 stub，未执行 Agent 推理；它本身不确认请求或启动规划。"],
+            uncertainties=["This result is from the development  stub, . No  Agent  inference was performed. This does not confirm a request or start planning."],
         )
 
     def _unavailable(self) -> ContractFailure:
         return ContractFailure(ContractError(
             code=ErrorCode.AGENT_FAILURE,
-            message="该业务能力尚未接入 B；stub 不提供规划、评估或工作流成功结果。",
+            message="This capability is not connected to  B; stub  and does not produce successful planning, assessment or workflow results.",
             allowed_actions=[AllowedAction.CONTACT_OPERATOR],
         ))
 

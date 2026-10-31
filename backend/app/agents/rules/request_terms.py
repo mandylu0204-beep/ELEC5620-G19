@@ -23,32 +23,12 @@ SOFT_TERMS = frozenset({
     'self-catered meals',
 })
 
-_SOFT_ALIASES = {
-    'quiet': ('安静', '安静的环境', '安静的地方', '清静'),
-    'toilets': ('厕所', '卫生间', 'toilet'),
-    'showers': ('淋浴', '洗澡', '可以洗澡', 'shower'),
-    'potable water': ('饮用水设施', '饮用水', 'potable_water'),
-    'public transport': ('公共交通', 'public_transport_access'),
-    'wheelchair accessible': ('轮椅通行', 'wheelchair_accessible'),
-    'campfire': ('营火', '篝火', 'fire_allowed'),
-    'pets': ('携带宠物', '宠物', 'pets_allowed'),
-    'ready-to-eat meals': ('即食餐食', '即食食品', '无需烹饪的餐食', 'ready_to_eat', 'ready-to-eat'),
-    'self-catered meals': ('自行烹饪', '自己做饭', 'self_catered', 'self-catered'),
-}
-_HARD_ALIASES = {
-    'toilets': ('厕所', '卫生间', 'toilet'),
-    'showers': ('淋浴', '洗澡', '可以洗澡', 'shower'),
-    'potable_water': ('饮用水设施', '饮用水', 'potable water'),
-    'wheelchair_accessible': ('轮椅通行', 'wheelchair access', 'wheelchair accessible'),
-    'fire_allowed': ('允许营火', '允许生火'),
-    'campfire': ('营火', '篝火'),
-    'no_fires': ('不生火', '不使用营火', '禁止营火', '不要生火', 'no campfires', 'no campfire', 'no fires'),
-    'pets_allowed': ('允许携带宠物', '携带宠物', 'pets allowed'),
-    'vehicle_access': ('车辆可达', 'vehicle access'),
-    'public_transport_access': ('公共交通可达', '公共交通', 'public transport access', 'public transport'),
-    'walk_in_only': ('仅可步行进入', 'walk-in only'),
-}
 
+
+
+# English labels plus unchanged legacy input aliases.
+_SOFT_ALIASES = {'quiet': ('\u5b89\u9759', '\u5b89\u9759\u7684\u73af\u5883', '\u5b89\u9759\u7684\u5730\u65b9', '\u6e05\u9759', 'quiet', 'quiet surroundings', 'quiet place'), 'toilets': ('\u5395\u6240', '\u536b\u751f\u95f4', 'toilet', 'toilets'), 'showers': ('\u6dcb\u6d74', '\u6d17\u6fa1', '\u53ef\u4ee5\u6d17\u6fa1', 'shower', 'showers', 'showers available'), 'potable water': ('\u996e\u7528\u6c34\u8bbe\u65bd', '\u996e\u7528\u6c34', 'potable_water', 'drinking-water facilities', 'drinking water'), 'public transport': ('\u516c\u5171\u4ea4\u901a', 'public_transport_access', 'public transport'), 'wheelchair accessible': ('\u8f6e\u6905\u901a\u884c', 'wheelchair_accessible', 'wheelchair access'), 'campfire': ('\u8425\u706b', '\u7bdd\u706b', 'fire_allowed', 'campfire'), 'pets': ('\u643a\u5e26\u5ba0\u7269', '\u5ba0\u7269', 'pets_allowed', 'bring pets', 'pets'), 'ready-to-eat meals': ('\u5373\u98df\u9910\u98df', '\u5373\u98df\u98df\u54c1', '\u65e0\u9700\u70f9\u996a\u7684\u9910\u98df', 'ready_to_eat', 'ready-to-eat', 'ready-to-eat meals', 'ready-to-eat food', 'meals requiring no cooking'), 'self-catered meals': ('\u81ea\u884c\u70f9\u996a', '\u81ea\u5df1\u505a\u996d', 'self_catered', 'self-catered', 'self-catered meals', 'cook own meals')}
+_HARD_ALIASES = {'toilets': ('\u5395\u6240', '\u536b\u751f\u95f4', 'toilet', 'toilets'), 'showers': ('\u6dcb\u6d74', '\u6d17\u6fa1', '\u53ef\u4ee5\u6d17\u6fa1', 'shower', 'showers', 'showers available'), 'potable_water': ('\u996e\u7528\u6c34\u8bbe\u65bd', '\u996e\u7528\u6c34', 'potable water', 'drinking-water facilities', 'drinking water'), 'wheelchair_accessible': ('\u8f6e\u6905\u901a\u884c', 'wheelchair access', 'wheelchair accessible'), 'fire_allowed': ('\u5141\u8bb8\u8425\u706b', '\u5141\u8bb8\u751f\u706b', 'campfires allowed', 'fires allowed'), 'campfire': ('\u8425\u706b', '\u7bdd\u706b', 'campfire'), 'no_fires': ('\u4e0d\u751f\u706b', '\u4e0d\u4f7f\u7528\u8425\u706b', '\u7981\u6b62\u8425\u706b', '\u4e0d\u8981\u751f\u706b', 'no campfires', 'no campfire', 'no fires', 'campfires prohibited'), 'pets_allowed': ('\u5141\u8bb8\u643a\u5e26\u5ba0\u7269', '\u643a\u5e26\u5ba0\u7269', 'pets allowed', 'bring pets'), 'vehicle_access': ('\u8f66\u8f86\u53ef\u8fbe', 'vehicle access'), 'public_transport_access': ('\u516c\u5171\u4ea4\u901a\u53ef\u8fbe', '\u516c\u5171\u4ea4\u901a', 'public transport access', 'public transport'), 'walk_in_only': ('\u4ec5\u53ef\u6b65\u884c\u8fdb\u5165', 'walk-in only', 'walk-in access only')}
 
 def _clean(value):
     return re.sub(r'\s+', ' ', value.strip().casefold()).rstrip('。.!！')
@@ -111,21 +91,21 @@ def term_issues(preferences, constraints, *, require_meal=True):
     for value in constraints:
         if value not in HARD_TERMS:
             issue('mandatory_constraints', FieldErrorCode.UNSUPPORTED,
-                  f'无法核实必须条件“{value}”。请说明具体需要的设施，或将它调整为偏好后重新生成摘要。',
-                  '尚未确认这项条件的含义或营地资料是否足以验证，不能直接作为已满足条件。')
+                  f'Cannot verify required condition: {value}. Specify the facilities needed, or move this to preferences and regenerate the summary.',
+                  'The condition meaning or source sufficiency is unconfirmed. It cannot directly be treated as met.')
     if 'no_fires' in constraints and {'campfire', 'fire_allowed'} & set(constraints):
         issue('mandatory_constraints', FieldErrorCode.CONFLICTING,
-              '“必须能生火”和“不生火”存在冲突，请选择本次行程实际需要的安排。',
-              '相互冲突的必须条件不能自动替你取舍。')
+              'Fires must be allowed conflicts with No fires. Choose the actual arrangement for this trip.',
+              'Conflicting required conditions cannot be resolved automatically for you.')
     meals = set(preferences)
     ready = bool(meals & {'ready-to-eat meals', 'ready_to_eat'})
     cooked = bool(meals & {'self-catered meals', 'self_catered'})
     if ready and cooked:
         issue('preferences', FieldErrorCode.CONFLICTING,
-              '用餐方式同时包含即食餐食和自行烹饪，请明确本次采用哪一种。',
-              '餐食费用和烹饪装备需要按同一种已确认安排检查。')
+              'Both ready-to-eat and self-catered meals were selected. Choose one arrangement for this trip.',
+              'Food costs and cooking equipment must use the same confirmed meal arrangement.')
     elif require_meal and not (ready or cooked):
         issue('preferences', FieldErrorCode.MISSING,
-              '请选择用餐方式：即食餐食或自行烹饪。',
-              '确认需求前，需要明确餐食费用和烹饪装备的计算方式。')
+              'Choose a meal arrangement: ready-to-eat or self-catered meals.',
+              'Specify how food costs and cooking equipment should be calculated before confirming requirements.')
     return errors, questions

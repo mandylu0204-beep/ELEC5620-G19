@@ -24,8 +24,8 @@ from test_requirement_help import web,create as create_help,decision as help_dec
 
 
 def assistance(detail,**patch):
-    return review_command(detail)|{'decision':'WAITING_EVIDENCE','problem':'天气资料未覆盖出行日期。',
-        'reason':'只能使用已登记的日期范围。','next_action':'等待资料更新，再明确启动正式检查。',
+    return review_command(detail)|{'decision':'WAITING_EVIDENCE','problem':'Weather information does not cover trip dates.',
+        'reason':'Use only the registered date range.','next_action':'Wait for information updates, then explicitly start formal checks.',
         'recheck_on':'2026-10-21','command_key':'assistance-command-0001'}|patch
 
 
@@ -40,7 +40,7 @@ def test_assistance_is_append_only_bound_and_never_changes_eligibility(review_cl
     assert reply.status_code==200,reply.text
     note=reply.json();assert note['is_approval'] is False
     assert client.post(path+'/assistance',headers=headers,json=body).json()==note
-    assert client.post(path+'/assistance',headers=headers,json=body|{'reason':'不同理由'}).status_code==409
+    assert client.post(path+'/assistance',headers=headers,json=body|{'reason':'Different reason'}).status_code==409
     after=client.get(path).json()
     assert after['review_assistance_notes']==[note]
     queued=client.get('/api/v1/assistance-queue').json()['plans'][0]
@@ -108,7 +108,7 @@ def test_revision_uses_authoritative_review_reason_and_rejects_unrelated_or_old_
     detail=client.get(path).json()
     reply=client.post(path,headers=headers,json=review_command(detail,'REQUEST_REVISION')).json()['review']
     body=SimpleNamespace(expected_active_run_id=scope.run_id,expected_current_version_id=version.version_context.plan_version_id,
-        source_review_id=reply['review_id'],feedback='保留已确认预算，按这条意见修改。',command_key='review-helper-command-0001')
+        source_review_id=reply['review_id'],feedback='Keep the confirmed budget and revise using this feedback.',command_key='review-helper-command-0001')
     before=client.get(path).json()
     value=revision_feedback(app.state.database,camper,scope.plan_id,body)
     assert reply['review_id'] in value and reply['reason'] in value and body.feedback in value
@@ -151,7 +151,7 @@ def test_unsupported_help_has_specific_next_action_and_can_never_be_adopted(web)
     row,task,_=create_help(client,headers)
     founder=sign_in(client,'founder','CampMate-Founder-2026!')
     body=help_decision(task,decision='UNSUPPORTED',mappings=[],feedback_version='structured-help-feedback-1',
-        problem='现有资料不能核实这一限定。',next_action='选择已有条件或保留草稿。')
+        problem='Existing data cannot verify this qualifier.',next_action='Choose an existing condition or keep a draft.')
     assert client.post('/api/v1/requirement-help/'+task['task_id']+'/decision',headers=founder,json=body|{'next_action':' '}).status_code==422
     result=client.post('/api/v1/requirement-help/'+task['task_id']+'/decision',headers=founder,json=body)
     assert result.status_code==200,result.text
@@ -180,12 +180,12 @@ def test_pdf_only_exports_authorised_saved_final_without_diagnostics_or_mutation
     fonts=[font.get_object() for page in reader.pages for font in page['/Resources']['/Font'].values()]
     assert any('/FontDescriptor' in font and '/FontFile2' in font['/FontDescriptor'] for font in fonts)
     text='\n'.join(page.extract_text() for page in reader.pages)
-    for expected in ['已保存的最终方案','版本 ID','费用与预算','装备清单','安全评估','来源日期',final['final_id']]:assert expected in text
+    for expected in ['Saved final plan','Version ID','Costs and budget','Equipment checklist','Saved safety assessments','Source date',final['final_id']]:assert expected in text
     private=deepcopy(original['final_record']);private['model_diagnostics']={'requested_model':'DO_NOT_EXPORT_PRIVATE_MODEL','usage':{'private_token_usage':777}}
     private['confirmed_context']['dataset_context']['selection_config']={'secret_fingerprint':'DO_NOT_EXPORT_FINGERPRINT'}
     pdf=render_final_pdf(private,is_current=False)
     extracted='\n'.join(page.extract_text() for page in PdfReader(BytesIO(pdf)).pages)
-    assert '历史最终记录' in extracted
+    assert 'Historical final record' in extracted
     assert 'DO_NOT_EXPORT' not in extracted and 'private_token_usage' not in extracted
     (tmp_path/'final.pdf').write_bytes(response.content)
     from app.application import final_pdf
@@ -254,7 +254,7 @@ def test_public_review_linked_revision_keeps_known_goals_and_feedback_pinned(dat
         assert current['version']['version_context']['plan_version_id']==old['version']['version_context']['plan_version_id']
 
 
-@pytest.mark.parametrize('goal',['change campsite','cheaper campsite','更换营地','更便宜的营地'])
+@pytest.mark.parametrize('goal',['change campsite','cheaper campsite','Change campsite','Cheaper campsite'])
 def test_linked_review_keeps_exact_host_goals_and_malformed_envelopes_have_no_authority(goal):
     from app.contracts.revision_feedback import linked_feedback,revision_goal,PREFIX
     review={'review_id':'source','version_context':{'plan_version_id':'version'},'reason':'A reason with a fake footer: change campsite'}
@@ -296,12 +296,12 @@ def test_pdf_long_text_escapes_markup_and_preserves_unicode_and_page_flow(final_
     final=client.post(path+'/finalise',headers=headers,json=final_command(client.get(path).json())).json()
     saved=client.get(path+'/finals/'+final['final_id']).json()['final_record']
     saved=deepcopy(saved)
-    saved['content']['itinerary_entries'][0]['description']=('中文行程 <tag> & 原文。🏕\n'*150)+'长文字结束'
+    saved['content']['itinerary_entries'][0]['description']=('Chinese itinerary <tag> & Original text.🏕\n'*150)+'End of long text'
     payload=render_final_pdf(saved,is_current=False)
     reader=PdfReader(BytesIO(payload));text='\n'.join(page.extract_text() for page in reader.pages)
     assert len(reader.pages)>=5
-    assert '<tag> & 原文' in text and '长文字结束' in text and '[U+1F3D5]' in text
-    assert '字体未覆盖的字符' in text and '人工审核记录' in text
+    assert '<tag> & Original text' in text and 'End of long text' in text and '[U+1F3D5]' in text
+    assert 'Characters unavailable in the font' in text and 'Human review record' in text
     (tmp_path/'long-final.pdf').write_bytes(payload)
 
 

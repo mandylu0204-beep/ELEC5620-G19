@@ -127,7 +127,7 @@ class LogisticsAgent:
         context = self.configuration.context
         if (context.dataset_version != self.dataset.context.dataset_version
                 or any(context.file_digests.get(key) != value for key, value in self.dataset.context.file_digests.items())):
-            raise model_failure('装备模型配置不属于实际消费的数据快照。', code=ErrorCode.STALE_CONTEXT)
+            raise model_failure('Equipment model settings do not belong to the consumed data snapshot.', code=ErrorCode.STALE_CONTEXT)
 
     @staticmethod
     def _diagnostic_failure(exc, response, turn, attempts, started):
@@ -156,14 +156,14 @@ class LogisticsAgent:
         try:
             input = LogisticsInput.model_validate(raw).model_copy(deep=True)
         except (ValidationError, ValueError, TypeError):
-            raise model_failure('装备模型输入不符合共享 LogisticsInput。', code=ErrorCode.CONTRACT_INVALID) from None
+            raise model_failure('Equipment model input does not match the shared  LogisticsInput.', code=ErrorCode.CONTRACT_INVALID) from None
         ensure_execution_mode(self.dataset, input.demo_context, ExecutionMode.AGENT)
         if input.saved_itinerary.execution_mode != ExecutionMode.AGENT:
-            raise model_failure('装备模型必须使用保存的 agent 行程，不能改标签。', code=ErrorCode.CONTRACT_INVALID)
+            raise model_failure('The equipment model must use the saved  agent  itinerary; relabelling is not allowed.', code=ErrorCode.CONTRACT_INVALID)
         if input.confirmed_requirements.start_date < input.demo_context.demo_today or input.confirmed_requirements.duration_nights > 30:
-            raise model_failure('装备模型仅支持固定演示日之后最多30晚的确认行程。', code=ErrorCode.INPUT_INVALID)
+            raise model_failure('Equipment modelling supports confirmed trips after the fixed demo date, up to 30 nights.', code=ErrorCode.INPUT_INVALID)
         if self.client.settings.max_turns < 3:
-            raise model_failure('装备模型至少需要3轮：读取事实、计算方案、返回方案。', code=ErrorCode.INPUT_INVALID)
+            raise model_failure('Equipment modelling requires at least 3 turns: read facts, calculate proposal, return proposal.', code=ErrorCode.INPUT_INVALID)
         return input
 
     def _facts(self, input):
@@ -204,7 +204,7 @@ class LogisticsAgent:
                 }})) from None
             self._check_configuration()
             if self.identity != identity or digest(self._facts(input).model_dump_json()) != facts_hash:
-                raise model_failure('装备事实、规则或模型身份在调用期间变化；未采纳结果。', code=ErrorCode.STALE_CONTEXT)
+                raise model_failure('Equipment facts, rules or model identity changed during the call. Result not adopted.', code=ErrorCode.STALE_CONTEXT)
             attempts += response.attempts
             hashes.append(digest(response.content))
             if response.served_model and response.served_model not in served:
@@ -218,7 +218,7 @@ class LogisticsAgent:
             if isinstance(action, FinalLogisticsAction):
                 proposal_hash = tools.proposal_hash(action.proposal)
                 if not read or proposal_hash not in evaluated:
-                    raise model_failure('模型必须先读取事实并计算同一方案，不能跳过确定性校验。', code=ErrorCode.CONTRACT_INVALID)
+                    raise model_failure('The model must read facts and calculate the same proposal first. Deterministic validation cannot be skipped.', code=ErrorCode.CONTRACT_INVALID)
                 plan = evaluated[proposal_hash]
                 result = tools.result(plan)
                 return LogisticsOutcome(result, plan, LogisticsTrace(
@@ -234,7 +234,7 @@ class LogisticsAgent:
                 output = tools.read_logistics_facts()
             elif isinstance(action, EvaluateAction):
                 if not read:
-                    raise model_failure('模型必须先读取实际装备与费用事实。', code=ErrorCode.CONTRACT_INVALID)
+                    raise model_failure('The model must first read actual equipment and cost facts.', code=ErrorCode.CONTRACT_INVALID)
                 try:
                     plan = tools.evaluate_logistics_plan(action.arguments)
                 except ContractFailure as exc:
@@ -258,7 +258,7 @@ class LogisticsAgent:
             calls.append(action.name)
             messages.append({'role': 'assistant', 'content': canonical(action.model_dump(mode='json'))})
             messages.append({'role': 'user', 'content': 'TOOL_RESULT=' + canonical(output)})
-        raise model_failure('装备模型工具循环超过上限；没有返回成功评估。', code=ErrorCode.CONTRACT_INVALID)
+        raise model_failure('Equipment model tool loop limit exceeded. No successful assessment returned.', code=ErrorCode.CONTRACT_INVALID)
 
     async def assess_gear_and_logistics(self, input: LogisticsInput) -> LogisticsResult:
         return (await self.assess_with_trace(input)).assessment

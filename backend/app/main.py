@@ -96,17 +96,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @application.exception_handler(RequestValidationError)
     async def input_failure(request: Request, exc: RequestValidationError):
         fields = [FieldError(field='.'.join(str(part) for part in item['loc'] if part != 'body'), code=FieldErrorCode.INVALID, message=item['msg']) for item in exc.errors()]
-        return error_response(request, ContractError(code=ErrorCode.INPUT_INVALID, message='输入格式不符合接口约定。', field_errors=fields, allowed_actions=[AllowedAction.EDIT_INPUT]), 422)
+        return error_response(request, ContractError(code=ErrorCode.INPUT_INVALID, message='Input format does not match the API contract.', field_errors=fields, allowed_actions=[AllowedAction.EDIT_INPUT]), 422)
 
     @application.exception_handler(HTTPException)
     async def http_failure(request: Request, exc: HTTPException):
         code = {401: ErrorCode.UNAUTHENTICATED, 403: ErrorCode.FORBIDDEN, 404: ErrorCode.NOT_FOUND}.get(exc.status_code, ErrorCode.INVALID_STATE)
-        return error_response(request, ContractError(code=code, message='接口不存在。' if exc.status_code == 404 else '当前请求不能执行。'), exc.status_code)
+        return error_response(request, ContractError(code=code, message='Endpoint not found.' if exc.status_code == 404 else 'This request cannot be executed.'), exc.status_code)
 
     @application.exception_handler(Exception)
     async def unexpected_failure(request: Request, exc: Exception):
         logger.error('Unexpected application failure: trace=%s type=%s', getattr(request.state, 'trace_id', 'unknown'), type(exc).__name__)
-        return error_response(request, ContractError(code=ErrorCode.AGENT_FAILURE, message='服务发生错误，请保留 trace_id 供开发排查。', allowed_actions=[AllowedAction.CONTACT_OPERATOR]), 503)
+        return error_response(request, ContractError(code=ErrorCode.AGENT_FAILURE, message='A service error occurred. Keep the  trace_id  for developer investigation.', allowed_actions=[AllowedAction.CONTACT_OPERATOR]), 503)
 
     @application.get('/api/v1/health/live')
     async def liveness():
@@ -178,7 +178,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @application.post('/api/v1/dev/interpret', response_model=InterpretRequestResult)
     async def interpret_preview(body: PreviewRequest):
         if config.execution_mode != ExecutionMode.STUB or application.state.agent is None:
-            raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='契约预览仅支持 stub；配置的其他模式尚未接入，不会自动回退。', allowed_actions=[AllowedAction.CONTACT_OPERATOR]))
+            raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='Contract preview only supports  stub; . Other configured modes are not connected and will not be used as a fallback.', allowed_actions=[AllowedAction.CONTACT_OPERATOR]))
         try:
             descriptor = inspect_dataset(config)
             input = InterpretRequestInput(
@@ -187,7 +187,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 demo_context=DemoContext(mode=config.execution_mode, demo_today=config.checking_date(), dataset_version=descriptor.context.dataset_version),
             )
         except ValidationError as exc:
-            raise ContractFailure(ContractError(code=ErrorCode.INPUT_INVALID, message='请求内容无效。', field_errors=[FieldError(field='.'.join(map(str, item['loc'])), code=FieldErrorCode.INVALID, message=item['msg']) for item in exc.errors()], allowed_actions=[AllowedAction.EDIT_INPUT])) from exc
+            raise ContractFailure(ContractError(code=ErrorCode.INPUT_INVALID, message='Invalid request content.', field_errors=[FieldError(field='.'.join(map(str, item['loc'])), code=FieldErrorCode.INVALID, message=item['msg']) for item in exc.errors()], allowed_actions=[AllowedAction.EDIT_INPUT])) from exc
         result = await application.state.agent.interpret_request(input)
         try:
             validated = InterpretRequestResult.model_validate(result)
@@ -195,7 +195,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 raise ValueError('Agent mode does not match the registered mode')
             return validated
         except (ValidationError, ValueError) as exc:
-            raise ContractFailure(ContractError(code=ErrorCode.CONTRACT_INVALID, message='Agent 输出不符合共享 schema，结果未保存。', allowed_actions=[AllowedAction.CONTACT_OPERATOR])) from exc
+            raise ContractFailure(ContractError(code=ErrorCode.CONTRACT_INVALID, message='Agent Output does not match the shared  schema, . Result not saved.', allowed_actions=[AllowedAction.CONTACT_OPERATOR])) from exc
 
     return application
 

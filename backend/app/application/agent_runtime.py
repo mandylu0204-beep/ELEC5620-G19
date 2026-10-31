@@ -44,9 +44,9 @@ class RuntimeSnapshot:
 
     def require_operation(self, operation, requirements=None):
         if operation not in self.supported_operations:
-            raise ContractFailure(ContractError(code=ErrorCode.INPUT_INVALID, message='当前模式不支持该操作，请新建并确认需求。'))
+            raise ContractFailure(ContractError(code=ErrorCode.INPUT_INVALID, message='This mode does not support the operation. Create and confirm a new request.'))
         if self.demo.mode == ExecutionMode.AGENT and requirements is not None and requirements.duration_nights > 30:
-            raise ContractFailure(ContractError(code=ErrorCode.INPUT_INVALID, message='首版混合规划最多支持30晚，未创建运行。'))
+            raise ContractFailure(ContractError(code=ErrorCode.INPUT_INVALID, message='Initial hybrid planning supports at most 30 nights. No run created.'))
 
 
 def configured_scenarios(settings, descriptor):
@@ -55,14 +55,14 @@ def configured_scenarios(settings, descriptor):
         try:
             payload = scenario_path(settings.dataset_path, name).read_bytes()
         except (OSError, ValueError) as exc:
-            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='场景文件在加载期间不可读，请重新读取。')) from exc
+            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='Scenario file became unreadable during loading. Reload it.')) from exc
         if hashlib.sha256(payload).hexdigest() != descriptor.context.fixture_digests[name]:
-            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='场景文件在加载期间变化，请重新读取。'))
+            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='Scenario file changed during loading. Reload it.'))
         try:
             value = json.loads(payload.decode('utf-8-sig'))
             scenarios.extend(ScenarioContext.model_validate(item) for item in (value if isinstance(value, list) else [value]))
         except (ValueError, TypeError, ValidationError) as exc:
-            raise ContractFailure(ContractError(code=ErrorCode.ADAPTER_FAILURE, message='登记的场景不是有效的 ScenarioContext。', context={'dataset_file': name})) from exc
+            raise ContractFailure(ContractError(code=ErrorCode.ADAPTER_FAILURE, message='The registered scenario is not valid  ScenarioContext.', context={'dataset_file': name})) from exc
     return scenarios
 
 
@@ -76,7 +76,7 @@ def build_v1_rule_binding(settings, descriptor):
     if dataset.context.dataset_version != descriptor.context.dataset_version or any(
         descriptor.context.file_digests.get(name) != value for name, value in dataset.context.file_digests.items()
     ):
-        raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='Adapter 消费的字节与应用登记的输入不一致。'))
+        raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='Adapter Consumed bytes do not match registered application inputs.'))
     base = descriptor.context.model_copy(update={'rules_version': descriptor.context.rules_version + '/a-runtime-bindings-v2'})
     configuration = WorkflowConfiguration(dataset, safety_case_ids=settings.workflow_safety_case_ids,
         scenarios=configured_scenarios(settings, descriptor), registered_context=base,
@@ -288,7 +288,7 @@ class AgentRuntime:
             return
         snapshot = self.resolve(feedback=choices.get('a_revision_feedback') or None)
         if snapshot.demo != scope.demo_context or snapshot.dataset != scope.dataset_context:
-            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='本次运行的数据、配置或时钟已变化，请重新评估。'))
+            raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='Run data, settings or clock changed. Reassess.'))
         return snapshot
 
     def _resolve(self, *, feedback=None, snapshot_day=None, safety_protocol=None, transport_policy=POLICY_VERSION,
@@ -325,10 +325,10 @@ class AgentRuntime:
             if settings.safety_execution == 'model' and descriptor.context.dataset_version == '2.2.0':
                 if safety_feedback_policy is not None:
                     if choices.get(FEEDBACK_KEY, safety_feedback_policy) != safety_feedback_policy:
-                        raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='安全反馈策略登记冲突。'))
+                        raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='Conflicting safety feedback policy registration.'))
                     choices[FEEDBACK_KEY] = safety_feedback_policy
                 elif FEEDBACK_KEY in choices:
-                    raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='旧运行不能采用新的安全反馈策略。'))
+                    raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='An old run cannot adopt a new safety feedback policy.'))
             if descriptor.context.dataset_version.startswith('2.'):
                 if transport_policy == POLICY_VERSION and descriptor.context.dataset_version != '2.2.0':
                     transport_policy = MINIMAL_POLICY_VERSION
@@ -336,16 +336,16 @@ class AgentRuntime:
                 # context fingerprint. for_scope reconstructs absence for old runs.
                 if transport_policy is not None:
                     if choices.get(POLICY_KEY, transport_policy) != transport_policy:
-                        raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='交通规则登记冲突。'))
+                        raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='Conflicting transport rule registration.'))
                     choices[POLICY_KEY] = transport_policy
                 elif POLICY_KEY in choices:
-                    raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='旧运行不能采用新的交通规则。'))
+                    raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='An old run cannot adopt new transport rules.'))
             if descriptor.context.dataset_version == '2.2.0' and planning_policy is not None:
                 if choices.get(PLANNING_KEY, planning_policy) != planning_policy:
-                    raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='行程资料登记冲突。'))
+                    raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='Conflicting itinerary reference registration.'))
                 choices[PLANNING_KEY] = planning_policy
             elif PLANNING_KEY in choices:
-                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='旧运行不能采用新的行程资料。'))
+                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='An old run cannot adopt new itinerary reference data.'))
             if feedback is not None:
                 choices['a_revision_feedback'] = feedback
             descriptor = replace(descriptor, context=descriptor.context.model_copy(update={'selection_config': choices}))
@@ -354,10 +354,10 @@ class AgentRuntime:
             from ..adapters.planning_reference import register_reference as register_planning
             descriptor = replace(descriptor, context=register_planning(descriptor.context))
             if settings.execution_mode != self.managed_mode:
-                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='执行模式已变化，请重新启动对应模式的应用。'))
+                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='Execution mode changed. Restart the application in the corresponding mode.'))
             factory = DATASET_AGENT_FACTORIES.get((settings.execution_mode, descriptor.provenance.source_name))
             if factory is None:
-                raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='该数据版本的业务 Adapter 尚未注册，不能启动规划。', context={'dataset_version': context.dataset_version}))
+                raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='Business support for this data version  Adapter  is not registered. Planning cannot start.', context={'dataset_version': context.dataset_version}))
             snapshot_options = dict(parsed_snapshots=self._parsed_snapshots,
                 snapshot_key=(today.isoformat(), settings.model_dump_json(), factory))
             accepts_snapshot_options = False
@@ -377,23 +377,23 @@ class AgentRuntime:
                 binding = factory(settings, descriptor)
             agent, context = binding.agent, binding.context
             if feedback is not None and context.selection_config.get('revision_feedback') != feedback:
-                raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='当前 Adapter 尚未接通修改意见，不能启动修订。'))
+                raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='Current Adapter Revision feedback is not connected. Revision cannot start.'))
             if context.dataset_version != descriptor.context.dataset_version or any(
                 context.file_digests.get(name) != value for name, value in descriptor.context.file_digests.items()
             ) or any(context.fixture_digests.get(name) != value for name, value in descriptor.context.fixture_digests.items()) or any(
                 context.selection_config.get(name) != value for name, value in descriptor.context.selection_config.items()
             ) or not context.rules_version.startswith(descriptor.context.rules_version + '/'):
-                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='业务配置遗漏或改变了应用登记的数据、选用项或规则身份。'))
+                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='Business settings omit or change registered application data, selections or rule identity.'))
             self.configured_agent = agent
             self.state.agent = agent
         elif feedback is not None:
-            raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='当前 Agent 尚未接通方案修订。'))
+            raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='Current Agent Plan revision is not connected.'))
         if settings.logistics_execution == 'model' and (
                 context.selection_config.get('a_logistics_audit_required') != '1'
                 or context.selection_config.get('a_logistics_mode') != 'model'
                 or getattr(agent, 'logistics_audit_contract', None) != '1.0'
                 or not callable(getattr(agent, 'assess_logistics_with_trace', None))):
-            raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='当前运行未登记完整物流模型能力。'))
+            raise ContractFailure(ContractError(code=ErrorCode.AGENT_FAILURE, message='The current run has no complete logistics model capability registration.'))
         if settings.safety_execution == 'model':
             from ..workflow.orchestration import Orchestrator
             from ..llm.safety_support import matches_live_protocol

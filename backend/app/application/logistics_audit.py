@@ -47,7 +47,7 @@ def required(scope):
 
 def integrity():
     raise ContractFailure(ContractError(code=ErrorCode.PERSISTENCE_FAILURE,
-        message='物流模型审计缺失、损坏或关联不一致；请联系开发负责人。',
+        message='Logistics model audit is missing, damaged or inconsistently linked. Contact the developer.',
         recoverable=False, allowed_actions=['CONTACT_OPERATOR']))
 
 
@@ -239,15 +239,15 @@ def load_audits(connection, scope, version, *, must_exist=False):
 async def save(port, context, result, raw_plan, raw_trace, write_key):
     from ..storage.repository import Repository, encode, now
     if not port.attempt_id or not required(port.scope):
-        fail(ErrorCode.CONTRACT_INVALID, '模型物流必须使用已登记、领取的执行端口。')
+        fail(ErrorCode.CONTRACT_INVALID, 'Model logistics must use the registered and claimed execution port.')
     if write_key != port.scope.write_keys['logistics']:
-        fail(ErrorCode.IDEMPOTENCY_CONFLICT, '写入 key 不属于物流步骤。')
+        fail(ErrorCode.IDEMPOTENCY_CONFLICT, 'Write key  does not belong to the logistics step.')
     try:
         result = LogisticsResult.model_validate(result)
         context = VersionContext.model_validate(context)
         _, hashed = payload(context, result, raw_plan, raw_trace)
     except (ValidationError, ValueError, TypeError, OverflowError):
-        fail(ErrorCode.CONTRACT_INVALID, '模型物流载荷类型、编码或大小无效。')
+        fail(ErrorCode.CONTRACT_INVALID, 'Invalid logistics model payload type, encoding or size.')
     # All work here is local, with one DB snapshot/transaction and no network.
     with port.db.transaction() as connection:
         _, run = port.active(connection, writing=True)
@@ -257,25 +257,25 @@ async def save(port, context, result, raw_plan, raw_trace, write_key):
         if previous:
             load_audits(connection, port.scope, version, must_exist=True)
             if previous['operation'] != 'logistics' or previous['input_hash'] != hashed:
-                fail(ErrorCode.IDEMPOTENCY_CONFLICT, '同一物流 key 不能保存不同模型产物。')
+                fail(ErrorCode.IDEMPOTENCY_CONFLICT, 'The same logistics  key  cannot save different model outputs.')
             return StoredAssessment.model_validate(decode(previous['result']))
         if connection.execute('SELECT 1 FROM model_logistics_audits WHERE run_id=?', (context.run_id,)).fetchone():
             integrity()
         if connection.execute("SELECT 1 FROM assessments WHERE run_id=? AND kind='LOGISTICS'", (context.run_id,)).fetchone():
             integrity()
         if run['status'] != 'RUNNING':
-            fail(ErrorCode.INVALID_STATE, '模型物流必须在当前运行中保存。')
+            fail(ErrorCode.INVALID_STATE, 'Model logistics must be saved in the current run.')
         confirmed = ConfirmedContext.model_validate_json(run['confirmed_context'])
         input = server_input(port.scope, confirmed, version)
         if port.workflow.logistics_facts_provider is None:
-            fail(ErrorCode.CONTRACT_INVALID, '模型物流权威事实验证器尚未接入。')
+            fail(ErrorCode.CONTRACT_INVALID, 'Authoritative model logistics fact validator is not connected.')
         baseline = port.workflow.logistics_facts_provider(port.scope, input)
         try:
             if result.version_context != context or result.execution_mode != 'agent':
                 raise ValueError('Wrong execution context')
             plan, trace = validate(port.scope, input, baseline, result, raw_plan, raw_trace)
         except (ContractFailure, ValidationError, ValueError, TypeError, KeyError):
-            fail(ErrorCode.CONTRACT_INVALID, '模型物流与已保存事实、登记身份或确定性计算不一致。')
+            fail(ErrorCode.CONTRACT_INVALID, 'Model logistics differs from saved facts, registered identity or deterministic calculations.')
         port.active(connection, writing=True)
         assessment_id, gear_id, audit_id, timestamp = uuid4().hex, uuid4().hex, uuid4().hex, now()
         stored = StoredAssessment(assessment_id=assessment_id, version_context=context,

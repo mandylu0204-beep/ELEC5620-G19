@@ -31,16 +31,16 @@ class ProfileInput(ContractModel):
     @model_validator(mode='after')
     def meaningful_equipment(self):
         if any(not item.item_key.strip() or not item.label.strip() or not item.unit.strip() for item in self.profile.equipment):
-            raise ValueError('装备类别、名称和单位不能留空。')
+            raise ValueError('Equipment category, name and unit cannot be blank.')
         if self.profile.has_children is True and self.profile.children_count == 0:
-            raise ValueError('有儿童与儿童人数为零冲突，请修改。')
+            raise ValueError('Children travelling conflicts with a zero child count. Correct the details.')
         return self
 
 
 def write_header(request: Request):
     # Cross-origin forms cannot set this header. No CORS permission is granted.
     if request.headers.get('X-CampMate-Client') != '1':
-        fail(ErrorCode.FORBIDDEN, '请通过 CampMate 页面提交请求。')
+        fail(ErrorCode.FORBIDDEN, 'Submit the request through the  CampMate  page.')
 
 
 def current_user(request: Request) -> User:

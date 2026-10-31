@@ -35,14 +35,14 @@ class HelpDecision(ContractModel):
     @field_validator('reason')
     @classmethod
     def meaningful(cls,value):
-        if not value.strip():raise ValueError('请说明判断理由。')
+        if not value.strip():raise ValueError('Explain the reason for your judgement.')
         return value.strip()
 
     @model_validator(mode='after')
     def complete_feedback(self):
         if self.decision=='UNSUPPORTED' or self.feedback_version is not None and self.decision=='RETURN_FOR_DETAILS':
             if not self.problem or not self.problem.strip() or not self.next_action or not self.next_action.strip():
-                raise ValueError('请填写具体问题及用户下一步。')
+                raise ValueError('Enter the specific issue and the next action for the user.')
         return self
 
 class HelpAdopt(HelpCreate):
@@ -77,7 +77,7 @@ class RequirementHelp:
     def _task(connection,user,task_id):
         row=connection.execute('SELECT t.* FROM requirement_help_tasks t JOIN requests q ON q.id=t.request_id WHERE t.id=? AND NOT EXISTS(SELECT 1 FROM deleted_requests d WHERE d.request_id=q.id) AND NOT EXISTS(SELECT 1 FROM successor_requests o JOIN trip_series s ON s.id=o.series_id LEFT JOIN plans p ON p.id=o.predecessor_plan_id WHERE o.request_id=q.id AND (s.deleted_at IS NOT NULL OR p.deleted_at IS NOT NULL))',(task_id,)).fetchone()
         if not row or user.role not in {'CAMPER','FOUNDER'} or (user.role=='CAMPER' and row['owner_id']!=user.id):
-            fail(ErrorCode.NOT_FOUND,'需求协助记录不存在。')
+            fail(ErrorCode.NOT_FOUND,'Request assistance record not found.')
         return row
 
     @staticmethod
@@ -85,9 +85,9 @@ class RequirementHelp:
         row=connection.execute('SELECT * FROM requests WHERE id=?',(task['request_id'],)).fetchone()
         profile,revision=_profile(connection,task['owner_id'])
         if json.loads(task['snapshot'])['choices_version']!=CHOICES_VERSION:
-            fail(ErrorCode.STALE_CONTEXT,'可选条件目录已变化，请重新提交协助。')
+            fail(ErrorCode.STALE_CONTEXT,'Available condition catalogue changed. Submit assistance again.')
         if row['status'] in {'CONFIRMED','ANALYSING'} or row['revision']!=task['request_revision'] or revision!=task['profile_revision']:
-            fail(ErrorCode.STALE_CONTEXT,'需求或个人资料已变化，请重新提交协助。')
+            fail(ErrorCode.STALE_CONTEXT,'Request or profile changed. Submit assistance again.')
         from .trip_series import validate_successor
         from ..auth import User
         owner=connection.execute('SELECT * FROM users WHERE id=?',(task['owner_id'],)).fetchone()
@@ -99,7 +99,7 @@ class RequirementHelp:
         old=connection.execute('SELECT * FROM requirement_help_commands WHERE actor_id=? AND command_key=?',(user.id,key)).fetchone()
         if old:
             if old['operation']!=operation or old['input_hash']!=fingerprint(payload):
-                fail(ErrorCode.VERSION_CONFLICT,'命令标识已用于其他内容。')
+                fail(ErrorCode.VERSION_CONFLICT,'Command key already used for different content.')
             return json.loads(old['result'])
 
     @staticmethod
@@ -119,15 +119,15 @@ class RequirementHelp:
             previous=self._receipt(connection,user,body.command_key,'create',payload)
             if previous:return previous
             RequestRepository.check_revision(row,body.expected_revision)
-            if row['status'] in {'CONFIRMED','ANALYSING'}:fail(ErrorCode.INVALID_STATE,'请在未确认草稿中提交协助。')
+            if row['status'] in {'CONFIRMED','ANALYSING'}:fail(ErrorCode.INVALID_STATE,'Submit assistance from an unconfirmed draft.')
             profile,revision=_profile(connection,user.id)
-            if revision!=body.expected_profile_revision:fail(ErrorCode.VERSION_CONFLICT,'个人资料已变化，请刷新。')
+            if revision!=body.expected_profile_revision:fail(ErrorCode.VERSION_CONFLICT,'Profile changed. Refresh.')
             from .trip_series import validate_successor
             validate_successor(connection,user,request_id)
             unknown=unknown_items(TripRequirements.model_validate_json(row['payload']),profile)
             if len(unknown)>256 or any(len(item['text'])>8000 for item in unknown):
-                fail(ErrorCode.INVALID_STATE,'其他要求过多或单项过长，请拆分精简后再提交协助。')
-            if not unknown:fail(ErrorCode.INVALID_STATE,'已有选项已覆盖这些表述，无需人工协助。')
+                fail(ErrorCode.INVALID_STATE,'Too many other requirements or an item is too long. Split or simplify before submitting assistance.')
+            if not unknown:fail(ErrorCode.INVALID_STATE,'Existing options cover these expressions. Human assistance is unnecessary.')
             old=connection.execute('SELECT * FROM requirement_help_tasks WHERE request_id=? AND request_revision=? AND profile_revision=?',
                 (request_id,row['revision'],revision)).fetchone()
             if old:result=_public(old)
@@ -183,13 +183,13 @@ class RequirementHelp:
             old=self._receipt(connection,user,body.command_key,'decide',payload)
             if old:return old
             self._current(connection,task)
-            if task['status']!='PENDING' or task['revision']!=body.expected_revision:fail(ErrorCode.VERSION_CONFLICT,'协助任务已处理，请刷新。')
+            if task['status']!='PENDING' or task['revision']!=body.expected_revision:fail(ErrorCode.VERSION_CONFLICT,'Assistance task processed. Refresh.')
             expected={(item['field'],item['index'],item['text']) for item in json.loads(task['snapshot'])['items']}
             actual={(item.field,item.index,item.original) for item in body.mappings}
             if body.decision=='PROPOSE_MAPPING':
-                if expected!=actual or len(actual)!=len(body.mappings):fail(ErrorCode.INVALID_STATE,'映射必须逐项覆盖原要求，不能遗漏或新增。')
-                if any(item.canonical not in LABELS[item.field] for item in body.mappings):fail(ErrorCode.INVALID_STATE,'只能建议该类别已有的可验证条件，不能直接批准其他要求。')
-            elif body.mappings:fail(ErrorCode.INVALID_STATE,'退回补充不能同时提交映射。')
+                if expected!=actual or len(actual)!=len(body.mappings):fail(ErrorCode.INVALID_STATE,'Mapping must cover each original requirement exactly, without omissions or additions.')
+                if any(item.canonical not in LABELS[item.field] for item in body.mappings):fail(ErrorCode.INVALID_STATE,'Only existing verifiable conditions in this category may be suggested. Other requirements cannot be directly approved.')
+            elif body.mappings:fail(ErrorCode.INVALID_STATE,'A return for clarification cannot also submit mappings.')
             response={'decision':body.decision,'reason':body.reason,'mappings':[item.model_dump(mode='json') for item in body.mappings],
                 'reviewer_id':user.id,'reviewed_at':now(),
                 **({'feedback_version':body.feedback_version,'problem':body.problem.strip() if body.problem else None,
@@ -207,12 +207,12 @@ class RequirementHelp:
             row,profile=self._current(connection,task)
             if (body.expected_revision!=row['revision'] or body.expected_profile_revision!=task['profile_revision']
                 or body.expected_task_revision!=task['revision'] or task['status']!='PROPOSED'):
-                fail(ErrorCode.VERSION_CONFLICT,'建议或需求已变化，请刷新后核对。')
+                fail(ErrorCode.VERSION_CONFLICT,'Suggestion or requirements changed. Refresh and review.')
             fields=json.loads(row['payload']);access=list(profile.accessibility_requirements)
             response=json.loads(task['response'])
             for item in response['mappings']:
                 values=access if item['field']=='accessibility_requirements' else fields[item['field']]
-                if values[item['index']]!=item['original']:fail(ErrorCode.STALE_CONTEXT,'原要求已变化。')
+                if values[item['index']]!=item['original']:fail(ErrorCode.STALE_CONTEXT,'Original requirements changed.')
                 values[item['index']]=item['canonical']
             profile_revision=task['profile_revision']
             if access!=profile.accessibility_requirements:
@@ -224,5 +224,5 @@ class RequirementHelp:
             connection.execute('DELETE FROM request_summaries WHERE request_id=?',(row['id'],))
             connection.execute("UPDATE requirement_help_tasks SET status='APPLIED',revision=revision+1 WHERE id=?",(task_id,))
             result={'task_id':task_id,'request_id':row['id'],'request_revision':row['revision']+1,'profile_revision':profile_revision,
-                'message':'已采用映射建议。请重新生成并确认摘要；尚未执行正式规划或检查。'}
+                'message':'Mapping adopted. Regenerate and confirm the summary. Formal planning and checks have not run.'}
             return self._save(connection,user,body.command_key,'adopt',payload,task_id,result)

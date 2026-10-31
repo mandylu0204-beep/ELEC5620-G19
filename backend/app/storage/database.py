@@ -420,7 +420,7 @@ class Database:
                 or any(part in text for part in ('no such table','no such column','unique constraint failed',
                     'foreign key constraint failed','check constraint failed','immutable ')))
             raise ContractFailure(ContractError(
-                code=ErrorCode.PERSISTENCE_FAILURE, message='保存或读取失败，事务已回滚。',
+                code=ErrorCode.PERSISTENCE_FAILURE, message='Save or read failed. Transaction rolled back.',
                 recoverable=not permanent, allowed_actions=[AllowedAction.CONTACT_OPERATOR if permanent else AllowedAction.RETRY],
             )) from exc
         except BaseException:

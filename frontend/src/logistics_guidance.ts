@@ -2,9 +2,9 @@ type Question = {field:string;question:string;reason:string};
 
 export function logisticsQuestions(items:Question[]) {
   const messages=items.map(item=>{
-    if(['meal_mode','gear_rule_input.meal_mode'].includes(item.field))return '请选择用餐方式：即食餐食或自行烹饪，再重新确认需求。';
-    if(item.field==='transport.estimated_km')return '请在露营资料中填写整个行程的预计行车总公里数。';
-    if(item.field==='cooking_method')return '请确认不依赖营火的烹饪安排，或改选无需烹饪的即食餐食。';
+    if(['meal_mode','gear_rule_input.meal_mode'].includes(item.field))return 'Select ready-to-eat meals or self-catering, then reconfirm the request.';
+    if(item.field==='transport.estimated_km')return 'Enter the estimated total driving distance for the whole trip in your camping profile.';
+    if(item.field==='cooking_method')return 'Confirm cooking arrangements that do not rely on a campfire, or select ready-to-eat meals.';
     return `${item.question} · ${item.reason}`;
   });
   return [...new Set(messages)];

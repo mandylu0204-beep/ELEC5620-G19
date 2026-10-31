@@ -58,7 +58,7 @@ class CampusModelClient:
         key = self.settings.api_key.get_secret_value().strip()
         if (not key or any(word in key.upper() for word in ('REPLACE_WITH', 'YOUR_KEY'))
                 or any(not 33 <= ord(character) <= 126 for character in key)):
-            raise model_failure('校园模型密钥未配置或无效；请仅在本地配置 ELEC5620_API_KEY。')
+            raise model_failure('Campus model key is missing or invalid. Configure locally only:  ELEC5620_API_KEY.')
 
     async def complete(self, messages):
         self.validate_configuration()
@@ -67,9 +67,9 @@ class CampusModelClient:
                 or set(message) != {'role', 'content'}
                 or message['role'] not in {'system', 'user', 'assistant'}
                 or not isinstance(message['content'], str) for message in messages)):
-            raise model_failure('模型消息不符合受控聊天协议。', code=ErrorCode.CONTRACT_INVALID)
+            raise model_failure('Model messages do not match the controlled chat protocol.', code=ErrorCode.CONTRACT_INVALID)
         if any(key in message['content'] for message in messages):
-            raise model_failure('模型上下文包含密钥；请求已阻止。', code=ErrorCode.CONTRACT_INVALID)
+            raise model_failure('Model context contains a secret. Request blocked.', code=ErrorCode.CONTRACT_INVALID)
         payload = {'model': self.settings.model, 'messages': messages,
             'max_completion_tokens': self.settings.max_completion_tokens, 'stream': False}
         if self.settings.reasoning_effort is not None:
@@ -77,9 +77,9 @@ class CampusModelClient:
         try:
             size = len(json.dumps(payload, ensure_ascii=False).encode('utf-8'))
         except (ValueError, UnicodeError):
-            raise model_failure('模型请求包含无法编码的数据。', code=ErrorCode.CONTRACT_INVALID) from None
+            raise model_failure('Model request contains unencodable data.', code=ErrorCode.CONTRACT_INVALID) from None
         if size > 131072:
-            raise model_failure('模型请求超过受控大小限制。', code=ErrorCode.CONTRACT_INVALID)
+            raise model_failure('Model request exceeds the controlled size limit.', code=ErrorCode.CONTRACT_INVALID)
         async with httpx.AsyncClient(timeout=self.settings.timeout_seconds, trust_env=False,
                 follow_redirects=False, transport=self.transport) as client:
             for attempt in range(1, self.settings.max_attempts + 1):
@@ -91,29 +91,29 @@ class CampusModelClient:
                         status = response.status_code
                         if status in RETRYABLE_STATUS:
                             if attempt == self.settings.max_attempts:
-                                raise model_failure('校园模型暂时不可用或限流；请稍后重试。',
+                                raise model_failure('Campus model temporarily unavailable or rate limited. Try again later.',
                                     recoverable=True, status=status)
                             retry = True
                         elif not 200 <= status < 300:
                             # Never include proxy body, request headers or exception text.
-                            raise model_failure('校园模型请求被拒绝；请检查密钥、VPN 和代理配置。', status=status)
+                            raise model_failure('Campus model request rejected. Check the key, VPN  and proxy configuration.', status=status)
                         else:
                             chunks, size = [], 0
                             async for chunk in response.aiter_bytes():
                                 size += len(chunk)
                                 if size > MAX_RESPONSE_BYTES:
-                                    raise model_failure('校园模型响应超过受控大小限制。',
+                                    raise model_failure('Campus model response exceeds the controlled size limit.',
                                         code=ErrorCode.CONTRACT_INVALID)
                                 chunks.append(chunk)
                             return self._completion(b''.join(chunks), attempt)
                 except httpx.HTTPError:
                     if attempt == self.settings.max_attempts:
-                        raise model_failure('校园模型网络请求失败；请检查校园网络/VPN 后重试。',
+                        raise model_failure('Campus model network request failed. Check the campus network / /VPN  and retry.',
                             recoverable=True) from None
                     retry = True
                 if retry:
                     await asyncio.sleep(0.25 * attempt)
-        raise model_failure('校园模型未返回可用结果。', recoverable=True)
+        raise model_failure('Campus model returned no usable result.', recoverable=True)
 
     def _completion(self, payload, attempt):
         try:
@@ -143,5 +143,5 @@ class CampusModelClient:
                     usage[name] = value
             return Completion(content, self.settings.model, attempt, usage, served_model)
         except (ValueError, KeyError, TypeError, AttributeError, UnicodeError):
-            raise model_failure('校园模型响应格式无效或被截断；未采纳任何输出。',
+            raise model_failure('Campus model response is invalid or truncated. No output was adopted.',
                 code=ErrorCode.CONTRACT_INVALID) from None

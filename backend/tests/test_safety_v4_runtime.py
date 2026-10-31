@@ -165,7 +165,7 @@ def test_http_save_revision_reassessment_final_restart_and_permissions(tmp_path,
         assert snapshot['final_record']['model_assessment_audits']['SAFETY']['advice_format'] == 'single-advice-v1'
         preparation = snapshot['final_record']['preparation_summary']
         assert preparation['system_preparation'] is True
-        assert preparation['origin_label'] == '悉尼市区（固定模拟出发地）'
+        assert preparation['origin_label'] == 'Central Sydney (fixed demonstration origin)'
         assert preparation['estimated_total_vehicle_km'] == '140'  # Saved Euroka reference, one confirmed car.
         assert preparation['source_refs'][0]['record_id'] == 'euroka'
         assert 'b_transport_reference_sha256' not in str(snapshot)

@@ -38,7 +38,7 @@ export function ChangePlanning({ data, refresh, choice, onChoiceChange,reviewReq
   async function submit(operation: 'revise' | 'reassess') {
     if (!session || !data.run || busy || data.current_version_revision == null) return;
     const text = choice === 'custom' ? feedback.trim() : choice;
-    if (operation === 'revise' && !text) { setError('请填写修改意见。'); return; }
+    if (operation === 'revise' && !text) { setError('Enter revision feedback.'); return; }
     const body = { expected_current_version_id: data.plan.current_version_id,
       expected_active_run_id: data.run.run_id, expected_version_revision: data.current_version_revision,
       expected_run_revision: data.run.revision, ...(operation === 'revise' ? { feedback: text,...(choice==='custom'&&sourceReviewId?{source_review_id:sourceReviewId}:{}) } : {}) };
@@ -57,22 +57,22 @@ export function ChangePlanning({ data, refresh, choice, onChoiceChange,reviewReq
     } catch (reason) {
       const preserved=preservedRevisionNotice(reason);
       if(preserved)setNotice(preserved);
-      else setError(reason instanceof ApiFailure ? `${reason.message}（追踪号 ${reason.envelope.trace_id}）` : '提交结果尚未确认。请刷新记录，或再次提交同一次操作。');
+      else setError(reason instanceof ApiFailure ? `${reason.message}(Trace ID ${reason.envelope.trace_id})` : 'Submission is unconfirmed. Refresh the record or submit the same action again.');
       if (reason instanceof ApiFailure && reason.envelope.error.code === 'UNAUTHENTICATED') reload();
     } finally { setBusy(null); }
   }
-  return <section className="panel planning-change"><h2>调整方案与重新检查</h2>
-    <p>新方案生成后，可对比并选择是否采用。重新检查会保留当前行程。</p>
-    <div className="modify-paths"><h3>修改需求或资料</h3><p>人数、日期、预算、必须条件或已有装备有变化时，先核对并重新确认。</p><Link className="text-link" to={tripUpdatePath(data.plan.plan_id)}>修改需求与资料并重新确认 ↗</Link></div>
-    <h3>修改行程安排</h3><p>保留已确认需求，生成待选方案后对比选择；若只更新检查依据，请使用下方重新检查。</p>
-    {reviewSource&&<div className="review-revision-source"><h3>审核员要求修改</h3><blockquote>{reviewSource.reason}</blockquote><button type="button" className="secondary-button" disabled={!!busy} onClick={useReview}>采用这条审核意见</button>{sourceReviewId&&<p>已关联原审核记录；核对修改意见后，点击生成待选方案才会执行模型。</p>}</div>}
-    <label htmlFor="revision-choice">修改目标</label><select id="revision-choice" value={choice} disabled={!!busy} onChange={event => onChoiceChange(event.target.value)}>
-      <option value="change campsite">更换营地</option><option value="cheaper campsite">寻找费用更低的营地</option><option value="custom">填写其他修改意见</option>
+  return <section className="panel planning-change"><h2>Adjust plan and recheck</h2>
+    <p>Compare and choose whether to adopt the new plan after generation. Rechecking keeps the current itinerary.</p>
+    <div className="modify-paths"><h3>Change requirements or profile</h3><p>Review and reconfirm changes to group size, dates, budget, required conditions or available equipment first.</p><Link className="text-link" to={tripUpdatePath(data.plan.plan_id)}>Edit and reconfirm requirements and profile ↗</Link></div>
+    <h3>Revise itinerary arrangements</h3><p>Keep confirmed requirements and generate a proposed plan to compare. To update check evidence only, use Recheck below.</p>
+    {reviewSource&&<div className="review-revision-source"><h3>Reviewer requested revision</h3><blockquote>{reviewSource.reason}</blockquote><button type="button" className="secondary-button" disabled={!!busy} onClick={useReview}>Use this reviewer feedback</button>{sourceReviewId&&<p>Original review linked. Review the feedback; the model runs only after selecting Generate proposed plan.</p>}</div>}
+    <label htmlFor="revision-choice">Revision goal</label><select id="revision-choice" value={choice} disabled={!!busy} onChange={event => onChoiceChange(event.target.value)}>
+      <option value="change campsite">Change campsite</option><option value="cheaper campsite">Find a campsite with lower fees</option><option value="custom">Enter other revision feedback</option>
     </select>
-    {choice==='cheaper campsite'&&<p className="mode-notice">保留预算 {data.confirmed_context?.requirements.budget_cents==null?'（金额待读取）':`AUD ${(data.confirmed_context.requirements.budget_cents/100).toFixed(2)}`}，尝试寻找更便宜的营地。总费用仍可能超出预算。</p>}
-    {choice === 'custom' && <><label htmlFor="revision-feedback">修改意见</label><textarea id="revision-feedback" value={feedback} maxLength={4000} disabled={!!busy} onChange={event => setFeedback(event.target.value)} /></>}
-    <div className="plan-actions"><button className="primary-button" disabled={!!busy || !data.revision_available} onClick={() => void submit('revise')}>{busy==='revise' ? '正在生成待选方案…' : choice==='cheaper campsite'?'寻找更便宜的营地':'生成待选方案'}</button>
-      <button className="secondary-button" disabled={!!busy || !data.reassessment_available} onClick={() => void submit('reassess')}>{busy==='reassess'?'正在启动检查…':'保留行程，重新检查'}</button></div>
+    {choice==='cheaper campsite'&&<p className="mode-notice">Keep the budget {data.confirmed_context?.requirements.budget_cents==null?'(amount loading)':`AUD ${(data.confirmed_context.requirements.budget_cents/100).toFixed(2)}`}, Try to find a cheaper campsite. The total may still exceed the budget.</p>}
+    {choice === 'custom' && <><label htmlFor="revision-feedback">Revision feedback</label><textarea id="revision-feedback" value={feedback} maxLength={4000} disabled={!!busy} onChange={event => setFeedback(event.target.value)} /></>}
+    <div className="plan-actions"><button className="primary-button" disabled={!!busy || !data.revision_available} onClick={() => void submit('revise')}>{busy==='revise' ? 'Generating proposed plan…' : choice==='cheaper campsite'?'Find a cheaper campsite':'Generate proposed plan'}</button>
+      <button className="secondary-button" disabled={!!busy || !data.reassessment_available} onClick={() => void submit('reassess')}>{busy==='reassess'?'Starting checks…':'Keep itinerary and recheck'}</button></div>
     {notice && <p className="mode-notice" role="status">{notice}</p>}
     {error && <p className="error-box" role="alert">{error}</p>}
   </section>;
@@ -86,7 +86,7 @@ export function RetryPlanning({ data, refresh }: { data: PlanDetail; refresh: ()
   const run = data.run;
   if (!run || run.status !== 'FAILED' || !run.is_active || data.trip_series?.is_current===false) return null;
   const guidance=failureGuidance(data)!;
-  if (['INPUT_INVALID','REQUEST_NOT_CONFIRMED'].includes(run.error?.code??'')) return <><p>本次要求需要重新核对，直接继续不会更新已确认的资料。</p><Link className="text-link" to={tripUpdatePath(data.plan.plan_id)}>调整本次需求并重新确认 ↗</Link></>;
+  if (['INPUT_INVALID','REQUEST_NOT_CONFIRMED'].includes(run.error?.code??'')) return <><p>These requirements need review. Continuing directly will not update confirmed information.</p><Link className="text-link" to={tripUpdatePath(data.plan.plan_id)}>Review and reconfirm this trip requirements ↗</Link></>;
   async function retry() {
     if (!run || !session || busy || !guidance.canRetry) return;
     if (command.current?.runId !== run.run_id || command.current.revision !== run.revision) {
@@ -101,12 +101,12 @@ export function RetryPlanning({ data, refresh }: { data: PlanDetail; refresh: ()
       });
       refresh();
     } catch (reason) {
-      setError(reason instanceof ApiFailure ? `${reason.message}（追踪号 ${reason.envelope.trace_id}）` : '提交结果尚未确认。请刷新记录查看状态，或再次提交同一次重试。');
+      setError(reason instanceof ApiFailure ? `${reason.message}(Trace ID ${reason.envelope.trace_id})` : 'Submission is unconfirmed. Refresh the record or submit the same retry again.');
       if (reason instanceof ApiFailure && reason.envelope.error.code === 'UNAUTHENTICATED') reload();
     } finally { setBusy(false); }
   }
   return <div className="planning-retry">
-    {guidance.canRetry ? <><p>{guidance.retryDescription}</p><button className="primary-button" disabled={busy} onClick={retry}>{busy ? '正在提交…' : guidance.retryLabel}</button></> : <><p className="muted">这次执行暂不能直接继续。已有记录会保留，请联系项目负责人核对原因。</p>{data.retry_unavailable_reason&&<details><summary>查看无法继续的原因</summary><p>{data.retry_unavailable_reason}</p></details>}</>}
+    {guidance.canRetry ? <><p>{guidance.retryDescription}</p><button className="primary-button" disabled={busy} onClick={retry}>{busy ? 'Submitting…' : guidance.retryLabel}</button></> : <><p className="muted">This run cannot resume directly. Existing records are retained. Contact the maintainer to investigate.</p>{data.retry_unavailable_reason&&<details><summary>Why this cannot continue</summary><p>{data.retry_unavailable_reason}</p></details>}</>}
     {error && <p className="error-box" role="alert">{error}</p>}
   </div>;
 }

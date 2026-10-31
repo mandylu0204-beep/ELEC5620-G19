@@ -6,7 +6,7 @@ from app.storage.requirement_help import RequirementHelp,HelpCreate
 from test_requests import web,draft,sign_in,FIELDS,confirm_body
 
 def create(client,headers,**fields):
-    row=draft(client,headers,FIELDS|{'preferences':['ready-to-eat meals'],'mandatory_constraints':['想要方便洗澡的设施']}|fields)
+    row=draft(client,headers,FIELDS|{'preferences':['ready-to-eat meals'],'mandatory_constraints':['Convenient shower facilities wanted']}|fields)
     state=row['requirement_help']
     body={'expected_revision':row['revision'],'expected_profile_revision':state['profile_revision'],'command_key':'help-create-command-0001'}
     reply=client.post('/api/v1/requests/'+row['request_id']+'/requirement-help',headers=headers,json=body)
@@ -15,7 +15,7 @@ def create(client,headers,**fields):
 
 def decision(task,**patch):
     return {'expected_revision':task['revision'],'command_key':'help-review-command-0001','decision':'PROPOSE_MAPPING',
-        'reason':'建议对应已有条件，请用户确认；不代表营地满足。','mappings':[{'field':item['field'],'index':item['index'],'original':item['text'],
+        'reason':'Suggest an existing condition for user confirmation; does not establish campsite compliance.','mappings':[{'field':item['field'],'index':item['index'],'original':item['text'],
         'canonical':{'preferences':'quiet','mandatory_constraints':'showers','accessibility_requirements':'step-free path'}[item['field']]}
         for item in task['snapshot']['items']]}|patch
 
@@ -35,22 +35,22 @@ def test_known_other_aliases_need_no_assistance_and_catalogue_is_host_owned(web)
     app,client,headers=web
     catalogue=client.get('/api/v1/requirement-choices').json()
     assert catalogue==client.get('/api/v1/request-context').json()['requirement_choices']
-    row=draft(client,headers,FIELDS|{'preferences':['希望安静','ready-to-eat meals'],'mandatory_constraints':['需要洗澡']})
+    row=draft(client,headers,FIELDS|{'preferences':['Prefer quiet surroundings','ready-to-eat meals'],'mandatory_constraints':['Need showers']})
     assert row['requirement_help']['needed'] is False
     reply=client.post('/api/v1/requests/'+row['request_id']+'/requirement-help',headers=headers,
         json={'expected_revision':1,'expected_profile_revision':1,'command_key':'known-help-command-0001'})
     assert reply.status_code==409
     reply=client.put('/api/v1/profile',headers=headers,json={'expected_revision':1,'profile':{'group_size':2,
-        'accessibility_requirements':['需要无台阶通道','需要私人热水淋浴']}})
+        'accessibility_requirements':['Need a step-free path','Need private hot showers']}})
     assert reply.status_code==200,reply.text
-    assert reply.json()['profile']['accessibility_requirements']==['step-free path','需要私人热水淋浴']
+    assert reply.json()['profile']['accessibility_requirements']==['step-free path','Need private hot showers']
 
 def test_unknown_is_blocked_before_runtime_or_paid_model_resolution(web,monkeypatch):
     app,client,headers=web;row,task,body=create(client,headers)
     monkeypatch.setattr(app.state.runtime,'resolve',lambda:pytest.fail('must not resolve runtime'))
     reply=client.post('/api/v1/requests/'+row['request_id']+'/interpret',headers=headers,json={'expected_revision':1})
     assert reply.status_code==409,reply.text
-    assert '未调用模型' in reply.json()['error']['message']
+    assert 'No model was called' in reply.json()['error']['message']
     current=client.get('/api/v1/requests/'+row['request_id']).json()
     assert current['status']=='DRAFT' and current['summary'] is None and current['revision']==1
 
@@ -80,7 +80,7 @@ def test_mapping_is_complete_exact_category_bounded_and_cannot_approve(web):
     founder=sign_in(client,'founder','CampMate-Founder-2026!')
     original=decision(task)['mappings'][0]
     for index,patch in enumerate([{'mappings':[]},{'mappings':[original|{'canonical':'quiet'}]},
-        {'mappings':[original|{'original':'不同原文'}]},{'mappings':[original,original]},
+        {'mappings':[original|{'original':'Different original wording'}]},{'mappings':[original,original]},
         {'decision':'APPROVE'},{'reason':' '}]):
         reply=client.post('/api/v1/requirement-help/'+task['task_id']+'/decision',headers=founder,
             json=decision(task,**patch)|{'command_key':f'invalid-command-key-{index:04d}'})
@@ -90,9 +90,9 @@ def test_mapping_is_complete_exact_category_bounded_and_cannot_approve(web):
 def test_suggestion_requires_owner_adoption_then_reanalysis_and_preserves_original_audit(web):
     app,client,headers=web
     assert client.put('/api/v1/profile',headers=headers,json={'expected_revision':1,'profile':{'group_size':2,
-        'accessibility_requirements':['婴儿车方便通行']}}).status_code==200
+        'accessibility_requirements':['Easy stroller access']}}).status_code==200
     original=client.get('/api/v1/profile').json()
-    row,task,body=create(client,headers,preferences=['ready-to-eat meals','尽量少喧闹'])
+    row,task,body=create(client,headers,preferences=['ready-to-eat meals','As little noise as possible'])
     proposed=decide(client,task);owner=sign_in(client)
     assert client.get('/api/v1/profile').json()==original
     assert client.get('/api/v1/requests/'+row['request_id']).json()['explicit_fields']==row['explicit_fields']
@@ -138,7 +138,7 @@ def test_returned_requirement_has_no_adopt_or_approval_action(web):
 
 def test_concurrent_create_is_deduplicated_and_changed_payload_cannot_reuse_key(web):
     app,client,headers=web
-    row=draft(client,headers,FIELDS|{'mandatory_constraints':['其他特殊要求']})
+    row=draft(client,headers,FIELDS|{'mandatory_constraints':['Other special requirements']})
     user=app.state.auth.authenticate(client.cookies.get('campmate_session'));service=RequirementHelp(app.state.database)
     def command(number):return service.create(user,row['request_id'],HelpCreate(expected_revision=1,
         expected_profile_revision=1,command_key=f'concurrent-help-command-{number:04d}'))
@@ -155,7 +155,7 @@ def test_profile_change_between_preflight_and_analysis_is_checked_under_the_snap
         with app.state.database.transaction() as db:
             import json
             saved=db.execute("SELECT payload FROM profiles WHERE owner_id='camper-a'").fetchone()
-            profile=json.loads(saved['payload']);profile['accessibility_requirements']=['尚未明确的无障碍要求']
+            profile=json.loads(saved['payload']);profile['accessibility_requirements']=['Unclear accessibility requirements']
             db.execute("UPDATE profiles SET payload=?,revision=revision+1 WHERE owner_id='camper-a'",(json.dumps(profile),))
         return original()
     monkeypatch.setattr(app.state.runtime,'resolve',changed)

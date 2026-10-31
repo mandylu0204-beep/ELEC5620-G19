@@ -116,7 +116,7 @@ def test_model_cannot_skip_tool_or_loop_forever():
     with pytest.raises(ContractFailure) as error:
         asyncio.run(planner.plan(input))
     assert len(messages) == planner.client.settings.max_turns == 4
-    assert '上限' in str(error.value)
+    assert 'limit exceeded' in str(error.value)
 
 
 def test_tool_cannot_widen_saved_recommendations_and_rechecks_hard_constraints():

@@ -75,13 +75,13 @@ def test_empty_key_cli_exits_cleanly_without_live_network(tmp_path):
     pytest.param('\r\n', id='crlf'),
 ])
 def test_main_json_roundtrips_on_strict_output_streams(monkeypatch, capsys, encoding, outcome, newline):
-    message = '离线检查：中文与符号 🏕️'
+    message = 'Offline check: Chinese and symbols 🏕️'
     error = ContractError(code='AGENT_FAILURE', message=message)
-    expected = {'status': 'OFFLINE_SUCCESS', 'message': message, 'items': ['第二行', 'é']}
+    expected = {'status': 'OFFLINE_SUCCESS', 'message': message, 'items': ['Second line', 'é']}
     if outcome == 'contract_failure':
         expected = {'status': 'FAILED', 'error': error.model_dump(mode='json')}
     elif outcome == 'invalid_input':
-        expected = {'status': 'FAILED', 'message': '本地模型配置或演示输入无效。'}
+        expected = {'status': 'FAILED', 'message': 'Local model configuration or demonstration input is invalid.'}
     calls = []
 
     async def execute(args):

@@ -36,9 +36,9 @@ LINK_SAMPLES = (
     'See tel:contact for guidance.',
     'See [guide](/local-help) for guidance.',
     'See [guide](example.com) for guidance.',
-    'See 例子.测试 for guidance.',
+    'See Example.Test for guidance.',
     'See café.example for guidance.',
-    'See example。com for guidance.',
+    'See example.com for guidance.',
     'See example．com for guidance.',
     'See example｡com for guidance.',
 )

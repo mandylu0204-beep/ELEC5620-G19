@@ -579,11 +579,11 @@ def test_schema_list_boundaries_do_not_claim_fabricated_facts_are_valid(collecti
         item = deepcopy(plan[collection][0])
         if collection == 'gear_actions':
             item['fact']['item_key'] = f'schema-only-{i}'
-            item['reason_unverified'] = '营'*240
+            item['reason_unverified'] = 'x'*240
         elif collection == 'budget_allocations': item['line_id'] = f'schema-only-{i}'
         items.append(item)
     plan[collection] = items
-    plan['decision_summary_unverified'] = '营'*1200
+    plan['decision_summary_unverified'] = 'x'*1200
     ValidatedLogisticsPlan.model_validate(plan)  # Shape only, not business acceptance.
     with pytest.raises(ContractFailure):
         validate_logistics_payload(input, baseline(dataset, input, config), outcome.assessment,
@@ -599,7 +599,7 @@ def test_full_save_payload_utf8_exact_limit_and_one_byte_over():
     outcome = asyncio.run(agent.assess_with_trace(input))
     trace = outcome.trace.model_dump(mode='json')
     # Tests the encoding boundary separately from semantic shape validation.
-    plan = {'padding': '营'*100}
+    plan = {'padding': 'Camp'*100}
     value, _ = payload(input.version_context, outcome.assessment, plan, trace)
     spare = LIMIT - len(canonical(value).encode('utf-8'))
     plan['padding'] += 'x'*spare

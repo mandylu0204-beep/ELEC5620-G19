@@ -9,19 +9,19 @@ import { forgetDeletedTripUpdate,openTripUpdate,tripUpdatePath } from './trip_up
 
 export function ProfileAdoptionPreview({before,after,revision,sourceRevision}:{before:Profile;after:Profile;revision:number|null;sourceRevision:number|null}){
   const changes=profileChanges(before,after);
-  return <section aria-label="采用资料的差异"><h3>本次采用资料 revision {revision??'未知'}</h3>
-    <p>原方案资料 revision：{sourceRevision??'历史记录未登记'}。以下仅为资料对比，不代表正式检查通过。</p>
-    {changes.length?changes.map(change=><details key={change.section} open><summary>{change.section}有变化</summary><div className="bottom-grid">
-      <div><h4>原方案采用</h4><ul>{change.before.map((line,index)=><li key={index}>{line}</li>)}</ul></div>
-      <div><h4>本次拟采用</h4><ul>{change.after.map((line,index)=><li key={index}>{line}</li>)}</ul></div>
-    </div></details>):<p>资料内容与原方案一致；重新规划仍会生成后继方案并执行正式检查。</p>}
+  return <section aria-label="Profile differences"><h3>Profile used for this update revision {revision??'Unknown'}</h3>
+    <p>Profile used for original plan revision: {sourceRevision??'Not recorded in history'}.This is a profile comparison only, not a formal check result.</p>
+    {changes.length?changes.map(change=><details key={change.section} open><summary>{change.section}Changed</summary><div className="bottom-grid">
+      <div><h4>Original plan used</h4><ul>{change.before.map((line,index)=><li key={index}>{line}</li>)}</ul></div>
+      <div><h4>Proposed for this update</h4><ul>{change.after.map((line,index)=><li key={index}>{line}</li>)}</ul></div>
+    </div></details>):<p>The profile matches the original. Replanning still creates a successor plan and runs formal checks.</p>}
   </section>;
 }
 
 export function ReplanFromProfile({source}:{source:SuccessorSource;previousProfile:Profile;refreshSource:()=>void}) {
-  return <section className="panel replan-panel" aria-label="调整露营方案">
-    <h2>调整露营方案</h2><p>修改出行需求，或使用最新露营资料重新规划。</p>
-    <Link className="primary-button" to={tripUpdatePath(source.plan_id)}>修改需求与资料 ↗</Link>
+  return <section className="panel replan-panel" aria-label="Adjust camping plan">
+    <h2>Adjust camping plan</h2><p>Change trip requirements or replan with the latest profile.</p>
+    <Link className="primary-button" to={tripUpdatePath(source.plan_id)}>Change requirements and profile ↗</Link>
   </section>;
 }
 
@@ -39,7 +39,7 @@ export function TripUpdateEntry(){
       try{
         const record=await openTripUpdate(api,window.sessionStorage,session!.user.user_id,planId!,()=>crypto.randomUUID());
         if(!cancelled)navigate('/request/'+encodeURIComponent(record.request_id)+(focus?'?focus='+focus:''),{replace:true,state:{profileSaved:location.state?.profileSaved===true}});
-      }catch(reason){if(!cancelled){setDeletedDraft((reason as {deletedUpdateDraft?:boolean})?.deletedUpdateDraft===true);setError(reason instanceof ApiFailure?reason.message:reason instanceof Error?reason.message:'无法准备更新，请重试。');}}
+      }catch(reason){if(!cancelled){setDeletedDraft((reason as {deletedUpdateDraft?:boolean})?.deletedUpdateDraft===true);setError(reason instanceof ApiFailure?reason.message:reason instanceof Error?reason.message:'Could not prepare the update. Please try again.');}}
     }
     void open();
     return()=>{cancelled=true;};
@@ -47,9 +47,9 @@ export function TripUpdateEntry(){
   async function newDraft(){
     if(!session||!planId)return;
     try{await forgetDeletedTripUpdate(<T,>(path:string)=>privateApi<T>(path),window.sessionStorage,session.user.user_id,planId);setRetry(value=>value+1);}
-    catch(reason){setError(reason instanceof Error?reason.message:'来源无法核对，请返回当前方案。');}
+    catch(reason){setError(reason instanceof Error?reason.message:'The source cannot be verified. Return to the current plan.');}
   }
-  return <section className="panel"><h1>核对本次更新</h1><p>保留原需求，准备同一次出行的更新草稿；不会自动启动模型或检查。</p>
-    {error?<><p className="error-box" role="alert">{error}</p>{deletedDraft?<><p>原更新草稿可能已删除。不会自动恢复已删除记录；仅在来源仍有效时，可明确创建另一份本次更新草稿。</p><button onClick={newDraft}>明确新建本次更新草稿</button></>:<button onClick={()=>setRetry(value=>value+1)}>重试原更新命令</button>}</>:<p role="status">正在读取…</p>}
-    <Link className="text-link" to={'/plans/'+encodeURIComponent(planId??'')}>取消并返回原方案 ↗</Link></section>;
+  return <section className="panel"><h1>Review this update</h1><p>Keep the original requirements and prepare an update draft for the same trip. No model or check starts automatically.</p>
+    {error?<><p className="error-box" role="alert">{error}</p>{deletedDraft?<><p>The previous update draft may have been deleted. Deleted records are not restored automatically. If the source is still valid, you can explicitly create another update draft.</p><button onClick={newDraft}>Create another update draft</button></>:<button onClick={()=>setRetry(value=>value+1)}>Retry original update command</button>}</>:<p role="status">Loading…</p>}
+    <Link className="text-link" to={'/plans/'+encodeURIComponent(planId??'')}>Cancel and return to original plan ↗</Link></section>;
 }

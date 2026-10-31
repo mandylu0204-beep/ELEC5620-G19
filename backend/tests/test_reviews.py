@@ -27,7 +27,7 @@ def command(detail,decision='APPROVE',key='review-command'):
     return {'command_key':key,'version_context':detail['version']['version_context'],
         'assessment_ids':[item['assessment_id'] for item in detail['assessments']],
         'expected_version_revision':detail['version']['revision'],
-        'expected_run_revision':detail['run']['revision'],'decision':decision,'reason':'独立测试：核对当前证据及风险。'}
+        'expected_run_revision':detail['run']['revision'],'decision':decision,'reason':'Isolated test: verify current evidence and risks.'}
 
 
 @pytest.mark.parametrize(('decision','status','eligible'),[('APPROVE','ELIGIBLE_FOR_FINALISATION',True),('REJECT','REJECTED',False),('REQUEST_REVISION','REVISION_REQUIRED',False)])
@@ -48,7 +48,7 @@ def test_decision_is_persisted_once_with_exact_evidence(review_client,decision,s
     assert sorted(result['review']['assessment_ids'])==sorted(body['assessment_ids'])
     assert result['finalisation_available'] is False and result['revision_execution_available'] is False
     assert client.post(path,headers=headers,json=body).json()==result
-    assert client.post(path,headers=headers,json={**body,'reason':'不同理由'}).status_code==409
+    assert client.post(path,headers=headers,json={**body,'reason':'Different reason'}).status_code==409
     assert client.post(path,headers=headers,json={**body,'command_key':'different'}).status_code==409
     updated=client.get(path).json()
     assert not updated['review_available'] and len(updated['reviews'])==1
@@ -146,7 +146,7 @@ def test_new_version_rejects_old_review_page(review_client):
     newer=app.state.repository.begin_run(camper,scope.request_id,scope.demo_context,scope.dataset_context,
         plan_id=scope.plan_id,operation='REVISE',expected_current_version_id=version.version_context.plan_version_id)
     port=app.state.repository.bind_port(camper,newer.run_id)
-    content=version.content.model_copy(update={'revision_reason':'独立测试：新版本'})
+    content=version.content.model_copy(update={'revision_reason':'Isolated test: new version'})
     saved=call(port.append_plan_version(version.version_context.plan_version_id,content,scope.request_id,'test',newer.write_keys['version']))
     assert saved.version_number==2
     assert client.post(path,headers=headers,json=old).status_code==409

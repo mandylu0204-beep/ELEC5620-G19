@@ -140,7 +140,7 @@ def interpret(dataset, input) -> InterpretRequestResult:
     if (any(not any(re.fullmatch(pattern, clause) for pattern in (*hard_phrases.values(), NO_FIRE_PATTERN)) for clause in clauses)
             or any(canonical_term(clause, 'constraint') is None for clause in chinese_clauses)):
         error('mandatory_constraints', FieldErrorCode.UNSUPPORTED,
-              '部分必须条件的含义尚未明确，请拆分并说明具体需要的设施，再重新生成摘要。')
+              'Some required conditions are unclear. Split them and specify the facilities needed, then regenerate the summary.')
     values.update({field: value for field, value in explicit.items() if field not in {'preferences', 'mandatory_constraints'}})
     values['preferences'], values['mandatory_constraints'] = merge_explicit_terms(preferences, constraints, input.explicit_fields)
     term_errors, term_questions = term_issues(values['preferences'], values['mandatory_constraints'])

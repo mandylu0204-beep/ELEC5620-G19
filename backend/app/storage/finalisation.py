@@ -27,7 +27,7 @@ class FinaliseInput(ContractModel):
     @classmethod
     def explicit_confirmation(cls, value):
         if not value:
-            raise ValueError('请确认已阅读方案及其证据。')
+            raise ValueError('Confirm you have read the plan and its evidence.')
         return value
 
 
@@ -48,7 +48,7 @@ class FinalisationService:
             plan = Repository.own_plan(connection, user, plan_id)
             row = connection.execute('SELECT * FROM final_records WHERE id=? AND plan_id=?', (final_id, plan_id)).fetchone()
             if not row:
-                fail(ErrorCode.NOT_FOUND, '最终方案不存在。')
+                fail(ErrorCode.NOT_FOUND, 'Final plan not found.')
             snapshot = json.loads(row['payload'])
             run = connection.execute('SELECT scope FROM runs WHERE id=?', (row['run_id'],)).fetchone()
             scope = RunScope.model_validate_json(run['scope'])
@@ -73,7 +73,7 @@ class FinalisationService:
             from .revision_choices import require_decided
             require_decided(connection, plan_id)
             if not run or body.version_context.plan_id != plan_id:
-                fail(ErrorCode.STALE_CONTEXT, '最终化上下文已变化，请刷新。')
+                fail(ErrorCode.STALE_CONTEXT, 'Finalisation context changed. Refresh.')
             scope = RunScope.model_validate_json(run['scope'])
             if self.context_guard is not None:
                 self.context_guard(scope)
@@ -82,29 +82,29 @@ class FinalisationService:
             assessments = port.assessments(connection, body.version_context)
             actual = sorted(item.assessment_id for item in assessments)
             if len(set(body.assessment_ids)) != 2 or sorted(body.assessment_ids) != actual:
-                fail(ErrorCode.STALE_CONTEXT, '最终化必须绑定当前两份评估记录。')
+                fail(ErrorCode.STALE_CONTEXT, 'Finalisation must bind both current assessment records.')
             review = port.review(connection, body.version_context, actual)
             if body.expected_review_id != (review.review_id if review else None):
-                fail(ErrorCode.STALE_CONTEXT, '审核决定已变化，请刷新。')
+                fail(ErrorCode.STALE_CONTEXT, 'Review decision changed. Refresh.')
             previous = connection.execute('SELECT * FROM final_commands WHERE owner_id=? AND command_key=?', (user.id, body.command_key)).fetchone()
             input_hash = fingerprint(body)
             if previous:
                 if previous['input_hash'] != input_hash:
-                    fail(ErrorCode.IDEMPOTENCY_CONFLICT, '同一提交编号不能用于不同最终化内容。')
+                    fail(ErrorCode.IDEMPOTENCY_CONFLICT, 'The same submission key cannot be used for different finalisation content.')
                 return json.loads(previous['result'])
             if body.expected_version_revision != version.revision or body.expected_run_revision != run['revision']:
-                fail(ErrorCode.VERSION_CONFLICT, '版本或运行已变化，请刷新。')
+                fail(ErrorCode.VERSION_CONFLICT, 'Version or run changed. Refresh.')
             confirmed = ConfirmedContext.model_validate_json(run['confirmed_context'])
             calculated = Repository.input_fingerprint(scope, confirmed, version.content.model_dump(mode='json'))
             if calculated != body.version_context.input_fingerprint:
-                fail(ErrorCode.STALE_CONTEXT, '版本内容与登记输入指纹不一致，不能最终化。')
+                fail(ErrorCode.STALE_CONTEXT, 'Version content does not match its registered input fingerprint. Finalisation unavailable.')
             request = connection.execute('SELECT status FROM requests WHERE id=? AND owner_id=?', (scope.request_id, user.id)).fetchone()
             route = connection.execute("SELECT result FROM write_receipts WHERE run_id=? AND operation='route'", (scope.run_id,)).fetchone()
             if not request or request['status'] != 'CONFIRMED' or run['status'] != 'SUCCEEDED' or run['stage'] != 'COMPLETED' or not route:
-                fail(ErrorCode.FINALISATION_BLOCKED, '请求未确认或工作流尚未成功完成，不能最终化。')
+                fail(ErrorCode.FINALISATION_BLOCKED, 'Request unconfirmed or workflow incomplete. Finalisation unavailable.')
             _, eligibility = port.decision(connection, body.version_context)
             if version.status != 'ELIGIBLE_FOR_FINALISATION' or not eligibility.eligible:
-                fail(ErrorCode.FINALISATION_BLOCKED, '当前方案存在未解决的审核、修订或 blocker，不能最终化。')
+                fail(ErrorCode.FINALISATION_BLOCKED, 'The current plan has unresolved review, revision or  blocker, . Finalisation unavailable.')
             final_id, timestamp = uuid4().hex, now()
             recommendation = connection.execute('SELECT payload FROM recommendations WHERE run_id=?', (scope.run_id,)).fetchone()
             events = [{**dict(row), 'error': json.loads(row['error']) if row['error'] else None} for row in connection.execute(

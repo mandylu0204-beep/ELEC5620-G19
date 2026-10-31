@@ -29,7 +29,7 @@ class PlanningDispatcher:
         import json
         snapshot = self.state.runtime.for_scope(scope)
         if snapshot.demo != scope.demo_context or snapshot.dataset != scope.dataset_context:
-            fail(ErrorCode.STALE_CONTEXT, '物流验证配置已变化，请开启新运行。')
+            fail(ErrorCode.STALE_CONTEXT, 'Logistics validation settings changed. Start a new run.')
         return logistics.assess(snapshot.agent.dataset, input, expected_mode=ExecutionMode.AGENT,
             safety_case_ids=json.loads(scope.dataset_context.selection_config['safety_case_ids']),
             transport_policy=scope.dataset_context.selection_config.get(POLICY_KEY))
@@ -64,7 +64,7 @@ class PlanningDispatcher:
 
     def require_available(self):
         if not self.available:
-            fail(ErrorCode.AGENT_FAILURE, '规划流程尚未启用；需接入对应模式的 Agent 和 Adapter。Stub 不生成方案。')
+            fail(ErrorCode.AGENT_FAILURE, 'Planning workflow is not enabled. Connect the corresponding mode  Agent and Adapter.Stub ; no plan is generated.')
 
     def context(self, scope=None):
         snapshot = self.state.runtime.for_scope(scope) if scope is not None else self.state.runtime.resolve()
@@ -183,10 +183,10 @@ class PlanningDispatcher:
             else:
                 workflow.fail_dispatch(user, run_id, result.error, attempt=attempt)
         except asyncio.CancelledError:
-            workflow.fail_dispatch(user, run_id, ContractError(code='AGENT_FAILURE', message='服务退出，执行已中断；已保存产物可在重启后重试。', recoverable=True, allowed_actions=['RETRY']), attempt=attempt)
+            workflow.fail_dispatch(user, run_id, ContractError(code='AGENT_FAILURE', message='Service stopped and execution was interrupted. Retry from saved outputs after restart.', recoverable=True, allowed_actions=['RETRY']), attempt=attempt)
             raise
         except (ValidationError, ValueError):
-            workflow.fail_dispatch(user, run_id, ContractError(code='CONTRACT_INVALID', message='工作流返回内容与保存记录不一致，请联系开发负责人。', allowed_actions=['CONTACT_OPERATOR']), attempt=attempt)
+            workflow.fail_dispatch(user, run_id, ContractError(code='CONTRACT_INVALID', message='Workflow output differs from saved records. Contact the developer.', allowed_actions=['CONTACT_OPERATOR']), attempt=attempt)
         except ContractFailure as exc:
             error = exc.error
             try:
@@ -194,7 +194,7 @@ class PlanningDispatcher:
             except ContractFailure:
                 logger.info('Run no longer writable: run=%s', run_id)
         except Exception:
-            workflow.fail_dispatch(user, run_id, ContractError(code='AGENT_FAILURE', message='工作流执行失败；可从已保存产物重试。', recoverable=True, allowed_actions=['RETRY']), attempt=attempt)
+            workflow.fail_dispatch(user, run_id, ContractError(code='AGENT_FAILURE', message='Workflow failed. Retry from saved outputs.', recoverable=True, allowed_actions=['RETRY']), attempt=attempt)
         finally:
             for task in (worker, heartbeat):
                 if task is not None:

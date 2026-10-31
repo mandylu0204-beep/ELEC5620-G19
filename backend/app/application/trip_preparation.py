@@ -14,7 +14,7 @@ def summary(confirmed, logistics):
     from ..agents.rules.common import meal_mode
     cooking_mode = meal_mode(SimpleNamespace(preferences=(confirmed.get('requirements') or {}).get('preferences', [])))
     return {'system_preparation': True, 'transport_type': mode,
-        'origin_label': '悉尼市区（固定模拟出发地）',
+        'origin_label': 'Central Sydney (fixed demonstration origin)',
         'access_and_capacity': (logistics or {}).get('transport_feasible'),
         'estimated_total_vehicle_km': distance.get('quantity') if distance else None,
         'vehicle_count': (profile.get('transport') or {}).get('vehicle_count') if mode == 'CAR' else None,

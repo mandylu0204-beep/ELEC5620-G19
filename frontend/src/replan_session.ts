@@ -50,7 +50,7 @@ export class ReplanSession {
   }
   async start(acknowledged:boolean) {
     if(!acknowledged||this.previewStale||!this.record||!['AWAITING_CONFIRMATION','CONFIRMED'].includes(this.record.status))
-      throw new Error('请先核对并确认本次需求和最新露营资料。');
+      throw new Error('Review and confirm this request and the latest camping profile first.');
     if(this.record.status!=='CONFIRMED'){
       // Before the first attempt, check the exact revision displayed by the
       // preview. The confirm transaction remains the authoritative race guard.
@@ -60,7 +60,7 @@ export class ReplanSession {
         const latest=await this.api<{revision:number}>('/profile');
         if(latest.revision!==this.record.profile_revision){
           this.previewStale=true;
-          throw new Error('露营资料已变化。请重新载入资料差异，核对新的 revision 后再次确认；尚未启动规划。');
+          throw new Error('Camping profile changed. Reload the differences, review the new revision and confirm again. Planning has not started.');
         }
       }
       if(this.confirmCommand?.revision!==this.record.revision)
@@ -75,7 +75,7 @@ export class ReplanSession {
         throw reason;
       }
     }
-    if(!this.record.planning_available)throw new Error('规划服务暂不可用，已保存确认的需求，请稍后重试。');
+    if(!this.record.planning_available)throw new Error('Planning is temporarily unavailable. Confirmed requirements are saved; try again later.');
     if(this.planCommand?.revision!==this.record.revision)
       this.planCommand={revision:this.record.revision,key:this.commandKey('plan',this.record.revision)};
     try{

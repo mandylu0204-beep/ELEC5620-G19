@@ -27,7 +27,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     privateApi<Session>('/auth/me', { signal: controller.signal }).then(value => { if (!controller.signal.aborted) setSession(value); }).catch(reason => {
       if (controller.signal.aborted) return;
       setSession(null);
-      if (!(reason instanceof ApiFailure && reason.envelope.error.code === 'UNAUTHENTICATED')) setError('无法读取登录状态，请重试。');
+      if (!(reason instanceof ApiFailure && reason.envelope.error.code === 'UNAUTHENTICATED')) setError('Could not read login status. Please retry.');
     }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [revision]);
@@ -54,18 +54,18 @@ export function AccountControl() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
-  if (loading) return <span>检查账户…</span>;
-  if (!session) return <Link className="account-link" to="/login">登录 ↗</Link>;
-  return <div className="account-control"><span>{session.user.display_name} · {session.user.role === 'FOUNDER' ? '审核员' : '露营用户'}</span><button disabled={busy} onClick={async () => { setBusy(true); setError(''); try { await logout(); navigate('/login'); } catch { setError('退出失败，请重试'); } finally { setBusy(false); } }}>{busy ? '正在退出' : '退出'}</button>{error && <span role="alert">{error}</span>}</div>;
+  if (loading) return <span>Checking account…</span>;
+  if (!session) return <Link className="account-link" to="/login">Log in ↗</Link>;
+  return <div className="account-control"><span>{session.user.display_name} · {session.user.role === 'FOUNDER' ? 'Reviewer' : 'Camper'}</span><button disabled={busy} onClick={async () => { setBusy(true); setError(''); try { await logout(); navigate('/login'); } catch { setError('Sign-out failed. Please retry'); } finally { setBusy(false); } }}>{busy ? 'Signing out' : 'Sign out'}</button>{error && <span role="alert">{error}</span>}</div>;
 }
 
 export function Protected({ role, children }: { role: User['role']; children: ReactNode }) {
   const { session, loading, error, reload } = useSession();
   const location = useLocation();
-  if (loading) return <section className="panel">正在检查登录状态…</section>;
-  if (error) return <section className="panel"><p role="alert">{error}</p><button onClick={reload}>重新连接</button></section>;
-  if (!session) return <section className="panel"><h2>先登录你的账户</h2><p>登录后可继续当前操作。</p><Link className="primary-button" to="/login" state={{returnTo:location.pathname+location.search}}>去登录 ↗</Link></section>;
-  if (session.user.role !== role) return <section className="panel"><h2>当前账户没有此页面权限</h2><p>露营用户查看自己的资料与方案；审核员处理人工审核。</p></section>;
+  if (loading) return <section className="panel">Checking login status…</section>;
+  if (error) return <section className="panel"><p role="alert">{error}</p><button onClick={reload}>Reconnect</button></section>;
+  if (!session) return <section className="panel"><h2>Sign in first</h2><p>Sign in to continue this action.</p><Link className="primary-button" to="/login" state={{returnTo:location.pathname+location.search}}>Sign in ↗</Link></section>;
+  if (session.user.role !== role) return <section className="panel"><h2>This account cannot access this page</h2><p>Campers view their own profiles and plans. Reviewers handle human reviews.</p></section>;
   return <div key={session.user.user_id}>{children}</div>;
 }
 
@@ -81,8 +81,8 @@ export function LoginPage() {
   async function submit(event: FormEvent) {
     event.preventDefault(); setBusy(true); setError('');
     try { await login(username.trim(), password); setPassword(''); }
-    catch (reason) { setError(reason instanceof ApiFailure ? reason.message : '登录失败，请检查服务连接。'); }
+    catch (reason) { setError(reason instanceof ApiFailure ? reason.message : 'Sign-in failed. Check the service connection.'); }
     finally { setBusy(false); }
   }
-  return <><div className="page-heading"><span className="eyebrow">账户登录</span><h1>欢迎回来。</h1><p>登录后，继续你的露营计划。</p></div><div className="login-layout"><section className="panel"><h2>账户登录</h2>{registeredUsername&&<p className="success-box" role="status">注册成功，请使用新账户登录。</p>}<form onSubmit={submit}><label htmlFor="username">用户名</label><input id="username" autoComplete="username" maxLength={80} required disabled={busy} value={username} onChange={event => setUsername(event.target.value)} /><label htmlFor="password">密码</label><input id="password" type="password" autoComplete="current-password" maxLength={256} required disabled={busy} value={password} onChange={event => setPassword(event.target.value)} />{error && <p className="error-box" role="alert">{error}</p>}<button className="primary-button" disabled={busy}>{busy ? '正在登录…' : '登录'} <span>↗</span></button></form><p>还没有账户？<Link className="text-link" to="/register" state={{returnTo:location.state?.returnTo}}>注册账户 ↗</Link></p></section></div></>;
+  return <><div className="page-heading"><span className="eyebrow">Account login</span><h1>Welcome back.</h1><p>Sign in to continue your camping plans.</p></div><div className="login-layout"><section className="panel"><h2>Account login</h2>{registeredUsername&&<p className="success-box" role="status">Registration complete. Sign in with your new account.</p>}<form onSubmit={submit}><label htmlFor="username">Username</label><input id="username" autoComplete="username" maxLength={80} required disabled={busy} value={username} onChange={event => setUsername(event.target.value)} /><label htmlFor="password">Password</label><input id="password" type="password" autoComplete="current-password" maxLength={256} required disabled={busy} value={password} onChange={event => setPassword(event.target.value)} />{error && <p className="error-box" role="alert">{error}</p>}<button className="primary-button" disabled={busy}>{busy ? 'Signing in…' : 'Log in'} <span>↗</span></button></form><p>No account yet?<Link className="text-link" to="/register" state={{returnTo:location.state?.returnTo}}>Create account ↗</Link></p></section></div></>;
 }

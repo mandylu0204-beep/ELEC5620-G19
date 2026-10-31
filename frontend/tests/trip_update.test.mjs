@@ -22,13 +22,13 @@ test('every update entry prepares only one linked draft; refresh and lost receip
   const storage=memory(),calls=[];let fail=true,sequence=0;
   const api=async(path,body)=>{calls.push({path,body});if(!body)return plan();if(fail){fail=false;throw new Error('lost receipt');}return {request_id:'same-draft'};};
   const key=()=>`update-command-${++sequence}-abcdefghijkl`;
-  await assert.rejects(()=>openTripUpdate(api,storage,'u','owned-plan',key),/lost receipt/);
+  await assert.rejects(()=>openTripUpdate(api,storage,'u','owned-plan',key),/lost receipt/i);
   assert.deepEqual(await openTripUpdate(api,storage,'u','owned-plan',key),{request_id:'same-draft'});
   await openTripUpdate(api,storage,'u','owned-plan',key);
   const writes=calls.filter(call=>call.body);
   assert.equal(sequence,1);assert.deepEqual(writes[0],writes[1]);assert.deepEqual(writes[1],writes[2]);
   assert.ok(writes.every(call=>call.path==='/plans/owned-plan/successor-requests'));
-  assert.ok(!calls.some(call=>/^\/requests$|\/(interpret|confirm|plan)$/.test(call.path)));
+  assert.ok(!calls.some(call=>/^\/requests$|\/(interpret|confirm|plan)$/i.test(call.path)));
 });
 test('legacy first linkage 0 to 1 does not create another preview after refresh',async()=>{
   const storage=memory(),writes=[];let linked=false;
@@ -47,22 +47,22 @@ test('concurrent mounts share a command, while another owner never shares it',as
 });
 test('active, historical, deleted or inaccessible source cannot create a successor',async()=>{
   for(const patch of [data=>data.run.status='RUNNING',data=>data.run.is_active=false,data=>data.trip_series.is_current=false]){
-    const data=plan();patch(data);assert.throws(()=>tripUpdateSource(data),/来源/);
+    const data=plan();patch(data);assert.throws(()=>tripUpdateSource(data),/Source/i);
   }
   const calls=[];
-  await assert.rejects(()=>openTripUpdate(async(path,body)=>{calls.push({path,body});throw new Error('not found');},memory(),'u','deleted',()=> 'unused-command-abcdefghijkl'),/not found/);
+  await assert.rejects(()=>openTripUpdate(async(path,body)=>{calls.push({path,body});throw new Error('not found');},memory(),'u','deleted',()=> 'unused-command-abcdefghijkl'),/not found/i);
   assert.equal(calls.length,1);assert.equal(calls[0].body,undefined);
 });
 test('storage failure blocks transmission rather than losing the retry command',async()=>{
   let writes=0;
-  await assert.rejects(()=>openTripUpdate(async(path,body)=>{if(body)writes++;return plan();},{getItem(){return null;},setItem(){throw new Error('storage unavailable');}},'u','owned-plan',()=> 'command-abcdefghijkl'),/storage unavailable/);
+  await assert.rejects(()=>openTripUpdate(async(path,body)=>{if(body)writes++;return plan();},{getItem(){return null;},setItem(){throw new Error('storage unavailable');}},'u','owned-plan',()=> 'command-abcdefghijkl'),/storage unavailable/i);
   assert.equal(writes,0);
 });
 test('confirmation and planning keys survive controller recreation and are distinct operations',async()=>{
   const storage=memory(),calls=[];let row={request_id:'draft',status:'AWAITING_CONFIRMATION',revision:3,profile_revision:1,planning_available:true};let lose=true;
   const api=async(path,body)=>{calls.push({path,body});if(path==='/profile')return {revision:1};if(path.endsWith('/confirm')){row={...row,status:'CONFIRMED',revision:4};return row;}if(path.endsWith('/plan')){if(lose){lose=false;throw new Error('lost plan receipt');}return {plan_id:'successor',run_id:'new-run'};}throw new Error('unexpected');};
   let number=0;const create=()=>new ReplanSession(api,()=>`unused-${++number}`,(operation,revision)=>tripCommandKey(storage,'u','draft',operation,revision,()=>`durable-command-abcdefghijkl-${++number}`));
-  let flow=create();flow.record=row;await assert.rejects(()=>flow.start(true),/lost plan/);
+  let flow=create();flow.record=row;await assert.rejects(()=>flow.start(true),/lost plan/i);
   flow=create();flow.record=row;await flow.start(true);
   const attempts=calls.filter(call=>call.path.endsWith('/plan'));assert.deepEqual(attempts[0],attempts[1]);
   assert.notEqual(calls.find(call=>call.path.endsWith('/confirm')).body.command_key,attempts[0].body.command_key);
@@ -70,10 +70,10 @@ test('confirmation and planning keys survive controller recreation and are disti
 test('correction links use series update paths; confirmed requests have no independent-template entry',()=>{
   assert.equal(tripUpdatePath('owned-plan','request-meal'),'/plans/owned-plan/update?focus=request-meal');
   for(const file of ['planning.tsx','next_steps.tsx','near_matches.tsx','trip_coverage.tsx','profile.tsx']){
-    const source=readFileSync(new URL('../src/'+file,import.meta.url),'utf8');assert.doesNotMatch(source,/copy_from/);
+    const source=readFileSync(new URL('../src/'+file,import.meta.url),'utf8');assert.doesNotMatch(source,/copy_from/i);
   }
   const request=readFileSync(new URL('../src/requests.tsx',import.meta.url),'utf8');
-  assert.doesNotMatch(request,/以此为模板，新建独立出行/);
-  assert.doesNotMatch(request,/to=\{['"]\/request\?copy_from=/);
-  assert.match(request,/确认采用并重新检查/);assert.match(request,/调整本次出行需求/);assert.match(request,/'开始规划'/);
+  assert.doesNotMatch(request,/Use as template for independent trip/i);
+  assert.doesNotMatch(request,/to=\{['"]\/request\?copy_from=/i);
+  assert.match(request,/Confirm changes and recheck/i);assert.match(request,/Adjust requirements for this trip/i);assert.match(request,/'Start planning'/i);
 });

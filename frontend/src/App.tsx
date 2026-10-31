@@ -34,7 +34,7 @@ function AppContent() {
     const controller = new AbortController();
     setStatus(null); setError(null);
     loadStatus(controller.signal).then(setStatus).catch((reason: unknown) => {
-      if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : '连接失败');
+      if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Connection failed');
     });
     return () => controller.abort();
   }, [refresh]);
@@ -42,23 +42,23 @@ function AppContent() {
   return <div className="app-shell">
     <aside className="sidebar">
       <Link className="brand" to="/"><Mountain small /><span>CampMate<span className="brand-ai">AI</span></span></Link>
-      <div className="sidebar-caption">你的露营伙伴</div>
-      <nav aria-label="主导航">
-        <NavLink to="/" end><span>◫</span>首页</NavLink>
+      <div className="sidebar-caption">Your camping companion</div>
+      <nav aria-label="Main navigation">
+        <NavLink to="/" end><span>◫</span>Home</NavLink>
         {session?.user.role !== 'FOUNDER' && <>
-          <NavLink to="/profile"><span>◎</span>露营资料</NavLink>
-          <NavLink to="/request"><span>↗</span>露营请求</NavLink>
-          <NavLink to="/plans"><span>≋</span>方案与历史</NavLink>
+          <NavLink to="/profile"><span>◎</span>Camping profile</NavLink>
+          <NavLink to="/request"><span>↗</span>Camping request</NavLink>
+          <NavLink to="/plans"><span>≋</span>Plans and history</NavLink>
         </>}
-        {session?.user.role === 'FOUNDER' && <><NavLink to="/review"><span>◇</span>人工审核</NavLink><NavLink to="/requirement-help"><span>?</span>需求协助</NavLink></>}
+        {session?.user.role === 'FOUNDER' && <><NavLink to="/review"><span>◇</span>Human review</NavLink><NavLink to="/requirement-help"><span>?</span>Request assistance</NavLink></>}
       </nav>
-      <div className="sidebar-note"><span className="eyebrow">规划下一次出行</span><p>从清晰的需求开始，<br />让每一步都有依据。</p></div>
+      <div className="sidebar-note"><span className="eyebrow">Plan your next trip</span><p>Start with clear requirements,<br />give every step a sound basis.</p></div>
     </aside>
     <div className="workspace">
-      <header className="topbar"><span>你的露营伙伴</span><div className="topbar-right"><AccountControl /></div></header>
+      <header className="topbar"><span>Your camping companion</span><div className="topbar-right"><AccountControl /></div></header>
       <main>
-        <>{status?.meta.agent_configuration_error && <p className="mode-notice" role="alert">规划服务暂不可用，请稍后重试。</p>}</>
-        {error && <div className="error-box" role="alert"><strong>无法连接服务</strong><p>{error}。请稍后刷新重试。</p><button onClick={() => setRefresh(value => value + 1)}>重新连接</button></div>}
+        <>{status?.meta.agent_configuration_error && <p className="mode-notice" role="alert">Planning is temporarily unavailable. Please try again later.</p>}</>
+        {error && <div className="error-box" role="alert"><strong>Cannot connect to the service</strong><p>{error}.Refresh and try again later.</p><button onClick={() => setRefresh(value => value + 1)}>Reconnect</button></div>}
         <Routes>
           <Route path="/" element={<Overview />} />
           <Route path="/request" element={<Protected role="CAMPER"><RequestsPage /></Protected>} />
@@ -75,20 +75,20 @@ function AppContent() {
           <Route path="/requirement-help" element={<Protected role="FOUNDER"><RequirementHelpQueue/></Protected>}/>
           <Route path="/requirement-help/:taskId" element={<Protected role="FOUNDER"><RequirementHelpReview/></Protected>}/>
           <Route path="/review" element={<Protected role="FOUNDER"><ReviewQueue /></Protected>} />
-          <Route path="*" element={<Upcoming title="页面不存在" description="请使用左侧导航返回首页。" />} />
+          <Route path="*" element={<Upcoming title="Page not found" description="Use the navigation to return home." />} />
         </Routes>
       </main>
-      <footer><p>规划下一次出发，保留每一份好安排。</p><span>CampMate AI · ELEC5620</span></footer>
+      <footer><p>Plan your next trip and keep your arrangements together.</p><span>CampMate AI · ELEC5620</span></footer>
     </div>
   </div>;
 }
 
 function Overview() {
   return <>
-    <section className="hero"><div><span className="eyebrow">让准备更有依据</span><h1>一次露营，<br />从一份清晰的计划开始。</h1><p>规划行程，准备装备，<br className="desktop-break" />让下一次出发更从容。</p><Link className="primary-button" to="/profile">开始规划 <span>↗</span></Link></div><div className="hero-art"><span>清晰规划，从容出发</span><Mountain /><div>规划 · 检查 · 审核</div></div></section>
-    <section className="section-heading"><div><span className="eyebrow">出行准备</span><h2>为下一次出发做好准备</h2></div></section>
-    <div className="journey">{[['01', '说说你的计划', '目的地、日期与预算'], ['02', '找到合适的营地', '比较营地，查看行程'], ['03', '准备好再出发', '核对装备、费用与安全'], ['04', '保存你的方案', '保留方案，随时回看']].map(([number, title, description]) => <div key={number}><span className="step-number">{number}</span><h3>{title}</h3><p>{description}</p></div>)}</div>
-    <div className="bottom-grid"><section className="panel"><span className="eyebrow">同行小组</span><h2>完善露营资料</h2><p>告诉我们同行人数、已有装备和交通安排。</p><Link className="text-link" to="/profile">编辑资料 ↗</Link></section><section className="panel next-panel"><span className="eyebrow">已有方案</span><h2>继续你的计划</h2><p>查看已有方案，调整行程或回看保存的安排。</p><Link className="text-link" to="/plans">查看我的方案 ↗</Link></section></div>
+    <section className="hero"><div><span className="eyebrow">Prepare with confidence</span><h1>A camping trip,<br />starting with a clear plan.</h1><p>Plan your itinerary and prepare your equipment,<br className="desktop-break" />so you can set off with confidence.</p><Link className="primary-button" to="/profile">Start planning <span>↗</span></Link></div><div className="hero-art"><span>Plan clearly, travel confidently</span><Mountain /><div>Plan · Check · Review</div></div></section>
+    <section className="section-heading"><div><span className="eyebrow">Trip preparation</span><h2>Get ready for your next trip</h2></div></section>
+    <div className="journey">{[['01', 'Describe your plans', 'Destination, dates and budget'], ['02', 'Find a suitable campsite', 'Compare campsites and view your itinerary'], ['03', 'Prepare before departure', 'Review equipment, costs and safety'], ['04', 'Save your plan', 'Keep your plan for later']].map(([number, title, description]) => <div key={number}><span className="step-number">{number}</span><h3>{title}</h3><p>{description}</p></div>)}</div>
+    <div className="bottom-grid"><section className="panel"><span className="eyebrow">Travel group</span><h2>Complete your camping profile</h2><p>Tell us about your group, available equipment and transport.</p><Link className="text-link" to="/profile">Edit profile ↗</Link></section><section className="panel next-panel"><span className="eyebrow">Existing plans</span><h2>Continue your plan</h2><p>View existing plans, adjust an itinerary or revisit saved arrangements.</p><Link className="text-link" to="/plans">View my plans ↗</Link></section></div>
   </>;
 }
 
@@ -113,13 +113,13 @@ function RequestPreview({ enabled }: { enabled: boolean }) {
       setResult(await previewRequest(rawText, { destination: destination.trim() || null, start_date: startDate || null, duration_nights: nights === '' ? null : Number(nights), budget_cents: cents }));
     } catch (reason) {
       if (reason instanceof ApiFailure) setError(reason.envelope);
-      else setNetworkError('未取得预览结果，请检查服务连接后重试。');
+      else setNetworkError('No preview was received. Check the connection and try again.');
     } finally { setBusy(false); }
   }
 
-  return <><div className="page-heading"><span className="eyebrow">需求字段预览</span><h1>说说你期待的露营之旅。</h1><p>测试前后端字段交接。此预览不确认请求，也不开始规划。</p></div><div className="preview-grid"><section className="panel"><div className="panel-title"><h2>露营请求</h2><span className="tag">STUB</span></div><p className="muted">Stub 不解析自然语言；下面的明确字段会原样回显。无需输入真实个人信息。</p><form onSubmit={submit}><label htmlFor="raw-text">你的露营想法</label><textarea id="raw-text" value={rawText} maxLength={8000} required placeholder="例如：想和朋友去露营两晚，先看看需求摘要。" onChange={event => { setRawText(event.target.value); invalidate(); }} disabled={busy} /><div className="form-grid"><div><label htmlFor="destination">明确目的地（可留空）</label><input id="destination" value={destination} onChange={event => { setDestination(event.target.value); invalidate(); }} disabled={busy} /></div><div><label htmlFor="start-date">开始日期（可留空）</label><input id="start-date" type="date" value={startDate} onChange={event => { setStartDate(event.target.value); invalidate(); }} disabled={busy} /></div><div><label htmlFor="nights">晚数（可留空）</label><input id="nights" type="number" min="1" step="1" value={nights} onChange={event => { setNights(event.target.value); invalidate(); }} disabled={busy} /></div><div><label htmlFor="budget">小组预算 AUD（可留空）</label><input id="budget" type="text" inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?" value={budget} placeholder="250.00" onChange={event => { setBudget(event.target.value); invalidate(); }} disabled={busy} /></div></div><button className="primary-button" disabled={!enabled || busy || !rawText.trim()}>{busy ? '正在读取预览…' : '预览字段交接'} <span>↗</span></button>{!enabled && <p className="muted">连接到已就绪的 stub 环境后可预览。</p>}</form></section><section className="panel result-panel" aria-live="polite"><span className="eyebrow">字段回显</span><h2>字段回显</h2>{error && <div className="error-box" role="alert"><strong>{error.error.code}</strong><p>{error.error.message}</p><ul>{error.error.field_errors.map((item, index) => <li key={index}>{item.field}：{item.message}</li>)}</ul><small>Trace: {error.trace_id}</small></div>}{networkError && <p className="error-box" role="alert">{networkError}</p>}{result ? <><div className="result-mode">{result.execution_mode.toUpperCase()} · Schema {result.schema_version}</div><dl>{[['目的地', result.extracted_requirements.destination], ['开始日期', result.extracted_requirements.start_date], ['晚数', result.extracted_requirements.duration_nights], ['预算 AUD', result.extracted_requirements.budget_cents === null ? null : (result.extracted_requirements.budget_cents / 100).toFixed(2)]].map(([label, value]) => <div key={String(label)}><dt>{label}</dt><dd>{value ?? '未提供'}</dd></div>)}</dl>{result.clarifications.length > 0 && <div className="clarifications"><h3>待明确的字段</h3>{result.clarifications.map(item => <p key={item.field}>○ {item.question}</p>)}</div>}<p className="muted">{result.uncertainties.join(' ')}</p></> : <div className="empty-state"><span>⌁</span><p>填写请求后，<br />在这里查看明确字段与缺失提示。</p></div>}<Link className="text-link" to="/request">前往露营请求进行确认与规划 ↗</Link></section></div></>;
+  return <><div className="page-heading"><span className="eyebrow">Request field preview</span><h1>Tell us about your ideal camping trip.</h1><p>Test the frontend/backend field handoff. This preview does not confirm a request or start planning.</p></div><div className="preview-grid"><section className="panel"><div className="panel-title"><h2>Camping request</h2><span className="tag">STUB</span></div><p className="muted">Stub No natural-language interpretation is performed. Explicit fields are echoed below. Do not enter real personal information.</p><form onSubmit={submit}><label htmlFor="raw-text">Your camping ideas</label><textarea id="raw-text" value={rawText} maxLength={8000} required placeholder="For example: a two-night camping trip with friends; preview the request summary first." onChange={event => { setRawText(event.target.value); invalidate(); }} disabled={busy} /><div className="form-grid"><div><label htmlFor="destination">Explicit destination (optional)</label><input id="destination" value={destination} onChange={event => { setDestination(event.target.value); invalidate(); }} disabled={busy} /></div><div><label htmlFor="start-date">Start date (optional)</label><input id="start-date" type="date" value={startDate} onChange={event => { setStartDate(event.target.value); invalidate(); }} disabled={busy} /></div><div><label htmlFor="nights">Number of nights (optional)</label><input id="nights" type="number" min="1" step="1" value={nights} onChange={event => { setNights(event.target.value); invalidate(); }} disabled={busy} /></div><div><label htmlFor="budget">Group budget AUD(optional)</label><input id="budget" type="text" inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?" value={budget} placeholder="250.00" onChange={event => { setBudget(event.target.value); invalidate(); }} disabled={busy} /></div></div><button className="primary-button" disabled={!enabled || busy || !rawText.trim()}>{busy ? 'Loading preview…' : 'Preview field handoff'} <span>↗</span></button>{!enabled && <p className="muted">Connect to a ready  stub  environment to preview.</p>}</form></section><section className="panel result-panel" aria-live="polite"><span className="eyebrow">Field summary</span><h2>Field summary</h2>{error && <div className="error-box" role="alert"><strong>{error.error.code}</strong><p>{error.error.message}</p><ul>{error.error.field_errors.map((item, index) => <li key={index}>{item.field}: {item.message}</li>)}</ul><small>Trace: {error.trace_id}</small></div>}{networkError && <p className="error-box" role="alert">{networkError}</p>}{result ? <><div className="result-mode">{result.execution_mode.toUpperCase()} · Schema {result.schema_version}</div><dl>{[['Destination', result.extracted_requirements.destination], ['Start date', result.extracted_requirements.start_date], ['Number of nights', result.extracted_requirements.duration_nights], ['Budget AUD', result.extracted_requirements.budget_cents === null ? null : (result.extracted_requirements.budget_cents / 100).toFixed(2)]].map(([label, value]) => <div key={String(label)}><dt>{label}</dt><dd>{value ?? 'Not provided'}</dd></div>)}</dl>{result.clarifications.length > 0 && <div className="clarifications"><h3>Fields to clarify</h3>{result.clarifications.map(item => <p key={item.field}>○ {item.question}</p>)}</div>}<p className="muted">{result.uncertainties.join(' ')}</p></> : <div className="empty-state"><span>⌁</span><p>After entering a request,<br />view explicit fields and missing information here.</p></div>}<Link className="text-link" to="/request">Open the camping request to confirm and plan ↗</Link></section></div></>;
 }
 
 function Upcoming({ title, description }: { title: string; description: string }) {
-  return <><div className="page-heading"><span className="eyebrow">页面未找到</span><h1>{title}</h1></div><section className="panel upcoming"><Mountain /><h2>没有找到这个页面</h2><p>{description}</p><Link to="/profile" className="text-link">开始规划 ↗</Link></section></>;
+  return <><div className="page-heading"><span className="eyebrow">Page not found</span><h1>{title}</h1></div><section className="panel upcoming"><Mountain /><h2>This page could not be found</h2><p>{description}</p><Link to="/profile" className="text-link">Start planning ↗</Link></section></>;
 }

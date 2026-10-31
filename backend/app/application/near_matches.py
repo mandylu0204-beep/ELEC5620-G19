@@ -4,84 +4,84 @@ import re
 from ..contracts.dto import ConfirmedContext
 from ..agents.rules.planning import SOFT_FEATURES, violations
 
-FEATURES = {'toilets':'厕所','potable_water':'饮用水','showers':'淋浴','fire_allowed':'允许营火',
-    'campfire':'允许营火','pets_allowed':'允许宠物','wheelchair_accessible':'轮椅通行',
-    'vehicle_access':'车辆通行','public_transport_access':'公共交通通达'}
-SEASONS = {'spring':'春季（9–11月）','summer':'夏季（12–2月）','autumn':'秋季（3–5月）','winter':'冬季（6–8月）','all':'全年'}
+FEATURES = {'toilets':'Toilets','potable_water':'Drinking water','showers':'Showers','fire_allowed':'Campfires allowed',
+    'campfire':'Campfires allowed','pets_allowed':'Pets allowed','wheelchair_accessible':'Wheelchair access',
+    'vehicle_access':'Vehicle access','public_transport_access':'Public transport access'}
+SEASONS = {'spring':'Spring (September–November)','summer':'Summer (December–February)','autumn':'Autumn (March–May)','winter':'Winter (June–August)','all':'Year-round'}
 
 def money(cents):
-    return '未知' if cents is None else f'AUD {cents // 100}.{cents % 100:02d}'
+    return 'Unknown' if cents is None else f'AUD {cents // 100}.{cents % 100:02d}'
 
 def problem(reason, camp, requirements, profile):
-    expected, actual, suggestion = None, None, '核对这一条件后，调整需求并重新确认。'
+    expected, actual, suggestion = None, None, 'Review this condition, adjust requirements and reconfirm.'
     status = 'UNVERIFIED'
-    field, title = 'other', '其他未满足条件'
+    field, title = 'other', 'Other unmet conditions'
     detail = reason
     if reason == 'Destination does not match.':
-        field,title='destination','目的地'
-        expected=requirements.destination;actual=camp.region if camp else '原地区未知'
-        status='MISMATCH';detail='营地所在地区与已确认的目的地不同。'
-        suggestion='选择目标地区的营地；如愿意更换地区，再修改目的地。'
+        field,title='destination','Destination'
+        expected=requirements.destination;actual=camp.region if camp else 'Original region unknown'
+        status='MISMATCH';detail='Campsite region differs from the confirmed destination.'
+        suggestion='Choose a campsite in the target region. Change the destination only if you agree to change region.'
     elif reason == 'Group capacity is insufficient or unknown.':
-        field,title='profile.group_size','同行人数与营地容量'
-        expected=f'{profile.group_size} 人';capacity=camp.max_group_size if camp else None
-        actual=f'最多 {capacity} 人' if capacity is not None else '容量未知'
+        field,title='profile.group_size','Group size and campsite capacity'
+        expected=f'{profile.group_size} people';capacity=camp.max_group_size if camp else None
+        actual=f'Up to  {capacity} people' if capacity is not None else 'Capacity unknown'
         status='MISMATCH' if capacity is not None else 'UNVERIFIED'
-        detail=f'容量还差 {profile.group_size-capacity} 人。' if capacity is not None else '未提供足以容纳小组的容量信息。'
-        suggestion=f'选择容量至少 {profile.group_size} 人的营地；仅在实际同行人数变化时更新露营资料。'
+        detail=f'Capacity shortfall:  {profile.group_size-capacity} people.' if capacity is not None else 'No information establishes capacity for the whole group.'
+        suggestion=f'Choose a campsite for at least  {profile.group_size}  people. Update your profile only if actual group size changes.'
     elif reason == 'Trip season is unsupported or unknown.':
-        field,title='start_date','行程季节'
-        expected=f'{requirements.start_date} 至 {requirements.end_date}'
+        field,title='start_date','Trip season'
+        expected=f'{requirements.start_date} to {requirements.end_date}'
         seasons=camp.supported_seasons if camp else []
-        actual='、'.join(SEASONS.get(s,s) for s in seasons) if seasons else '开放季节未知'
-        status='MISMATCH' if seasons else 'UNVERIFIED';detail='这段行程未被已知支持季节完整覆盖。'
-        suggestion='选择支持整个行程季节的营地，或在核对开放信息后调整日期。'
+        actual=', '.join(SEASONS.get(s,s) for s in seasons) if seasons else 'Opening season unknown'
+        status='MISMATCH' if seasons else 'UNVERIFIED';detail='Known supported seasons do not cover the entire trip.'
+        suggestion='Choose a campsite supporting the whole trip season, or verify opening information and change dates.'
     elif reason == 'Campsite fee alone exceeds the confirmed group budget.':
-        field,title='budget_cents','营地费用与小组预算'
-        expected=f'小组总预算 {money(requirements.budget_cents)}'
+        field,title='budget_cents','Campsite fees and group budget'
+        expected=f'Total group budget {money(requirements.budget_cents)}'
         fee=camp.nightly_fee_cents if camp else None
         subtotal=fee*requirements.duration_nights if fee is not None else None
-        actual=f'{requirements.duration_nights} 晚营地费 {money(subtotal)}'
+        actual=f'{requirements.duration_nights} -night campsite fees {money(subtotal)}'
         status='MISMATCH'
-        detail=f'仅营地费已超预算 {money(subtotal-requirements.budget_cents)}，尚未加交通、食物、水及装备。' if subtotal is not None else '保存的筛选结果显示仅营地费已超预算；原报价目前无法核对。'
-        suggestion=f'增加预算至至少 {money(subtotal)}（只含营地费），并另计其他开支；或减少晚数、比较更便宜的营地。' if subtotal is not None else '核对营地报价，增加预算、减少晚数或比较更便宜的营地。'
+        detail=f'Campsite fees alone exceed budget {money(subtotal-requirements.budget_cents)}, Transport, food, water and equipment are additional.' if subtotal is not None else 'Saved filtering shows campsite fees alone exceed budget. The original quote cannot currently be verified.'
+        suggestion=f'Increase the budget to at least  {money(subtotal)}( (campsite fees only), with other costs additional; or reduce nights or compare cheaper campsites.' if subtotal is not None else 'Check campsite prices, increase the budget, reduce nights or compare cheaper campsites.'
     else:
         feature=None
         match=re.fullmatch(r'Mandatory feature (.+) is unavailable or unknown\.',reason)
         if match:
-            feature=match[1];field='mandatory_constraints';title='必须条件：'+FEATURES.get(feature,feature)
-            expected='明确提供 '+FEATURES.get(feature,feature)
+            feature=match[1];field='mandatory_constraints';title='Required condition:'+FEATURES.get(feature,feature)
+            expected='Explicitly provided '+FEATURES.get(feature,feature)
             feature='fire_allowed' if feature=='campfire' else feature
         elif reason == 'Vehicle access is unavailable or unknown.':
-            field,title,feature,expected='profile.transport','汽车通达','vehicle_access','汽车可到达'
+            field,title,feature,expected='profile.transport','Car access','vehicle_access','Accessible by car'
         elif reason == 'Public transport access is unavailable or unknown.':
-            field,title,feature,expected='profile.transport','公共交通通达','public_transport_access','公共交通可到达'
+            field,title,feature,expected='profile.transport','Public transport access','public_transport_access','Accessible by public transport'
         if feature:
             supplied=getattr(camp,feature,None) if camp else None
-            actual='明确不提供' if supplied is False else '未提供可验证信息'
+            actual='Explicitly not provided' if supplied is False else 'No verifiable information provided'
             status='MISMATCH' if supplied is False else 'UNVERIFIED'
-            detail='当前营地不满足这项条件。' if supplied is False else '信息未知，不能当作已满足。'
-            suggestion='若这项条件确实可选，可修改必须条件；否则选择明确满足条件的营地或补齐来源。'
-            if feature=='fire_allowed':suggestion='选择明确允许营火的营地，或改为无营火行程；实际禁火限制不能由修改表单解除。'
-            if field=='profile.transport':suggestion='选择实际交通方式可到达的营地；只有交通安排真正改变后再更新资料。'
-            if feature=='wheelchair_accessible':suggestion='保留实际无障碍需求，选择已验证支持的营地；未知信息需核实。'
+            detail='This campsite does not meet this condition.' if supplied is False else 'Unknown information cannot be treated as a match.'
+            suggestion='If truly optional, change the required condition. Otherwise choose a verified matching campsite or obtain sources.'
+            if feature=='fire_allowed':suggestion='Choose a campsite explicitly allowing campfires, or plan without a campfire. Editing a form cannot override actual fire restrictions.'
+            if field=='profile.transport':suggestion='Choose a campsite accessible by your actual transport. Update your profile only after arrangements really change.'
+            if feature=='wheelchair_accessible':suggestion='Keep actual accessibility needs and choose a verified supported campsite. Unknown information needs verification.'
         elif reason.startswith('Accessible requirement '):
-            field,title='profile.accessibility_requirements','无障碍需求'
+            field,title='profile.accessibility_requirements','Accessibility requirements'
             expected=reason.removeprefix('Accessible requirement ').removesuffix(' is unavailable or unverified.').strip("'")
-            actual='不提供或尚未验证';detail='已保存的筛选结果未确认这项无障碍需求。'
+            actual='Unavailable or unverified';detail='Saved filtering did not confirm this accessibility requirement.'
             if camp:
                 normalized=expected.casefold()
                 unavailable=(normalized=='wheelchair access' and camp.wheelchair_accessible is False) or (
                     normalized=='wheelchair-accessible toilet' and (camp.wheelchair_accessible is False or camp.toilets is False)) or (
                     normalized=='step-free path' and camp.step_free_path is False)
                 if unavailable:
-                    status='MISMATCH';actual='明确不提供';detail='营地明确不满足这项无障碍需求。'
-            suggestion='保留实际无障碍需求，选择明确支持的营地，或补充可验证设施信息。'
+                    status='MISMATCH';actual='Explicitly not provided';detail='The campsite explicitly does not meet this accessibility requirement.'
+            suggestion='Keep actual accessibility needs. Choose an explicitly supported campsite or obtain verifiable facility information.'
         elif reason == 'Walk-in-only access is not established.':
-            field,title='mandatory_constraints','仅步行进入'
-            expected='明确仅步行进入';actual='不符合或未知';detail='未确认营地只允许步行进入。'
-            if camp and camp.vehicle_access is True:status='MISMATCH';actual='允许车辆通行'
-            suggestion='核对通达方式；如仅步行不是必要条件，可以修改后重新确认。'
+            field,title='mandatory_constraints','Walk-in only'
+            expected='Explicitly walk-in only';actual='Does not match or unknown';detail='Walk-in-only access is unconfirmed.'
+            if camp and camp.vehicle_access is True:status='MISMATCH';actual='Vehicle access permitted'
+            suggestion='Verify access. If walk-in-only is not required, change it and reconfirm.'
     return {'field':field,'title':title,'status':status,'expected':expected,'actual':actual,'detail':detail,'suggestion':suggestion,'original_reason':reason}
 
 def guidance(data, dataset=None, *, metadata_note=None):
@@ -106,10 +106,10 @@ def guidance(data, dataset=None, *, metadata_note=None):
                 normalized=preference.strip().casefold()
                 feature=SOFT_FEATURES.get(normalized)
                 if normalized=='quiet':
-                    if camp.quiet_environment is True:matches.append('安静环境（合成资料）')
-                    else:uncertainties.append('安静环境未获确认')
+                    if camp.quiet_environment is True:matches.append('Quiet environment (synthetic data)')
+                    else:uncertainties.append('Quiet environment unconfirmed')
                 elif feature and getattr(camp,feature) is True:matches.append(FEATURES.get(feature,preference))
-                elif feature:uncertainties.append('偏好 '+FEATURES.get(feature,preference)+' 未获确认')
+                elif feature:uncertainties.append('Preferences '+FEATURES.get(feature,preference)+' Unconfirmed')
         fee=camp.nightly_fee_cents if camp else None
         subtotal=fee*req.duration_nights if fee is not None else None
         items.append({'campsite_id':excluded['campsite_id'],'name':camp.name if camp else excluded['campsite_id'],
@@ -122,5 +122,5 @@ def guidance(data, dataset=None, *, metadata_note=None):
         item['budget_excess_cents'] or 0,-len(item['matched_preferences']),item['nightly_fee_cents'] is None,
         item['nightly_fee_cents'] or 0,item['campsite_id']))
     return {'near_matches':[dict(item,rank=rank) for rank,item in enumerate(items[:3],1)],'excluded_count':len(items),
-        'ranking':'先按需处理的筛选条件数从少到多；同分优先信息明确、已知预算缺口小、偏好匹配多、营地费用低的营地。未知金额不当作零；最终同分按营地编号排序。',
-        'metadata_note':metadata_note,'scope':'仅供调整需求比较，均未满足全部筛选条件；没有生成行程，也未通过道路、天气、营火和物流评估。'}
+        'ranking':'Ranked by fewest conditions to address, then clearer information, smaller known budget gap, more preference matches and lower campsite fees. Unknown amounts are not zero. Final ties use campsite ID.',
+        'metadata_note':metadata_note,'scope':'For requirement-adjustment comparison only. None meet all filters. No itinerary was generated or road, weather, fire and logistics assessment passed.'}

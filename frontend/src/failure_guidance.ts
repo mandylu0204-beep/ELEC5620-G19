@@ -13,30 +13,30 @@ export function failureGuidance(data:FailedPlan){
       item.version_context[key as keyof Context]===data.version!.version_context[key as keyof Context]));
   const logistics=current('LOGISTICS'),safety=current('SAFETY');
   const noMatch=data.recommendations?.result?.search_outcome==='NO_MATCH';
-  const titles:Record<string,string>={RECOMMENDING:'营地筛选暂未完成',GENERATING:'行程生成暂未完成',
-    SAVING_VERSION:'行程保存暂未完成',ASSESSING_LOGISTICS:'装备与费用检查暂未完成',
-    ASSESSING_SAFETY:'安全检查暂未完成',ROUTING:'方案结果尚未确认完成',COMPLETED:'方案结果尚未确认完成'};
-  const saved=[...(data.recommendations?['营地筛选结果']:[]),
-    ...(data.version?[run.operation==='PLAN'?'行程': '原有行程']:[]),
-    ...(logistics?['本次装备与费用检查结果']:[]),...(safety?['本次安全检查结果']:[])];
+  const titles:Record<string,string>={RECOMMENDING:'Campsite filtering incomplete',GENERATING:'Itinerary generation incomplete',
+    SAVING_VERSION:'Itinerary saving incomplete',ASSESSING_LOGISTICS:'Equipment and cost checks incomplete',
+    ASSESSING_SAFETY:'Safety checks incomplete',ROUTING:'Plan result is not yet confirmed complete',COMPLETED:'Plan result is not yet confirmed complete'};
+  const saved=[...(data.recommendations?['Campsite filtering results']:[]),
+    ...(data.version?[run.operation==='PLAN'?'Itinerary': 'Original itinerary']:[]),
+    ...(logistics?['Current equipment and cost check results']:[]),...(safety?['Current safety check results']:[])];
   const canRetry=run.is_active&&data.retry_available===true;
-  const label=run.stage==='ASSESSING_SAFETY'&&!safety?'继续安全检查'
-    :run.stage==='ASSESSING_LOGISTICS'&&!logistics?'继续装备与费用检查':'继续未完成的步骤';
+  const label=run.stage==='ASSESSING_SAFETY'&&!safety?'Continue safety checks'
+    :run.stage==='ASSESSING_LOGISTICS'&&!logistics?'Continue equipment and cost checks':'Continue unfinished steps';
   const code=run.error?.code;
   const explanation=code==='INPUT_INVALID'||code==='REQUEST_NOT_CONFIRMED'
-    ?'本次需求需要核对并重新确认，请按提示补充资料。'
+    ?'Review and reconfirm this request. Complete the information indicated.'
     :code==='PERSISTENCE_FAILURE'
-    ?'本次结果未能完整保存。无需因此重新填写露营请求。'
+    ?'The result was not fully saved. You do not need to re-enter the camping request for this reason.'
     :code==='AGENT_FAILURE'||code==='ADAPTER_FAILURE'||code==='CONTRACT_INVALID'
-    ?'本次服务处理未能完成。无需仅为此重新填写露营请求。'
+    ?'The service could not complete this run. You do not need to re-enter the camping request for this reason.'
     :code==='STALE_CONTEXT'
-    ?'本次执行所用资料已变化，请核对最新资料后再继续。'
-    :'本次执行未完成，已有内容会继续保留。';
-  return {title:noMatch?'搜索结果尚未确认完成':titles[run.stage]??'本次执行尚未完成',saved,canRetry,retryLabel:label,
+    ?'Information used by this run changed. Review the latest information before continuing.'
+    :'This run is incomplete. Saved results will be retained.';
+  return {title:noMatch?'Search results are not yet confirmed complete':titles[run.stage]??'This run is incomplete',saved,canRetry,retryLabel:label,
     explanation,
     retryDescription:run.operation==='REASSESS'
-      ?'继续本次检查会保留原行程，复用已保存的检查结果；尚未保存的检查可能重新执行。'
-      :'继续本次执行会复用已保存的行程与检查结果；尚未保存的步骤可能重新执行。',
-    completionNote:!run.is_active?'这是一次未完成的历史执行，已保存内容仅供查看。':noMatch?'未找到满足条件的营地，搜索结果已保留；此次执行尚未确认完成。':safety?'检查结果已保留，但本次执行尚未确认完成；当前不能保存最终方案。'
-      :'尚未完成全部必要检查，当前不能保存最终方案。'};
+      ?'Continuing keeps the original itinerary and reuses saved check results. Unsaved checks may run again.'
+      :'Continuing reuses the saved itinerary and check results. Unsaved steps may run again.',
+    completionNote:!run.is_active?'This is an incomplete historical run. Saved content is read-only.':noMatch?'No campsite met the conditions. Search results are retained; this run is not yet confirmed complete.':safety?'Check results are retained but the run is not confirmed complete. The final plan cannot be saved yet.'
+      :'Required checks are incomplete. The final plan cannot be saved yet.'};
 }

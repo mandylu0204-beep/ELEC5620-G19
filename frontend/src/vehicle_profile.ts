@@ -13,10 +13,10 @@ export function prepareProfileEquipment(items:DraftEquipment[],mode:string,count
   const result=items.filter(item=>item.item_key!=='charged_phone')
     .map(item=>item.item_key==='vehicle'?{...item,unit:'vehicle'}:item);
   if(mode==='CAR'&&!result.some(item=>item.item_key==='vehicle'))result.push({
-    item_key:'vehicle',label:'车辆',quantity:/^\d+$/.test(count)?count:'',unit:'vehicle',capacity:'',confirmed:false,
+    item_key:'vehicle',label:'Vehicles',quantity:/^\d+$/.test(count)?count:'',unit:'vehicle',capacity:'',confirmed:false,
   });
   if(!systemPreparation&&mode==='PUBLIC_TRANSPORT'&&!result.some(item=>item.item_key==='transport_itinerary'))result.push({
-    item_key:'transport_itinerary',label:'往返及接驳计划',quantity:'',unit:'plan',capacity:'',confirmed:false,
+    item_key:'transport_itinerary',label:'Return journey and connection plan',quantity:'',unit:'plan',capacity:'',confirmed:false,
   });
   return result;
 }

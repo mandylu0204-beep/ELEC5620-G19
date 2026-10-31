@@ -41,7 +41,7 @@ def cooking_preview(body: CookingPreviewInput, request: Request, user: User = De
             run = connection.execute('SELECT scope,confirmed_context FROM runs WHERE id=? AND plan_id=?',
                 (plan['active_run_id'], plan['id'])).fetchone()
             if not run:
-                fail(ErrorCode.INVALID_STATE, '尚无确认需求可供准备核对。')
+                fail(ErrorCode.INVALID_STATE, 'No confirmed requirements available for preparation review.')
             scope = RunScope.model_validate_json(run['scope'])
             requirements = json.loads(run['confirmed_context'])['requirements']
         else:
@@ -53,8 +53,8 @@ def cooking_preview(body: CookingPreviewInput, request: Request, user: User = De
     runtime = request.app.state.runtime
     snapshot = runtime.for_scope(scope) if scope else runtime.resolve()
     if scope and snapshot.dataset != scope.dataset_context:
-        fail(ErrorCode.STALE_CONTEXT, '无法读取来源方案固定的规则，请核对当前出行。')
+        fail(ErrorCode.STALE_CONTEXT, 'Could not read the source plan rules. Review the current trip.')
     dataset = getattr(snapshot.agent, 'dataset', None)
     if dataset is None:
-        fail(ErrorCode.INVALID_STATE, '当前模式未提供准备规则预检查。')
+        fail(ErrorCode.INVALID_STATE, 'This mode does not provide a preparation rules precheck.')
     return preview(dataset, requirements, [item.model_dump(mode='json') for item in body.equipment])

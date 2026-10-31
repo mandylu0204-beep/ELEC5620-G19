@@ -45,9 +45,9 @@ class Repository:
         with self.db.transaction() as connection:
             row = connection.execute('SELECT * FROM profiles WHERE owner_id=?', (user.id,)).fetchone()
             if expected_revision != (row['revision'] if row else 0):
-                fail(ErrorCode.VERSION_CONFLICT, '资料已更新，请刷新后再保存。')
+                fail(ErrorCode.VERSION_CONFLICT, 'Profile updated. Refresh before saving.')
             if profile.profile_id is not None:
-                fail(ErrorCode.INPUT_INVALID, 'profile_id 由服务器生成，不能在请求中指定。')
+                fail(ErrorCode.INPUT_INVALID, 'profile_id  is server-generated and cannot be specified in a request.')
             stored = profile.model_copy(update={'profile_id': row['profile_id'] if row else uuid4().hex})
             connection.execute('INSERT INTO profiles VALUES(?,?,?,?,?) ON CONFLICT(owner_id) DO UPDATE SET payload=excluded.payload,revision=excluded.revision,updated_at=excluded.updated_at', (user.id, stored.profile_id, encode(stored), expected_revision + 1, now()))
             return {'profile': stored.model_dump(mode='json'), 'revision': expected_revision + 1}
@@ -57,7 +57,7 @@ class Repository:
         require_role(user, 'CAMPER')
         row = connection.execute('SELECT * FROM plans WHERE id=? AND owner_id=? AND deleted_at IS NULL', (plan_id, user.id)).fetchone()
         if not row:
-            fail(ErrorCode.NOT_FOUND, '方案不存在。')
+            fail(ErrorCode.NOT_FOUND, 'Plan not found.')
         return row
 
     def delete_plan(self, user: User, plan_id: str):
@@ -66,7 +66,7 @@ class Repository:
             self.own_plan(connection, user, plan_id)
             active = connection.execute("SELECT 1 FROM runs WHERE plan_id=? AND status IN ('PENDING','RUNNING')", (plan_id,)).fetchone()
             if active:
-                fail(ErrorCode.INVALID_STATE, '方案仍在生成或检查中，请完成后再删除。')
+                fail(ErrorCode.INVALID_STATE, 'Plan generation or checks are still running. Wait before deleting.')
             connection.execute('UPDATE plans SET deleted_at=? WHERE id=?', (now(), plan_id))
             from .trip_series import membership
             series = membership(connection, plan_id)
@@ -106,9 +106,9 @@ class Repository:
         """Only trusted A workflow services call this; no B-supplied RunScope accepted."""
         require_role(user, 'CAMPER')
         if operation not in {'PLAN', 'REVISE', 'REASSESS'}:
-            fail(ErrorCode.INPUT_INVALID, '运行操作无效。')
+            fail(ErrorCode.INPUT_INVALID, 'Invalid run operation.')
         if command_key is not None and (not isinstance(command_key, str) or not command_key.strip() or len(command_key) > 128):
-            fail(ErrorCode.INPUT_INVALID, 'command_key 必须为 1 至 128 位非空字符串。')
+            fail(ErrorCode.INPUT_INVALID, 'command_key must contain 1 to 128 nonblank characters.')
         input_hash = fingerprint({'operation': operation, 'request_id': request_id, 'plan_id': plan_id,
             'expected_current_version_id': expected_current_version_id, 'expected_active_run_id': expected_active_run_id,
             'expected_request_revision': expected_request_revision, 'single_plan': single_plan,
@@ -117,36 +117,36 @@ class Repository:
             **({'revision_selection': True} if revision_selection else {})})
         if revision_selection and (operation != 'REVISE' or plan_id is None
                 or expected_run_revision is None or expected_version_revision is None):
-            fail(ErrorCode.INPUT_INVALID, '只有已有方案的修订可以生成待选版本。')
+            fail(ErrorCode.INPUT_INVALID, 'Only revisions of existing plans can generate a proposed version.')
         new_plan = plan_id is None
         with self.db.transaction() as connection:
             if command_key is not None:
                 previous = connection.execute('SELECT * FROM workflow_commands WHERE owner_id=? AND command_key=?', (user.id, command_key)).fetchone()
                 if previous:
                     if previous['operation'] != 'START' or previous['input_hash'] != input_hash:
-                        fail(ErrorCode.IDEMPOTENCY_CONFLICT, '同一个 key 不能启动不同任务。')
+                        fail(ErrorCode.IDEMPOTENCY_CONFLICT, 'The same key  cannot start different tasks.')
                     saved_scope = RunScope.model_validate_json(previous['result'])
                     from .trip_series import require_current
                     require_current(connection, self.own_plan(connection, user, saved_scope.plan_id))
                     return saved_scope
             request = connection.execute('SELECT * FROM requests WHERE id=? AND owner_id=?', (request_id, user.id)).fetchone()
             if not request:
-                fail(ErrorCode.NOT_FOUND, '请求不存在。')
+                fail(ErrorCode.NOT_FOUND, 'Request not found.')
             if operation == 'PLAN' and connection.execute('SELECT 1 FROM deleted_requests WHERE request_id=?', (request_id,)).fetchone():
-                fail(ErrorCode.NOT_FOUND, '请求不存在。')
+                fail(ErrorCode.NOT_FOUND, 'Request not found.')
             if request['status'] != 'CONFIRMED':
-                fail(ErrorCode.REQUEST_NOT_CONFIRMED, '请先确认请求。')
+                fail(ErrorCode.REQUEST_NOT_CONFIRMED, 'Confirm the request first.')
             if expected_request_revision is not None and request['revision'] != expected_request_revision:
-                fail(ErrorCode.VERSION_CONFLICT, '需求记录已更新，请刷新后开始规划。')
+                fail(ErrorCode.VERSION_CONFLICT, 'Request record updated. Refresh before starting planning.')
             if single_plan and connection.execute('SELECT 1 FROM plans WHERE request_id=? AND owner_id=?', (request_id, user.id)).fetchone():
-                fail(ErrorCode.INVALID_STATE, '此请求已有规划记录，请查看现有方案或重试失败运行。')
+                fail(ErrorCode.INVALID_STATE, 'This request already has planning records. View the existing plan or retry the failed run.')
             context = ConfirmedContext.model_validate_json(request['confirmed_context'])
             from ..agents.rules.transport import require_supported
             require_supported(context.profile_snapshot, dataset)
             context = ConfirmedContext.model_validate(context.model_copy(update={'demo_context': demo, 'dataset_context': dataset}))
             if plan_id is None:
                 if operation != 'PLAN' or expected_current_version_id is not None:
-                    fail(ErrorCode.INVALID_STATE, '新方案只能发起 PLAN。')
+                    fail(ErrorCode.INVALID_STATE, 'New plans can only start  PLAN.')
                 plan_id = uuid4().hex
                 from .trip_series import validate_successor
                 validate_successor(connection, user, request_id)
@@ -158,30 +158,30 @@ class Repository:
                 from .revision_choices import require_decided
                 require_decided(connection, plan_id)
                 if command_key is not None and plan['active_run_id'] != expected_active_run_id:
-                    fail(ErrorCode.STALE_CONTEXT, '当前运行已变化，请刷新后启动新任务。')
+                    fail(ErrorCode.STALE_CONTEXT, 'Current run changed. Refresh before starting a new task.')
                 if expected_run_revision is not None:
                     current_run = connection.execute('SELECT revision,status FROM runs WHERE id=?', (plan['active_run_id'],)).fetchone()
                     current_version = connection.execute('SELECT revision FROM versions WHERE id=? AND plan_id=?', (expected_current_version_id, plan_id)).fetchone()
                     if not current_run or not current_version or current_run['revision'] != expected_run_revision or current_version['revision'] != expected_version_revision:
-                        fail(ErrorCode.VERSION_CONFLICT, '版本或运行已更新，请刷新。')
+                        fail(ErrorCode.VERSION_CONFLICT, 'Version or run updated. Refresh.')
                     if current_run['status'] in {'PENDING','RUNNING'}:
-                        fail(ErrorCode.INVALID_STATE, '当前任务尚未结束，请等待后再启动新任务。')
+                        fail(ErrorCode.INVALID_STATE, 'A task is still running. Wait before starting another.')
                     if plan['request_id'] != request_id:
-                        fail(ErrorCode.STALE_CONTEXT, '方案需求已变化，请刷新。')
+                        fail(ErrorCode.STALE_CONTEXT, 'Plan requirements changed. Refresh.')
                 restart_before_version = operation == 'PLAN' and command_key is not None and plan['current_version_id'] is None and expected_current_version_id is None
                 if not restart_before_version and (operation == 'PLAN' or plan['current_version_id'] != expected_current_version_id or expected_current_version_id is None):
-                    fail(ErrorCode.VERSION_CONFLICT, '当前版本已变化。')
+                    fail(ErrorCode.VERSION_CONFLICT, 'The current version has changed.')
                 if revision_selection and not connection.execute('''SELECT 1 FROM runs r JOIN run_versions rv ON rv.run_id=r.id
                     WHERE r.id=? AND r.plan_id=? AND rv.version_id=? AND r.status='SUCCEEDED' AND r.stage='COMPLETED' ''',
                     (plan['active_run_id'], plan_id, plan['current_version_id'])).fetchone():
-                    fail(ErrorCode.INVALID_STATE, '当前方案尚未完成检查，请先继续原任务，或查看历史中已完成的方案。')
+                    fail(ErrorCode.INVALID_STATE, 'Current plan checks are incomplete. Continue the original task or view a completed historical plan.')
                 if operation == 'REVISE' and revision_check is not None:
                     # Run after ownership, idempotency and revision guards, before
                     # any pointer, status, receipt or assessment can be changed.
                     version = connection.execute('SELECT content FROM versions WHERE id=? AND plan_id=?',
                         (expected_current_version_id, plan_id)).fetchone()
                     if not version:
-                        fail(ErrorCode.VERSION_CONFLICT, '当前版本已变化。')
+                        fail(ErrorCode.VERSION_CONFLICT, 'The current version has changed.')
                     revision_check(context, json.loads(version['content']))
                 if plan['active_run_id']:
                     connection.execute("UPDATE runs SET status='SUPERSEDED',revision=revision+1 WHERE id=? AND status IN ('PENDING','RUNNING')", (plan['active_run_id'],))
@@ -222,7 +222,7 @@ class Repository:
         with self.db.transaction(write=False) as connection:
             row = connection.execute('SELECT * FROM runs WHERE id=?', (run_id,)).fetchone()
             if not row:
-                fail(ErrorCode.NOT_FOUND, '运行不存在。')
+                fail(ErrorCode.NOT_FOUND, 'Run not found.')
             self.own_plan(connection, user, row['plan_id'])
             return SqlitePersistencePort(self.db, user.id, RunScope.model_validate_json(row['scope']))
 
@@ -230,5 +230,5 @@ class Repository:
     def stored_version(connection, scope):
         row = connection.execute('SELECT v.*,rv.fingerprint FROM run_versions rv JOIN versions v ON v.id=rv.version_id WHERE rv.run_id=?', (scope.run_id,)).fetchone()
         if not row:
-            fail(ErrorCode.INVALID_STATE, '尚未保存版本。')
+            fail(ErrorCode.INVALID_STATE, 'No saved version yet.')
         return StoredVersion(version_context=VersionContext(plan_id=scope.plan_id, plan_version_id=row['id'], run_id=scope.run_id, input_fingerprint=row['fingerprint']), version_number=row['version_number'], content=json.loads(row['content']), status=row['status'], revision=row['revision'])

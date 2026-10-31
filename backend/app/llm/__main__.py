@@ -23,7 +23,7 @@ async def execute(args):
     settings = CampusModelSettings(_env_file=args.env_file)
     if args.probe:
         client = CampusModelClient(settings.model_copy(update={'max_completion_tokens': 128}))
-        result = await client.complete([{'role': 'user', 'content': 'Explain Ohm’s law in one short sentence.'}])
+        result = await client.complete([{'role': 'user', 'content': 'Explain Ohm"s law in one short sentence.'}])
         return {'status': 'PROXY_RESPONSE_RECEIVED', 'requested_model': result.model,
             'served_model': result.served_model, 'attempts': result.attempts,
             'usage': result.usage, 'reply_received': bool(result.content.strip())}
@@ -70,7 +70,7 @@ def main():
         return 1
     except (ValueError, OSError, KeyError, ValidationError):
         # Do not echo local config values or malformed response/input payloads.
-        _print_json({'status': 'FAILED', 'message': '本地模型配置或演示输入无效。'})
+        _print_json({'status': 'FAILED', 'message': 'Local model configuration or demonstration input is invalid.'})
         return 1
     _print_json(result, indent=2)
     return 0

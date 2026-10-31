@@ -10,12 +10,12 @@ from .safety_schema import ActionCode
 VERSION = 'safety-structural-diagnostics-1'
 _ACTIONS = frozenset(get_args(ActionCode))
 _MESSAGES = {
-    'PROPOSAL_SCHEMA': '安全模型方案结构校验未通过；未采纳该方案。',
-    'FINDING_COVERAGE': '安全模型方案未完整覆盖本次安全事项；未采纳该方案。',
-    'FACT_IDENTITY': '安全模型方案引用的数据身份不一致；未采纳该方案。',
-    'ACTION_NOT_ALLOWED': '安全模型为某项安全问题选择了不适用的处理动作；未采纳该方案。',
-    'FACT_BINDING': '安全事项的来源关联校验未通过，请联系开发负责人。',
-    'PLAN_VALIDATION': '安全建议完整性校验未通过；未采纳该方案。',
+    'PROPOSAL_SCHEMA': 'Safety model proposal failed structural validation. It was not adopted.',
+    'FINDING_COVERAGE': 'Safety model proposal does not cover all safety issues. It was not adopted.',
+    'FACT_IDENTITY': 'Safety model proposal references a different data identity. It was not adopted.',
+    'ACTION_NOT_ALLOWED': 'Safety model selected an unsupported action for a safety issue. It was not adopted.',
+    'FACT_BINDING': 'Safety issue source links failed validation. Contact the developer.',
+    'PLAN_VALIDATION': 'Safety suggestion completeness validation failed. The proposal was not adopted.',
 }
 
 

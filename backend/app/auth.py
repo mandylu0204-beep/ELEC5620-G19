@@ -71,18 +71,18 @@ class AuthService:
         username = username.strip().lower()
         display_name = display_name.strip()
         if not re.fullmatch(r'[a-z0-9][a-z0-9_.-]{2,31}', username):
-            fail(ErrorCode.INPUT_INVALID, '用户名请使用 3–32 位英文字母、数字、点、下划线或短横线，以字母或数字开头。')
+            fail(ErrorCode.INPUT_INVALID, 'Use a username with  3–32  letters, numbers, dots, underscores or hyphens, starting with a letter or number.')
         if not 1 <= len(display_name) <= 80 or any(unicodedata.category(char).startswith('C') for char in display_name):
-            fail(ErrorCode.INPUT_INVALID, '请填写有效昵称，最多 80 个字符。')
+            fail(ErrorCode.INPUT_INVALID, 'Enter a valid display name, at most  80  characters.')
         if (not 8 <= len(password) <= 256 or not re.search(r'[A-Z]', password)
                 or not re.search(r'[a-z]', password) or not re.search(r'[0-9]', password)
                 or not any(char in string.punctuation for char in password)):
-            fail(ErrorCode.INPUT_INVALID, '密码须为 8–256 个字符，并包含大写英文字母、小写英文字母、数字和半角特殊符号（如 ! @ #，空格不算）。')
+            fail(ErrorCode.INPUT_INVALID, 'Password must contain  8–256  characters, including uppercase and lowercase English letters, digits and ASCII special characters (such as  ! @ #, ; spaces do not count).')
         encoded = hash_password(password)
         with self.db.transaction() as connection:
             if (username in {item[1] for item in DEMO_ACCOUNTS}
                     or connection.execute('SELECT 1 FROM users WHERE lower(username)=?', (username,)).fetchone()):
-                fail(ErrorCode.VERSION_CONFLICT, '此用户名已被使用，请换一个。')
+                fail(ErrorCode.VERSION_CONFLICT, 'This username is taken. Choose another.')
             user = User(uuid4().hex, username, display_name, 'CAMPER')
             connection.execute('INSERT INTO users VALUES(?,?,?,?,?)',
                 (user.id, user.username, user.display_name, user.role, encoded))
@@ -93,7 +93,7 @@ class AuthService:
             row = connection.execute('SELECT * FROM users WHERE lower(username)=?', (username.strip().lower(),)).fetchone()
             verified = verify_password(password, row['password_hash'] if row else self.dummy_hash)
             if not row or not verified:
-                fail(ErrorCode.UNAUTHENTICATED, '用户名或密码错误。')
+                fail(ErrorCode.UNAUTHENTICATED, 'Incorrect username or password.')
             now = int(time.time())
             connection.execute('DELETE FROM sessions WHERE expires_at<=?', (now,))
             if previous_token:
@@ -105,13 +105,13 @@ class AuthService:
 
     def authenticate(self, token: str | None, csrf: str | None = None, *, write=False):
         if not token or len(token) > 128:
-            fail(ErrorCode.UNAUTHENTICATED, '请先登录。')
+            fail(ErrorCode.UNAUTHENTICATED, 'Sign in first.')
         with self.db.transaction(write=False) as connection:
             row = connection.execute('SELECT u.*,s.csrf_hash FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>?', (digest(token), int(time.time()))).fetchone()
             if not row:
-                fail(ErrorCode.UNAUTHENTICATED, '登录已过期，请重新登录。')
+                fail(ErrorCode.UNAUTHENTICATED, 'Your session expired. Sign in again.')
             if write and (not csrf or not hmac.compare_digest(row['csrf_hash'], digest(csrf))):
-                fail(ErrorCode.FORBIDDEN, '请求验证失败，请刷新后重试。')
+                fail(ErrorCode.FORBIDDEN, 'Request verification failed. Refresh and retry.')
             return User(row['id'], row['username'], row['display_name'], row['role'])
 
     @staticmethod
@@ -127,4 +127,4 @@ class AuthService:
 
 def require_role(user: User, role: str):
     if user.role != role:
-        fail(ErrorCode.FORBIDDEN, '当前账户没有此操作权限。')
+        fail(ErrorCode.FORBIDDEN, 'This account is not authorised for this action.')

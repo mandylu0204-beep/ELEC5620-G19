@@ -28,11 +28,11 @@ test('stale car links do not focus unrelated or hidden fields for non-car travel
 
 test('summary deduplicates vehicle totals against editable fields and never targets an absent vehicle-unit control',()=>{
   const vehicle={item_key:'vehicle',quantity:'',capacity:'',confirmed:false,unit:'vehicle'};
-  assert.deepEqual(profileCorrectionTargets({'vehicle-count':'数量未知','gear-quantity-0':'填写数量','gear-capacity-0':'填写座位'},[vehicle]),
+  assert.deepEqual(profileCorrectionTargets({'vehicle-count':'Quantity unknown','gear-quantity-0':'Enter quantity','gear-capacity-0':'Enter seats'},[vehicle]),
     ['gear-quantity-0','gear-capacity-0']);
-  assert.deepEqual(profileCorrectionTargets({'vehicle-count':'请添加车辆'},[]),['add-vehicle']);
+  assert.deepEqual(profileCorrectionTargets({'vehicle-count':'Add vehicles'},[]),['add-vehicle']);
   assert.equal(profileFocusId('equipment.vehicle',[{...vehicle,unit:'item'}],'CAR'),'gear-quantity-0');
-  assert.deepEqual(profileCorrectionTargets({'gear-unit-0':'旧车辆单位错误'},[vehicle]),['gear-quantity-0']);
+  assert.deepEqual(profileCorrectionTargets({'gear-unit-0':'Incorrect legacy vehicle unit'},[vehicle]),['gear-quantity-0']);
 });
 
 test('navigation focuses and scrolls an actual enabled input, skipping missing and disabled targets',()=>{

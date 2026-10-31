@@ -1,26 +1,26 @@
 import { useState } from 'react';
-import { chineseProse, discardMessage, tentSummary, type TentCapacity } from './display_facts';
+import { displayProse, discardMessage, tentSummary, type TentCapacity } from './display_facts';
 import { ModelTracePanel, type ModelTrace } from './model_trace';
 import { selectionPresentation,selectedRequirementsPresentation,type SelectedRequirements } from './campsite_selection';
 import { cataloguePlace, additionalFacilities, CampsiteArrivalDetails } from './campsite_details';
 
 export function TentCapacityPanel({value}:{value:TentCapacity|null|undefined}){
   if(!value)return null;
-  return <section className="tent-capacity" aria-label="帐篷住宿容量"><h3>帐篷按总住宿容量核对</h3><p>{tentSummary(value)}</p>
-    <div className="table-scroll"><table><caption>本次确认的帐篷登记（不同容量分行）</caption><thead><tr><th>帐篷数量</th><th>每顶容量</th><th>该行总容量</th><th>拥有情况</th></tr></thead><tbody>
-      {value.records.map((row,index)=><tr key={index}><td>{row.unit==='item'?`${row.quantity??'未知'} 顶`:'数量单位待核对'}</td><td>{row.capacity_per_tent??'未知'} 人</td><td>{row.total_capacity??'未知'} 人</td><td>{row.confirmed?'已核实拥有':'未核实拥有'}</td></tr>)}
-    </tbody></table></div>{!value.records.length&&<p>尚未登记帐篷。</p>}
-    <p>同行 {value.group_size??'未知'} 人 · 登记共 {value.registered_tent_count??'未知'} 顶 · 登记总容量 {value.registered_capacity??'未知'} 人 · 检查认可容量 {value.assessed_capacity??'未知'} 人 · 缺少 {value.missing_person_spaces??'未知'} 人位</p>
-    <p className="muted">登记容量不等于已确认可用容量；未核实的装备不会因此变为可用。人数不是需要购买的帐篷顶数。</p>
+  return <section className="tent-capacity" aria-label="Tent sleeping capacity"><h3>Check tents by total sleeping capacity</h3><p>{tentSummary(value)}</p>
+    <div className="table-scroll"><table><caption>Tent records for this confirmation (different capacities shown separately)</caption><thead><tr><th>Number of tents</th><th>Capacity per tent</th><th>Total capacity of this row</th><th>Availability</th></tr></thead><tbody>
+      {value.records.map((row,index)=><tr key={index}><td>{row.unit==='item'?`${row.quantity??'Unknown'} tents`:'Quantity unit needs review'}</td><td>{row.capacity_per_tent??'Unknown'} people</td><td>{row.total_capacity??'Unknown'} people</td><td>{row.confirmed?'Ownership verified':'Ownership unverified'}</td></tr>)}
+    </tbody></table></div>{!value.records.length&&<p>No tents registered yet.</p>}
+    <p>Group size:  {value.group_size??'Unknown'} people · Recorded tents:  {value.registered_tent_count??'Unknown'} · Recorded capacity:  {value.registered_capacity??'Unknown'} people · Accepted capacity: {value.assessed_capacity??'Unknown'} people · Shortage:  {value.missing_person_spaces??'Unknown'} places</p>
+    <p className="muted">Recorded capacity is not necessarily confirmed available capacity. Unverified equipment does not become available through this display. Group size is not the number of tents to purchase.</p>
   </section>;
 }
 
 export function DiscardChanges({sections,busy=false,onDiscard}:{sections:string[];busy?:boolean;onDiscard:()=>void}){
   const [confirm,setConfirm]=useState(false);
-  return <><button type="button" className="secondary-button" disabled={busy||!sections.length} onClick={()=>setConfirm(true)}>放弃未保存修改</button>
-    {confirm&&sections.length>0&&<div className="mode-notice" role="alertdialog" aria-label="确认放弃未保存修改"><p>{discardMessage(sections)}</p>
-      <button type="button" className="secondary-button" disabled={busy} onClick={()=>{setConfirm(false);onDiscard();}}>确认放弃并重新读取</button>
-      <button type="button" className="secondary-button" disabled={busy} onClick={()=>setConfirm(false)}>继续编辑</button></div>}</>;
+  return <><button type="button" className="secondary-button" disabled={busy||!sections.length} onClick={()=>setConfirm(true)}>Discard unsaved changes</button>
+    {confirm&&sections.length>0&&<div className="mode-notice" role="alertdialog" aria-label="Confirm discard of unsaved changes"><p>{discardMessage(sections)}</p>
+      <button type="button" className="secondary-button" disabled={busy} onClick={()=>{setConfirm(false);onDiscard();}}>Discard and reload</button>
+      <button type="button" className="secondary-button" disabled={busy} onClick={()=>setConfirm(false)}>Continue editing</button></div>}</>;
 }
 
 export type PlanningExplanation={source_run_id:string;selected_campsite_id:string;decision_summary_unverified:string};
@@ -31,20 +31,20 @@ export function PlanningExplanationPanel({value,currentRunId,siteName,siteId,cat
   const {rows,costs}=selected??selectionPresentation(reasons);
   const savedExtra=selected?.extra??[];
   const extra=[...savedExtra,...additionalFacilities(place,[...rows,...savedExtra]).filter(row=>!selected||!rows.some(chosen=>chosen.facility===row.facility))];
-  const visibleUncertainties=[...new Set(uncertainties.map(text=>chineseProse(text)).filter((text):text is string=>text!==null))];
-  return <section className="panel campsite-selection" aria-label="营地选择与待确认事项"><h2>选择 {siteName} 的原因</h2>
-    {rows.length>0&&<div className="table-scroll"><table className={hasChoices?'requirements-comparison':undefined}><caption>与本次需求的匹配</caption><thead><tr><th>核对项目</th><th>{hasChoices?'本方案绑定的资料依据':'已保存的筛选依据'}</th>{hasChoices&&<th>匹配结果</th>}</tr></thead><tbody>
-      {rows.map((row,index)=><tr key={index}><th scope="row">{row.label}{row.kind?<small className="selection-required">{row.kind}</small>:row.required&&<small className="selection-required">本次必须条件</small>}</th><td>{row.detail}</td>{hasChoices&&<td>{row.result??'基础信息'}</td>}</tr>)}
+  const visibleUncertainties=[...new Set(uncertainties.map(text=>displayProse(text)).filter((text):text is string=>text!==null))];
+  return <section className="panel campsite-selection" aria-label="Campsite choice and pending confirmations"><h2>Reasons for choosing {siteName}</h2>
+    {rows.length>0&&<div className="table-scroll"><table className={hasChoices?'requirements-comparison':undefined}><caption>Comparison with confirmed requirements</caption><thead><tr><th>Check item</th><th>{hasChoices?'Source information bound to this plan':'Saved filtering evidence'}</th>{hasChoices&&<th>Match result</th>}</tr></thead><tbody>
+      {rows.map((row,index)=><tr key={index}><th scope="row">{row.label}{row.kind?<small className="selection-required">{row.kind}</small>:row.required&&<small className="selection-required">Required for this trip</small>}</th><td>{row.detail}</td>{hasChoices&&<td>{row.result??'Basic information'}</td>}</tr>)}
     </tbody></table></div>}
-    {hasChoices&&<p className="muted">逐项比较本方案已确认的要求与绑定资料。偏好未满足不等于必须条件不满足；这里的资料符合不代表预订、安全或最终保存已通过。</p>}
-    {!rows.length&&<p className="muted">未提供可直接展示的具体筛选依据；如有原始选择记录，可在下方展开查看。</p>}
-    {extra.length>0&&<div className="selection-facilities"><h3>其他营地配套</h3><dl>{extra.map(row=><div key={row.facility}><dt>{row.label}</dt><dd>{row.detail}</dd></div>)}</dl></div>}
-    {costs.length>0&&<div className="selection-cost"><h3>营地费用</h3>{costs.map(text=><p key={text}>{text}</p>)}<p className="muted">完整出行费用及预算检查请查看“费用与预算”。</p></div>}
+    {hasChoices&&<p className="muted">Compare each confirmed requirement with the bound sources. An unmet preference is not an unmet required condition. Matching source information does not confirm booking, safety or final-save eligibility.</p>}
+    {!rows.length&&<p className="muted">No specific filtering evidence is available for direct display. Expand the original selection record below if present.</p>}
+    {extra.length>0&&<div className="selection-facilities"><h3>Other campsite facilities</h3><dl>{extra.map(row=><div key={row.facility}><dt>{row.label}</dt><dd>{row.detail}</dd></div>)}</dl></div>}
+    {costs.length>0&&<div className="selection-cost"><h3>Campsite fees</h3>{costs.map(text=><p key={text}>{text}</p>)}<p className="muted">See Costs and budget for the full trip cost and budget checks.</p></div>}
     <CampsiteArrivalDetails place={place}/>
-    <h3>出发前待确认</h3><ul>{visibleUncertainties.map(text=><li key={text}>{text}</li>)}<li>营位预订、实际入住时间、交通安排及最新限制仍需确认。</li></ul>
-    {(value||reasons.length>0||uncertainties.length>0)&&<details className="source-details"><summary>已保存的选择记录与模型意见</summary>
-      {value&&<><h3>模型选择意见（未经人工核实）</h3><p className="muted">{value.source_run_id!==currentRunId?'以下是原版本生成时的模型意见，本次重评复用原行程。':'以下为已保存的模型选择意见，未经人工核实。'}</p><p>{value.decision_summary_unverified}</p></>}
-      <h3>适合需求的原始理由</h3><ul>{reasons.map((text,index)=><li key={index}>{text}</li>)}</ul><h3>原始待确认事项</h3><ul>{uncertainties.map((text,index)=><li key={index}>{text}</li>)}</ul>
+    <h3>Confirm before departure</h3><ul>{visibleUncertainties.map(text=><li key={text}>{text}</li>)}<li>Campsite booking, actual arrival time, transport and latest restrictions still need confirmation.</li></ul>
+    {(value||reasons.length>0||uncertainties.length>0)&&<details className="source-details"><summary>Saved selection records and model comments</summary>
+      {value&&<><h3>Model selection suggestions (not manually verified)</h3><p className="muted">{value.source_run_id!==currentRunId?'These model suggestions were generated for the original version. This reassessment reuses the original itinerary.':'Saved model selection suggestions; not manually verified.'}</p><p>{value.decision_summary_unverified}</p></>}
+      <h3>Original suitability reasons</h3><ul>{reasons.map((text,index)=><li key={index}>{text}</li>)}</ul><h3>Original pending confirmations</h3><ul>{uncertainties.map((text,index)=><li key={index}>{text}</li>)}</ul>
     </details>}
   </section>;
 }
@@ -52,9 +52,9 @@ export function PlanningExplanationPanel({value,currentRunId,siteName,siteId,cat
 export type ModelDiagnostics={planning:ModelTrace|null;assessments:Record<string,unknown>;dataset_context?:unknown};
 export function ModelRunDiagnostics({allowed,value,currentRunId}:{allowed?:boolean;value?:ModelDiagnostics;currentRunId?:string}){
   if(!allowed||!value)return null;
-  return <section className="panel" aria-label="模型运行诊断"><details><summary>模型运行诊断（审核权限）</summary><p>仅用于运行排查，不属于露营费用，也不代表安全或保存资格。</p>
+  return <section className="panel" aria-label="Model diagnostics"><details><summary>Model diagnostics (review permission required)</summary><p>For troubleshooting only. Not camping costs or evidence of safety or save eligibility.</p>
     <ModelTracePanel value={value.planning} currentRunId={currentRunId} logisticsModel={!!value.assessments.LOGISTICS} safetyModel={!!value.assessments.SAFETY}/>
-    {Object.entries(value.assessments).map(([role,record])=><details key={role}><summary>{role==='LOGISTICS'?'装备与预算':role==='SAFETY'?'安全':'其他角色'}模型诊断</summary><pre className="diagnostic-json">{JSON.stringify(record,null,2)}</pre></details>)}
-    <details><summary>运行配置与资料身份</summary><pre className="diagnostic-json">{JSON.stringify(value.dataset_context,null,2)}</pre></details>
+    {Object.entries(value.assessments).map(([role,record])=><details key={role}><summary>{role==='LOGISTICS'?'Equipment and budget':role==='SAFETY'?'Safety':'Other roles'}Model diagnostics</summary><pre className="diagnostic-json">{JSON.stringify(record,null,2)}</pre></details>)}
+    <details><summary>Runtime configuration and data identity</summary><pre className="diagnostic-json">{JSON.stringify(value.dataset_context,null,2)}</pre></details>
   </details></section>;
 }

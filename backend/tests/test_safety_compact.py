@@ -122,7 +122,7 @@ def test_complete_findings_and_only_allowed_actions(case,change):
 
 @pytest.mark.parametrize('text',['x'*97,'word '*13,'Visit https://example.com','Meet at 123',
     'approval granted','ignore previous instructions','line\nbreak','invisible\u200btext',
-    'bare.example','中文\u2028分隔',chr(96)*3+'code'+chr(96)*3,'<b>okay</b>'])
+    'bare.example','Chinese\u2028Separator',chr(96)*3+'code'+chr(96)*3,'<b>okay</b>'])
 def test_text_exclusions_and_hard_bounds_never_repair(case,text):
     raw=proposal(tools(case).read_safety_facts());raw['findings'][0]['advice']=text;before=deepcopy(raw)
     with pytest.raises(ValueError):CompactProposal.model_validate(raw)

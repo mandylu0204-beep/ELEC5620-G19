@@ -40,7 +40,7 @@ def summarize(input):
     if requirements.start_date and requirements.start_date<input.demo_context.demo_today:
         message=f'Start date must be on or after the checking date ({input.demo_context.demo_today.isoformat()}, Australia/Sydney).'
         errors.append(FieldError(field='start_date',code=FieldErrorCode.INVALID,message=message))
-        questions.append(Clarification(field='start_date',question=message,reason='结构化摘要仍按本次检查日期验证。'))
+        questions.append(Clarification(field='start_date',question=message,reason='The structured summary is still validated against this check date.'))
     return InterpretRequestResult(execution_mode=input.demo_context.mode,extracted_requirements=requirements,
         field_errors=errors,clarifications=questions,
         assumptions=['Summary assembled from structured form fields by the host; no model was invoked.'])

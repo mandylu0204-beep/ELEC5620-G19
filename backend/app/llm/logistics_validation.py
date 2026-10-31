@@ -52,4 +52,4 @@ def validate_logistics_payload(input, baseline, result, raw_plan, raw_trace, *, 
             raise ValueError('Result/proposal does not match deterministic tools')
         return plan, trace
     except (ValidationError, ValueError, TypeError, KeyError, AttributeError) as exc:
-        raise model_failure('物流模型载荷与登记事实或严格协议不一致。', code=ErrorCode.CONTRACT_INVALID) from exc
+        raise model_failure('Logistics model payload does not match registered facts or the strict protocol.', code=ErrorCode.CONTRACT_INVALID) from exc

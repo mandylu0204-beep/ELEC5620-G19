@@ -3,15 +3,15 @@ import assert from 'node:assert/strict';
 import {prepareMissingEquipment,profileGuidance} from '../src/profile_guidance.ts';
 import {logisticsDestinations} from '../src/logistics_navigation.ts';
 
-const catalog=[['tent','帐篷','item'],['vehicle','车辆','vehicle'],['sleeping_bag','睡袋','item'],['camping_stove','炉具','item']];
+const catalog=[['tent','Tent','item'],['vehicle','Vehicles','vehicle'],['sleeping_bag','Sleeping bag','item'],['camping_stove','Stove','item']];
 const issue=(field,code='EQUIPMENT_DETAILS',extra={})=>({issue_id:field,code,category:'USER_INPUT',field,
   item_key:field.startsWith('equipment.')?field.split('.')[1]:null,target:'PROFILE',current:null,required:null,
   action_url:'/profile?focus='+encodeURIComponent(field)+'&request_id=r&plan_id=p',...extra});
 const draft=(equipment=[],extra={})=>({equipment,transport:'CAR',vehicles:'1',km:'100',children:'no',childrenCount:'0',experience:'BEGINNER',...extra});
-const tent={item_key:'tent',label:'帐篷',quantity:'1',unit:'item',capacity:'',confirmed:true};
+const tent={item_key:'tent',label:'Tent',quantity:'1',unit:'item',capacity:'',confirmed:true};
 
 test('conditional cooking preparation creates two blank rows together without confirmation, duplication or fake blockers',()=>{
-  const cookingCatalog=[...catalog,['fuel_canister','燃料罐','item']];
+  const cookingCatalog=[...catalog,['fuel_canister','Fuel canister','item']];
   const root=issue('cooking_method','COOKING_ARRANGEMENT',{target:'REQUEST',related_equipment:['camping_stove','fuel_canister']});
   const prepared=prepareMissingEquipment([], [root], '',cookingCatalog);
   assert.deepEqual(prepared.map(row=>row.item_key),['camping_stove','fuel_canister']);
@@ -42,14 +42,14 @@ test('cooking alternate entry prepares the stove, while data problems and unsupp
 test('tent capacity is highlighted without asking again for already confirmed quantity',()=>{
   const hints=profileGuidance(draft([tent]),[issue('equipment.tent.capacity')]);
   assert.deepEqual(Object.keys(hints),['gear-capacity-0']);
-  assert.match(hints['gear-capacity-0'],/双人帐填写 2/);
+  assert.match(hints['gear-capacity-0'],/For a two-person tent, enter 2/i);
 });
 
 test('vehicle draft highlights all actual missing fields and explains seats including driver',()=>{
   const equipment=prepareMissingEquipment([],[issue('equipment.vehicle.capacity','VEHICLE_DETAILS')],'',catalog);
   const hints=profileGuidance(draft(equipment,{vehicles:''}),[issue('equipment.vehicle.capacity','VEHICLE_DETAILS')]);
   for(const id of ['gear-quantity-0','gear-capacity-0','gear-confirmed-0','vehicle-count'])assert.ok(hints[id],id);
-  assert.match(hints['gear-capacity-0'],/包含驾驶员/);
+  assert.match(hints['gear-capacity-0'],/including the driver/i);
   const updated=equipment.map(item=>({...item,quantity:'1',capacity:'5',confirmed:true}));
   assert.deepEqual(profileGuidance(draft(updated),[issue('equipment.vehicle.capacity','VEHICLE_DETAILS')]),{});
 });
@@ -73,13 +73,13 @@ test('honest zero stock does not ask users to confirm nonexistent equipment or i
 });
 
 test('quantity unit, seat shortage, vehicle count and trip kilometres get distinct guidance',()=>{
-  const car={item_key:'vehicle',label:'车辆',quantity:'1',unit:'item',capacity:'2',confirmed:true};
+  const car={item_key:'vehicle',label:'Vehicles',quantity:'1',unit:'item',capacity:'2',confirmed:true};
   const hints=profileGuidance(draft([car],{vehicles:'2',km:''}),[
     issue('equipment.vehicle.capacity','TRANSPORT_CAPACITY',{required:3}),issue('transport.estimated_km','DISTANCE')]);
-  assert.match(hints['gear-unit-0'],/辆/);
-  assert.match(hints['gear-capacity-0'],/本次需 3 人/);
-  assert.match(hints['vehicle-count'],/共 1 辆/);
-  assert.match(hints['estimated-km'],/包含往返/);
+  assert.match(hints['gear-unit-0'],/vehicles/i);
+  assert.match(hints['gear-capacity-0'],/required for this trip 3 people/i);
+  assert.match(hints['vehicle-count'],/Verified vehicles below total 1/i);
+  assert.match(hints['estimated-km'],/including return travel/i);
 });
 
 test('experience and child questions highlight the correct fields without assigning answers',()=>{
@@ -105,17 +105,17 @@ test('header navigation keeps correction context, supports stove alternative and
 test('tent correction uses current confirmed sleeping capacity instead of stale required tent count',()=>{
   const previous=issue('equipment.tent.quantity','EQUIPMENT_SHORTAGE',{required:{quantity:'2',capacity_persons:2}});
   const small={...tent,capacity:'1'};
-  assert.match(profileGuidance(draft([small]),[previous])['gear-quantity-0'],/共可住 1 人，本次需 2 人/);
+  assert.match(profileGuidance(draft([small]),[previous])['gear-quantity-0'],/Verified total tent capacity: 1 people; required for this trip 2 people/i);
   assert.deepEqual(profileGuidance(draft([{...small,capacity:'2'}]),[previous]),{});
   assert.ok(profileGuidance(draft([{...small,capacity:'2',confirmed:false}]),[previous])['gear-confirmed-0']);
-  assert.match(profileGuidance(draft([{...small,capacity:'2'}],{group:'3'}),[previous])['gear-quantity-0'],/本次需 3 人/);
+  assert.match(profileGuidance(draft([{...small,capacity:'2'}],{group:'3'}),[previous])['gear-quantity-0'],/required for this trip 3 people/i);
   assert.deepEqual(profileGuidance(draft([small,{...small}]),[previous]),{});
 });
 
 test('old car findings and URL focus cannot demand vehicle input for a non-car trip',()=>{
   const questions=[issue('transport.vehicle_count'),issue('equipment.vehicle.capacity','VEHICLE_DETAILS'),
     issue('transport.estimated_km','DISTANCE')];
-  const equipment=[{item_key:'vehicle',label:'旧车',quantity:'',unit:'vehicle',capacity:'',confirmed:false}];
+  const equipment=[{item_key:'vehicle',label:'Old vehicle',quantity:'',unit:'vehicle',capacity:'',confirmed:false}];
   const before=structuredClone({questions,equipment});
   for(const transport of ['PUBLIC_TRANSPORT','WALKING','OTHER','']){
     for(const focus of ['transport.vehicle_count','equipment.vehicle.quantity','transport.estimated_km'])
@@ -129,7 +129,7 @@ test('old car findings and URL focus cannot demand vehicle input for a non-car t
 });
 
 test('public transport retains its actual connection-plan hints without treating form edits as a formal pass',()=>{
-  const connection={item_key:'transport_itinerary',label:'往返连接',quantity:'',unit:'plan',capacity:'',confirmed:false};
+  const connection={item_key:'transport_itinerary',label:'Return connections',quantity:'',unit:'plan',capacity:'',confirmed:false};
   const questions=[issue('transport.vehicle_count'),issue('equipment.transport_itinerary')];
   const original=structuredClone(questions);
   const value=draft([connection],{transport:'PUBLIC_TRANSPORT',vehicles:'',km:''});
@@ -141,8 +141,8 @@ test('public transport retains its actual connection-plan hints without treating
 test('public connection notes have their own hint without requiring private vehicles or replacing the original issue',()=>{
   const questions=[issue('transport.assumptions','TRANSPORT_CONNECTION')];
   const value=draft([],{transport:'PUBLIC_TRANSPORT',vehicles:'',km:'',assumptions:'  \n'});
-  assert.match(profileGuidance(value,questions)['transport-assumptions'],/去程、返程/);
-  assert.deepEqual(profileGuidance({...value,assumptions:'去程、返程及最后接驳已核对。'},questions),{});
+  assert.match(profileGuidance(value,questions)['transport-assumptions'],/Outbound, return/i);
+  assert.deepEqual(profileGuidance({...value,assumptions:'Outbound, return and final connections verified.'},questions),{});
   assert.deepEqual(profileGuidance({...value,transport:'CAR'},questions),{});
   assert.equal(questions.length,1);
 });

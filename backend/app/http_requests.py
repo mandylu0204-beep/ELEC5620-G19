@@ -42,7 +42,7 @@ class ConfirmInput(RevisionInput):
     @classmethod
     def acknowledged_only(cls, value):
         if value is not True:
-            raise ValueError('请阅读并确认当前摘要。')
+            raise ValueError('Read and confirm the current summary.')
         return value
 
 
@@ -59,7 +59,7 @@ def request_context(request: Request, user: User = Depends(current_user)):
         'demo_today': snapshot.demo.demo_today.isoformat(), 'clock_mode': request.app.state.settings.clock_mode,
         'supported_transport_modes': list(SUPPORTED_MODES),
         'system_preparation': snapshot.dataset.selection_config.get(POLICY_KEY) == POLICY_VERSION,
-        'planning_origin': {'id':'sydney_city_demo','label':'悉尼市区（固定模拟出发地）'} if snapshot.dataset.selection_config.get(POLICY_KEY) == POLICY_VERSION else None,
+        'planning_origin': {'id':'sydney_city_demo','label':'Central Sydney (fixed demonstration origin)'} if snapshot.dataset.selection_config.get(POLICY_KEY) == POLICY_VERSION else None,
         'requirement_choices': choices(),
         'planning_available': request.app.state.dispatcher.available}
 
@@ -110,11 +110,11 @@ async def interpret_request(request_id: str, body: RevisionInput, request: Reque
     repository = request.app.state.requests
     current=await run_in_threadpool(repository.get,user,request_id)
     if current.get('requirement_help') and current['requirement_help']['needed']:
-        fail(ErrorCode.INVALID_STATE,'其他要求尚未对应已有条件，请先提交需求协助；本次未调用模型。')
+        fail(ErrorCode.INVALID_STATE,'Other requirements do not map to existing conditions. Submit request assistance first. No model was called.')
     snapshot = await run_in_threadpool(request.app.state.runtime.resolve)
     agent, config = snapshot.agent, request.app.state.settings
     if agent is None and current['raw_text'].strip():
-        fail(ErrorCode.AGENT_FAILURE, '当前解释器尚未接入；请求草稿已保留。')
+        fail(ErrorCode.AGENT_FAILURE, 'The current interpreter is not connected. The request draft is retained.')
     dataset, regions = snapshot.dataset, snapshot.descriptor.regions
     demo = snapshot.demo
     revision, input = await run_in_threadpool(repository.begin_analysis, user, request_id, body.expected_revision, demo, dataset)
@@ -140,7 +140,7 @@ async def interpret_request(request_id: str, body: RevisionInput, request: Reque
             current = RequestInterpretationIdentity.model_validate(agent.request_interpretation_identity)
             if observation.identity != identity or current != identity:
                 raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT,
-                    message='需求理解配置已变化，请重新生成摘要。'))
+                    message='Interpretation settings changed. Regenerate the summary.'))
             result = InterpretRequestResult.model_validate(outcome.result)
             metadata = RequestInterpretationMetadata(**observation.model_dump(mode='json'),
                 analysis_revision=revision, input_sha256=request_input_fingerprint(input))
@@ -156,18 +156,18 @@ async def interpret_request(request_id: str, body: RevisionInput, request: Reque
             normalized, status, **options)
         return request_response(saved)
     except (ValidationError, ValueError) as exc:
-        error = ContractError(code=ErrorCode.CONTRACT_INVALID, message='解释器输出不符合约定；请求未确认，可修改或重试。', allowed_actions=[AllowedAction.RETRY])
+        error = ContractError(code=ErrorCode.CONTRACT_INVALID, message='Interpreter output does not match the contract. The request is unconfirmed; edit or retry.', allowed_actions=[AllowedAction.RETRY])
         await run_in_threadpool(repository.fail_analysis, user, request_id, revision, error)
         raise ContractFailure(error) from exc
     except ContractFailure as exc:
         await run_in_threadpool(repository.fail_analysis, user, request_id, revision, exc.error)
         raise
     except asyncio.CancelledError:
-        error = ContractError(code=ErrorCode.AGENT_FAILURE, message='摘要生成中断，请重试。', recoverable=True, allowed_actions=[AllowedAction.RETRY])
+        error = ContractError(code=ErrorCode.AGENT_FAILURE, message='Summary generation interrupted. Please retry.', recoverable=True, allowed_actions=[AllowedAction.RETRY])
         await asyncio.shield(run_in_threadpool(repository.fail_analysis, user, request_id, revision, error))
         raise
     except Exception as exc:
-        error = ContractError(code=ErrorCode.AGENT_FAILURE, message='摘要生成失败，草稿已保留，请重试。', recoverable=True, allowed_actions=[AllowedAction.RETRY])
+        error = ContractError(code=ErrorCode.AGENT_FAILURE, message='Summary generation failed. The draft is retained. Please retry.', recoverable=True, allowed_actions=[AllowedAction.RETRY])
         await run_in_threadpool(repository.fail_analysis, user, request_id, revision, error)
         raise ContractFailure(error) from exc
 

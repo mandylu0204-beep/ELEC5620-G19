@@ -29,23 +29,23 @@ export function campsiteSourceLabel(url:string){
   try{
     const parsed=new URL(url);const path=parsed.pathname.replace(/\/$/u,'');
     if(parsed.hostname==='www.nationalparks.nsw.gov.au'){
-      if(/^\/camping-and-accommodation\/campgrounds\/[^/]+\/visitor-info$/u.test(path))return '官方到达与访客信息';
-      if(/^\/camping-and-accommodation\/campgrounds\/[^/]+$/u.test(path))return '官方营地概况';
+      if(/^\/camping-and-accommodation\/campgrounds\/[^/]+\/visitor-info$/u.test(path))return 'Official access and visitor information';
+      if(/^\/camping-and-accommodation\/campgrounds\/[^/]+$/u.test(path))return 'Official campsite overview';
     }
     if(parsed.hostname==='www.cockatooisland.gov.au'){
-      if(path==='/en/stay/waterfront-campground')return '官方营地概况';
-      if(path==='/en/stay/waterfront-campground/byo-tent-option')return '官方自带帐篷露营说明';
+      if(path==='/en/stay/waterfront-campground')return 'Official campsite overview';
+      if(path==='/en/stay/waterfront-campground/byo-tent-option')return 'Official bring-your-own-tent information';
     }
-    return `资料来源：${parsed.hostname}${parsed.pathname}${parsed.search}${parsed.hash}`;
-  }catch{return `资料来源：${url}`;}
+    return `Source:${parsed.hostname}${parsed.pathname}${parsed.search}${parsed.hash}`;
+  }catch{return `Source:${url}`;}
 }
 
 export function CampsiteArrivalDetails({place}:{place:Place|null}) {
   if(!place)return null;
   return <>
-    <h3>到达方式与注意事项</h3><p>{place.access_notes}</p>
-    <p className="muted">营地接入资料不代表已确认实际班次、接驳或预订，出发前仍需核对。</p>
-    <details className="source-details"><summary>营地规定与资料来源</summary>
+    <h3>Getting there and important notes</h3><p>{place.access_notes}</p>
+    <p className="muted">Campsite access information does not verify actual services, connections or bookings. Check before departure.</p>
+    <details className="source-details"><summary>Campsite rules and sources</summary>
       <ul>{place.static_restrictions.map(text=><li key={text}>{text}</li>)}</ul>
       {place.source_urls.map(url=><p key={url}><a href={url} target="_blank" rel="noreferrer">{campsiteSourceLabel(url)} ↗</a></p>)}
     </details>

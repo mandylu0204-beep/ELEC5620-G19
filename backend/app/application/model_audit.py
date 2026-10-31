@@ -54,25 +54,25 @@ def trace_payload(raw):
     try:
         return ModelPlanningTrace.model_validate(raw)
     except (ValidationError, ValueError, TypeError):
-        fail(ErrorCode.CONTRACT_INVALID, '模型审计内容不符合受控接口，未保存方案。')
+        fail(ErrorCode.CONTRACT_INVALID, 'Model audit does not match the controlled interface. Plan not saved.')
 
 
 def validate_trace(scope, content, trace, recommendation):
     values = scope.dataset_context.selection_config
     if scope.demo_context.mode != 'agent' or scope.operation not in {'PLAN', 'REVISE'} or not required(scope):
-        fail(ErrorCode.CONTRACT_INVALID, '当前运行未登记模型规划审计。')
+        fail(ErrorCode.CONTRACT_INVALID, 'No model planning audit is registered for this run.')
     expected = {'configuration_fingerprint': 'hybrid_planning_fingerprint',
         'prompt_sha256': 'a_model_prompt_sha256', 'tool_version': 'a_model_tool_version',
         'requested_model': 'a_model_requested_model'}
     if any(getattr(trace, field) != values.get(key) for field, key in expected.items()):
-        fail(ErrorCode.STALE_CONTEXT, '模型审计身份与已登记的配置不同。')
+        fail(ErrorCode.STALE_CONTEXT, 'Model audit identity differs from registered settings.')
     if (content.selected_campsite_ids != [trace.selected_campsite_id]
             or len(trace.candidate_ids) != len(set(trace.candidate_ids))
             or trace.selected_campsite_id not in trace.candidate_ids
             or not set(trace.candidate_ids).issubset({item.campsite_id for item in recommendation.result.candidates})
             or len(trace.response_sha256) != trace.turns or len(trace.tool_calls) != trace.turns-1
             or trace.http_attempts < trace.turns):
-        fail(ErrorCode.CONTRACT_INVALID, '模型审计与保存的营地、推荐或调用记录不一致。')
+        fail(ErrorCode.CONTRACT_INVALID, 'Model audit does not match the saved campsite, recommendations or call records.')
 
 
 def trace_hash(trace):
@@ -87,23 +87,23 @@ def load_model_trace(connection, scope, version):
     row = connection.execute('SELECT * FROM model_planning_traces WHERE run_id=?', (scope.run_id,)).fetchone()
     if not row:
         if required(scope):
-            fail(ErrorCode.PERSISTENCE_FAILURE, '模型版本缺少必要审计记录，不能继续放行。')
+            fail(ErrorCode.PERSISTENCE_FAILURE, 'Model version lacks required audit records and cannot proceed.')
         return None
     owner = connection.execute('SELECT owner_id FROM plans WHERE id=?', (scope.plan_id,)).fetchone()
     if (not owner or row['owner_id'] != owner['owner_id'] or not row['attempt_id']
             or row['plan_id'] != scope.plan_id or row['version_id'] != version.version_context.plan_version_id
             or row['input_fingerprint'] != version.version_context.input_fingerprint):
-        fail(ErrorCode.STALE_CONTEXT, '保存的模型审计不属于当前版本。')
+        fail(ErrorCode.STALE_CONTEXT, 'Saved model audit does not belong to the current version.')
     try:
         trace = trace_payload(json.loads(row['payload']))
     except (ValueError, TypeError):
-        fail(ErrorCode.PERSISTENCE_FAILURE, '保存的模型审计无法解码。')
+        fail(ErrorCode.PERSISTENCE_FAILURE, 'Saved model audit cannot be decoded.')
     if trace_hash(trace) != row['payload_sha256']:
-        fail(ErrorCode.PERSISTENCE_FAILURE, '保存的模型审计摘要不一致。')
+        fail(ErrorCode.PERSISTENCE_FAILURE, 'Saved model audit digest differs.')
     recommendation = connection.execute('SELECT payload FROM recommendations WHERE run_id=?', (scope.run_id,)).fetchone()
     from ..contracts.dto import StoredRecommendations
     if not recommendation:
-        fail(ErrorCode.PERSISTENCE_FAILURE, '模型审计缺少对应推荐。')
+        fail(ErrorCode.PERSISTENCE_FAILURE, 'Model audit has no corresponding recommendation.')
     validate_trace(scope, version.content, trace, StoredRecommendations.model_validate_json(recommendation['payload']))
     return {**{key: row[key] for key in ('id','plan_id','run_id','version_id','input_fingerprint','attempt_id','created_at')},
         'trace': trace.model_dump(mode='json')}
@@ -121,28 +121,28 @@ def load_origin_trace(connection, scope, version):
             or version.version_context.run_id != scope.run_id
             or version.version_context.plan_id != scope.plan_id
             or version.version_context.plan_version_id != scope.expected_current_version_id):
-        fail(ErrorCode.STALE_CONTEXT, '重评没有登记有效的原版本审计关联。')
+        fail(ErrorCode.STALE_CONTEXT, 'Reassessment has no valid original-version audit link.')
     binding = connection.execute('SELECT * FROM run_versions WHERE run_id=?', (scope.run_id,)).fetchone()
     rows = connection.execute('SELECT * FROM model_planning_traces WHERE plan_id=? AND version_id=?',
         (scope.plan_id, version.version_context.plan_version_id)).fetchall()
     if len(rows) != 1 or not binding or binding['version_id'] != scope.expected_current_version_id or binding['fingerprint'] != version.version_context.input_fingerprint:
-        fail(ErrorCode.PERSISTENCE_FAILURE, '重评版本缺少唯一且有效的原生成审计。')
+        fail(ErrorCode.PERSISTENCE_FAILURE, 'Reassessment version lacks a unique valid original-generation audit.')
     origin = rows[0]
     run = connection.execute('SELECT * FROM runs WHERE id=?', (origin['run_id'],)).fetchone()
     if not run:
-        fail(ErrorCode.PERSISTENCE_FAILURE, '原模型生成运行不存在。')
+        fail(ErrorCode.PERSISTENCE_FAILURE, 'Original model-generation run not found.')
     try:
         original_scope = RunScope.model_validate_json(run['scope'])
         confirmed = ConfirmedContext.model_validate_json(run['confirmed_context'])
     except (ValueError, TypeError):
-        fail(ErrorCode.PERSISTENCE_FAILURE, '原模型生成上下文无法解码。')
+        fail(ErrorCode.PERSISTENCE_FAILURE, 'Original model-generation context cannot be decoded.')
     if (original_scope.operation not in {'PLAN', 'REVISE'} or not required(original_scope)
             or original_scope.run_id != origin['run_id'] or original_scope.plan_id != scope.plan_id
             or original_scope.request_id != scope.request_id or original_scope.demo_context.mode != 'agent'
             or confirmed.request_id != original_scope.request_id
             or confirmed.demo_context != original_scope.demo_context
             or confirmed.dataset_context != original_scope.dataset_context):
-        fail(ErrorCode.STALE_CONTEXT, '原模型审计关联的生成运行不匹配。')
+        fail(ErrorCode.STALE_CONTEXT, 'Generation run linked by the original audit does not match.')
     from ..storage.repository import Repository
     original_version = Repository.stored_version(connection, original_scope)
     current_run = connection.execute('SELECT confirmed_context FROM runs WHERE id=?', (scope.run_id,)).fetchone()
@@ -154,6 +154,6 @@ def load_origin_trace(connection, scope, version):
             or current_confirmed.requirements != confirmed.requirements or current_confirmed.profile_snapshot != confirmed.profile_snapshot
             or current_confirmed.demo_context != scope.demo_context or current_confirmed.dataset_context != scope.dataset_context
             or version.version_context.input_fingerprint != Repository.input_fingerprint(scope, current_confirmed, version.content.model_dump(mode='json'))):
-        fail(ErrorCode.STALE_CONTEXT, '原生成内容或重评绑定的输入身份不一致。')
+        fail(ErrorCode.STALE_CONTEXT, 'Original generation content or reassessment input identity differs.')
     # Recurses only to a PLAN/REVISE scope. Original IDs/attempt/time stay intact.
     return load_model_trace(connection, original_scope, original_version)

@@ -31,7 +31,7 @@ def safe_path(location):
 def protocol_failure(stage, errors, *, line=None, column=None):
     issues = [{'path': safe_path(error.get('loc', ())),
         'type': error['type'] if error.get('type') in _TYPES else 'schema_error'} for error in errors[:8]]
-    failure = model_failure('模型装备方案不符合受控 JSON 协议；未采纳任何方案。', code=ErrorCode.CONTRACT_INVALID)
+    failure = model_failure('The model equipment proposal does not match the controlled  JSON  protocol. No proposal was adopted.', code=ErrorCode.CONTRACT_INVALID)
     context = {**failure.error.context, 'diagnostic_version': VERSION,
         'failure_stage': stage, 'validation_errors': json.dumps(issues, ensure_ascii=True, separators=(',', ':'))}
     if type(line) is int and type(column) is int:
@@ -78,7 +78,7 @@ def cost_priority_failure(expected, provided):
         'duplicated_expected_ids':[safe_id(key) for key in duplicate[:16]],
         'unexpected_count':len(unexpected),'unexpected_positions':unexpected[:16],
         'details_truncated':len(missing)>16 or len(duplicate)>16 or len(unexpected)>16}
-    failure = model_failure('模型费用优先级必须覆盖全部原费用行，不能删除必要费用。',code=ErrorCode.CONTRACT_INVALID)
+    failure = model_failure('Model cost priorities must include every original cost row and cannot remove required costs.',code=ErrorCode.CONTRACT_INVALID)
     return type(failure)(failure.error.model_copy(update={'context':{
         **failure.error.context,'diagnostic_version':VERSION,'failure_stage':'COST_PRIORITY_COVERAGE',
         'cost_priority_diagnostics':json.dumps(detail,ensure_ascii=True,separators=(',',':'))}}))

@@ -50,7 +50,7 @@ class CommandInput(ContractModel):
     @classmethod
     def nonblank(cls, value):
         if not value.strip():
-            raise ValueError('command_key 不能为空。')
+            raise ValueError('command_key  cannot be blank.')
         return value
 
 
@@ -77,7 +77,7 @@ class RevisePlanningInput(NewEvaluationInput):
     @classmethod
     def meaningful_feedback(cls, value):
         if not value.strip():
-            raise ValueError('请填写修改意见。')
+            raise ValueError('Enter revision feedback.')
         return value.strip()
 
 
@@ -100,11 +100,11 @@ async def new_evaluation(plan_id, body, request, user, operation, *, revision_se
                 snapshot.require_operation(operation, context.requirements)
                 if context.requirements.start_date < snapshot.demo.demo_today:
                     raise ContractFailure(ContractError(code=ErrorCode.INPUT_INVALID,
-                        message='出行日期已过去，请调整日期并重新确认需求。'))
+                        message='Trip dates are in the past. Change dates and reconfirm the request.'))
                 dataset = getattr(snapshot.agent, 'dataset', None)
                 if dataset is None:
                     raise ContractFailure(ContractError(code=ErrorCode.ADAPTER_FAILURE,
-                        message='暂时无法比较营地费用，原方案已保留。'))
+                        message='Campsite fees cannot currently be compared. The original plan is retained.'))
                 require_cheaper_campsite(dataset, context, previous_content)
     scope = state.workflows.start(user, plan['request_id'], snapshot.demo, snapshot.dataset,
         command_key=body.command_key, plan_id=plan_id, operation=operation,
@@ -178,7 +178,7 @@ def retry_fields(request, user, data):
         run = data['run']
     data.update(planning_available=available, retry_available=False, retry_unavailable_reason=None)
     if run and run['status'] == 'FAILED':
-        reason = '此运行已被取代，请查看当前运行。' if not run['is_active'] else '规划流程尚未启用。' if not available else '此故障不能自动重试，请联系开发负责人。'
+        reason = 'This run was superseded. View the current run.' if not run['is_active'] else 'The planning workflow is not enabled.' if not available else 'This failure cannot be retried automatically. Contact the developer.'
         if available and run['is_active'] and run['error'] and run['error']['recoverable']:
             try:
                 with state.database.transaction(write=False) as connection:
@@ -225,10 +225,10 @@ def retry_fields(request, user, data):
             scope = RunScope.model_validate_json(row['scope'])
             snapshot = state.runtime.for_scope(scope)
             if snapshot.dataset != scope.dataset_context or snapshot.demo != scope.demo_context:
-                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='比较资料的输入身份已变化。'))
+                raise ContractFailure(ContractError(code=ErrorCode.STALE_CONTEXT, message='The comparison input identity changed.'))
             dataset = getattr(snapshot.agent, 'dataset', None)
         except ContractFailure:
-            note = '当前来源或运行配置已变化，仅根据本次保存的排除理由比较；原报价、容量和设施值无法核对，保持未知。'
+            note = 'Source or runtime settings changed. Comparison uses only saved exclusion reasons. Original prices, capacity and facilities cannot be verified and remain unknown.'
         data['recommendation_guidance'] = guidance(data, dataset, metadata_note=note)
     if data.get('trip_series') and not data['trip_series']['is_current']:
         data['retry_available'] = data['revision_available'] = data['reassessment_available'] = data['finalisation_available'] = False
@@ -290,7 +290,7 @@ def final_pdf(plan_id:str,final_id:str,request:Request,user:User=Depends(current
     try:payload=render_final_pdf(data['final_record'],is_current=data['is_current'])
     except Exception:
         from .auth import fail
-        fail(ErrorCode.ADAPTER_FAILURE,'PDF 导出未完成，已保存的最终方案不受影响，请重试。')
+        fail(ErrorCode.ADAPTER_FAILURE,'PDF Export incomplete. The saved final plan is unaffected. Please retry.')
     return Response(payload,media_type='application/pdf',headers={
         'Content-Disposition':'attachment; filename="campmate-final-'+final_id+'.pdf"',
         'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff'})

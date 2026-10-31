@@ -10,11 +10,11 @@ DETAILED_TOOL_VERSION = 'campsite-tool-daily-1'
 
 def recommend_for_model(dataset, input: RecommendCampsitesInput):
     if input.demo_context.mode != ExecutionMode.AGENT:
-        raise model_failure('校园模型工具只接受 agent 模式。', code=ErrorCode.CONTRACT_INVALID)
+        raise model_failure('Campus model tools only accept  agent mode.', code=ErrorCode.CONTRACT_INVALID)
     if dataset.context.dataset_version != input.demo_context.dataset_version:
-        raise model_failure('模型工具与确认数据版本不一致。', code=ErrorCode.STALE_CONTEXT)
+        raise model_failure('Model tool and confirmed data versions differ.', code=ErrorCode.STALE_CONTEXT)
     if input.confirmed_requirements.start_date < input.demo_context.demo_today:
-        raise model_failure('确认行程早于固定演示日期。', code=ErrorCode.INPUT_INVALID)
+        raise model_failure('The confirmed trip starts before the fixed demonstration date.', code=ErrorCode.INPUT_INVALID)
     return recommend(dataset, input)
 
 
@@ -23,18 +23,18 @@ class CampsiteToolset:
         self.dataset, self.input = dataset, input
         if (input.demo_context.mode != ExecutionMode.AGENT
                 or input.recommendations.execution_mode != ExecutionMode.AGENT):
-            raise model_failure('营地工具必须绑定 agent 模式的确认与推荐。', code=ErrorCode.CONTRACT_INVALID)
+            raise model_failure('The campsite tool must bind confirmation and recommendations in  agent  mode.', code=ErrorCode.CONTRACT_INVALID)
         if input.demo_context.dataset_version != dataset.context.dataset_version:
-            raise model_failure('营地工具的数据快照版本不一致。', code=ErrorCode.STALE_CONTEXT)
+            raise model_failure('Campsite tool data snapshot versions differ.', code=ErrorCode.STALE_CONTEXT)
         if input.confirmed_requirements.start_date < input.demo_context.demo_today:
-            raise model_failure('营地工具不能规划过去的行程。', code=ErrorCode.INPUT_INVALID)
+            raise model_failure('The campsite tool cannot plan past trips.', code=ErrorCode.INPUT_INVALID)
         validate_constraints(input.confirmed_requirements)
         supplied = input.recommendations.candidates
         ids = [item.campsite_id for item in supplied]
         ranks = [item.rank for item in supplied]
         if (input.recommendations.search_outcome != 'MATCHES' or not ids
                 or len(ids) != len(set(ids)) or len(ranks) != len(set(ranks))):
-            raise model_failure('模型规划需要已登记且唯一的匹配候选。', code=ErrorCode.INPUT_INVALID)
+            raise model_failure('Model planning needs registered, unique matching candidates.', code=ErrorCode.INPUT_INVALID)
         # The model cannot add candidates absent from A's saved recommendation.
         self._records = []
         for item in sorted(supplied, key=lambda value: value.rank):
@@ -42,7 +42,7 @@ class CampsiteToolset:
             if not violations(campsite, input.confirmed_requirements, input.profile_snapshot):
                 self._records.append((item, campsite))
         if not self._records:
-            raise model_failure('已登记候选没有满足确认硬条件的营地。', code=ErrorCode.INPUT_INVALID)
+            raise model_failure('No registered candidate meets the confirmed hard conditions.', code=ErrorCode.INPUT_INVALID)
 
     @property
     def exposed_ids(self):

@@ -29,7 +29,7 @@ class ReviewInput(ContractModel):
     @classmethod
     def meaningful_reason(cls, value):
         if not value.strip():
-            raise ValueError('审核理由不能为空。')
+            raise ValueError('Review reason cannot be blank.')
         return value.strip()
 
 
@@ -105,9 +105,9 @@ class ReviewService:
             owner = connection.execute('SELECT u.display_name FROM users u JOIN plans p ON p.owner_id=u.id WHERE p.id=?', (plan_id,)).fetchone()
         data['owner_display_name'] = owner['display_name'] if owner else None
         if not data['version'] or not data['route'] or data['run']['status'] != 'SUCCEEDED':
-            fail(ErrorCode.INVALID_STATE, '当前运行尚未完成评估和路由，请等待。')
+            fail(ErrorCode.INVALID_STATE, 'Assessment and routing are incomplete for the current run. Please wait.')
         if data['version']['status'] not in {'ESCALATED','BLOCKED','REVISION_REQUIRED'} and not data['reviews'] and not data.get('review_assistance_notes'):
-            fail(ErrorCode.FORBIDDEN, '此方案不属于人工审核范围。')
+            fail(ErrorCode.FORBIDDEN, 'This plan is outside human-review scope.')
         historical = not data['run']['is_active'] or bool(data.get('trip_series') and not data['trip_series']['is_current'])
         data['review_available'] = not historical and not data['reviews'] and approval_required(data['assessments'], data['eligibility'])
         data['review_policy_version'] = REVIEW_POLICY_VERSION
@@ -131,14 +131,14 @@ class ReviewService:
         with self.db.transaction() as connection:
             plan = connection.execute('SELECT * FROM plans WHERE id=? AND deleted_at IS NULL', (plan_id,)).fetchone()
             if not plan:
-                fail(ErrorCode.NOT_FOUND, '方案不存在。')
+                fail(ErrorCode.NOT_FOUND, 'Plan not found.')
             from .trip_series import require_current
             require_current(connection, plan)
             from .revision_choices import require_decided
             require_decided(connection, plan_id)
             run = connection.execute('SELECT * FROM runs WHERE id=?', (plan['active_run_id'],)).fetchone()
             if not run or body.version_context.plan_id != plan_id:
-                fail(ErrorCode.STALE_CONTEXT, '审核上下文已变化，请刷新。')
+                fail(ErrorCode.STALE_CONTEXT, 'Review context changed. Refresh.')
             scope = RunScope.model_validate_json(run['scope'])
             if self.context_guard is not None:
                 self.context_guard(scope)
@@ -147,29 +147,29 @@ class ReviewService:
             assessments = port.assessments(connection, body.version_context)
             actual = sorted(item.assessment_id for item in assessments)
             if len(set(body.assessment_ids)) != 2 or sorted(body.assessment_ids) != actual:
-                fail(ErrorCode.STALE_CONTEXT, '审核必须绑定当前两份评估记录。')
+                fail(ErrorCode.STALE_CONTEXT, 'Review must bind both current assessment records.')
             previous = connection.execute('SELECT * FROM review_commands WHERE reviewer_id=? AND command_key=?', (user.id, body.command_key)).fetchone()
             input_hash = fingerprint(body)
             if previous:
                 if previous['input_hash'] != input_hash:
-                    fail(ErrorCode.IDEMPOTENCY_CONFLICT, '同一提交编号不能用于不同审核内容。')
+                    fail(ErrorCode.IDEMPOTENCY_CONFLICT, 'The same submission key cannot be used for different review content.')
                 return json.loads(previous['result'])
             if version.revision != body.expected_version_revision or run['revision'] != body.expected_run_revision:
-                fail(ErrorCode.VERSION_CONFLICT, '方案或运行已变化，请刷新后重新审核。')
+                fail(ErrorCode.VERSION_CONFLICT, 'Plan or run changed. Refresh before reviewing again.')
             if run['status'] != 'SUCCEEDED' or version.status not in {'ESCALATED','BLOCKED','REVISION_REQUIRED'} or port.review(connection, body.version_context, actual):
-                fail(ErrorCode.INVALID_STATE, '当前版本不再接受审核，请刷新。')
+                fail(ErrorCode.INVALID_STATE, 'The current version no longer accepts reviews. Refresh.')
             if not connection.execute("SELECT 1 FROM write_receipts WHERE run_id=? AND operation='route'", (scope.run_id,)).fetchone():
-                fail(ErrorCode.INVALID_STATE, '当前运行尚未保存路由。')
+                fail(ErrorCode.INVALID_STATE, 'Current run routing is not saved.')
             eligibility_before = port.decision(connection, body.version_context)[1].model_dump(mode='json')
             if not approval_required([item.model_dump(mode='json') for item in assessments], eligibility_before):
-                fail(ErrorCode.INVALID_STATE, '当前结果需要补充或修正，不属于风险审批任务；审批不能解除硬性缺口。')
+                fail(ErrorCode.INVALID_STATE, 'This result needs completion or correction and is not a risk-approval task. Approval cannot remove hard gaps.')
             review = ValidReview(review_id=uuid4().hex, version_context=body.version_context,
                 assessment_ids=actual, reviewer_user_id=user.id, decision=body.decision, reason=body.reason)
             connection.execute('INSERT INTO reviews VALUES(?,?,?,?,?,?)', (review.review_id, scope.run_id, body.version_context.plan_version_id, user.id, encode(review), now()))
             if body.decision == ReviewDecision.APPROVE:
                 route, eligibility = port.decision(connection, body.version_context)
                 if not eligibility.eligible:
-                    fail(ErrorCode.INVALID_STATE, '存在 blocker、必要证据不足或未解决修订，不能批准；请要求修订或拒绝。')
+                    fail(ErrorCode.INVALID_STATE, 'There is a  blocker, , insufficient required evidence or an unresolved revision. Approval is unavailable; request revision or reject.')
                 status = route.value
             else:
                 status = 'REJECTED' if body.decision == ReviewDecision.REJECT else 'REVISION_REQUIRED'

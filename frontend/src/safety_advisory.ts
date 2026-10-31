@@ -12,10 +12,10 @@ export type SafetyAdviceBinding = {runId:string;versionId:string;assessmentId:st
   logisticsId:string;inputFingerprint:string};
 
 const actionTitles:Record<string,string>={
-  ACKNOWLEDGE_INFORMATION:'了解出行注意事项',CHECK_NEAR_DEPARTURE:'临近出发时再检查',
-  OBTAIN_APPLICABLE_INFORMATION:'补齐适用的安全资料',RESOLVE_SOURCE_CONFLICT:'核实相互冲突的资料',
-  REQUEST_HUMAN_REVIEW:'等待审核员核对',CHANGE_TRIP:'调整营地、日期或活动',
-  RESOLVE_LOGISTICS:'完善装备或交通安排',CONFIRM_ACTIVITY_DETAILS:'确认活动安排',
+  ACKNOWLEDGE_INFORMATION:'Review trip notices',CHECK_NEAR_DEPARTURE:'Recheck near departure',
+  OBTAIN_APPLICABLE_INFORMATION:'Obtain applicable safety evidence',RESOLVE_SOURCE_CONFLICT:'Verify conflicting information',
+  REQUEST_HUMAN_REVIEW:'Wait for reviewer verification',CHANGE_TRIP:'Change campsite, dates or activities',
+  RESOLVE_LOGISTICS:'Resolve equipment or transport arrangements',CONFIRM_ACTIVITY_DETAILS:'Confirm activity arrangements',
 };
 
 export function safetyAdvice(value:SafetyAudit|null|undefined,binding:SafetyAdviceBinding|null){

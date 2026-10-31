@@ -4,7 +4,7 @@ from ..contracts.dto import ItineraryResult, RecommendCampsitesInput
 from ..contracts.enums import ErrorCode
 from ..contracts.errors import ContractError, ContractFailure
 
-CHEAPER_GOALS = frozenset({'cheaper campsite', '更便宜的营地', 'lower campsite fee'})
+CHEAPER_GOALS = frozenset({'cheaper campsite', 'Cheaper campsite', 'lower campsite fee'})
 
 
 def require_cheaper_campsite(dataset, confirmed, previous_content):
@@ -13,7 +13,7 @@ def require_cheaper_campsite(dataset, confirmed, previous_content):
     fees = [dataset.get_campsite(key).nightly_fee_cents for key in selected]
     if len(fees) != 1 or fees[0] is None:
         raise ContractFailure(ContractError(code=ErrorCode.INPUT_INVALID,
-            message='当前营地费用无法比较，原方案已保留。',
+            message='Campsite fees cannot currently be compared. The original plan is retained.',
             context={'revision_outcome': 'CAMPSITE_FEE_UNKNOWN'}))
     candidates = recommend(dataset, RecommendCampsitesInput(
         confirmed_requirements=confirmed.requirements,
@@ -24,5 +24,5 @@ def require_cheaper_campsite(dataset, confirmed, previous_content):
                 and site.nightly_fee_cents < fees[0]):
             return
     raise ContractFailure(ContractError(code=ErrorCode.INPUT_INVALID,
-        message='未找到符合当前条件的更便宜营地，原方案已保留。',
+        message='No cheaper campsite meets the current conditions. The original plan is retained.',
         context={'revision_outcome': 'NO_CHEAPER_CAMPSITE'}))

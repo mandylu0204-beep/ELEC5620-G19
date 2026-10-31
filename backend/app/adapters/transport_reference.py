@@ -28,7 +28,7 @@ class Reference(BaseModel):
     version: Literal['sydney-city-demo-distances-1']
     created_on: Literal['2026-10-27']
     origin_id: Literal['sydney_city_demo']
-    origin_label: Literal['悉尼市区（固定模拟出发地）']
+    origin_label: Literal['\u6089\u5c3c\u5e02\u533a\uff08\u56fa\u5b9a\u6a21\u62df\u51fa\u53d1\u5730\uff09']
     scope: str
     provenance: Provenance
     routes: tuple[Route, ...]
@@ -54,19 +54,19 @@ def read_reference():
             raise ValueError('Invalid synthetic reference')
         return value, hashlib.sha256(payload).hexdigest()
     except (OSError, ValueError, TypeError):
-        fail('模拟交通距离表缺失或无效，不能使用旧个人里程代替。')
+        fail('Simulated transport distances are missing or invalid. Legacy personal distance cannot be substituted.')
 
 
 def register_reference(context):
     if context.selection_config.get(POLICY_KEY) != POLICY_VERSION:
         return context
     if context.dataset_version != '2.2.0':
-        fail('系统交通准备策略只登记在 Sydney 2.2 数据上。')
+        fail('System transport preparation policy is registered only in  Sydney 2.2 dataset.')
     reference, digest = read_reference()
     markers = {'b_transport_origin': reference.origin_id, 'b_transport_reference_sha256': digest}
     if (any(context.selection_config.get(key, value) != value for key, value in markers.items())
             or context.file_digests.get(REFERENCE_KEY, digest) != digest):
-        fail('模拟交通距离登记与实际文件不一致。')
+        fail('Simulated transport distance registration does not match the actual file.')
     return context.model_copy(update={'selection_config': {**context.selection_config, **markers},
         'file_digests': {**context.file_digests, REFERENCE_KEY: digest}}, deep=True)
 
@@ -79,7 +79,7 @@ def bind_reference(dataset, context):
             or context.selection_config.get('b_transport_reference_sha256') != digest
             or context.selection_config.get('b_transport_origin') != reference.origin_id
             or {row.campsite_id for row in reference.routes} != {camp.campsite_id for camp in dataset.campsites}):
-        fail('实际消费的模拟交通距离不属于本次运行快照。')
+        fail('Consumed simulated distances do not belong to this run snapshot.')
     dataset.transport_reference = reference
 
 
