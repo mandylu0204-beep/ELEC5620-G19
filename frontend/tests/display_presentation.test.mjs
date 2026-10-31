@@ -945,7 +945,8 @@ test('formal cooking gaps stay visible while complete records leave no empty pan
   const blocked=structuredClone(value);
   blocked.assessments[0].result.gear_checklist.push({item_key:'fuel_canister',required_quantity:'4',available_quantity:'2',missing_quantity:'2',unit:'item',capacity_requirement:null,arrangement_status:'UNCONFIRMED',essential:true});
   const html=renderPlan(blocked);
-  assert.match(html,/The saved check still has cooking tasks/i);assert.doesNotMatch(html,/class="cooking-registration"/i);
+  assert.doesNotMatch(html,/The saved check still has cooking tasks|class="cooking-registration"/i);
+  assert.match(html,/Fuel canister<\/td><td>4<\/td><td>2<\/td><td>2<\/td>/i);
   assert.equal(blocked.assessments[0].result.gear_checklist.at(-1).missing_quantity,'2');
 });
 
