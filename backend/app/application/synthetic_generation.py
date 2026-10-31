@@ -25,9 +25,13 @@ def timestamp(day):
     return datetime.combine(day,time(0),ZONE).isoformat()
 
 
-def build(original, periods, *, rolling_day=None):
+def build(original, periods, *, rolling_day=None, weather_events=None):
     dataset = SyntheticDatasetV2Adapter(original).load()
     sydney = dataset.context.dataset_version == SYDNEY_VERSION
+    if weather_events is not None and (not sydney or rolling_day is None
+            or not {e.campsite_id for e in weather_events.document.events}.issubset({c.campsite_id for c in dataset.campsites})):
+        from .weather_events import fail
+        fail('Forecast events require a rolling Sydney snapshot and known campsites.')
     output_version = SYDNEY_VERSION if sydney else '2.1.0'
     old_rows = json.loads(data_file_path(original,'runtime_safety_evidence.json').read_bytes())
     events = []
@@ -76,6 +80,13 @@ def build(original, periods, *, rolling_day=None):
                     elif code==1:
                         row['weather']['summary']='Cold synthetic conditions.'
                         row['evidence_facts'].update(temperature_min_c=3,temperature_max_c=12)
+                if weather_events is not None:
+                    event = next((e for e in weather_events.document.events
+                        if e.campsite_id == camp.campsite_id and e.snapshot_date == rolling_day), None)
+                    if event is not None:
+                        row['weather']['summary'] = event.summary
+                        row['evidence_facts'] = event.facts.model_dump(mode='json')
+                        row['origin_case_ids'] = [event.event_id]
         rows.append(row)
     for camp in sorted(dataset.campsites,key=lambda value:value.campsite_id):
         for first,last in periods:
@@ -111,6 +122,9 @@ def build(original, periods, *, rolling_day=None):
         content['data/'+name]=data_file_path(original,name).read_bytes()
     if sydney:
         content['data/' + CATALOGUE_FILE] = data_file_path(original, CATALOGUE_FILE).read_bytes()
+    if weather_events is not None:
+        from .weather_events import SNAPSHOT_FILE
+        content[SNAPSHOT_FILE] = weather_events.payload
     index=encode(sorted(rows,key=lambda row:row['safety_case_id']))
     content['data/runtime_safety_evidence.json']=index
     content['data/synthetic_safety_scenarios.json']=index
@@ -155,6 +169,9 @@ Read-only validation from the repository root:
         content.pop('tests/fixtures/legacy_runtime_safety_evidence.json',None)
         content['README.md']=b'Generated synthetic simulation only. Never use for real travel.\n'
         manifest['files_sha256']={name:hashlib.sha256(data).hexdigest() for name,data in sorted(content.items())}
+        if weather_events is not None:
+            manifest.update(weather_events_policy=weather_events.document.version,
+                            weather_events_sha256=weather_events.sha256)
     if sydney:
         # A new catalogue must not be silently relabelled as the sealed 2.1
         # snapshot. Keep field citations and assumptions in every daily input.

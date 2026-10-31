@@ -49,7 +49,6 @@ export function CookingPreparationPanel({value,preview=null,stale=false,unsaved=
         {onFocus&&<button type="button" className="text-button" onClick={()=>onFocus(item.item_key)}>Enter{equipmentLabel(item.item_key)}Profile ↓</button>}</li>)}</ul>
       {stale&&<p role="status">Profile changed. Update the preparation details.</p>}
       {unsaved&&!stale&&<p role="status">Changes on this page are unsaved. Review the stove and fuel and save your profile. Formal results have not been updated.</p>}
-      {attention&&<p role="status">The saved check still has cooking tasks. Address each issue. Entering quantities does not automatically clear formal gaps.</p>}
       {!stale&&preview?.required_fuel_quantity!=null&&<p>Estimated fuel canisters needed {preview.required_fuel_quantity} items{preview.fuel_gap!=null?`, Still missing ${preview.fuel_gap} items`:', Available quantity to confirm'}.</p>}
       {!stale&&preview?.calculation_status==='WAITING_FOR_STOVE'&&<p>Enter the available stove quantity before confirming fuel requirements.</p>}
       {!stale&&preview?.calculation_status==='UNAVAILABLE'&&<p>Fuel usage cannot yet be estimated. View the equipment list after generating a plan.</p>}

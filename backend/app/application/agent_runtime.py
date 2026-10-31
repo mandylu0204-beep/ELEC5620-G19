@@ -21,6 +21,7 @@ from ..agents.rules.transport import POLICY_KEY, POLICY_VERSION, MINIMAL_POLICY_
 from ..adapters.planning_reference import (POLICY_KEY as PLANNING_KEY, POLICY_VERSION as PLANNING_VERSION, checked_policy as checked_planning)
 from ..llm.safety_feedback import (POLICY_KEY as FEEDBACK_KEY, POLICY_VERSION as FEEDBACK_VERSION,
     checked_policy as checked_feedback)
+from .weather_events import POLICY_VERSION as WEATHER_VERSION, POLICY_KEY as WEATHER_KEY, validate_saved as validate_weather
 
 
 @dataclass(frozen=True)
@@ -241,13 +242,14 @@ class AgentRuntime:
                 self.error = exc.error
 
     def resolve(self, *, feedback=None, snapshot_day=None, safety_protocol=None, transport_policy=POLICY_VERSION,
-                safety_feedback_policy=FEEDBACK_VERSION, planning_policy=PLANNING_VERSION):
+                safety_feedback_policy=FEEDBACK_VERSION, planning_policy=PLANNING_VERSION, weather_policy=WEATHER_VERSION):
         # HTTP reads run in worker threads while the supervisor runs on asyncio.
         # Keep the managed Agent marker and state.agent replacement consistent.
         with self._lock:
             with self._parsed_snapshots.transaction():
                 return self._resolve(feedback=feedback, snapshot_day=snapshot_day, safety_protocol=safety_protocol,
-                    transport_policy=transport_policy, safety_feedback_policy=safety_feedback_policy, planning_policy=planning_policy)
+                    transport_policy=transport_policy, safety_feedback_policy=safety_feedback_policy, planning_policy=planning_policy,
+                    weather_policy=weather_policy)
 
     def for_scope(self, scope):
         choices=scope.dataset_context.selection_config
@@ -257,6 +259,7 @@ class AgentRuntime:
         register_reference(scope.dataset_context)
         from ..adapters.planning_reference import register_reference as register_planning
         register_planning(scope.dataset_context)
+        validate_weather(scope.dataset_context)
         # Recovery consumes its registered date/snapshot even after midnight.
         # Eligibility/finalisation uses validate_scope's CURRENT resolution.
         pinned=scope.demo_context.demo_today if choices.get('a_daily_snapshot')=='synthetic-daily-v1' else None
@@ -276,9 +279,11 @@ class AgentRuntime:
                 # flags, client configuration, bytes and scope checks still run.
                 return self.resolve(feedback=choices.get('a_revision_feedback') or None,
                     snapshot_day=pinned, safety_protocol=protocol, transport_policy=choices.get(POLICY_KEY),
-                    safety_feedback_policy=choices.get(FEEDBACK_KEY), planning_policy=choices.get(PLANNING_KEY))
+                    safety_feedback_policy=choices.get(FEEDBACK_KEY), planning_policy=choices.get(PLANNING_KEY),
+                    weather_policy=choices.get(WEATHER_KEY))
         return self.resolve(feedback=choices.get('a_revision_feedback') or None, snapshot_day=pinned,
-            transport_policy=choices.get(POLICY_KEY), safety_feedback_policy=choices.get(FEEDBACK_KEY), planning_policy=choices.get(PLANNING_KEY))
+            transport_policy=choices.get(POLICY_KEY), safety_feedback_policy=choices.get(FEEDBACK_KEY), planning_policy=choices.get(PLANNING_KEY),
+            weather_policy=choices.get(WEATHER_KEY))
 
     def validate_scope(self, scope):
         # Internal legacy fixtures predate runtime bindings. All HTTP-created
@@ -292,7 +297,7 @@ class AgentRuntime:
         return snapshot
 
     def _resolve(self, *, feedback=None, snapshot_day=None, safety_protocol=None, transport_policy=POLICY_VERSION,
-                 safety_feedback_policy=FEEDBACK_VERSION, planning_policy=PLANNING_VERSION):
+                 safety_feedback_policy=FEEDBACK_VERSION, planning_policy=PLANNING_VERSION, weather_policy=WEATHER_VERSION):
         checked_policy(transport_policy)
         checked_feedback(safety_feedback_policy)
         checked_planning(planning_policy)
@@ -306,7 +311,7 @@ class AgentRuntime:
             today=snapshot_day
         from .daily_snapshot import effective_settings
         descriptor=inspect_dataset(settings)
-        effective=effective_settings(settings,today,base=descriptor)
+        effective=effective_settings(settings,today,base=descriptor,weather_policy=weather_policy)
         if effective is not settings:
             descriptor=inspect_dataset(effective)
         settings=effective

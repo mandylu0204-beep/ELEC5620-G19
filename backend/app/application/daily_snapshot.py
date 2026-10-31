@@ -17,6 +17,9 @@ from ..dataset_paths import data_file_path, manifest_file_path
 from .datasets import inspect_dataset
 from .synthetic_generation import build
 from ..adapters.catalogue_identity import TRIP_DATASET_VERSIONS
+from ..adapters.catalogue_identity import SYDNEY_VERSION
+from .weather_events import (POLICY_VERSION as WEATHER_POLICY, POLICY_KEY as WEATHER_KEY,
+    DIGEST_KEY as WEATHER_DIGEST, checked_policy, read_reference)
 
 POLICY = 'synthetic-daily-v1'
 _lock = RLock()
@@ -27,14 +30,15 @@ def failure(message):
     return ContractFailure(ContractError(code=ErrorCode.ADAPTER_FAILURE, message=message))
 
 
-def effective_settings(settings, today, *, base=None):
+def effective_settings(settings, today, *, base=None, weather_policy=WEATHER_POLICY):
     try:
-        return _effective_settings(settings,today,base=base)
+        return _effective_settings(settings,today,base=base,weather_policy=weather_policy)
     except (OSError,OverflowError) as exc:
         raise failure('Daily simulated information could not be read or generated. Original data and plans are retained.') from exc
 
 
-def _effective_settings(settings, today, *, base=None):
+def _effective_settings(settings, today, *, base=None, weather_policy=WEATHER_POLICY):
+    checked_policy(weather_policy)
     base = base or inspect_dataset(settings)
     rolling = settings.synthetic_evidence_mode == 'rolling' or (
         settings.synthetic_evidence_mode == 'auto' and settings.clock_mode == 'current'
@@ -44,9 +48,15 @@ def _effective_settings(settings, today, *, base=None):
     if (base.context.dataset_version not in TRIP_DATASET_VERSIONS or settings.dataset_scenario_files
             or settings.workflow_safety_case_ids or settings.dataset_selection):
         raise failure('Daily information requires a supported itinerary dataset and automatic source selection. For fixed scenarios, use  sealed mode.')
-    identity = hashlib.sha256(json.dumps({
+    reference = read_reference(weather_policy) if base.context.dataset_version == SYDNEY_VERSION else None
+    weather = reference if reference is not None and any(
+        event.snapshot_date == today for event in reference.document.events) else None
+    identity_values = {
         'base':base.context.model_dump(mode='json'), 'date':today.isoformat(), 'policy':POLICY,
-    },sort_keys=True).encode()).hexdigest()
+    }
+    if weather is not None:
+        identity_values['weather_events'] = {'policy':weather.document.version, 'sha256':weather.sha256}
+    identity = hashlib.sha256(json.dumps(identity_values,sort_keys=True).encode()).hexdigest()
     raw_cache=settings.snapshot_cache_path
     for path in (raw_cache,*raw_cache.parents):
         if path.is_symlink() or (hasattr(path,'is_junction') and path.is_junction()):
@@ -63,7 +73,8 @@ def _effective_settings(settings, today, *, base=None):
     with _lock:
         key=(str(source),identity)
         if key not in _expected:
-            content=build(source,[(today.isoformat(),(today+timedelta(days=30)).isoformat())],rolling_day=today)
+            content=build(source,[(today.isoformat(),(today+timedelta(days=30)).isoformat())],
+                rolling_day=today,weather_events=weather)
             if inspect_dataset(settings) != base:
                 raise failure('Base data changed during generation. Please retry.')
             _expected[key]=content
@@ -101,5 +112,7 @@ def _effective_settings(settings, today, *, base=None):
     return settings.model_copy(update={
         'dataset_path':target,
         'dataset_selection':{'a_daily_snapshot':POLICY,'a_snapshot_date':today.isoformat(),
-                             'a_snapshot_base':identity,'a_clock_mode':settings.clock_mode},
+                             'a_snapshot_base':identity,'a_clock_mode':settings.clock_mode,
+                             **({WEATHER_KEY:weather.document.version, WEATHER_DIGEST:weather.sha256}
+                                if weather is not None else {})},
     })

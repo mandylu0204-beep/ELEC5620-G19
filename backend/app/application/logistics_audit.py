@@ -11,7 +11,7 @@ from ..contracts.base import ContractModel, MoneyCents, Quantity
 from ..contracts.dto import ConfirmedContext, LogisticsInput, LogisticsResult, StoredAssessment, VersionContext
 from ..contracts.enums import ErrorCode
 from ..contracts.errors import ContractError, ContractFailure
-from ..llm.logistics_agent import LOGISTICS_AGENT_VERSION
+from ..llm.logistics_agent import LOGISTICS_AGENT_VERSION, LEGACY_LOGISTICS_AGENT_VERSION, trace_model
 from ..llm.logistics_schema import LOGISTICS_VALIDATION_VERSION, LogisticsProposal
 from ..llm.logistics_tools import LOGISTICS_TOOL_VERSION, BudgetAllocation, LogisticsToolset, SupplyPlan, ValidatedLogisticsPlan
 from ..agents.rules.common import SUPPORTED_RULES_VERSIONS
@@ -110,6 +110,10 @@ class AuditTrace(ContractModel):
         return value
 
 
+class AuditTraceV2(AuditTrace):
+    format_correction_turns: list[Annotated[StrictInt, Field(ge=2, le=4)]] = Field(max_length=1)
+
+
 class ModelLogisticsPersistencePort(Protocol):
     async def save_model_logistics_assessment(self, context: VersionContext, result: LogisticsResult,
         plan: Mapping[str, object], trace: Mapping[str, object], write_key: str) -> StoredAssessment: ...
@@ -136,7 +140,7 @@ def registered_seed(scope):
                             'dataset_rules_version','prompt_sha256','model_client'}):
         raise ValueError('Unregistered logistics identity')
     # Versioned verifier: v1 remains available when future roles are introduced.
-    if (seed['agent_version'] != LOGISTICS_AGENT_VERSION or seed['tool_version'] != LOGISTICS_TOOL_VERSION
+    if (seed['agent_version'] not in {LEGACY_LOGISTICS_AGENT_VERSION, LOGISTICS_AGENT_VERSION} or seed['tool_version'] != LOGISTICS_TOOL_VERSION
             or seed['validation_version'] != LOGISTICS_VALIDATION_VERSION
             or seed['kernel_version'] not in SUPPORTED_RULES_VERSIONS):
         raise ValueError('Unsupported historical logistics verifier')
@@ -145,8 +149,10 @@ def registered_seed(scope):
 
 def validate(scope, input, baseline, result, raw_plan, raw_trace):
     plan = AuditPlan.model_validate(raw_plan)
-    trace = AuditTrace.model_validate(raw_trace)
     seed = registered_seed(scope)
+    trace = (AuditTrace if seed['agent_version'] == LEGACY_LOGISTICS_AGENT_VERSION else AuditTraceV2).model_validate(raw_trace)
+    # The version selects an exact trace shape. v1 never accepts v2 corrections.
+    trace_model(seed['agent_version']).model_validate(raw_trace)
     public = seed['model_client']
     expected = digest(canonical({**seed, 'workflow_context':scope.dataset_context.model_dump(mode='json')}))
     if (trace.requested_model != public['model'] or trace.configuration_fingerprint != expected
@@ -154,7 +160,8 @@ def validate(scope, input, baseline, result, raw_plan, raw_trace):
             or trace.input_sha256 != digest(input.model_dump_json())
             or trace.rule_facts_sha256 != digest(baseline.model_dump_json())
             or trace.turns > public['max_turns'] or not trace.turns <= trace.http_attempts <= trace.turns * public['max_attempts']
-            or len(trace.response_sha256) != trace.turns or len(trace.tool_calls) != trace.turns - 1
+            or len(trace.response_sha256) != trace.turns
+            or len(trace.tool_calls) != trace.turns - 1 - len(getattr(trace, 'format_correction_turns', ()))
             or trace.tool_calls[0] != 'read_logistics_facts' or 'evaluate_logistics_plan' not in trace.tool_calls
             or len(trace.served_models) > trace.turns or len(trace.served_models) != len(set(trace.served_models))):
         raise ValueError('Trace differs from registered facts or identity')

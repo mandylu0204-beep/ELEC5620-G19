@@ -1,11 +1,11 @@
-"""Pure v1 payload verifier. No model, persistence, files or mutable trace cache."""
+"""Versioned pure verifier. No model, persistence, files or mutable trace cache."""
 from pydantic import ValidationError
 
 from ..contracts.dto import LogisticsResult
 from ..contracts.enums import ErrorCode
 from .client import model_failure
 from .coordinator import canonical, digest
-from .logistics_agent import LogisticsTrace
+from .logistics_agent import trace_model
 from .logistics_schema import LogisticsProposal
 from .logistics_tools import LogisticsToolset, ValidatedLogisticsPlan
 
@@ -22,7 +22,7 @@ def validate_logistics_payload(input, baseline, result, raw_plan, raw_trace, *, 
             if value is not None and not isinstance(value, str):
                 raise ValueError('JSON quantities require decimal strings')
         plan = ValidatedLogisticsPlan.model_validate(raw_plan)
-        trace = LogisticsTrace.model_validate(raw_trace)
+        trace = trace_model(identity['agent_version']).model_validate(raw_trace)
         result = LogisticsResult.model_validate(result)
         if (canonical(raw_plan) != canonical(plan.model_dump(mode='json'))
                 or canonical(raw_trace) != canonical(trace.model_dump(mode='json'))):

@@ -1,0 +1,27 @@
+{
+  "version": "sydney-weather-events-1",
+  "created_on": "2026-10-31",
+  "scope": "Synthetic forecast events for application demonstrations; not observed weather.",
+  "provenance": {
+    "source_type": "SYNTHETIC",
+    "source_name": "CampMate Synthetic Demo Dataset v2",
+    "source_date": "2026-10-07",
+    "demo_only": true
+  },
+  "events": [
+    {
+      "event_id": "bonnie-vale-rain-2026-11-04",
+      "campsite_id": "bonnie-vale",
+      "snapshot_date": "2026-11-04",
+      "valid_from": "2026-11-04",
+      "valid_to": "2026-11-10",
+      "summary": "Heavy rain in synthetic forecast.",
+      "facts": {
+        "temperature_min_c": 12,
+        "temperature_max_c": 22,
+        "forecast_rain_mm": 60,
+        "wind_kph": 35
+      }
+    }
+  ]
+}

@@ -133,7 +133,8 @@ def test_evaluation_feedback_keeps_computed_values_and_exact_proposal_without_re
     # still available to the model; the persisted plan remains the full object.
     facts = json.loads(messages[3]['content'][12:])
     tools = LogisticsToolset(input, baseline(dataset, input, config))
-    assert facts == tools.read_logistics_facts()
+    from app.llm.logistics_format import EVALUATE_ENVELOPE
+    assert facts == tools.read_logistics_facts() | {'next_action': EVALUATE_ENVELOPE}
 
 
 def test_prompt_changes_alter_registered_identity_without_changing_persistence_validation(monkeypatch):
