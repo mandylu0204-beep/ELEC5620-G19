@@ -1,3 +1,8 @@
+export function preparationOrigin(label:string):string{
+ if(/^\u6089\u5c3c\u5e02\u533a\s*[\uff08(]\u56fa\u5b9a\u6a21\u62df\u51fa\u53d1\u5730[\uff09)]$/.test(label))return 'Sydney CBD';
+ return label.replace(/\s*\((?:fixed simulated origin|fixed demonstration origin)\)/,'').replace('Central Sydney','Sydney CBD').trim();
+}
+
 const aud=(cents:number)=>new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',currencyDisplay:'code'}).format(cents/100);
 
 export type PreparationSummary={system_preparation:true;transport_type:string|null;origin_label:string;
@@ -10,7 +15,7 @@ export function TripPreparation({value}:{value:PreparationSummary|null|undefined
   const car=value.transport_type==='CAR';
   return <section className="panel" aria-label="Transport and meals for this trip">
     <h2>Transport and meals for this trip</h2>
-    <p>Departure point: {value.origin_label.replace(/\s*\((?:fixed simulated origin|fixed demonstration origin)\)/,'').replace('Central Sydney','Sydney CBD').trim()}. The system filters using registered campsite access information. All costs below are simulated estimates.</p>
+    <p>Departure point: {preparationOrigin(value.origin_label)}. The system filters using registered campsite access information. All costs below are simulated estimates.</p>
     <dl className="summary-list"><div><dt>Transport mode</dt><dd>{car?'Car':value.transport_type==='PUBLIC_TRANSPORT'?'Public transport':'To be confirmed'}</dd></div>
       <div><dt>{car?'Campsite access and vehicle capacity':'Campsite public-transport access information'}</dt><dd>{value.access_and_capacity===true?'Meets this check':value.access_and_capacity===false?'Does not meet this check':'Check incomplete or insufficient information'}</dd></div>
       {car&&<><div><dt>Confirmed vehicles for this trip</dt><dd>{value.vehicle_count??'Unknown'} vehicles</dd></div>

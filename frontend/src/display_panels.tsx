@@ -1,3 +1,4 @@
+import {englishSavedReason} from './legacy_filter_reasons';
 import { useState } from 'react';
 import { displayProse, discardMessage, tentSummary, type TentCapacity } from './display_facts';
 import { ModelTracePanel, type ModelTrace } from './model_trace';
@@ -44,7 +45,7 @@ export function PlanningExplanationPanel({value,currentRunId,siteName,siteId,cat
     <h3>Confirm before departure</h3><ul>{visibleUncertainties.map(text=><li key={text}>{text}</li>)}<li>Campsite booking, actual arrival time, transport and latest restrictions still need confirmation.</li></ul>
     {(value||reasons.length>0||uncertainties.length>0)&&<details className="source-details"><summary>Saved selection records and model comments</summary>
       {value&&<><h3>Model selection suggestions (not manually verified)</h3><p className="muted">{value.source_run_id!==currentRunId?'These model suggestions were generated for the original version. This reassessment reuses the original itinerary.':'Saved model selection suggestions; not manually verified.'}</p><p>{value.decision_summary_unverified}</p></>}
-      <h3>Original suitability reasons</h3><ul>{reasons.map((text,index)=><li key={index}>{text}</li>)}</ul><h3>Original pending confirmations</h3><ul>{uncertainties.map((text,index)=><li key={index}>{text}</li>)}</ul>
+      <h3>Saved suitability reasons</h3><ul>{reasons.map((text,index)=><li key={index}>{englishSavedReason(text)}</li>)}</ul><h3>Saved pending confirmations</h3><ul>{uncertainties.map((text,index)=><li key={index}>{text}</li>)}</ul>
     </details>}
   </section>;
 }

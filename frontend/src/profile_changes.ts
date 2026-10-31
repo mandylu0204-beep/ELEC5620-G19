@@ -1,4 +1,4 @@
-import { equipmentLabel, type Profile } from './profile';
+import { displayEquipmentName, equipmentLabel, type Profile } from './profile';
 import { termLabel } from './user_terms';
 
 export type ProfileChange={section:string;before:string[];after:string[]};
@@ -17,7 +17,7 @@ function sections(profile:Profile){
     'Children in the group':[profile.has_children===null?'Children in group: unknown':profile.has_children?'Children included':'No children',`Recorded child count: ${known(profile.children_count)}`],
     'Equipment and vehicles':list(profile.equipment.map(item=>{
       const unit=item.item_key==='tent'&&item.unit==='item'?'tents':units[item.unit]??item.unit;
-      return `${item.label}(Category: ${equipmentLabel(item.item_key)}): ${known(item.quantity)} ${unit}; ${item.item_key==='tent'?'capacity per tent':item.item_key==='vehicle'?'Seats per vehicle: ':'People accommodated per item'} ${known(item.capacity_persons)} people; ${item.confirmed?'Ownership verified':'Unverified'}`;
+      return `${displayEquipmentName(item.item_key,item.label)} (Category: ${equipmentLabel(item.item_key)}): ${known(item.quantity)} ${unit}; ${item.item_key==='tent'?'capacity per tent':item.item_key==='vehicle'?'Seats per vehicle: ':'People accommodated per item'} ${known(item.capacity_persons)} people; ${item.confirmed?'Ownership verified':'Unverified'}`;
     })),
     'Transport arrangements':[
       `Transport mode: ${modes[profile.transport.transport_type??'']??known(profile.transport.transport_type)}`,

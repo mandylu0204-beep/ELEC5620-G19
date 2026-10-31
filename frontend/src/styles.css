@@ -173,3 +173,8 @@ select{width:100%;height:41px;border:1px solid #dce1d4;border-radius:5px;color:#
 .equipment-add-bottom span{font-size:28px;font-weight:400;line-height:1}
 .equipment-add-bottom:hover:not(:disabled){background:#edf3e7;border-color:#8da87d}
 .equipment-add-bottom:focus-visible{outline:2px solid #486842;outline-offset:3px}
+
+/* Keep group fields aligned and preserve existing required badge colours. */
+.group-information .form-grid>div>label{min-height:2.8em;display:flex;align-items:center;gap:6px;line-height:1.4}
+.group-information .required-field-label>span:first-child{min-width:0}
+.group-information .required-mark{font-size:10px;padding:1px 4px;margin-left:0;flex:none;line-height:1.25}

@@ -16,7 +16,7 @@ const vocabulary: Record<Kind, Record<string, string[]>> = {
   },
   accessibility: {
     'step-free path':["Step-free path", "\u65e0\u53f0\u9636\u901a\u9053", "\u9700\u8981\u65e0\u53f0\u9636\u901a\u9053", "Need a step-free path"],
-    'wheelchair access':["Wheelchair access", "\u8f6e\u6905\u901a\u884c"], 'wheelchair-accessible toilet':["Accessible toilet", "\u65e0\u969c\u788d\u5395\u6240"],
+    'wheelchair access':["Wheelchair access", "\u8f6e\u6905\u901a\u884c", "\u9700\u8981\u8f6e\u6905\u901a\u884c"], 'wheelchair-accessible toilet':["Accessible toilet", "\u65e0\u969c\u788d\u5395\u6240", "\u9700\u8981\u65e0\u969c\u788d\u5395\u6240"],
   },
 };
 
@@ -28,7 +28,8 @@ export function canonicalTerms(values:string[],kind:Kind):string[] {
 }
 
 export function termLabel(value:string,kind:Kind):string {
-  return Object.hasOwn(vocabulary[kind],value)?vocabulary[kind][value][0]:value;
+  const key=canonicalTerms([value],kind)[0];
+  return Object.hasOwn(vocabulary[kind],key)?vocabulary[kind][key][0]:value;
 }
 
 export function itineraryText(description:string):string {

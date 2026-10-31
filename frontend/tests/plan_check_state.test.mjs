@@ -1,3 +1,4 @@
+import {readFileSync} from 'node:fs';
 import test,{after} from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'vite';
@@ -113,4 +114,41 @@ test('eligible plans do not display an empty warning block or the removed three-
  assert.match(html,/To be confirmed/i);assert.doesNotMatch(html,/Resolve before confirming this plan|check-step-list|Itinerary Agent|Costs and equipment Agent|Safety Agent/i);
  assert.match(html,/Save as final plan/i);
  assert.doesNotMatch(html,/plan-state-detail|Current checks passed. Confirm and save, or modify the plan and reassess./i);
+});
+
+test('other recommended campsite reasons use English in user, review and final snapshot pages without changing saved facts',()=>{
+ const data=fixture();data.recommendations.result.candidates=[{campsite_id:'little-beach',rank:1,reasons:[
+ '\u76ee\u7684\u5730\u533a\u57df\uff1aSydney & Surrounds\uff0c\u4e0e\u672c\u6b21\u9009\u62e9\u4e00\u81f4\u3002',
+ '\u540c\u884c\u4eba\u6570\uff1a\u672c\u6b21 2 \u4eba\uff0c\u767b\u8bb0\u4eba\u6570\u4e0a\u9650 6 \u4eba\u3002',
+ '\u4ea4\u901a\uff1a\u53ef\u9a7e\u8f66\u62b5\u8fbe\u505c\u8f66\u5904\uff0c\u4e4b\u540e\u9700\u642c\u8fd0\u88c5\u5907\u6b65\u884c\u8fdb\u5165\u8425\u4f4d\uff1b\u8f66\u8f86\u4e0d\u80fd\u76f4\u63a5\u8fdb\u5165\u8425\u4f4d\u3002',
+ '\u5fc5\u987b\u6761\u4ef6\uff1a\u5395\u6240\uff0c\u767b\u8bb0\u4fe1\u606f\u4e3a\u652f\u6301\u3002',
+ '\u8425\u5730\u914d\u5957\uff1a\u5395\u6240\u5df2\u767b\u8bb0\u63d0\u4f9b\u3002',
+ '\u8425\u5730\u914d\u5957\uff1a\u6dcb\u6d74\u672a\u63d0\u4f9b\uff0c\u9700\u53e6\u4f5c\u5b89\u6392\u3002',
+ '\u8425\u5730\u914d\u5957\uff1a\u996e\u7528\u6c34\u672a\u63d0\u4f9b\uff0c\u9700\u53e6\u4f5c\u5b89\u6392\u3002',
+ '\u4f4f\u5bbf\u8d39\u7528\uff1a\u6bcf\u665a AUD 35.00\uff0c2 \u665a\u5408\u8ba1 AUD 70.00\uff1b\u4ec5\u4e3a\u8425\u5730\u8d39\uff0c\u5b8c\u6574\u8d39\u7528\u4ecd\u9700\u68c0\u67e5\u3002',
+ ],material_uncertainties:['A recommendation does not confirm availability. Verify safety information before departure.']}];
+ const before=structuredClone(data);
+ for(const mode of [{},{review:true},{snapshot:true}]){
+  const html=render(PlanView,{data,error:'',refresh(){},...mode});
+  const comparison=html.match(/<ol class="candidate-list">([\s\S]*?)<\/ol>/)?.[1];assert.ok(comparison);
+  for(const text of ['Destination region: Sydney &amp; Surrounds','this trip has 2 people; recorded capacity is 6 people','drive to the parking area','Vehicles cannot enter the campsite directly','Required condition: Toilets; registered information: supported','Campsite facilities: Toilets; Listed as provided.','Campsite facilities: Showers; Not provided; make alternative arrangements.','Campsite facilities: Drinking water; Not provided; make alternative arrangements.','per night AUD 35.00, 2 nights total AUD 70.00','does not confirm availability'])assert.ok(comparison.includes(text),text);
+  assert.doesNotMatch(comparison,/[\u3400-\u9fff]/u);
+ }
+ assert.deepEqual(data,before);
+});
+
+test('saved selection details, old activities and departure origin stay English across user, review and final views',()=>{
+ const data=fixture(),a=JSON.parse(readFileSync(new URL('../../data/planning/camp_activities_v2.json',import.meta.url),'utf8')).activities.find(item=>item.activity_id==='cattai-travel-stories');
+ const description=a.title+'\uff1a'+a.description+'\uff08\u6a21\u62df\u6d3b\u52a8\u5efa\u8bae\uff1b\u987b\u4ee5\u6b63\u5f0f\u5b89\u5168\u68c0\u67e5\u548c\u73b0\u573a\u6761\u4ef6\u4e3a\u51c6。\uff09';
+ data.version.content.selected_campsite_ids=['cattai'];
+ data.version.content.itinerary_entries=[{entry_kind:'ACTIVITY',campsite_id:'cattai',description,start_at:'2026-11-04T13:00:00+11:00',end_at:'2026-11-04T16:00:00+11:00'}];
+ data.recommendations.result.candidates=[{campsite_id:'cattai',rank:1,reasons:['\u4ea4\u901a\uff1a\u8d44\u6599\u767b\u8bb0\u652f\u6301\u8f66\u8f86\u62b5\u8fbe。','\u8425\u5730\u914d\u5957\uff1a\u996e\u7528\u6c34\u672a\u63d0\u4f9b，\u9700\u53e6\u4f5c\u5b89\u6392。'],material_uncertainties:[]}];
+ data.preparation_summary={system_preparation:true,transport_type:'CAR',origin_label:'\u6089\u5c3c\u5e02\u533a\uff08\u56fa\u5b9a\u6a21\u62df\u51fa\u53d1\u5730\uff09',access_and_capacity:true,estimated_total_vehicle_km:'200',vehicle_count:1,estimated_transport_cents:3800,meal_mode:'READY_TO_EAT',source_refs:[]};
+ const before=structuredClone(data);
+ for(const mode of [{},{review:true},{snapshot:true}]){
+  const html=render(PlanView,{data,error:'',refresh(){},...mode});assert.doesNotMatch(html,/[\u3400-\u9fff]/u);
+  for(const text of ['Saved suitability reasons','Transport: registered information supports vehicle access.','Drinking water; Not provided; make alternative arrangements.','Travel stories and quiet rest','No off-site route is scheduled.','Departure point: Sydney CBD.'])assert.ok(html.includes(text),text);
+  assert.doesNotMatch(html,/Original suitability reasons|View the saved original itinerary description/);
+ }
+ assert.deepEqual(data,before);
 });

@@ -1,3 +1,4 @@
+import {englishSavedReason} from '../src/legacy_filter_reasons.ts';
 import test, {after} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -965,7 +966,7 @@ test('selected campsite merges matching facts, facilities, cost and arrival with
   }
   for(const text of ['Comparison with confirmed requirements','Required for this trip','this trip has 1 people','Campsite fees','AUD 120.00','Campsite fees only','Getting there and important notes','Campsite rules and sources','Official campsite overview','Official access and visitor information','verify actual return services and final connections'])assert.ok(html.includes(text),text);
   assert.doesNotMatch(html,/Campsite and arrival arrangements|Filtering record: suitability reasons|ABOUT THE CAMPGROUND/i);
-  for(const reason of reasons)assert.ok(html.includes(renderToStaticMarkup(h('li',null,reason))),'original record must remain: '+reason);
+  for(const reason of reasons)assert.ok(html.includes(renderToStaticMarkup(h('li',null,englishSavedReason(reason)))),'saved reason display must remain: '+reason);
   assert.deepEqual(reasons,before);
 });
 

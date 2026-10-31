@@ -1,3 +1,5 @@
+import {englishRequestMessage} from './legacy_request_messages';
+import {dateFieldError,endDateMinimum,firstFutureDate} from './calendar_dates';
 import {RequirementChoices,type RequirementCatalogue} from './requirement_choices';
 import {RequirementHelpPanel,type RequirementHelpState} from './requirement_help';
 import { DiscardChanges } from './display_panels';
@@ -26,7 +28,11 @@ export function requestDraftFromRecord(record: Record): Draft {
   return { raw:record.raw_text, destination:value.destination ?? '', start:value.start_date ?? '', nights:String(value.duration_nights ?? ''), days:String(record.explicit_fields.duration_days ?? ''), end:record.explicit_fields.end_date ?? '', budget:value.budget_cents === null || value.budget_cents === undefined ? '' : (value.budget_cents / 100).toFixed(2), preferences:(value.preferences ?? []).join('\n'), constraints:(value.mandatory_constraints ?? []).join('\n') };
 }
 
-export function requestPayload(draft: Draft) {
+export function requestPayload(draft: Draft,minimumStart?:string) {
+  if(minimumStart){
+    const error=dateFieldError(draft.start,minimumStart);if(error)throw new Error(error);
+    const endError=dateFieldError(draft.end,endDateMinimum(draft.start,minimumStart));if(endError)throw new Error(endError);
+  }
   let budget_cents: number | null = null;
   if (draft.budget !== '') {
     if (!/^\d+([.]\d{1,2})?$/.test(draft.budget)) throw new Error('Enter the budget with at most two decimal places in AUD.');
@@ -45,7 +51,7 @@ export function requestMealPreferences(preferences:string,selected:string):strin
   return [...remaining,...(selected?[termLabel(selected,'preference')]:[])].join('\n');
 }
 
-export function RequestFields({draft,set,regions,disabled,catalogue}:{catalogue?:RequirementCatalogue;draft:Draft;set:(patch:Partial<Draft>)=>void;regions:string[];disabled:boolean}) {
+export function RequestFields({draft,set,regions,disabled,catalogue,minimumStart=firstFutureDate()}:{minimumStart?:string;catalogue?:RequirementCatalogue;draft:Draft;set:(patch:Partial<Draft>)=>void;regions:string[];disabled:boolean}) {
   const nights=Number(draft.nights);
   const preferences=canonicalTerms(lines(draft.preferences),'preference');
   const ready=preferences.some(value=>['ready-to-eat meals','ready_to_eat'].includes(value));
@@ -58,10 +64,10 @@ export function RequestFields({draft,set,regions,disabled,catalogue}:{catalogue?
     {draft.raw.trim()&&<details className="source-details legacy-request-source"><summary>View legacy request text</summary><p>This legacy request still generates its summary from the original text and form. New requests use structured fields. Updates from existing plans retain confirmed conditions without reintroducing the old original text.</p><blockquote>{draft.raw}</blockquote></details>}
     <section className="request-form-section"><div className="form-section-heading"><span>01</span><h3>Destination and itinerary</h3></div><div className="form-grid">
       <div><label htmlFor="request-destination">Destination</label><input id="request-destination" list="supported-destinations" value={draft.destination} onChange={event=>set({destination:event.target.value})}/><datalist id="supported-destinations">{regions.map(region=><option key={region} value={region}/>)}</datalist></div>
-      <div><label htmlFor="request-start">Start date</label><input id="request-start" type="date" value={draft.start} onChange={event=>set({start:event.target.value})}/></div>
+      <div><label htmlFor="request-start">Start date</label><input id="request-start" type="date" min={minimumStart} value={draft.start} onChange={event=>set({start:event.target.value})}/></div>
       <div><label htmlFor="request-nights">Number of nights</label><input id="request-nights" type="number" min="1" step="1" value={draft.nights} aria-describedby="nights-hint" onChange={event=>set({nights:event.target.value})}/><FieldHint id="nights-hint">{draft.nights&&Number.isSafeInteger(nights)&&nights>0&&nights<Number.MAX_SAFE_INTEGER?`${nights} nights correspond to ${nights+1} days.`:'For example, two nights span three days.'}</FieldHint></div>
       <div><label htmlFor="request-budget">Budget for the whole group AUD</label><input id="request-budget" inputMode="decimal" pattern="[0-9]+([.][0-9]{1,2})?" placeholder="For example 320.00" value={draft.budget} aria-describedby="budget-hint" onChange={event=>set({budget:event.target.value})}/><FieldHint id="budget-hint">Enter the total budget for the entire trip.</FieldHint></div>
-    </div><details className="optional-fields"><summary>Already know the duration or end date? Add it here</summary><div className="form-grid"><div><label htmlFor="request-days">Explicit number of days</label><input id="request-days" type="number" min="1" step="1" value={draft.days} onChange={event=>set({days:event.target.value})}/></div><div><label htmlFor="request-end">Explicit end date</label><input id="request-end" type="date" value={draft.end} onChange={event=>set({end:event.target.value})}/></div></div><p className="field-hint">If this conflicts with the number of nights, review the summary guidance.</p></details></section>
+    </div><details className="optional-fields"><summary>Already know the duration or end date? Add it here</summary><div className="form-grid"><div><label htmlFor="request-days">Explicit number of days</label><input id="request-days" type="number" min="1" step="1" value={draft.days} onChange={event=>set({days:event.target.value})}/></div><div><label htmlFor="request-end">Explicit end date</label><input id="request-end" type="date" min={endDateMinimum(draft.start,minimumStart)} value={draft.end} onChange={event=>set({end:event.target.value})}/></div></div><p className="field-hint">If this conflicts with the number of nights, review the summary guidance.</p></details></section>
     <section className="request-form-section"><div className="form-section-heading"><span>02</span><h3>Preferences and required conditions</h3></div><label htmlFor="request-meal">Meal arrangement</label><select id="request-meal" value={meal} onChange={event=>selectMeal(event.target.value)} aria-describedby="meal-hint"><option value="">Select meal arrangement</option><option value="ready-to-eat meals">Ready-to-eat meals (no cooking)</option><option value="self-catered meals">Self-catering (verify stove and fuel)</option></select><FieldHint id="meal-hint">Used to calculate food costs and cooking equipment. Select before confirming the request.</FieldHint><div className="requirements-sections"><RequirementChoices id="request-preferences" title="Camping preferences" value={draft.preferences} choices={catalogue?.fields.preferences??null} preserved={['ready-to-eat meals','self-catered meals','ready_to_eat','self_catered','Ready-to-eat meals','Self-catered meals','Ready-to-eat food','Meals requiring no cooking','Cook own meals']} onChange={value=>set({preferences:value})} hint="Select any that apply. Preferences help compare suitability. Missing information will be identified; not all preferences are guaranteed."/><RequirementChoices id="request-constraints" title="Required conditions" value={draft.constraints} choices={catalogue?.fields.mandatory_constraints??null} onChange={value=>set({constraints:value})} hint="Select any that apply. Required conditions are strict filters. If no campsite matches, you decide whether to adjust them."/></div></section>
   </fieldset>;
 }
@@ -79,7 +85,7 @@ export function requestClarificationField(field:string,message:string):string {
     'Choose a meal arrangement: ready-to-eat or self-catered meals.',
     'Both ready-to-eat and self-catered meals were selected. Choose one arrangement for this trip.',
   ];
-  return base==='preferences'&&mealQuestions.includes(message)?'meal_mode':base;
+  return base==='preferences'&&mealQuestions.includes(englishRequestMessage(message))?'meal_mode':base;
 }
 
 export function RequestMeaningSummary({requirements,pendingConstraints=false}:{requirements:Requirements;pendingConstraints?:boolean}) {
@@ -96,11 +102,12 @@ export function RequirementsChangePreview({before,after}:{before:Requirements;af
   return <section aria-label="Requirement changes"><h3>Requirement changes</h3>{changed.length?<ul>{changed.map(key=><li key={key}>{FIELD_TITLES[key]}: {text(key,before[key])} → {text(key,after[key])}</li>)}</ul>:<p>Destination, dates, budget and preferences match the original plan.</p>}<p>These are the proposed requirements, not a formal check result.</p></section>;
 }
 export function clarificationText(field:string,message:string,requirements:Requirements|undefined) {
+  message=englishRequestMessage(message);
   const pastDate=message.match(/^Start date must be on or after the checking date \((\d{4}-\d{2}-\d{2}), Australia\/Sydney\)\.$/);
   if(pastDate)return `The start date cannot be earlier than this check date (${pastDate[1]}, Sydney time). Adjust it and regenerate the summary.`;
   if(message==='Start date precedes the fixed demonstration date.')return 'The start date is earlier than the date used for the previous check. Regenerate the summary to verify the current date.';
   if(['What start date?','Which synthetic region?','How many nights?','What total AUD group budget?','Required request information is missing.'].includes(message))
-    return `Please provide${FIELD_TITLES[field]??'this information'}.`;
+    return `Please provide ${FIELD_TITLES[field]??'this information'}.`;
   if(message==='Choose ready-to-eat meals or self-catered meals before confirming the request.'||message==='Choose one confirmed meal mode.')return 'Select ready-to-eat meals or self-catering, then regenerate the summary.';
   if(message==='Only registered synthetic regions are supported.')return 'Current data does not cover this region. Check the destination.';
   const unsupported=message.match(/^Unsupported hard constraint:\s*(.*?)\.?$/);
@@ -177,13 +184,13 @@ export function RequestsPage() {
   },[copyLoading,copyFailed,search]);
   async function create(event:FormEvent) {
     event.preventDefault(); if(!session||busy||copyLoading||copyFailed)return; setBusy(true);setError('');
-    try {const record=await privateApi<Record>('/requests',{method:'POST',headers:{'Content-Type':'application/json','X-CampMate-Client':'1','X-CSRF-Token':session.csrf_token},body:JSON.stringify(requestPayload(draft))});navigate('/request/'+record.request_id);}
+    try {const record=await privateApi<Record>('/requests',{method:'POST',headers:{'Content-Type':'application/json','X-CampMate-Client':'1','X-CSRF-Token':session.csrf_token},body:JSON.stringify(requestPayload(draft,firstFutureDate(context?.demo_today)))});navigate('/request/'+record.request_id);}
     catch(reason){setError(requestFailure(reason,'Save failed.'));if(reason instanceof ApiFailure&&reason.envelope.error.code==='UNAUTHENTICATED')reload();}finally{setBusy(false);}
   }
   const createHint=copyLoading?'Loading original requirements…':copyFailed?'The original request could not be loaded. Start a blank request or reopen the original record.':busy?'Saving draft…':'Save the draft first, then generate a summary and review the requirements.';
   return <div className="onboarding-page"><TripFlow step={2}/><div className="onboarding-heading"><div><span className="eyebrow">Camping requirements</span><h1>Tell us about your ideal camping trip.</h1><p>Review your arrangements, then start planning.</p></div><Link className="text-link" to="/profile">View camping profile ↗</Link></div>
     {(error||contextError)&&<p className="error-box" role="alert">{error||contextError}</p>}{copyNotice&&<p className="success-box" role="status">{copyNotice}</p>}{copyLoading&&<p role="status">Loading original requirements…</p>}{copyFrom&&<button className="secondary-button" disabled={busy} onClick={()=>setSearch({})}>Start blank request</button>}
-    <div className="request-layout"><section className="panel request-editor"><div className="section-title"><span className="eyebrow">Plan your next trip</span><h2>New camping request</h2></div><form onSubmit={create}><RequestFields draft={draft} set={patch=>setDraft(value=>({...value,...patch}))} regions={context?.supported_destinations??[]} catalogue={context?.requirement_choices} disabled={busy||copyLoading||copyFailed}/><div className="request-action"><p id="create-hint" className="action-hint" role="status">{createHint}</p><button className="primary-button" disabled={busy||copyLoading||copyFailed} aria-describedby="create-hint">{busy?'Saving…':'Save draft and continue'} <span>↗</span></button></div></form></section>
+    <div className="request-layout"><section className="panel request-editor"><div className="section-title"><span className="eyebrow">Plan your next trip</span><h2>New camping request</h2></div><form onSubmit={create}><RequestFields minimumStart={firstFutureDate(context?.demo_today)} draft={draft} set={patch=>setDraft(value=>({...value,...patch}))} regions={context?.supported_destinations??[]} catalogue={context?.requirement_choices} disabled={busy||copyLoading||copyFailed}/><div className="request-action"><p id="create-hint" className="action-hint" role="status">{createHint}</p><button className="primary-button" disabled={busy||copyLoading||copyFailed} aria-describedby="create-hint">{busy?'Saving…':'Save draft and continue'} <span>↗</span></button></div></form></section>
     <aside className="request-sidebar"><section className="panel request-guide"><span className="eyebrow">Before you begin</span><h2>A clear plan</h2><ul><li>Group size and equipment come from your saved camping profile.</li><li>Leave uncertain information blank. The summary will identify missing details.</li><li>Confirm the summary before generating an itinerary and assessments.</li></ul><Link className="text-link" to="/profile">Complete your camping profile ↗</Link></section>{deleteError&&<p className="error-box" role="alert">{deleteError}</p>}<RequestHistory rows={rows} deleting={deleting} selected={confirmDelete} onSelect={id=>{setConfirmDelete(id);setDeleteError('');}} onDelete={id=>void deleteRequest(id)} onCancel={()=>setConfirmDelete(null)}/></aside></div>
   </div>;
 }
@@ -205,7 +212,7 @@ export function RequestDetail() {
     event.preventDefault();if(!record||busy)return;setBusy(true);setError('');setNotice('');
     try {
       let current=record;
-      if(dirty||current.status==='ANALYSING'){current=await privateApi<Record>('/requests/'+requestId,{method:'PATCH',headers:headers(),body:JSON.stringify({...requestPayload(draft),expected_revision:current.revision})});apply(current);}
+      if(dirty||current.status==='ANALYSING'){current=await privateApi<Record>('/requests/'+requestId,{method:'PATCH',headers:headers(),body:JSON.stringify({...requestPayload(draft,firstFutureDate(context?.demo_today)),expected_revision:current.revision})});apply(current);}
       await privateApi<UpdateRecord>('/requests/'+requestId+'/interpret',{method:'POST',headers:headers(),body:JSON.stringify({expected_revision:current.revision})});
       // Read the role-scoped preparation projection; GET never dispatches a model.
       const updated=await privateApi<UpdateRecord>('/requests/'+requestId);apply(updated);updateFlow.current=null;setUpdateStale(false);
@@ -218,7 +225,7 @@ export function RequestDetail() {
   async function saveOnly(){
     if(!record||busy)return;setBusy(true);setError('');
     try{
-      if(dirty){const saved=await privateApi<UpdateRecord>('/requests/'+requestId,{method:'PATCH',headers:headers(),body:JSON.stringify({...requestPayload(draft),expected_revision:record.revision})});apply(saved);updateFlow.current=null;setUpdateStale(false);}
+      if(dirty){const saved=await privateApi<UpdateRecord>('/requests/'+requestId,{method:'PATCH',headers:headers(),body:JSON.stringify({...requestPayload(draft,firstFutureDate(context?.demo_today)),expected_revision:record.revision})});apply(saved);updateFlow.current=null;setUpdateStale(false);}
       setNotice(record.trip_series_id?'Changes saved. New profile information has not been adopted and formal checks have not been updated. The original plan is unchanged.':'Draft saved. No summary or planning has started.');
     }catch(reason){setError(requestFailure(reason,'Save failed.'));}finally{setBusy(false);}
   }
@@ -280,7 +287,7 @@ export function RequestDetail() {
     {!record?<section className="panel"><p>Loading request…</p><button className="secondary-button" onClick={()=>setRefresh(value=>value+1)}>Reload</button></section>:<div className={'request-layout'+(confirmed?' request-confirmed-layout':'')}>
       {!confirmed&&<section className="panel request-editor">
         <div className="section-title"><span className="eyebrow">Trip details</span><h2>Enter and complete</h2></div>
-        <form onSubmit={saveAndAnalyse}><RequestFields draft={draft} set={change} regions={context?.supported_destinations??[]} catalogue={context?.requirement_choices} disabled={busy}/>
+        <form onSubmit={saveAndAnalyse}><RequestFields minimumStart={firstFutureDate(context?.demo_today)} draft={draft} set={change} regions={context?.supported_destinations??[]} catalogue={context?.requirement_choices} disabled={busy}/>
           <div className="request-action"><p id="analyse-hint" className="action-hint" role="status">{busy?'Generating summary…':!context?contextError?'Could not read supported options. Reopen the page.':'Loading supported options…':!dirty&&record.requirement_help?.needed?'Other requirements need request assistance first, or must be changed to an existing option.':dirty?null:'Generate a summary to review arrangements and missing information.'}</p>
             <div className="request-action-buttons">
               <Link className="secondary-button request-back-button" to={'/profile?request_id='+encodeURIComponent(record.request_id)}><span aria-hidden="true">←</span> Back to previous page</Link>

@@ -1,3 +1,4 @@
+import {englishSavedReason} from './legacy_filter_reasons';
 import {planCheckState,pendingRevision} from './plan_check_state';
 import {ConfirmedRequirementsList} from './confirmed_requirements';
 import {AssistanceNotes,AssistanceNextAction,type AssistanceNote} from './review_assistance';
@@ -325,7 +326,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       </section>}
       {version&&!noMatch&&<TripPreparation value={data.preparation_summary}/>}
       {recommendation&&!noMatch&&<details className="panel recommendation-panel"><summary>Compare other recommended campsites <span>{recommendation.candidates.length} items</span></summary>
-        <ol className="candidate-list">{recommendation.candidates.map(item=><li key={item.campsite_id}><h3>#{item.rank} · {campName(item.campsite_id)}</h3><ul>{item.reasons.map((reason,index)=><li key={index}>{displayProse(reason)??reason}</li>)}</ul>{item.material_uncertainties.map((uncertainty,index)=><p className="muted" key={index}>Uncertain: {displayProse(uncertainty)??uncertainty}</p>)}</li>)}</ol>
+        <ol className="candidate-list">{recommendation.candidates.map(item=><li key={item.campsite_id}><h3>#{item.rank} · {campName(item.campsite_id)}</h3><ul>{item.reasons.map((reason,index)=>{const text=englishSavedReason(reason);return <li key={index}>{displayProse(text)??text}</li>;})}</ul>{item.material_uncertainties.map((uncertainty,index)=><p className="muted" key={index}>Uncertain: {displayProse(uncertainty)??uncertainty}</p>)}</li>)}</ol>
       </details>}
     </div>
     <div {...pane('gear')}><section className="panel"><div className="section-title"><span className="eyebrow">Departure preparation</span><h2>Equipment and logistics</h2></div>

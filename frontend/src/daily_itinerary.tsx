@@ -1,3 +1,4 @@
+import {englishSavedActivity} from './legacy_activity_descriptions';
 import { displayProse } from './display_facts';
 import { campName } from './campsite_names';
 import { itineraryText } from './user_terms';
@@ -12,7 +13,8 @@ export function DailyItinerary({entries,time,label}:{entries:SavedEntry[];time:(
   for(const entry of entries){const day=dayFormat.format(new Date(entry.start_at));days.set(day,[...(days.get(day)??[]),entry]);}
   return <div className="daily-itinerary">{[...days].map(([day,items],index)=><section key={day} aria-label={`Day ${index+1} · ${day}`}>
     <h3>Day {index+1} · {day}</h3>
-    <ol className="plan-timeline">{items.map((entry,i)=>{const text=displayProse(itineraryText(entry.description));
+    <ol className="plan-timeline">{items.map((entry,i)=>{const translated=englishSavedActivity(entry.description,entry.campsite_id,entry.entry_kind);
+      const text=displayProse(translated??itineraryText(entry.description));
       const separator=text?.indexOf(': ')??-1;
       const namedActivity=entry.entry_kind==='ACTIVITY'&&!!text?.endsWith(simulatedActivityMarker)&&separator>0&&separator<=80;
       const activityTitle=namedActivity?text!.slice(0,separator):null;
@@ -25,6 +27,7 @@ export function DailyItinerary({entries,time,label}:{entries:SavedEntry[];time:(
       <div className="timeline-content"><h4>{activityTitle??(entry.campsite_id?campName(entry.campsite_id):label(entry.entry_kind))}</h4>
         {activityTitle&&entry.campsite_id&&<p className="muted">{campName(entry.campsite_id)}</p>}
         <p>{description??'Suggested itinerary item; confirm activities and transport arrangements.'}</p>
+        {translated&&<small>English display of a saved activity suggestion.</small>}
         {!text&&<details><summary>View the saved original itinerary description</summary><p>{entry.description}</p></details>}
         <small>to {time(entry.end_at)}</small>
       </div>
