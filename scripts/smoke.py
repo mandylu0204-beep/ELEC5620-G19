@@ -112,8 +112,10 @@ def final_command(detail):
 
 
 def run(args):
-    folder = ROOT/'var'/('deployment-smoke-'+uuid4().hex)
-    folder.mkdir(parents=True)
+    # Hash-named snapshots already add substantial depth. Keep the diagnostic
+    # prefix short enough for extracted projects on Windows with MAX_PATH.
+    folder = ROOT/'var'/('smoke-'+uuid4().hex[:12])
+    folder.mkdir(parents=True,exist_ok=False)
     database = folder/'campmate.sqlite3'
     passed = []
     report = {'scope':'Isolated Sydney 2.2 rules HTTP workflow; no browser JavaScript or model acceptance',

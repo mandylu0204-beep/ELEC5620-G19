@@ -23,6 +23,9 @@ if accidentally committed.
 ## Independent installation
 
 Extract to a new empty folder with no dependency links or original configuration.
+On Windows, prefer a short destination rather than nesting one checkout inside
+another; snapshot identities add long path components. Do not change system
+security/path settings to run this project.
 In its `campmate_app` directory run:
 
 ```powershell
