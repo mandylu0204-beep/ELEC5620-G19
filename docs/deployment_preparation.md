@@ -1,7 +1,7 @@
 # Packaging and independent deployment
 
-The [README](../README.md) is the current setup/start guide. Older A-numbered
-reports describe historical commits only.
+The [README](../README.md) is the current setup/start guide. Historical handoffs
+and screenshots remain in Git history rather than the delivery tree.
 
 ## Package committed source
 

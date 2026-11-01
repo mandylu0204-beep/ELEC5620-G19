@@ -172,6 +172,8 @@ docs/demo/               repeatable input and walkthrough
 
 The ZIP excludes Git metadata, keys/environment files, databases/sessions,
 runtime logs/caches, installed dependencies and untracked local diagnostics.
-Old datasets/validators remain for archived replay compatibility. User-facing
-text and these entry-point instructions are English; historical development
-records/comments may retain their original language.
+Old datasets/validators remain for archived replay compatibility. Current
+user-facing text, maintained source and delivery instructions are English.
+Obsolete handoffs and screenshots have been removed; Git history retains them.
+Necessary immutable reference resources retain their original bytes, including
+some original-language text. See [source delivery scope](docs/source_delivery_scope.md).

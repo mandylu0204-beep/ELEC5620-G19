@@ -16,7 +16,7 @@ NO_FIRE_PATTERN = r"\b(?:no fires|no campfires?|without campfires?|avoid campfir
 
 def _negated_before(text, start):
     prefix = re.split(r'[,，.;。；!?！？]', text[:start])[-1]
-    return bool(re.search(r"(?:\b(?:no|not|without|avoid|do not want|don't want|do not|don't)\s+(?:need\s+|require\s+|want\s+|an?\s+|any\s+)?|不需要|不想要|不想|无需|不用|不要|不)\s*$", prefix))
+    return bool(re.search("(?:\\b(?:no|not|without|avoid|do not want|don't want|do not|don't)\\s+(?:need\\s+|require\\s+|want\\s+|an?\\s+|any\\s+)?|\u4e0d\u9700\u8981|\u4e0d\u60f3\u8981|\u4e0d\u60f3|\u65e0\u9700|\u4e0d\u7528|\u4e0d\u8981|\u4e0d)\\s*$", prefix))
 
 
 def _positive_integer_tokens(tokens: list[str]) -> tuple[list[int], bool]:
@@ -97,12 +97,12 @@ def interpret(dataset, input) -> InterpretRequestResult:
 
     preferences = []
     phrases = (
-        ('quiet', r'\bquiet\b|安静|清静'), ('toilets', r'\btoilets?\b|厕所|卫生间'),
-        ('showers', r'\bshowers?\b|淋浴|洗澡'),
-        ('public transport', r'\bpublic transport\b|公共交通'),
-        ('wheelchair accessible', r'\b(?:accessible|wheelchair)\b|轮椅通行'),
-        ('ready-to-eat meals', r'\bready[- ]to[- ]eat\b|即食餐食|即食食品'),
-        ('self-catered meals', r'\bself[- ]catered\b|自行烹饪|自己做饭'),
+        ('quiet', '\\bquiet\\b|\u5b89\u9759|\u6e05\u9759'), ('toilets', '\\btoilets?\\b|\u5395\u6240|\u536b\u751f\u95f4'),
+        ('showers', '\\bshowers?\\b|\u6dcb\u6d74|\u6d17\u6fa1'),
+        ('public transport', '\\bpublic transport\\b|\u516c\u5171\u4ea4\u901a'),
+        ('wheelchair accessible', '\\b(?:accessible|wheelchair)\\b|\u8f6e\u6905\u901a\u884c'),
+        ('ready-to-eat meals', '\\bready[- ]to[- ]eat\\b|\u5373\u98df\u9910\u98df|\u5373\u98df\u98df\u54c1'),
+        ('self-catered meals', '\\bself[- ]catered\\b|\u81ea\u884c\u70f9\u996a|\u81ea\u5df1\u505a\u996d'),
     )
     for preference, pattern in phrases:
         matches = list(re.finditer(pattern, lowered))
@@ -126,13 +126,13 @@ def interpret(dataset, input) -> InterpretRequestResult:
             constraints.append(constraint)
     if no_fire:
         constraints.append('no_fires')
-    chinese_clauses = [match.group(0).strip() for match in re.finditer(r'(?:必须|需要|一定要)[^，,。；;.!！?？]*', text)
+    chinese_clauses = [match.group(0).strip() for match in re.finditer('(?:\u5fc5\u987b|\u9700\u8981|\u4e00\u5b9a\u8981)[^\uff0c,\u3002\uff1b;.!\uff01?\uff1f]*', text)
                        if not _negated_before(text, match.start())]
     for clause in chinese_clauses:
         canonical = canonical_term(clause, 'constraint')
         if canonical:
             constraints.append(canonical)
-    if re.search(r'不生火|不使用营火|禁止营火|不要生火', text):
+    if re.search('\u4e0d\u751f\u706b|\u4e0d\u4f7f\u7528\u8425\u706b|\u7981\u6b62\u8425\u706b|\u4e0d\u8981\u751f\u706b', text):
         constraints.append('no_fires')
     # An empty structured box does not waive an unknown mandatory prose clause.
     clauses = [match.group(0).split(',')[0].strip() for match in re.finditer(r'\b(?:must|requires?|need)\b[^.;]*', lowered)

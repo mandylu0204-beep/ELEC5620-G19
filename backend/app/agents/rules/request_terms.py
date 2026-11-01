@@ -45,9 +45,9 @@ def canonical_term(text, kind):
     for canonical, labels in aliases.items():
         if value == canonical or value in labels:
             return canonical
-    prefixes = (('必须有', '必须', '需要有', '需要', '一定要有', '一定要',
+    prefixes = (('\u5fc5\u987b\u6709', '\u5fc5\u987b', '\u9700\u8981\u6709', '\u9700\u8981', '\u4e00\u5b9a\u8981\u6709', '\u4e00\u5b9a\u8981',
                  'must have ', 'requires ', 'require ', 'need ', 'needs ')
-                if kind == 'constraint' else ('希望有', '希望', '最好有', '最好', 'prefer ', 'preferably '))
+                if kind == 'constraint' else ('\u5e0c\u671b\u6709', '\u5e0c\u671b', '\u6700\u597d\u6709', '\u6700\u597d', 'prefer ', 'preferably '))
     for prefix in prefixes:
         if value.startswith(prefix):
             suffix = value[len(prefix):].strip()

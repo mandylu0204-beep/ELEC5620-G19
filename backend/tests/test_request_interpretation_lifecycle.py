@@ -29,9 +29,9 @@ IDENTITY = {
     'prompt_sha256': '1' * 64, 'configuration_fingerprint': '2' * 64,
     'requested_model': 'campus-qwen',
 }
-RAW_TEXT = '准备和男朋友一起去，想找个安静的地方。'
-EXPLICIT = FIELDS | {'preferences': ['希望安静', 'ready-to-eat meals'],
-    'mandatory_constraints': ['需要洗澡']}
+RAW_TEXT = '\u51c6\u5907\u548c\u7537\u670b\u53cb\u4e00\u8d77\u53bb，\u60f3\u627e\u4e2a\u5b89\u9759\u7684\u5730\u65b9。'
+EXPLICIT = FIELDS | {'preferences': ['\u5e0c\u671b\u5b89\u9759', 'ready-to-eat meals'],
+    'mandatory_constraints': ['\u9700\u8981\u6d17\u6fa1']}
 
 
 class ObservedAgent:
@@ -349,7 +349,7 @@ def test_production_hybrid_request_chain_with_mock_transport_preserves_canonical
         for source in payload['sources']:
             text = source['text']
             if source['source'] == 'raw_text':
-                quote, canonical, strength = '想找个安静的地方', 'quiet', 'soft'
+                quote, canonical, strength = '\u60f3\u627e\u4e2a\u5b89\u9759\u7684\u5730\u65b9', 'quiet', 'soft'
             elif source['source'] == 'preferences':
                 quote, canonical, strength = text, 'ready-to-eat meals', 'soft'
             else:
@@ -377,7 +377,7 @@ def test_production_hybrid_request_chain_with_mock_transport_preserves_canonical
         assert snapshot.agent.model_request_terms is True
         region = snapshot.descriptor.regions[0]
         explicit = FIELDS | {'destination': region, 'start_date': '2026-10-25',
-            'preferences': ['ready-to-eat meals'], 'mandatory_constraints': ['需要洗澡']}
+            'preferences': ['ready-to-eat meals'], 'mandatory_constraints': ['\u9700\u8981\u6d17\u6fa1']}
         record = analysed(client, headers, draft(client, headers, explicit=explicit))
         assert record['summary']['extracted_requirements']['preferences'] == ['quiet', 'ready-to-eat meals']
         assert record['summary']['extracted_requirements']['mandatory_constraints'] == ['showers']

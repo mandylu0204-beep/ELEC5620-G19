@@ -11,7 +11,7 @@ backend code.
 ```text
 CAMPMATE_CLOCK_MODE=current
 CAMPMATE_SYNTHETIC_EVIDENCE_MODE=auto
-CAMPMATE_DATASET_PATH=data/synthetic_demo_v2_1
+CAMPMATE_DATASET_PATH=data/sydney_surrounds_v2_2
 CAMPMATE_DATASET_SELECTION={}
 CAMPMATE_DATASET_SCENARIO_FILES=[]
 CAMPMATE_WORKFLOW_SAFETY_CASE_IDS=[]
@@ -21,9 +21,9 @@ These settings work with either the rule runtime or the existing campus hybrid
 runtime. Model execution and credentials are configured separately. This change
 does not enable a model, make weather API requests or alter personal credentials.
 
-With `auto`, v2.1 and the current clock use generated daily synthetic snapshots.
+With `auto`, supported v2.1/v2.2 data and the current clock use generated daily synthetic snapshots.
 Other source versions keep their sealed inputs. Explicit `rolling` requires
-v2.1 and automatic evidence selection; incompatible scenario selections fail
+a supported v2.1/v2.2 package and automatic evidence selection; incompatible scenario selections fail
 instead of falling back. `sealed` always reads the selected original package.
 
 For a repeatable fixed scenario, set `CAMPMATE_CLOCK_MODE=fixed`,
@@ -34,7 +34,7 @@ unless they explicitly specify `clock_mode=current`.
 
 ## What is simulated
 
-The original v2 and v2.1 packages are not overwritten. Independent snapshots
+The original v2, v2.1 and Sydney v2.2 packages are not overwritten. Independent snapshots
 are materialized below `var/daily-snapshots/<date>/<identity>/`. Their identity
 includes the inspected base context, date and generator policy. The full byte
 digests, selection settings and checking date enter the existing run scope and

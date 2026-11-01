@@ -63,19 +63,19 @@ Explicit mandatory_constraints entries express hard conditions; preferences
 entries express soft preferences. If their wording contradicts that field, mark
 ambiguous. Preserve every preference/condition in a compound clause. Unknown
 concepts use canonical=null; never replace them with a convenient known term.
-Use separate mention quotes for atomic conditions joined by and/or/和/并且;
+Use separate mention quotes for atomic conditions joined by and/or/\u548c/\u5e76\u4e14;
 do not map an entire compound quote to one canonical term. Carry the obligation
 across a list unless the wording explicitly changes it. Personal background
 before a request (for example going with a boyfriend) is not a facility need.
-For raw prose, 'must', 'need', '必须', '需要' express hard requirements;
-'prefer', '最好', '希望' normally express soft preferences. Unclear obligation
+For raw prose, 'must', 'need', '\u5fc5\u987b', '\u9700\u8981' express hard requirements;
+'prefer', '\u6700\u597d', '\u5e0c\u671b' normally express soft preferences. Unclear obligation
 uses strength=uncertain and ambiguous=true. Respect the whole local clause.
 Ready-to-eat meals and self-catered meals are the group's meal arrangements,
 not campsite facilities. Identify the quoted meal mode even when its wording
 is mandatory. Preserve negation, competing modes and dietary qualifiers;
 never reduce an unverified dietary requirement to a generic meal mode.
-'do not need showers' / '不需要淋浴' means not_required, not required showers.
-'avoid/no campfires' / '不要生火' means negative campfire (or positive no_fires).
+'do not need showers' / '\u4e0d\u9700\u8981\u6dcb\u6d74' means not_required, not required showers.
+'avoid/no campfires' / '\u4e0d\u8981\u751f\u706b' means negative campfire (or positive no_fires).
 Other negative facility requirements must stay negative, never become positive.
 Uncertain, contradictory or partially understood clauses set unresolved=true
 and ambiguous=true where applicable. Never use a confidence score to confirm.
@@ -84,15 +84,15 @@ User confirmation of the host-validated summary remains the final authority.
 
 _NEGATIVE = re.compile(
     r"\b(?:no|not|never|without|avoid|don't|cannot|can't|optional|unnecessary)\b|"
-    r'不要|不想|不用|无需|不需要|不必|避免|没有|禁止|不能|不得|不允许|可有可无|不要求|不强求|非必须|无所谓|可选|可以没有', re.I)
-_HARD = re.compile(r'\b(?:must|require[sd]?|need[sd]?|essential|mandatory)\b|必须|务必|需要|必需|一定要', re.I)
-_SOFT = re.compile(r'\b(?:prefer(?:red|ably)?|hopefully|nice to have)\b|希望|最好|倾向', re.I)
-_UNCERTAIN = re.compile(r'\b(?:maybe|might|possibly|perhaps|uncertain)\b|可能|不确定|也许|大概', re.I)
-_OPTIONAL = re.compile(r"\b(?:(?:do\s+not|don't|not)\s+(?:need|required?|necessary)|optional|unnecessary)\b|不需要|无需|不用|不必|不要求|不强求|非必须|可有可无|无所谓|可选|可以没有", re.I)
-_BOUNDARY = re.compile(r'[,;。；，!?！？]|\b(?:but|and|however)\b|但是|而且|并且|同时|而是|但|只', re.I)
-_COMPOUND = re.compile(r'\b(?:and|or|as well as)\b|并且|以及|而且|同时|还有|并|和|及|与|或', re.I)
-_QUIET_ANTONYM = re.compile(r'\bnot\s+noisy\b|不吵|不嘈杂', re.I)
-_SHOWER_MODIFIER = re.compile(r'\b(?:hot|heated|warm|private|daily|free)\b|热水|热淋浴|私人|私用|独立|全天|每天|免费', re.I)
+    '\u4e0d\u8981|\u4e0d\u60f3|\u4e0d\u7528|\u65e0\u9700|\u4e0d\u9700\u8981|\u4e0d\u5fc5|\u907f\u514d|\u6ca1\u6709|\u7981\u6b62|\u4e0d\u80fd|\u4e0d\u5f97|\u4e0d\u5141\u8bb8|\u53ef\u6709\u53ef\u65e0|\u4e0d\u8981\u6c42|\u4e0d\u5f3a\u6c42|\u975e\u5fc5\u987b|\u65e0\u6240\u8c13|\u53ef\u9009|\u53ef\u4ee5\u6ca1\u6709', re.I)
+_HARD = re.compile('\\b(?:must|require[sd]?|need[sd]?|essential|mandatory)\\b|\u5fc5\u987b|\u52a1\u5fc5|\u9700\u8981|\u5fc5\u9700|\u4e00\u5b9a\u8981', re.I)
+_SOFT = re.compile('\\b(?:prefer(?:red|ably)?|hopefully|nice to have)\\b|\u5e0c\u671b|\u6700\u597d|\u503e\u5411', re.I)
+_UNCERTAIN = re.compile('\\b(?:maybe|might|possibly|perhaps|uncertain)\\b|\u53ef\u80fd|\u4e0d\u786e\u5b9a|\u4e5f\u8bb8|\u5927\u6982', re.I)
+_OPTIONAL = re.compile("\\b(?:(?:do\\s+not|don't|not)\\s+(?:need|required?|necessary)|optional|unnecessary)\\b|\u4e0d\u9700\u8981|\u65e0\u9700|\u4e0d\u7528|\u4e0d\u5fc5|\u4e0d\u8981\u6c42|\u4e0d\u5f3a\u6c42|\u975e\u5fc5\u987b|\u53ef\u6709\u53ef\u65e0|\u65e0\u6240\u8c13|\u53ef\u9009|\u53ef\u4ee5\u6ca1\u6709", re.I)
+_BOUNDARY = re.compile('[,;\u3002\uff1b\uff0c!?\uff01\uff1f]|\\b(?:but|and|however)\\b|\u4f46\u662f|\u800c\u4e14|\u5e76\u4e14|\u540c\u65f6|\u800c\u662f|\u4f46|\u53ea', re.I)
+_COMPOUND = re.compile('\\b(?:and|or|as well as)\\b|\u5e76\u4e14|\u4ee5\u53ca|\u800c\u4e14|\u540c\u65f6|\u8fd8\u6709|\u5e76|\u548c|\u53ca|\u4e0e|\u6216', re.I)
+_QUIET_ANTONYM = re.compile('\\bnot\\s+noisy\\b|\u4e0d\u5435|\u4e0d\u5608\u6742', re.I)
+_SHOWER_MODIFIER = re.compile('\\b(?:hot|heated|warm|private|daily|free)\\b|\u70ed\u6c34|\u70ed\u6dcb\u6d74|\u79c1\u4eba|\u79c1\u7528|\u72ec\u7acb|\u5168\u5929|\u6bcf\u5929|\u514d\u8d39', re.I)
 _SOFT_TO_HARD = {value: key for key, value in {
     'potable_water': 'potable water', 'public_transport_access': 'public transport',
     'wheelchair_accessible': 'wheelchair accessible', 'pets_allowed': 'pets',
@@ -103,7 +103,7 @@ _MEALS = {'ready_to_eat': 'ready-to-eat meals', 'self_catered': 'self-catered me
 _MEAL_MODES = frozenset(_MEALS.values())
 _MEAL_OBLIGATION = re.compile(
     r'^(?:must(?:\s+(?:have|eat|use))?|need[sd]?(?:\s+(?:to\s+)?(?:eat|use))?|require[sd]?)\s+'
-    r'|^(?:必须|需要|一定要)(?:吃|使用)?', re.I)
+    '|^(?:\u5fc5\u987b|\u9700\u8981|\u4e00\u5b9a\u8981)(?:\u5403|\u4f7f\u7528)?', re.I)
 
 
 def _canonical(value):
@@ -171,7 +171,7 @@ def _known_term(text, kind):
 
 def _meal_mode(text):
     """Recognise a whole meal label; never discard dietary qualifiers."""
-    value = re.sub(r'^(?:we|i)\s+|^(?:我们|我)', '', text.strip(), flags=re.I)
+    value = re.sub('^(?:we|i)\\s+|^(?:\u6211\u4eec|\u6211)', '', text.strip(), flags=re.I)
     canonical = canonical_term(value, 'preference')
     if canonical not in _MEAL_MODES:
         canonical = canonical_term(_MEAL_OBLIGATION.sub('', value, count=1), 'preference')
@@ -212,7 +212,7 @@ def _semantic_problem(clause, mention):
         hard, soft = bool(_HARD.search(context)), bool(_SOFT.search(context))
         if not hard and not soft:
             prefix = clause.quote[:clause.quote.find(mention.quote)]
-            prefix = re.split(r'[;。；!?！？]|\b(?:but|however)\b|但是|但', prefix, flags=re.I)[-1]
+            prefix = re.split('[;\u3002\uff1b!?\uff01\uff1f]|\\b(?:but|however)\\b|\u4f46\u662f|\u4f46', prefix, flags=re.I)[-1]
             cues = [(match.start(), True) for match in _HARD.finditer(prefix)]
             cues += [(match.start(), False) for match in _SOFT.finditer(prefix)]
             if cues:
@@ -256,7 +256,7 @@ def _coverage_problem(dataset, clause):
     # Only grammar and request scaffolding are ignorable. Unknown facilities,
     # qualifiers and the remainder after a conjunction must stay visible.
     remaining = re.sub(r"\b(?:i|we|our|would|like|want|a|an|the|some|somewhere|site|campsite|place|with|to|have|be|it|is|are|can|please|also|and|or|but|then|need|needs|require|requires|must|prefer|preferably|for|in|at|from|this|trip|camp|camping)\b", ' ', remaining, flags=re.I)
-    remaining = re.sub(r'我们|我|请|想要|希望|最好|需要|必须|一定要|务必|并且|以及|而且|同时|还有|然后|营地|地方|一个|可以|能够|能|有|要|和|与|及|或|并|的', ' ', remaining)
+    remaining = re.sub('\u6211\u4eec|\u6211|\u8bf7|\u60f3\u8981|\u5e0c\u671b|\u6700\u597d|\u9700\u8981|\u5fc5\u987b|\u4e00\u5b9a\u8981|\u52a1\u5fc5|\u5e76\u4e14|\u4ee5\u53ca|\u800c\u4e14|\u540c\u65f6|\u8fd8\u6709|\u7136\u540e|\u8425\u5730|\u5730\u65b9|\u4e00\u4e2a|\u53ef\u4ee5|\u80fd\u591f|\u80fd|\u6709|\u8981|\u548c|\u4e0e|\u53ca|\u6216|\u5e76|\u7684', ' ', remaining)
     return bool(re.sub(r'[\s\W_]+', '', remaining, flags=re.UNICODE))
 
 
@@ -384,9 +384,9 @@ def _project(dataset, input, proposal):
             context = _context(clause.quote, mention.quote)
             detail_unverified = (
                 canonical == 'showers' and _SHOWER_MODIFIER.search(context)
-                or canonical == 'toilets' and re.search(r'accessible|wheelchair|无障碍|轮椅', context, re.I)
+                or canonical == 'toilets' and re.search('accessible|wheelchair|\u65e0\u969c\u788d|\u8f6e\u6905', context, re.I)
                 or canonical in {'wheelchair_accessible', 'wheelchair accessible'}
-                    and re.search(r'step[- ]free|无台阶|无障碍厕所|accessible toilet', context, re.I))
+                    and re.search('step[- ]free|\u65e0\u53f0\u9636|\u65e0\u969c\u788d\u5395\u6240|accessible toilet', context, re.I))
             if detail_unverified:
                 if field == 'mandatory_constraints':
                     issue(field, FieldErrorCode.UNSUPPORTED, f'Campsite information cannot verify the facility details or additional conditions in: {mention.quote}. Please review.')

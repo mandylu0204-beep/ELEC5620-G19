@@ -21,7 +21,7 @@ def mention(quote, canonical, *, polarity='positive', strength='soft', ambiguous
 def setup(raw, mappings=None, *, explicit=None, mutate=None, response=None):
     dataset, itinerary = model_input()
     fields = itinerary.confirmed_requirements.model_dump()
-    fields.update(preferences=['即食餐食'], mandatory_constraints=[])
+    fields.update(preferences=['\u5373\u98df\u9910\u98df'], mandatory_constraints=[])
     if explicit:
         fields.update(explicit)
     input = InterpretRequestInput(raw_text=raw, explicit_fields=TripRequirements.model_validate(fields),
@@ -37,8 +37,8 @@ def setup(raw, mappings=None, *, explicit=None, mutate=None, response=None):
         clauses = []
         for source in payload['sources']:
             entries = (mappings or {}).get(source['text'], [])
-            if source['text'] == '即食餐食' and source['source'] == 'preferences':
-                entries = [mention('即食餐食', 'ready-to-eat meals')]
+            if source['text'] == '\u5373\u98df\u9910\u98df' and source['source'] == 'preferences':
+                entries = [mention('\u5373\u98df\u9910\u98df', 'ready-to-eat meals')]
             clauses.append(dict(source=source['source'], index=source['index'], quote=source['text'],
                 mentions=entries, unresolved=False))
         proposal = {'clauses': clauses}
@@ -59,9 +59,9 @@ def interpreted(agent, input):
 
 
 @pytest.mark.parametrize('raw,mappings', [
-    ('需要洗澡。而且希望周围清静一些。', {
-        '需要洗澡。': [mention('需要洗澡', 'showers', strength='hard')],
-        '而且希望周围清静一些。': [mention('希望周围清静一些', 'quiet')],
+    ('\u9700\u8981\u6d17\u6fa1。\u800c\u4e14\u5e0c\u671b\u5468\u56f4\u6e05\u9759\u4e00\u4e9b。', {
+        '\u9700\u8981\u6d17\u6fa1。': [mention('\u9700\u8981\u6d17\u6fa1', 'showers', strength='hard')],
+        '\u800c\u4e14\u5e0c\u671b\u5468\u56f4\u6e05\u9759\u4e00\u4e9b。': [mention('\u5e0c\u671b\u5468\u56f4\u6e05\u9759\u4e00\u4e9b', 'quiet')],
     }),
     ('We need showers and prefer quiet.', {
         'We need showers and prefer quiet.': [mention('need showers', 'showers', strength='hard'),
@@ -89,7 +89,7 @@ def test_bilingual_semantics_preserve_scalar_authority_and_use_one_completion(ra
 
 
 @pytest.mark.parametrize('raw,phrase', [
-    ('不需要淋浴。', '不需要淋浴'),
+    ('\u4e0d\u9700\u8981\u6dcb\u6d74。', '\u4e0d\u9700\u8981\u6dcb\u6d74'),
     ('We do not need showers.', 'do not need showers'),
     ('Showers are optional.', 'Showers are optional'),
 ])
@@ -101,7 +101,7 @@ def test_optional_showers_never_become_positive_requirement(raw, phrase):
     assert not result.field_errors
 
 
-@pytest.mark.parametrize('raw,phrase', [('不要生火。', '不要生火'), ('No campfires.', 'No campfires')])
+@pytest.mark.parametrize('raw,phrase', [('\u4e0d\u8981\u751f\u706b。', '\u4e0d\u8981\u751f\u706b'), ('No campfires.', 'No campfires')])
 def test_negative_campfire_uses_existing_no_fires_constraint(raw, phrase):
     agent, input, _ = setup(raw, {raw: [mention(phrase, 'campfire', polarity='negative', strength='hard')]})
     result = interpreted(agent, input).result
@@ -111,12 +111,12 @@ def test_negative_campfire_uses_existing_no_fires_constraint(raw, phrase):
 
 
 @pytest.mark.parametrize('raw,entry', [
-    ('不需要淋浴。', mention('淋浴', 'showers', strength='hard')),
+    ('\u4e0d\u9700\u8981\u6dcb\u6d74。', mention('\u6dcb\u6d74', 'showers', strength='hard')),
     ('We do not need showers.', mention('showers', 'showers', strength='hard')),
     ('We need showers.', mention('need showers', 'showers', strength='soft')),
     ('We need showers.', mention('need showers', 'showers', polarity='not_required', strength='hard')),
     ('We prefer showers.', mention('prefer showers', 'showers', strength='hard')),
-    ('可能需要洗澡。', mention('可能需要洗澡', 'showers', strength='hard')),
+    ('\u53ef\u80fd\u9700\u8981\u6d17\u6fa1。', mention('\u53ef\u80fd\u9700\u8981\u6d17\u6fa1', 'showers', strength='hard')),
 ])
 def test_host_asks_about_negation_reversal_and_incorrect_obligation(raw, entry):
     agent, input, requests = setup(raw, {raw: [entry]})
@@ -127,8 +127,8 @@ def test_host_asks_about_negation_reversal_and_incorrect_obligation(raw, entry):
 
 
 def test_host_rejects_unrelated_canonical_for_a_known_phrase():
-    raw = '需要淋浴。'
-    agent, input, _ = setup(raw, {raw: [mention('需要淋浴', 'public_transport_access', strength='hard')]})
+    raw = '\u9700\u8981\u6dcb\u6d74。'
+    agent, input, _ = setup(raw, {raw: [mention('\u9700\u8981\u6dcb\u6d74', 'public_transport_access', strength='hard')]})
     with pytest.raises(ContractFailure) as error:
         interpreted(agent, input)
     assert error.value.error.code == 'CONTRACT_INVALID'
@@ -143,19 +143,19 @@ def test_host_rejects_unrelated_canonical_for_a_known_phrase():
     lambda value: value['clauses'].append(dict(value['clauses'][0])),
 ])
 def test_strict_protocol_rejects_fabrication_unknown_canonical_missing_sources_and_scalar_edits(mutation):
-    raw = '必须有淋浴。'
-    agent, input, _ = setup(raw, {raw: [mention('必须有淋浴', 'showers', strength='hard')]}, mutate=mutation)
+    raw = '\u5fc5\u987b\u6709\u6dcb\u6d74。'
+    agent, input, _ = setup(raw, {raw: [mention('\u5fc5\u987b\u6709\u6dcb\u6d74', 'showers', strength='hard')]}, mutate=mutation)
     with pytest.raises(ContractFailure) as error:
         interpreted(agent, input)
     assert error.value.error.code == 'CONTRACT_INVALID'
 
 
 def test_explicit_natural_terms_are_normalized_without_overwriting_original_input():
-    agent, input, _ = setup('露营安排。', {'需要洗澡': [mention('需要洗澡', 'showers', strength='hard')]},
-        explicit={'mandatory_constraints': ['需要洗澡']})
+    agent, input, _ = setup('\u9732\u8425\u5b89\u6392。', {'\u9700\u8981\u6d17\u6fa1': [mention('\u9700\u8981\u6d17\u6fa1', 'showers', strength='hard')]},
+        explicit={'mandatory_constraints': ['\u9700\u8981\u6d17\u6fa1']})
     result = interpreted(agent, input).result
     assert result.extracted_requirements.mandatory_constraints == ['showers']
-    assert input.explicit_fields.mandatory_constraints == ['需要洗澡']
+    assert input.explicit_fields.mandatory_constraints == ['\u9700\u8981\u6d17\u6fa1']
     assert not result.field_errors
 
 
@@ -177,7 +177,7 @@ def test_unresolved_raw_obligation_cannot_be_silently_confirmed():
 
 
 def test_explicit_entry_cannot_be_silently_omitted_by_model():
-    agent, input, _ = setup('露营安排。', explicit={'mandatory_constraints': ['wifi']})
+    agent, input, _ = setup('\u9732\u8425\u5b89\u6392。', explicit={'mandatory_constraints': ['wifi']})
     with pytest.raises(ContractFailure) as error:
         interpreted(agent, input)
     assert error.value.error.code == 'CONTRACT_INVALID'
@@ -190,7 +190,7 @@ def test_explicit_entry_cannot_be_silently_omitted_by_model():
 def test_neutral_evidence_cannot_erase_or_negate_explicit_or_raw_requirement(source, polarity):
     entry = mention('showers', 'showers', polarity=polarity, strength='hard')
     if source == 'mandatory_constraints':
-        agent, input, _ = setup('露营安排。', {'showers': [entry]},
+        agent, input, _ = setup('\u9732\u8425\u5b89\u6392。', {'showers': [entry]},
             explicit={'mandatory_constraints': ['showers']})
     else:
         agent, input, _ = setup('showers', {'showers': [entry]})
@@ -218,17 +218,17 @@ def test_compound_raw_hard_condition_cannot_hide_an_unmapped_remainder(raw, quot
     assert any(error.field == 'mandatory_constraints' for error in result.field_errors)
 
 
-@pytest.mark.parametrize('quoted', ['需要洗澡', '需要洗澡并且要泳池'])
+@pytest.mark.parametrize('quoted', ['\u9700\u8981\u6d17\u6fa1', '\u9700\u8981\u6d17\u6fa1\u5e76\u4e14\u8981\u6cf3\u6c60'])
 def test_explicit_compound_cannot_hide_unknown_condition_with_partial_or_whole_quote(quoted):
-    text = '需要洗澡并且要泳池'
-    agent, input, _ = setup('露营安排。', {text: [mention(quoted, 'showers', strength='hard')]},
+    text = '\u9700\u8981\u6d17\u6fa1\u5e76\u4e14\u8981\u6cf3\u6c60'
+    agent, input, _ = setup('\u9732\u8425\u5b89\u6392。', {text: [mention(quoted, 'showers', strength='hard')]},
         explicit={'mandatory_constraints': [text]})
     result = interpreted(agent, input).result
     assert result.clarifications
 
 
 @pytest.mark.parametrize('raw,phrase', [
-    ('不能没有厕所。', '不能没有厕所'),
+    ('\u4e0d\u80fd\u6ca1\u6709\u5395\u6240。', '\u4e0d\u80fd\u6ca1\u6709\u5395\u6240'),
     ("I don't want a site without toilets.", "don't want a site without toilets"),
 ])
 def test_double_negative_returns_actionable_clarification_without_protocol_failure(raw, phrase):
@@ -239,8 +239,8 @@ def test_double_negative_returns_actionable_clarification_without_protocol_failu
 
 
 def test_registered_meal_alias_with_negative_word_is_a_positive_meal_mode():
-    text = '无需烹饪的餐食'
-    agent, input, _ = setup('露营安排。', {text: [mention(text, 'ready-to-eat meals')]},
+    text = '\u65e0\u9700\u70f9\u996a\u7684\u9910\u98df'
+    agent, input, _ = setup('\u9732\u8425\u5b89\u6392。', {text: [mention(text, 'ready-to-eat meals')]},
         explicit={'preferences': [text]})
     result = interpreted(agent, input).result
     assert result.extracted_requirements.preferences == ['ready-to-eat meals']
@@ -256,8 +256,8 @@ def test_not_noisy_can_mean_quiet_without_negation_reversal():
 
 
 def test_optional_hot_shower_does_not_create_an_unsupported_hot_shower_requirement():
-    raw = '不需要热水淋浴。'
-    agent, input, _ = setup(raw, {raw: [mention('不需要热水淋浴', 'showers',
+    raw = '\u4e0d\u9700\u8981\u70ed\u6c34\u6dcb\u6d74。'
+    agent, input, _ = setup(raw, {raw: [mention('\u4e0d\u9700\u8981\u70ed\u6c34\u6dcb\u6d74', 'showers',
         polarity='not_required', strength='hard')]})
     result = interpreted(agent, input).result
     assert not result.field_errors
@@ -265,8 +265,8 @@ def test_optional_hot_shower_does_not_create_an_unsupported_hot_shower_requireme
 
 
 @pytest.mark.parametrize('raw,canonical,phrase', [
-    ('必须有无障碍厕所。', 'toilets', '必须有无障碍厕所'),
-    ('必须有无台阶通道。', 'wheelchair_accessible', '必须有无台阶通道'),
+    ('\u5fc5\u987b\u6709\u65e0\u969c\u788d\u5395\u6240。', 'toilets', '\u5fc5\u987b\u6709\u65e0\u969c\u788d\u5395\u6240'),
+    ('\u5fc5\u987b\u6709\u65e0\u53f0\u9636\u901a\u9053。', 'wheelchair_accessible', '\u5fc5\u987b\u6709\u65e0\u53f0\u9636\u901a\u9053'),
 ])
 def test_accessibility_details_cannot_be_reduced_to_generic_facility(raw, canonical, phrase):
     agent, input, _ = setup(raw, {raw: [mention(phrase, canonical, strength='hard')]})
@@ -285,10 +285,10 @@ def test_optional_fire_cannot_become_a_hard_fire_ban():
 
 @pytest.mark.parametrize('explicit', [False, True])
 def test_soft_negative_campfire_stays_soft(explicit):
-    text = '不要生火' if explicit else '最好不要生火。'
-    agent, input, _ = setup('露营安排。' if explicit else text,
+    text = '\u4e0d\u8981\u751f\u706b' if explicit else '\u6700\u597d\u4e0d\u8981\u751f\u706b。'
+    agent, input, _ = setup('\u9732\u8425\u5b89\u6392。' if explicit else text,
         {text: [mention(text.rstrip('。'), 'campfire', polarity='negative')]},
-        explicit={'preferences': ['即食餐食', text]} if explicit else None)
+        explicit={'preferences': ['\u5373\u98df\u9910\u98df', text]} if explicit else None)
     result = interpreted(agent, input).result
     assert 'no_fires' not in result.extracted_requirements.mandatory_constraints
     assert text.rstrip('。') in result.extracted_requirements.preferences
@@ -302,9 +302,9 @@ def test_scalar_only_need_sentence_does_not_create_a_facility_clarification():
 
 
 @pytest.mark.parametrize('raw,quote', [
-    ('准备和男朋友一起去，想找个安静的地方。', '想找个安静的地方'),
-    ('准备和我男朋友一起去，想找个安静的地方', '想找个安静的地方'),
-    ('准备和我男朋友一起去，想找个安静的地方', '安静'),
+    ('\u51c6\u5907\u548c\u7537\u670b\u53cb\u4e00\u8d77\u53bb，\u60f3\u627e\u4e2a\u5b89\u9759\u7684\u5730\u65b9。', '\u60f3\u627e\u4e2a\u5b89\u9759\u7684\u5730\u65b9'),
+    ('\u51c6\u5907\u548c\u6211\u7537\u670b\u53cb\u4e00\u8d77\u53bb，\u60f3\u627e\u4e2a\u5b89\u9759\u7684\u5730\u65b9', '\u60f3\u627e\u4e2a\u5b89\u9759\u7684\u5730\u65b9'),
+    ('\u51c6\u5907\u548c\u6211\u7537\u670b\u53cb\u4e00\u8d77\u53bb，\u60f3\u627e\u4e2a\u5b89\u9759\u7684\u5730\u65b9', '\u5b89\u9759'),
 ])
 def test_background_in_same_unsplit_sentence_is_not_an_omitted_condition(raw, quote):
     agent, input, requests = setup(raw, {raw: [mention(quote, 'quiet')]})
@@ -316,8 +316,8 @@ def test_background_in_same_unsplit_sentence_is_not_an_omitted_condition(raw, qu
 
 
 def test_unmapped_subjective_raw_description_is_retained_without_blocking_confirmation():
-    raw = '希望环境安静又能看看星星，适合和男朋友一起待着。'
-    agent, input, _ = setup(raw, {raw: [mention('安静', 'quiet')]})
+    raw = '\u5e0c\u671b\u73af\u5883\u5b89\u9759\u53c8\u80fd\u770b\u770b\u661f\u661f，\u9002\u5408\u548c\u7537\u670b\u53cb\u4e00\u8d77\u5f85\u7740。'
+    agent, input, _ = setup(raw, {raw: [mention('\u5b89\u9759', 'quiet')]})
     result = interpreted(agent, input).result
     assert not result.field_errors and not result.clarifications
     assert set(result.extracted_requirements.preferences) == {'quiet', 'ready-to-eat meals'}
@@ -325,9 +325,9 @@ def test_unmapped_subjective_raw_description_is_retained_without_blocking_confir
 
 
 def test_explicit_soft_remainder_is_preserved_as_unverified_preference():
-    text = '安静且适合看星星'
-    agent, input, _ = setup('露营安排。', {text: [mention('安静', 'quiet')]},
-        explicit={'preferences': ['即食餐食', text]})
+    text = '\u5b89\u9759\u4e14\u9002\u5408\u770b\u661f\u661f'
+    agent, input, _ = setup('\u9732\u8425\u5b89\u6392。', {text: [mention('\u5b89\u9759', 'quiet')]},
+        explicit={'preferences': ['\u5373\u98df\u9910\u98df', text]})
     result = interpreted(agent, input).result
     assert not result.field_errors and not result.clarifications
     assert text in result.extracted_requirements.preferences
@@ -335,27 +335,27 @@ def test_explicit_soft_remainder_is_preserved_as_unverified_preference():
 
 
 @pytest.mark.parametrize('text,entry', [
-    ('热水淋浴', mention('热水淋浴', 'showers', strength='hard')),
+    ('\u70ed\u6c34\u6dcb\u6d74', mention('\u70ed\u6c34\u6dcb\u6d74', 'showers', strength='hard')),
     ('private showers', mention('private showers', 'showers', strength='hard')),
     ('wifi', mention('wifi', None, strength='hard')),
 ])
 def test_unverified_hard_modifiers_and_unknown_conditions_require_clarification(text, entry):
-    agent, input, _ = setup('露营安排。', {text: [entry]}, explicit={'mandatory_constraints': [text]})
+    agent, input, _ = setup('\u9732\u8425\u5b89\u6392。', {text: [entry]}, explicit={'mandatory_constraints': [text]})
     result = interpreted(agent, input).result
     assert any(error.field == 'mandatory_constraints' and error.code == 'UNSUPPORTED' for error in result.field_errors)
     assert result.clarifications
 
 
 def test_ambiguous_obligation_is_a_question_without_promoting_a_hard_constraint():
-    raw = '同行的人可能需要洗澡。'
-    agent, input, _ = setup(raw, {raw: [mention('可能需要洗澡', 'showers', strength='uncertain', ambiguous=True)]})
+    raw = '\u540c\u884c\u7684\u4eba\u53ef\u80fd\u9700\u8981\u6d17\u6fa1。'
+    agent, input, _ = setup(raw, {raw: [mention('\u53ef\u80fd\u9700\u8981\u6d17\u6fa1', 'showers', strength='uncertain', ambiguous=True)]})
     result = interpreted(agent, input).result
     assert result.clarifications
     assert 'showers' not in result.extracted_requirements.mandatory_constraints
 
 
 def test_model_failure_propagates_without_rules_fallback():
-    agent, input, requests = setup('需要洗澡。', response=httpx.Response(503))
+    agent, input, requests = setup('\u9700\u8981\u6d17\u6fa1。', response=httpx.Response(503))
     with pytest.raises(ContractFailure) as error:
         interpreted(agent, input)
     assert error.value.error.code == 'AGENT_FAILURE'
@@ -363,17 +363,17 @@ def test_model_failure_propagates_without_rules_fallback():
 
 
 def test_interpreter_identity_drift_during_completion_is_rejected(monkeypatch):
-    raw = '需要洗澡。'
+    raw = '\u9700\u8981\u6d17\u6fa1。'
     def drift(_):
         monkeypatch.setattr(request_interpretation, 'SYSTEM_PROMPT', request_interpretation.SYSTEM_PROMPT + '\nchanged')
-    agent, input, _ = setup(raw, {raw: [mention('需要洗澡', 'showers', strength='hard')]}, mutate=drift)
+    agent, input, _ = setup(raw, {raw: [mention('\u9700\u8981\u6d17\u6fa1', 'showers', strength='hard')]}, mutate=drift)
     with pytest.raises(ContractFailure) as error:
         interpreted(agent, input)
     assert error.value.error.code == 'STALE_CONTEXT'
 
 
 def test_request_identity_does_not_change_planning_or_workflow_identity(monkeypatch):
-    agent, _, _ = setup('露营安排。')
+    agent, _, _ = setup('\u9732\u8425\u5b89\u6392。')
     planner = agent.coordinator
     planning_identity = planner.identity
     context = agent.workflow_configuration.context.model_dump(mode='json')
@@ -405,12 +405,12 @@ def test_positive_meal_mode_is_not_an_unsupported_campsite_requirement(meal, can
 
 
 @pytest.mark.parametrize('text,meal', [
-    ('必须即食餐食', 'ready-to-eat meals'),
+    ('\u5fc5\u987b\u5373\u98df\u9910\u98df', 'ready-to-eat meals'),
     ('We need self-catered meals', 'self-catered meals'),
-    ('无需烹饪的餐食', 'ready-to-eat meals'),
+    ('\u65e0\u9700\u70f9\u996a\u7684\u9910\u98df', 'ready-to-eat meals'),
 ])
 def test_explicit_meal_arrangement_can_be_required_without_becoming_a_facility(text, meal):
-    agent, input, _ = setup('露营安排。', {text: [mention(text, meal, strength='hard')]},
+    agent, input, _ = setup('\u9732\u8425\u5b89\u6392。', {text: [mention(text, meal, strength='hard')]},
         explicit={'preferences': [], 'mandatory_constraints': [text]})
     result = interpreted(agent, input).result
     assert result.extracted_requirements.preferences == [meal]
@@ -448,7 +448,7 @@ def test_negative_meal_mode_is_not_converted_to_a_positive_choice(polarity):
 
 def test_required_dietary_details_are_not_dropped_when_routing_meal_mode():
     text = 'gluten-free ready-to-eat meals'
-    agent, input, _ = setup('露营安排。', {text: [mention(text, 'ready-to-eat meals', strength='hard')]},
+    agent, input, _ = setup('\u9732\u8425\u5b89\u6392。', {text: [mention(text, 'ready-to-eat meals', strength='hard')]},
         explicit={'preferences': [], 'mandatory_constraints': [text]})
     result = interpreted(agent, input).result
     assert result.clarifications

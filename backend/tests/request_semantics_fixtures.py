@@ -12,8 +12,8 @@ _TERMS = {
     'pets_allowed': 'pets_allowed', 'wheelchair_accessible': 'wheelchair_accessible',
     'vehicle_access': 'vehicle_access', 'public_transport_access': 'public_transport_access',
     'no_fires': 'no_fires', 'walk_in_only': 'walk_in_only',
-    '即食餐食': 'ready-to-eat meals', '自行烹饪': 'self-catered meals',
-    '安静': 'quiet', '需要洗澡': 'showers', '必须有淋浴': 'showers',
+    '\u5373\u98df\u9910\u98df': 'ready-to-eat meals', '\u81ea\u884c\u70f9\u996a': 'self-catered meals',
+    '\u5b89\u9759': 'quiet', '\u9700\u8981\u6d17\u6fa1': 'showers', '\u5fc5\u987b\u6709\u6dcb\u6d74': 'showers',
 }
 _RAW_PHRASES = (
     ('quiet', 'quiet', 'soft'),

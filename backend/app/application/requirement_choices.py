@@ -13,9 +13,9 @@ LABELS = {
         'wheelchair-accessible toilet':'Need an accessible toilet'},
 }
 LEGACY_LABELS = {"preferences": {"quiet": "\u5b89\u9759\u7684\u73af\u5883", "toilets": "\u5395\u6240", "showers": "\u6dcb\u6d74", "potable water": "\u996e\u7528\u6c34\u8bbe\u65bd", "public transport": "\u516c\u5171\u4ea4\u901a\u53ef\u8fbe", "wheelchair accessible": "\u8f6e\u6905\u901a\u884c", "campfire": "\u8425\u706b", "pets": "\u5141\u8bb8\u643a\u5e26\u5ba0\u7269"}, "mandatory_constraints": {"toilets": "\u5fc5\u987b\u6709\u5395\u6240", "showers": "\u5fc5\u987b\u6709\u6dcb\u6d74", "potable_water": "\u5fc5\u987b\u6709\u996e\u7528\u6c34\u8bbe\u65bd", "wheelchair_accessible": "\u5fc5\u987b\u80fd\u8f6e\u6905\u901a\u884c", "fire_allowed": "\u5fc5\u987b\u5141\u8bb8\u751f\u706b", "no_fires": "\u4e0d\u4f7f\u7528\u8425\u706b", "pets_allowed": "\u5fc5\u987b\u5141\u8bb8\u643a\u5e26\u5ba0\u7269", "vehicle_access": "\u5fc5\u987b\u8f66\u8f86\u53ef\u8fbe", "public_transport_access": "\u5fc5\u987b\u516c\u5171\u4ea4\u901a\u53ef\u8fbe", "walk_in_only": "\u4ec5\u53ef\u6b65\u884c\u8fdb\u5165"}, "accessibility_requirements": {"step-free path": "\u9700\u8981\u65e0\u53f0\u9636\u901a\u9053", "wheelchair access": "\u9700\u8981\u8f6e\u6905\u901a\u884c", "wheelchair-accessible toilet": "\u9700\u8981\u65e0\u969c\u788d\u5395\u6240"}}
-ACCESS_ALIASES = {'step-free path':['无台阶通道','需要无台阶通道'],
-    'wheelchair access':['轮椅通行','需要轮椅通行'],
-    'wheelchair-accessible toilet':['无障碍厕所','需要无障碍厕所']}
+ACCESS_ALIASES = {'step-free path':['\u65e0\u53f0\u9636\u901a\u9053','\u9700\u8981\u65e0\u53f0\u9636\u901a\u9053'],
+    'wheelchair access':['\u8f6e\u6905\u901a\u884c','\u9700\u8981\u8f6e\u6905\u901a\u884c'],
+    'wheelchair-accessible toilet':['\u65e0\u969c\u788d\u5395\u6240','\u9700\u8981\u65e0\u969c\u788d\u5395\u6240']}
 
 
 def choices():
@@ -26,11 +26,11 @@ def choices():
         for key,label in labels.items():
             values=list(dict.fromkeys([key,label,LEGACY_LABELS[field][key],*aliases.get(key,())]))
             if field!='accessibility_requirements':
-                prefixes=('必须有','必须','需要有','需要','一定要有','一定要','must have ','requires ','require ','need ','needs ') if field=='mandatory_constraints' else ('希望有','希望','最好有','最好','prefer ','preferably ')
+                prefixes=('\u5fc5\u987b\u6709','\u5fc5\u987b','\u9700\u8981\u6709','\u9700\u8981','\u4e00\u5b9a\u8981\u6709','\u4e00\u5b9a\u8981','must have ','requires ','require ','need ','needs ') if field=='mandatory_constraints' else ('\u5e0c\u671b\u6709','\u5e0c\u671b','\u6700\u597d\u6709','\u6700\u597d','prefer ','preferably ')
                 base=list(values)
                 values.extend(prefix+value for prefix in prefixes for value in base
                     if canonical_term(prefix+value,'constraint' if field=='mandatory_constraints' else 'preference')==key)
-            if key=='fire_allowed':values.extend(['campfire','营火','篝火'])
+            if key=='fire_allowed':values.extend(['campfire','\u8425\u706b','\u7bdd\u706b'])
             result[field].append({'value':key,'label':label,'aliases':list(dict.fromkeys(values))})
     return {'version':CHOICES_VERSION, 'fields':result}
 

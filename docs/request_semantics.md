@@ -29,7 +29,7 @@ has not yet been validated against a live campus completion.
    meaning, contradictory requirements and unverifiable facility details remain
    unconfirmed; model confidence is not confirmation.
 
-For example, a mandatory entry `需要洗澡` can become `showers`; `prefer showers`
+For example, a mandatory entry `need a shower` can become `showers`; `prefer showers`
 is a preference; `do not need showers` must not produce a positive shower
 requirement. Hot or private showers cannot silently become ordinary showers.
 Unknown soft preferences remain visible as unverified preferences. A soft
