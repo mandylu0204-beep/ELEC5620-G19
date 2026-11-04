@@ -1,4 +1,5 @@
 import type { PlanDetail } from './plans';
+import {boundReview} from './review_revision';
 
 export type CheckKey='itinerary'|'logistics'|'safety';
 export type CheckStep={key:CheckKey;title:string;state:'pending'|'running'|'passed'|'attention'|'review'|'incomplete';text:string};
@@ -30,6 +31,8 @@ export function planCheckState(data:PlanDetail,{snapshot=false,readError=false}:
   if(run?.status==='SUCCEEDED'&&data.version?.status==='FINALISED')return state('saved','The saved final plan is retained. Updating this trip requires a new confirmation and checks.');
   if(data.recommendations?.result.search_outcome==='NO_MATCH')return state('adjustment','Itinerary: no campsite meets the required conditions. Adjust the trip conditions.');
   if(run?.status!=='SUCCEEDED')return state('incomplete','This check has not been confirmed complete. View run records.');
+  const review=boundReview(data);
+  if(review?.decision==='REQUEST_REVISION'||review?.decision==='REJECT')return {...state('adjustment','Read the reviewer feedback, adjust the plan and complete the required checks.'),title:review.decision==='REJECT'?'Review rejected':'Revision requested'};
   if(data.finalisation_available&&data.eligibility?.eligible&&checkSteps(data).every(item=>item.state==='passed'))return state('confirm','Current checks passed. Confirm and save, or modify the plan and reassess.');
   const reasons=data.eligibility?.blocking_reasons??[];
   const safety=data.assessments.find(item=>item.kind==='SAFETY')?.result;

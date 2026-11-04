@@ -218,3 +218,24 @@ test('historical and final snapshots retain saved risks without inviting a new f
  const historical=highRainFixture();historical.run.is_active=false;
  assert.match(overview(render(PlanView,{data:historical,error:'',refresh(){}})),/Historical check result/);
 });
+
+
+test('current reviewer revision or rejection is prominent to the camper without granting saving',()=>{
+ for(const decision of ['REQUEST_REVISION','REJECT']){
+  const data=highRainFixture();data.version.status=decision==='REJECT'?'REJECTED':'REVISION_REQUIRED';
+  data.eligibility.blocking_reasons.push({code:decision==='REJECT'?'VERSION_STATE':'REVISION_REQUIRED',message:'review prevents saving'});
+  data.reviews=[{review_id:'review',decision,reason:'no',reviewer_user_id:'founder',version_context:{...data.version.version_context}}];
+  const before=structuredClone(data),html=render(PlanView,{data,error:'',refresh(){}});
+  assert.equal(planCheckState(data).title,decision==='REJECT'?'Review rejected':'Revision requested');
+  assert.match(html,/aria-label="Reviewer feedback"/);assert.match(html,/Reviewer feedback[\s\S]*?no/);
+  assert.doesNotMatch(html,/Awaiting human review|This plan needs human risk review/);
+  assert.doesNotMatch(render(FinalisePanel,{data}),/Save as final plan/i);assert.deepEqual(data,before);
+ }
+});
+test('a review for a different run or fingerprint does not replace the current waiting state or feedback',()=>{
+ for(const field of ['plan_id','plan_version_id','run_id','input_fingerprint']){
+  const data=highRainFixture();data.reviews=[{review_id:'old',decision:'REJECT',reason:'outdated reviewer reason',version_context:{...data.version.version_context,[field]:'old'}}];
+  assert.equal(planCheckState(data).title,'Awaiting human review');
+  const html=render(PlanView,{data,error:'',refresh(){}});assert.doesNotMatch(html,/aria-label="Reviewer feedback"/);
+ }
+});

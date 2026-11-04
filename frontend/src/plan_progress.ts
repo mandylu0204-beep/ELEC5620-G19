@@ -1,4 +1,5 @@
 import type { PlanDetail } from './plans';
+import {boundReview} from './review_revision.ts';
 
 export type RunProgress = {
   plan_id:string; active_run_id:string|null;
@@ -33,4 +34,14 @@ export function mergeProgress(value:PlanDetail, progress:RunProgress):PlanDetail
   if(progress.run.revision<run.revision) return value;
   return {...value,run:{...run,...progress.run},retry_available:false,
     revision_available:false,reassessment_available:false,finalisation_available:false};
+}
+
+// Poll persisted records only; this never starts planning or model execution.
+export function shouldPollPlan(value:PlanDetail):boolean {
+  if(value.trip_series?.is_current===false)return false;
+  if(value.revision_comparison&&!value.revision_comparison.decision&&['PENDING','RUNNING'].includes(value.revision_comparison.after.run.status))return true;
+  if(!value.run?.is_active)return false;
+  if(['PENDING','RUNNING'].includes(value.run.status))return true;
+  return value.run.status==='SUCCEEDED'&&value.version?.status==='ESCALATED'
+    &&!value.current_inputs_error&&!boundReview(value);
 }

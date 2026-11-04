@@ -3,7 +3,7 @@ import {englishSavedReason} from './legacy_filter_reasons';
 import {planCheckState,pendingRevision} from './plan_check_state';
 import {ConfirmedRequirementsList} from './confirmed_requirements';
 import {AssistanceNotes,AssistanceNextAction,type AssistanceNote} from './review_assistance';
-import {revisionReview} from './review_revision';
+import {boundReview,revisionReview} from './review_revision';
 import { failureGuidance } from './failure_guidance';
 import { RevisionComparison, type RevisionComparisonData } from './revision_comparison';
 import type { SafetyAudit } from './safety_advisory';
@@ -31,8 +31,8 @@ import type { TripCoverage } from './trip_coverage';
 import { ApiFailure, type ApiError, type Requirements } from './api';
 import { ProfileSummary, equipmentLabel, type Profile } from './profile';
 import { privateApi, useSession } from './session';
-import { mergeProgress, progressPath, type RunProgress } from './plan_progress';
-import { startSavedPolling } from './saved_polling';
+import { mergeProgress, progressPath, shouldPollPlan, type RunProgress } from './plan_progress';
+import { startSavedPolling, subscribePageRefresh } from './saved_polling';
 
 export type Source = { dataset_file:string; record_id:string; provenance:{source_name:string; source_type:string; source_date:string; demo_only:boolean}; valid_from:string|null; valid_to:string|null };
 type Artifact = { execution_mode:string; source_refs:Source[]; assumptions:string[]; uncertainties:string[] };
@@ -57,10 +57,6 @@ export function aud(cents:number|null|undefined){
   return `AUD ${cents<0?'-':''}${digits.slice(0,-2)}.${digits.slice(-2)}`;
 }
 function time(value:string){const parsed=new Date(value);return Number.isNaN(parsed.getTime())?value:new Intl.DateTimeFormat('en-AU',{timeZone:'Australia/Sydney',dateStyle:'short',timeStyle:'short'}).format(parsed);}
-const runActive=(value:PlanDetail)=>!!(value.revision_comparison&&!value.revision_comparison.decision&&['PENDING','RUNNING'].includes(value.revision_comparison.after.run.status))||value.run?.is_active===true&&(
-  ['PENDING','RUNNING'].includes(value.run.status) ||
-  (value.version?.status==='ESCALATED' && !value.current_inputs_error && !value.reviews.length &&
-    value.eligibility?.blocking_reasons.every(item=>item.code==='REVIEW_REQUIRED')===true));
 const plansActive=(value:{plans:PlanRow[]})=>value.plans.some(row=>['PENDING','RUNNING'].includes(row.run_status??''));
 
 async function readPlanProgress(value:PlanDetail,signal:AbortSignal):Promise<PlanDetail|null>{
@@ -68,13 +64,15 @@ async function readPlanProgress(value:PlanDetail,signal:AbortSignal):Promise<Pla
   return path ? mergeProgress(value,await privateApi<RunProgress>(path,{signal})) : null;
 }
 
-export function useSavedRead<T>(path:string,poll:(value:T)=>boolean,progress?:(value:T,signal:AbortSignal)=>Promise<T|null>){
+export function useSavedRead<T>(path:string,poll:(value:T)=>boolean,progress?:(value:T,signal:AbortSignal)=>Promise<T|null>,liveRefresh=false){
   const {reload}=useSession();const [data,setData]=useState<T|null>(null);const [error,setError]=useState('');const [retry,setRetry]=useState(0);
   useEffect(()=>{setData(null);setError('');
     return startSavedPolling<T>({read:signal=>privateApi<T>(path,{signal}),progress,poll,
+      subscribeRefresh:liveRefresh?subscribePageRefresh:undefined,
+      retryOnError:liveRefresh?reason=>reason instanceof ApiFailure?reason.envelope.error.recoverable&&!['UNAUTHENTICATED','FORBIDDEN','NOT_FOUND'].includes(reason.envelope.error.code):reason instanceof TypeError||reason instanceof SyntaxError:undefined,
       onValue:value=>{setData(value);setError('');},
       onError:reason=>{setError(reason instanceof ApiFailure?`${reason.message}(Trace ID ${reason.envelope.trace_id})`:'Connection failed; displayed content is from the most recent successful read.');if(reason instanceof ApiFailure&&reason.envelope.error.code==='UNAUTHENTICATED')reload();}});
-  },[path,retry,poll,progress,reload]);
+  },[path,retry,poll,progress,reload,liveRefresh]);
   return {data,error,refresh:()=>setRetry(value=>value+1)};
 }
 
@@ -153,7 +151,7 @@ export function PlansPage(){
   </>;
 }
 
-export function PlanPage(){const location=useLocation();const {planId}=useParams();const [search,setSearch]=useSearchParams();const runId=search.get('run_id');const {data,error,refresh}=useSavedRead<PlanDetail>('/plans/'+planId+(runId?'?run_id='+encodeURIComponent(runId):''),runActive,readPlanProgress);
+export function PlanPage(){const location=useLocation();const {planId}=useParams();const [search,setSearch]=useSearchParams();const runId=search.get('run_id');const {data,error,refresh}=useSavedRead<PlanDetail>('/plans/'+planId+(runId?'?run_id='+encodeURIComponent(runId):''),shouldPollPlan,readPlanProgress,true);
   if(!data)return <><div className="page-heading"><h1>Read planning records</h1></div>{error&&<p className="error-box" role="alert">{error}</p>}<button className="secondary-button" onClick={refresh}>Reload</button><Link className="text-link" to="/plans">Back to plans ↗</Link></>;
   return <>{location.state?.profileSaved===true&&<p className="success-box" role="status">{PROFILE_SAVED_NOTICE}</p>}<PlanView data={data} error={error} refresh={refresh} current={()=>setSearch({})}/></>;
 }
@@ -199,8 +197,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       &&(['plan_id','plan_version_id','run_id','input_fingerprint'] as const).every(
         key=>item.version_context![key]===version.version_context[key]));
   const displayedApproval = validApproval||historicalApproval;
-  const safetyReviewDecision = version&&data.reviews.find(item=>item.version_context&&
-    (['plan_id','plan_version_id','run_id','input_fingerprint'] as const).every(key=>item.version_context![key]===version.version_context[key]))?.decision;
+  const safetyReviewDecision = boundReview(data)?.decision;
   const roadClosed = safety?.evidence.some(item=>item.kind==='ROAD'&&item.road_state==='CLOSED');
   const requirements = confirmed?.requirements;
   const title = version?.content.selected_campsite_ids.map(campName).join(' / ') || requirements?.destination || 'My camping plan';
@@ -210,7 +207,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
   qualityIssues.forEach(([kind,status])=>{const state=safetyCondition(kind,status,safety?.evidence??[],requirements);const text=state.title+', '+state.detail;qualityGroups.set(text,[...(qualityGroups.get(text)??[]),checkNames[kind]??'Safety information']);});
   const preparationCodes=['ESSENTIAL_GEAR_MISSING','TRANSPORT_UNAVAILABLE','LOGISTICS_INCOMPLETE','COSTS_INCOMPLETE'];
   const onlyPreparationBlocked=!!safety&&safety.mandatory_blockers.length>0&&safety.mandatory_blockers.every(item=>preparationCodes.includes(item.code));
-  const safetyText = !safety ? 'Not checked' : roadClosed ? 'Road closed; change the plan' : qualityIssues.length ? qualityIssues.some(([,status])=>status==='CONFLICTING')?'Conflicting safety information; verification required':qualityIssues.some(([,status])=>status==='STALE')?'Safety information needs updating':'Safety information needs confirmation' : safety.mandatory_blockers.some(item=>item.code==='CAMPSITE_CLOSED')?'Campsite closed; adjust the plan':safety.mandatory_blockers.some(item=>item.code==='FIRE_PROHIBITED')?'Adjust campfire arrangements':onlyPreparationBlocked?'Equipment and transport preparation incomplete':safety.outcome==='BLOCKED'?'Safety conditions not met':historicalApproval&&safety.outcome==='REVIEW' ? 'Approved in the earlier review' : validApproval&&safety.outcome==='REVIEW' ? 'Review approved' : safety.requires_human_review ? 'Human review required' : label(safety.outcome);
+  const safetyText = !safety ? 'Not checked' : roadClosed ? 'Road closed; change the plan' : qualityIssues.length ? qualityIssues.some(([,status])=>status==='CONFLICTING')?'Conflicting safety information; verification required':qualityIssues.some(([,status])=>status==='STALE')?'Safety information needs updating':'Safety information needs confirmation' : safety.mandatory_blockers.some(item=>item.code==='CAMPSITE_CLOSED')?'Campsite closed; adjust the plan':safety.mandatory_blockers.some(item=>item.code==='FIRE_PROHIBITED')?'Adjust campfire arrangements':onlyPreparationBlocked?'Equipment and transport preparation incomplete':safety.outcome==='BLOCKED'?'Safety conditions not met':historicalApproval&&safety.outcome==='REVIEW' ? 'Approved in the earlier review' : validApproval&&safety.outcome==='REVIEW' ? 'Review approved' : safetyReviewDecision==='REQUEST_REVISION'?'Revision requested':safetyReviewDecision==='REJECT'?'Review rejected': safety.requires_human_review ? 'Human review required' : label(safety.outcome);
   const rawWarnings=data.eligibility?.blocking_reasons??[];
   const hiddenCodes = new Set(['VERSION_STATE','ASSESSMENT_BLOCKED','RUN_NOT_SUCCEEDED','REVISION_REQUIRED','REVIEW_REQUIRED',
     ...(qualityIssues.length?['EVIDENCE_COVERAGE','EVIDENCE_UNAVAILABLE','ROAD_UNAVAILABLE']:[]),

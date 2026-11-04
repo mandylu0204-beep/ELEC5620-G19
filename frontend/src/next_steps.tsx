@@ -1,3 +1,4 @@
+import {boundReview} from './review_revision';
 import {planCheckState} from './plan_check_state';
 import { needsMealChoice } from './logistics_guidance';
 import { Link } from 'react-router-dom';
@@ -11,7 +12,7 @@ export function NextSteps({data,onRecheck,onReviewRevision}:{data:PlanDetail;onR
   // A pending candidate must be selected or kept before opening a successor.
   if(data.revision_comparison&&!data.revision_comparison.decision)return null;
   const reasons=new Set(data.eligibility?.blocking_reasons.map(item=>item.code));
-  const review=data.reviews.at(-1);
+  const review=boundReview(data);
   const safety=data.assessments.find(item=>item.kind==='SAFETY')?.result;
   const roadClosed=!!safety&&'evidence' in safety&&safety.evidence.some(item=>item.kind==='ROAD'&&item.road_state==='CLOSED');
   const quality=safety&&'data_quality' in safety?Object.values(safety.data_quality):[];
@@ -51,12 +52,12 @@ export function NextSteps({data,onRecheck,onReviewRevision}:{data:PlanDetail;onR
   }
   const state=planCheckState(data);
   if(state.kind==='cancelled')return null;
-  const heading=state.kind==='adjustment'?'Next':state.kind==='review'?'Awaiting human review':title;
+  const heading=review&&['REQUEST_REVISION','REJECT'].includes(review.decision)?state.title:state.kind==='adjustment'?'Next':state.kind==='review'?'Awaiting human review':title;
   return <section className="panel next-steps" aria-label="What to do next"><h2>{heading}</h2><p>{description}</p>
     {data.current_inputs_error&&<>{data.current_inputs_state==='CHANGED'&&<p className="muted">Rechecking retains the current itinerary. Missing or inapplicable information will remain unresolved.</p>}
       {data.reassessment_available&&onRecheck?<button className="secondary-button" onClick={onRecheck}>Open recheck ↓</button>:<p className="muted">Checks cannot start now. The original itinerary is retained.</p>}
       <details className="source-details"><summary>View system details</summary><p>{data.current_inputs_error}</p></details></>}
-    {review&&<div className="clarifications"><strong>Review reason</strong><p>{review.reason}</p></div>}
+    {review&&<div className="clarifications" role="status" aria-label="Reviewer feedback"><strong>Reviewer feedback</strong><blockquote>{review.reason}</blockquote>{['REQUEST_REVISION','REJECT'].includes(review.decision)&&<p>{review.decision==='REJECT'?'This plan was not approved.':'The reviewer requested changes.'} Review the reason before adjusting the plan; final saving remains unavailable until the required checks and approval are valid.</p>}</div>}
     {onReviewRevision&&<button type="button" className="primary-button" onClick={onReviewRevision}>Prepare revision using reviewer feedback ↓</button>}
     <div className="plan-actions"><Link className="text-link" to={tripUpdatePath(data.plan.plan_id)}>Review and adjust this trip requirements ↗</Link><Link className="text-link" to={'/profile?plan_id='+encodeURIComponent(data.plan.plan_id)+'&request_id='+encodeURIComponent(data.plan.request_id)}>Edit camping profile ↗</Link></div>
   </section>;

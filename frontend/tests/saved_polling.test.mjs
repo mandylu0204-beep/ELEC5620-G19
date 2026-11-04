@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {setImmediate} from 'node:timers/promises';
-import {startSavedPolling} from '../src/saved_polling.ts';
+import {startSavedPolling,subscribePageRefresh} from '../src/saved_polling.ts';
 import {mergeProgress} from '../src/plan_progress.ts';
 const settle=()=>setImmediate();
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};};
@@ -40,4 +40,35 @@ test('no next poll starts until the current request completes and stopping clear
  const clock=scheduler(),pending=deferred();let reads=0;
  const stop=startSavedPolling({...clock,read:async()=>{reads++;return pending.promise;},poll,onValue:()=>{},onError:e=>assert.fail(e)});
  assert.equal(clock.jobs.size,0);pending.resolve(value());await settle();assert.equal(reads,1);assert.equal(clock.jobs.size,1);stop();assert.equal(clock.jobs.size,0);
+});
+
+
+test('a transient read failure retains the prior record and retries full detail without running a command',async()=>{
+ const clock=scheduler(),seen=[],errors=[],initial=value('SUCCEEDED');let reads=0,progressReads=0;
+ const final={...initial,review:{decision:'REQUEST_REVISION',reason:'no'}};
+ const stop=startSavedPolling({...clock,read:async()=>{reads++;if(reads===2)throw new TypeError('Network unavailable');return reads===1?initial:final;},
+  progress:async()=>{progressReads++;return null;},poll:v=>!v.review,retryOnError:e=>e instanceof TypeError,onValue:v=>seen.push(v),onError:e=>errors.push(e)});
+ await settle();await clock.next();assert.equal(errors.length,1);assert.equal(seen.at(-1),initial);assert.equal(clock.jobs.size,1);
+ await clock.next();assert.equal(seen.at(-1),final);assert.equal(reads,3);assert.equal(progressReads,1);assert.equal(clock.jobs.size,0);stop();
+});
+test('returning to a plan reloads full detail even after polling stopped and unsubscribes on departure',async()=>{
+ const clock=scheduler(),seen=[];let wake,unsubscribed=0,reads=0;
+ const stop=startSavedPolling({...clock,read:async()=>({read:++reads}),poll:()=>false,subscribeRefresh:cb=>{wake=cb;return ()=>unsubscribed++;},onValue:v=>seen.push(v),onError:e=>assert.fail(e)});
+ await settle();assert.equal(reads,1);wake();await settle();assert.equal(reads,2);stop();wake();await settle();assert.equal(reads,2);assert.equal(unsubscribed,1);
+});
+test('a refresh during an in-flight read queues one full read and cannot overlap requests',async()=>{
+ const clock=scheduler(),pending=deferred(),seen=[];let wake,reads=0;
+ const stop=startSavedPolling({...clock,read:async()=>++reads===1?pending.promise:{read:reads},poll:()=>true,subscribeRefresh:cb=>{wake=cb;return ()=>{};},onValue:v=>seen.push(v),onError:e=>assert.fail(e)});
+ wake();wake();assert.equal(reads,1);pending.resolve({read:1});await settle();await settle();assert.equal(reads,2);assert.equal(clock.jobs.size,1);assert.equal(seen.at(-1).read,2);stop();
+});
+
+test('page focus and visibility only request a read when visible, with listeners removed on cleanup',()=>{
+ const oldWindow=globalThis.window,oldDocument=globalThis.document;
+ const page=new EventTarget(),doc=new EventTarget();doc.visibilityState='hidden';globalThis.window=page;globalThis.document=doc;
+ try{
+  let reads=0;const stop=subscribePageRefresh(()=>reads++);
+  page.dispatchEvent(new Event('focus'));assert.equal(reads,0);
+  doc.visibilityState='visible';doc.dispatchEvent(new Event('visibilitychange'));page.dispatchEvent(new Event('focus'));assert.equal(reads,2);
+  stop();page.dispatchEvent(new Event('focus'));doc.dispatchEvent(new Event('visibilitychange'));assert.equal(reads,2);
+ }finally{if(oldWindow===undefined)delete globalThis.window;else globalThis.window=oldWindow;if(oldDocument===undefined)delete globalThis.document;else globalThis.document=oldDocument;}
 });
