@@ -6,7 +6,6 @@ import {AssistanceNotes,AssistanceNextAction,type AssistanceNote} from './review
 import {revisionReview} from './review_revision';
 import { failureGuidance } from './failure_guidance';
 import { RevisionComparison, type RevisionComparisonData } from './revision_comparison';
-import { SafetyAdvisoryPanel } from './safety_advisory_panel';
 import type { SafetyAudit } from './safety_advisory';
 import { LogisticsIssues, type LogisticsIssue } from './logistics_issues';
 import { CookingPreparationPanel, canHideCookingPreparation, type CookingPreparation } from './cooking_preparation';
@@ -184,15 +183,6 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
     &&data.revision_comparison.after.run.run_id===run?.run_id&&data.trip_series?.is_current!==false;
   const savedFinal=data.last_final??data.series_last_final;
   const failure=failureGuidance(data);
-  const safetyBinding = version&&safetyAssessment&&logisticsAssessment
-    &&safetyAssessment.depends_on_assessment_id===logisticsAssessment.assessment_id
-    &&['plan_id','plan_version_id','run_id','input_fingerprint'].every(key=>
-      safetyAssessment.version_context[key as keyof Version['version_context']]===version.version_context[key as keyof Version['version_context']]
-      &&logisticsAssessment.version_context[key as keyof Version['version_context']]===version.version_context[key as keyof Version['version_context']])
-    ?{runId:version.version_context.run_id,versionId:version.version_context.plan_version_id,
-      assessmentId:safetyAssessment.assessment_id,logisticsId:logisticsAssessment.assessment_id,
-      inputFingerprint:version.version_context.input_fingerprint}:null;
-
   const savedApprovalScope = version?.status==='FINALISED'&&run?.status==='SUCCEEDED'
     &&data.last_final?.is_current===true
     &&data.last_final.run_id===version.version_context.run_id
@@ -209,6 +199,8 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       &&(['plan_id','plan_version_id','run_id','input_fingerprint'] as const).every(
         key=>item.version_context![key]===version.version_context[key]));
   const displayedApproval = validApproval||historicalApproval;
+  const safetyReviewDecision = version&&data.reviews.find(item=>item.version_context&&
+    (['plan_id','plan_version_id','run_id','input_fingerprint'] as const).every(key=>item.version_context![key]===version.version_context[key]))?.decision;
   const roadClosed = safety?.evidence.some(item=>item.kind==='ROAD'&&item.road_state==='CLOSED');
   const requirements = confirmed?.requirements;
   const title = version?.content.selected_campsite_ids.map(campName).join(' / ') || requirements?.destination || 'My camping plan';
@@ -347,7 +339,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
         <div className="cost-notes"><p className="muted">Costs are estimates. Actual spending depends on prices when booking, purchasing and travelling.</p>{logistics.cost_breakdown.some(line=>line.unit==='per_person_per_day')&&<p className="muted">Food and drinking water are estimated by group size and trip days, using a per-person daily rate.</p>}{logistics.cost_breakdown.some(line=>line.unit==='per_kilometre')&&<p className="muted">Transport costs are estimated from the recorded total distance.</p>}{logistics.cost_breakdown.some(line=>line.unit==='not_procured')&&<p className="muted">Deferred equipment is not included in purchase costs. Confirm how it will be obtained and any costs.</p>}</div>
       </>:<p className="plan-empty-text">No costs have been saved; amounts are unknown.</p>}
     </section><LogisticsPlanPanel value={logisticsAudit} section="cost" money={aud} itemName={equipmentLabel} unitName={unitName}/></div>
-    <div {...pane('safety')}><SafetyInformation advisory={<SafetyAdvisoryPanel value={data.model_assessment_audits?.SAFETY} binding={safetyBinding} outdated={!!data.current_inputs_error} historical={snapshot||(!run?.is_active&&!candidatePreview)||data.trip_series?.is_current===false}/>} coverage={data.trip_evidence_coverage} requestId={data.plan.request_id} planId={data.plan.plan_id} readOnly={snapshot||review||!run?.is_active||data.trip_series?.is_current===false} value={safety} requirements={requirements} summary={safetyText} approved={displayedApproval} review={review} outdated={!!data.current_inputs_error} blockers={<><LogisticsIssues items={logisticsIssues.filter(item=>item.item_key||item.target==='PROFILE')} summary onGear={()=>{setSection('gear');tabRefs.current[1]?.focus();}} onSafety={()=>{}} disabled/><Blockers review={review} items={(safety?.mandatory_blockers??[]).filter(item=>!logisticsIssues.length||!['ESSENTIAL_GEAR_MISSING','TRANSPORT_UNAVAILABLE','LOGISTICS_INCOMPLETE','COSTS_INCOMPLETE'].includes(item.code))}/></>} notes={null} rawWarnings={rawWarnings} sources={refs=><Sources refs={refs}/>} label={label}/></div>
+    <div {...pane('safety')}><SafetyInformation coverage={data.trip_evidence_coverage} requestId={data.plan.request_id} planId={data.plan.plan_id} readOnly={snapshot||review||!run?.is_active||data.trip_series?.is_current===false} value={safety} requirements={requirements} historical={snapshot||(!run?.is_active&&!candidatePreview)||data.trip_series?.is_current===false} saved={version?.status==='FINALISED'} readyForFinalSave={!data.current_inputs_error&&!candidatePreview&&(review?data.eligibility?.eligible===true:data.finalisation_available)} decision={safetyReviewDecision} approved={displayedApproval} review={review} outdated={!!data.current_inputs_error} blockers={<><LogisticsIssues items={logisticsIssues.filter(item=>item.item_key||item.target==='PROFILE')} summary onGear={()=>{setSection('gear');tabRefs.current[1]?.focus();}} onSafety={()=>{}} disabled/><Blockers review={review} items={(safety?.mandatory_blockers??[]).filter(item=>!logisticsIssues.length||!['ESSENTIAL_GEAR_MISSING','TRANSPORT_UNAVAILABLE','LOGISTICS_INCOMPLETE','COSTS_INCOMPLETE'].includes(item.code))}/></>} notes={null} rawWarnings={rawWarnings} sources={refs=><Sources refs={refs}/>} label={label}/></div>
     <div {...pane('history')}>
       <section className="panel progress-panel"><div className="section-title"><span className="eyebrow">Versions and runs</span><h2>Planning records</h2></div>
         {run?<><p>{label(run.operation)} · {label(run.status)}</p><ol className="progress-stages">{STAGES.map((stage,index)=>{const skipped=(noMatch&&run.status==='SUCCEEDED'&&index>0&&index<6)||(run.operation==='REASSESS'&&index===0);const currentStage=run.stage===stage&&!stepSaved[index]&&!skipped;return <li key={stage} className={stepSaved[index]?'stage-saved':currentStage?'stage-current':''}><span>{index+1}</span><strong>{label(stage)}</strong><small>{skipped?'Not required':stepSaved[index]?run.operation==='REASSESS'&&(index===1||index===2)?'Reuse saved':'Saved':currentStage?run.status==='FAILED'?'Stop here':'Current stage':'No outputs yet'}</small></li>;})}</ol>

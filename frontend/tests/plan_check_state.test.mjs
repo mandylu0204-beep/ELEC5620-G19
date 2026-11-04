@@ -152,3 +152,69 @@ test('saved selection details, old activities and departure origin stay English 
  }
  assert.deepEqual(data,before);
 });
+
+function highRainFixture(){
+ const data=fixture();data.version.status='ESCALATED';
+ const safe=safety(data);Object.assign(safe,{outcome:'REVIEW',requires_human_review:true,risk_level:'HIGH',
+  evidence:[{kind:'WEATHER',summary:'Heavy rain in synthetic forecast.',status:'AVAILABLE',source_date:'2026-11-04',valid_from:'2026-11-04',valid_to:'2026-11-10',road_state:null,source_refs:[]}],hazards:['Heavy rain forecast.']});
+ data.confirmed_context.requirements={...data.confirmed_context.requirements,start_date:'2026-11-05',end_date:'2026-11-07'};
+ data.eligibility={eligible:false,blocking_reasons:[{code:'REVIEW_REQUIRED',message:'Review required.'}],review_required:true,valid_review_id:null};data.finalisation_available=false;
+ data.model_assessment_audits={SAFETY:{kind:'SAFETY',run_id:'r',plan_version_id:'v',assessment_id:'s',depends_on_assessment_id:'l',input_fingerprint:'fp',advice_format:'single-advice-v1',plan:{decision_summary_unverified:'High risk synthetic demo; heavy rain and restrictions require review before departure.',action_priority:['source'],findings:[{finding_key:'source',fact_refs:['/input/demo_context'],action_code:'REQUEST_HUMAN_REVIEW',action_unverified:'Synthetic demo only; escalate to authorised Founder before use.',interpretation_unverified:'Synthetic demo only; escalate to authorised Founder before use.'}]}}};
+ return data;
+}
+function approvedRainFixture(){
+ const data=highRainFixture();data.reviews=[{review_id:'approved-current',decision:'APPROVE',reason:'Reviewed current assessments.',reviewer_user_id:'founder',version_context:{...data.version.version_context}}];
+ data.eligibility={eligible:true,blocking_reasons:[],review_required:true,valid_review_id:'approved-current'};data.finalisation_available=true;data.version.status='ELIGIBLE_FOR_FINALISATION';return data;
+}
+function overview(html){const content=html.match(/<dl class="safety-overview"[\s\S]*?<\/dl>/)?.[0];assert.ok(content);return content;}
+
+test('safety overview uses saved facts and removes the AI prose card while retaining HIGH risk and review requirement',()=>{
+ const data=highRainFixture(),before=structuredClone(data);
+ for(const mode of [{},{review:true}]){
+  const html=render(PlanView,{data,error:'',refresh(){},...mode}),content=overview(html);
+  for(const text of ['Risk level','HIGH','Main concern','Heavy rain forecast','Required action','Founder review is required before final saving.','Before departure','Recheck weather, road access and campsite notices.'])assert.ok(content.includes(text),text);
+  assert.doesNotMatch(html,/AI Safety preparation advice|class="safety-advisory"|Suggested actions|High risk demo|only; escalate|View group details and saved originals/);
+  assert.doesNotMatch(render(FinalisePanel,{data}),/Save as final plan/i);
+ }
+ assert.deepEqual(data,before);
+});
+
+test('current approval updates the next step but retains the official risk and does not add model calls',()=>{
+ const data=approvedRainFixture(),before=structuredClone(data);
+ for(const mode of [{},{review:true}]){
+  const html=render(PlanView,{data,error:'',refresh(){},...mode}),content=overview(html);
+  assert.match(content,/Review approved. The camper can confirm and save the final plan./);
+  assert.match(content,/>HIGH</);assert.match(content,/Heavy rain forecast/);
+  assert.doesNotMatch(content,/Founder review is required|Wait for reviewer/);
+ }
+ assert.deepEqual(data,before);
+});
+
+test('old approvals and matching rejection or revision decisions have distinct truthful next steps',()=>{
+ const old=highRainFixture();old.reviews=[{review_id:'old',decision:'APPROVE',reason:'Old',reviewer_user_id:'founder',version_context:{...old.version.version_context,run_id:'old-run'}}];
+ assert.match(overview(render(PlanView,{data:old,error:'',refresh(){}})),/Founder review is required/);
+ for(const [decision,message] of [['REJECT','Review rejected. This plan cannot be saved as final.'],['REQUEST_REVISION','Changes requested. Revise the plan and complete the required checks.']]){
+  const data=highRainFixture();data.reviews=[{review_id:'decision-current',decision,reason:'Current result needs attention.',reviewer_user_id:'founder',version_context:{...data.version.version_context}}];
+  const content=overview(render(PlanView,{data,error:'',refresh(){}}));assert.ok(content.includes(message));assert.doesNotMatch(content,/can confirm and save/);
+ }
+});
+
+test('blockers, missing evidence and stale inputs prevent an approval message from implying saving permission',()=>{
+ for(const problem of ['blocker','evidence','outdated','other-check']){
+  const data=approvedRainFixture();data.finalisation_available=false;data.eligibility.eligible=false;
+  if(problem==='blocker')safety(data).mandatory_blockers=[{code:'ROAD_CLOSED',message:'Road closed.'}];
+  if(problem==='evidence')safety(data).data_quality.WEATHER='MISSING';
+  if(problem==='outdated')data.current_inputs_error='Inputs need updating.';
+  const content=overview(render(PlanView,{data,error:'',refresh(){}}));assert.doesNotMatch(content,/can confirm and save/);assert.match(content,/>HIGH</);
+  assert.match(content,problem==='outdated'?/Checks need updating/:problem==='other-check'?/Other checks must be resolved/:/Resolve the outstanding safety issues/);
+ }
+});
+
+test('historical and final snapshots retain saved risks without inviting a new final save',()=>{
+ const data=approvedRainFixture();data.version.status='FINALISED';data.finalisation_available=false;
+ const before=structuredClone(data),html=render(PlanView,{data,error:'',refresh(){},snapshot:true}),content=overview(html);
+ assert.match(content,/Review approval is recorded for this saved version/);assert.match(content,/>HIGH</);assert.doesNotMatch(content,/can confirm and save/);
+ assert.doesNotMatch(html,/AI Safety preparation advice|class="safety-advisory"|High risk demo/);assert.deepEqual(data,before);
+ const historical=highRainFixture();historical.run.is_active=false;
+ assert.match(overview(render(PlanView,{data:historical,error:'',refresh(){}})),/Historical check result/);
+});
