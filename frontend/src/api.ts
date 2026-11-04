@@ -1,3 +1,4 @@
+import {visitorText} from './visitor_text.ts';
 export type Mode = 'stub' | 'deterministic_demo' | 'agent';
 export interface Meta {
   schema_version: string; execution_mode: Mode; demo_today: string; disclaimer: string;
@@ -30,7 +31,7 @@ export interface PreviewResult {
   uncertainties: string[]; assumptions: string[]; source_refs: unknown[];
 }
 export class ApiFailure extends Error {
-  constructor(public readonly envelope: ApiError) { super(envelope.error.message); }
+  constructor(public readonly envelope: ApiError) { super(visitorText(envelope.error.message)); }
 }
 async function getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(url, { signal });

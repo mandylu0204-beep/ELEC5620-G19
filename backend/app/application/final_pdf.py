@@ -1,4 +1,5 @@
 """Generate a read-only PDF from an authorised, already-saved final snapshot."""
+from .visitor_copy import visitor_text
 from datetime import datetime
 from decimal import Decimal
 from io import BytesIO
@@ -66,7 +67,7 @@ def render_final_pdf(saved,*,is_current):
     add('Final record ID: '+saved['final_id']);add('Plan ID: '+context['plan_id']);add('Version ID: '+context['plan_version_id'])
     add('Run ID: '+context['run_id'])
     if any(ref.get('provenance',{}).get('demo_only') for ref in content.get('source_refs',[])):
-        add('Contains demo / simulated information and suggestions. Does not confirm bookings, live access or actual trip safety.')
+        add('Bookings, access and safety conditions still require confirmation.')
     section('Confirmed trip requirements')
     add(str(req.get('destination') or 'Not recorded')+' · '+str(req.get('start_date'))+' to '+str(req.get('end_date')))
     add('Group size: '+str(confirmed.get('profile_snapshot',{}).get('group_size') or 'Not recorded')+'; Budget: '+money(req.get('budget_cents')))
@@ -74,25 +75,25 @@ def render_final_pdf(saved,*,is_current):
     section('Itinerary (all times suggested / pending confirmation)')
     for entry in content.get('itinerary_entries',[]):
         story.append(KeepTogether([p(label(entry['entry_kind'])+' · '+str(entry.get('campsite_id') or 'Not recorded'),heading),
-            p(instant(entry['start_at'])+' to '+instant(entry['end_at'])),p(entry['description'])]))
+            p(instant(entry['start_at'])+' to '+instant(entry['end_at'])),p(visitor_text(entry['description']))]))
     assessments={row['kind']:row['result'] for row in saved.get('assessments',[])}
     logistics=assessments.get('LOGISTICS',{});safety=assessments.get('SAFETY',{})
     section('Costs and budget (estimates)')
     add('Estimated total: '+money(logistics.get('total_cents'))+'; Known subtotal: '+money(logistics.get('known_subtotal_cents')))
     table(['Cost item','Quantity / unit','Unit price','Subtotal'],[[label(row['category'])+' / '+row['item_key'],str(row.get('quantity'))+' / '+row['unit'],money(row.get('unit_price_cents')),money(row.get('subtotal_cents'))] for row in logistics.get('cost_breakdown',[])],[65,35,34,34])
     for row in logistics.get('cost_breakdown',[]):
-        if row.get('assumption'):add(row['item_key']+': '+row['assumption'])
-    for value in logistics.get('assumptions',[]):add('Cost assumptions: '+value)
+        if row.get('assumption'):add(row['item_key']+': '+visitor_text(row['assumption']))
+    for value in logistics.get('assumptions',[]):add('Cost assumptions: '+visitor_text(value))
     section('Equipment checklist')
     table(['Equipment','Required quantity','Available','Shortfall'],[[row['item_key'],str(row.get('required_quantity'))+' / '+row['unit'],row.get('available_quantity'),row.get('missing_quantity')] for row in logistics.get('gear_checklist',[])],[65,35,34,34])
     section('Saved safety assessments and source dates')
     add('Assessment: '+label(safety.get('outcome'))+'; Risk: '+label(safety.get('risk_level'))+'; Confidence: '+label(safety.get('confidence')))
     for row in safety.get('evidence',[]):
         add(label(row['kind'])+' · '+label(row['status'])+' · Source date: '+str(row.get('source_date') or 'Not recorded'))
-        add('Source coverage: '+str(row.get('valid_from') or 'Not recorded')+' to '+str(row.get('valid_to') or 'Not recorded'));add(row.get('summary'))
-        for ref in row.get('source_refs',[]):add('Source: '+str(ref.get('provenance',{}).get('source_name','Not recorded'))+' / '+ref['record_id'])
+        add('Source coverage: '+str(row.get('valid_from') or 'Not recorded')+' to '+str(row.get('valid_to') or 'Not recorded'));add(visitor_text(row.get('summary')))
+        for ref in row.get('source_refs',[]):add('Source: '+visitor_text(ref.get('provenance',{}).get('source_name','Not recorded'))+' / '+ref['record_id'])
     for name,key in [('Risk','hazards'),('Suggestions','recommended_actions'),('Restrictions','mandatory_blockers')]:
-        for row in safety.get(key,[]):add(name+': '+(row.get('message','') if isinstance(row,dict) else row))
+        for row in safety.get(key,[]):add(name+': '+visitor_text(row.get('message','') if isinstance(row,dict) else row))
     section('Human review record')
     review=saved.get('review')
     if review:

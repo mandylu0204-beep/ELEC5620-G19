@@ -1,3 +1,4 @@
+import {visitorText} from '../src/visitor_text.ts';
 import {englishSavedReason} from '../src/legacy_filter_reasons.ts';
 import test, {after} from 'node:test';
 import assert from 'node:assert/strict';
@@ -633,7 +634,7 @@ test('saved safety-09 heat remains visible to camper, historical, final and revi
     const page={...data,run:{...data.run,is_active:active}};
     const html=renderPlan(page,options);
     assert.match(html,/Extreme heat forecast/i);assert.match(html,/View the saved original risk explanation/i);
-    assert.ok(html.includes(row.campsite_id+': '+row.weather.summary));
+    assert.ok(html.includes(visitorText(row.campsite_id+': '+row.weather.summary)));
     if(!options.review)assert.doesNotMatch(html,/Full check details|private-rule-action|Model diagnostics/i);
   }
   assert.deepEqual(data,before);
@@ -650,7 +651,7 @@ test('untranslated safety and hazard originals survive escaped without source or
   const before=structuredClone(value),html=render(SafetyInformation,props);
   assert.match(html,/View the saved original safety explanation/i);assert.match(html,/&lt;img src=x onerror=alert\(1\)&gt;/i);
   assert.doesNotMatch(html,/<img|INTERNAL_CODE|private-diagnostic|private-source-record|private-conflict|private-rule-action|Full check details/i);
-  for(const hazard of hazards)assert.ok(html.includes(hazard));
+  for(const hazard of hazards)assert.ok(html.includes(visitorText(hazard)));
   assert.equal((html.match(/View the saved original risk explanation/gi)||[]).length,2);
   assert.deepEqual(value,before);
 });

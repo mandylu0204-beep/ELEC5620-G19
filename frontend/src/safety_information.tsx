@@ -1,3 +1,4 @@
+import {visitorText} from './visitor_text.ts';
 import type { ReactNode } from 'react';
 import type { Safety, Source } from './plans';
 import type { Requirements } from './api';
@@ -22,19 +23,19 @@ export function SafetyInformation({value,requirements,summary,approved,review,ou
     {advisory}
     {(value.evidence.length>0||value.hazards.length>0)&&<details className="artifact-notes"><summary>View safety details and campsite rules</summary>
       {hazards.length>0&&<><h3>Risks to note</h3><ul>{hazards.map(({original,text})=><li key={original}>{text??'Some risks require verification. View the saved explanation.'}
-        {!text&&<details><summary>View the saved original risk explanation</summary><p>{original}</p></details>}
+        {!text&&<details><summary>View the saved original risk explanation</summary><p>{visitorText(original)}</p></details>}
       </li>)}</ul></>}
       {value.evidence.map((item,index)=>{const state=safetyCondition(item.kind,item.status,[item],requirements);const text=safetySummary(item.summary)??safetyRegulations(item.summary);return <article className="evidence-item" key={index}><h3>{checkNames[item.kind]??'Safety information'} · {state.title}</h3>
         {text&&<p>{text}</p>}
-        {!review&&!text&&item.summary&&<details><summary>View the saved original safety explanation</summary><p>{item.summary}</p></details>}
-        {review&&<details className="source-details"><summary>View sources and original text</summary>{item.summary&&<p>{item.summary}</p>}{sources(item.source_refs)}</details>}
+        {!review&&!text&&item.summary&&<details><summary>View the saved original safety explanation</summary><p>{visitorText(item.summary)}</p></details>}
+        {review&&<details className="source-details"><summary>View sources and original text</summary>{item.summary&&<p>{visitorText(item.summary)}</p>}{sources(item.source_refs)}</details>}
       </article>;})}
     </details>}
     {review&&<details className="artifact-notes"><summary>Full check details</summary><p>Saved assessment result: {label(value.outcome)} · Evidence completeness:{label(value.confidence)}</p>
-      {value.hazards.length>0&&<><h3>Original risk explanation</h3><ul>{value.hazards.map((item,index)=><li key={index}>{item}</li>)}</ul></>}
-      {value.unresolved_conflicts.length>0&&<><h3>Conflicting information</h3><ul>{value.unresolved_conflicts.map((item,index)=><li key={index}>{item}</li>)}</ul></>}
-      {value.recommended_actions.length>0&&<><h3>Original check suggestions</h3><ul>{value.recommended_actions.map((item,index)=><li key={index}>{item}</li>)}</ul></>}
-      {rawWarnings.map((item,index)=><p key={index}><strong>{item.code}</strong> · {item.message}</p>)}{notes}
+      {value.hazards.length>0&&<><h3>Original risk explanation</h3><ul>{value.hazards.map((item,index)=><li key={index}>{visitorText(item)}</li>)}</ul></>}
+      {value.unresolved_conflicts.length>0&&<><h3>Conflicting information</h3><ul>{value.unresolved_conflicts.map((item,index)=><li key={index}>{visitorText(item)}</li>)}</ul></>}
+      {value.recommended_actions.length>0&&<><h3>Original check suggestions</h3><ul>{value.recommended_actions.map((item,index)=><li key={index}>{visitorText(item)}</li>)}</ul></>}
+      {rawWarnings.map((item,index)=><p key={index}><strong>{item.code}</strong> · {visitorText(item.message)}</p>)}{notes}
     </details>}
   </section>;
 }

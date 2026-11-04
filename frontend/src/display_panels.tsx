@@ -1,3 +1,4 @@
+import {visitorText,diagnosticSummary} from './visitor_text.ts';
 import {englishSavedReason} from './legacy_filter_reasons';
 import { useState } from 'react';
 import { displayProse, discardMessage, tentSummary, type TentCapacity } from './display_facts';
@@ -44,8 +45,8 @@ export function PlanningExplanationPanel({value,currentRunId,siteName,siteId,cat
     <CampsiteArrivalDetails place={place}/>
     <h3>Confirm before departure</h3><ul>{visibleUncertainties.map(text=><li key={text}>{text}</li>)}<li>Campsite booking, actual arrival time, transport and latest restrictions still need confirmation.</li></ul>
     {(value||reasons.length>0||uncertainties.length>0)&&<details className="source-details"><summary>Saved selection records and model comments</summary>
-      {value&&<><h3>Model selection suggestions (not manually verified)</h3><p className="muted">{value.source_run_id!==currentRunId?'These model suggestions were generated for the original version. This reassessment reuses the original itinerary.':'Saved model selection suggestions; not manually verified.'}</p><p>{value.decision_summary_unverified}</p></>}
-      <h3>Saved suitability reasons</h3><ul>{reasons.map((text,index)=><li key={index}>{englishSavedReason(text)}</li>)}</ul><h3>Saved pending confirmations</h3><ul>{uncertainties.map((text,index)=><li key={index}>{text}</li>)}</ul>
+      {value&&<><h3>Model selection suggestions (not manually verified)</h3><p className="muted">{value.source_run_id!==currentRunId?'These model suggestions were generated for the original version. This reassessment reuses the original itinerary.':'Saved model selection suggestions; not manually verified.'}</p><p>{visitorText(value.decision_summary_unverified)}</p></>}
+      <h3>Saved suitability reasons</h3><ul>{reasons.map((text,index)=><li key={index}>{visitorText(englishSavedReason(text))}</li>)}</ul><h3>Saved pending confirmations</h3><ul>{uncertainties.map((text,index)=><li key={index}>{visitorText(text)}</li>)}</ul>
     </details>}
   </section>;
 }
@@ -55,7 +56,7 @@ export function ModelRunDiagnostics({allowed,value,currentRunId}:{allowed?:boole
   if(!allowed||!value)return null;
   return <section className="panel" aria-label="Model diagnostics"><details><summary>Model diagnostics (review permission required)</summary><p>For troubleshooting only. Not camping costs or evidence of safety or save eligibility.</p>
     <ModelTracePanel value={value.planning} currentRunId={currentRunId} logisticsModel={!!value.assessments.LOGISTICS} safetyModel={!!value.assessments.SAFETY}/>
-    {Object.entries(value.assessments).map(([role,record])=><details key={role}><summary>{role==='LOGISTICS'?'Equipment and budget':role==='SAFETY'?'Safety':'Other roles'}Model diagnostics</summary><pre className="diagnostic-json">{JSON.stringify(record,null,2)}</pre></details>)}
-    <details><summary>Runtime configuration and data identity</summary><pre className="diagnostic-json">{JSON.stringify(value.dataset_context,null,2)}</pre></details>
+    {Object.entries(value.assessments).map(([role,record])=><details key={role}><summary>{role==='LOGISTICS'?'Equipment and budget':role==='SAFETY'?'Safety':'Other roles'}Model diagnostics</summary><pre className="diagnostic-json">{JSON.stringify(diagnosticSummary(record),null,2)}</pre></details>)}
+    <details><summary>Runtime configuration summary</summary><pre className="diagnostic-json">{JSON.stringify(diagnosticSummary(value.dataset_context),null,2)}</pre></details>
   </details></section>;
 }

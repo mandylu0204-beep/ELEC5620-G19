@@ -1,3 +1,4 @@
+import {visitorText} from './visitor_text.ts';
 import {englishSavedActivity} from './legacy_activity_descriptions';
 import { displayProse } from './display_facts';
 import { campName } from './campsite_names';
@@ -14,21 +15,22 @@ export function DailyItinerary({entries,time,label}:{entries:SavedEntry[];time:(
   return <div className="daily-itinerary">{[...days].map(([day,items],index)=><section key={day} aria-label={`Day ${index+1} · ${day}`}>
     <h3>Day {index+1} · {day}</h3>
     <ol className="plan-timeline">{items.map((entry,i)=>{const translated=englishSavedActivity(entry.description,entry.campsite_id,entry.entry_kind);
-      const text=displayProse(translated??itineraryText(entry.description));
-      const separator=text?.indexOf(': ')??-1;
-      const namedActivity=entry.entry_kind==='ACTIVITY'&&!!text?.endsWith(simulatedActivityMarker)&&separator>0&&separator<=80;
-      const activityTitle=namedActivity?text!.slice(0,separator):null;
+      const savedText=translated??itineraryText(entry.description);
+      const text=displayProse(savedText);
+      const separator=savedText.indexOf(': ');
+      const namedActivity=entry.entry_kind==='ACTIVITY'&&!!text&&savedText.endsWith(simulatedActivityMarker)&&separator>0&&separator<=80;
+      const activityTitle=namedActivity?savedText.slice(0,separator):null;
       // Keep the saved provenance untouched; avoid repeating its internal marker on cards.
       const description=namedActivity
-        ?text!.slice(separator+2,-simulatedActivityMarker.length)+'(Subject to formal safety checks and on-site conditions.)'
+        ?savedText.slice(separator+2,-simulatedActivityMarker.length)+'(Subject to formal safety checks and on-site conditions.)'
         :text;
       return <li key={i}>
       <div className="timeline-time"><span>{label(entry.entry_kind)}</span><time>{time(entry.start_at)}</time><small>Suggested time / to be confirmed</small></div>
       <div className="timeline-content"><h4>{activityTitle??(entry.campsite_id?campName(entry.campsite_id):label(entry.entry_kind))}</h4>
         {activityTitle&&entry.campsite_id&&<p className="muted">{campName(entry.campsite_id)}</p>}
-        <p>{description??'Suggested itinerary item; confirm activities and transport arrangements.'}</p>
+        <p>{visitorText(description??'Suggested itinerary item; confirm activities and transport arrangements.')}</p>
         {translated&&<small>English display of a saved activity suggestion.</small>}
-        {!text&&<details><summary>View the saved original itinerary description</summary><p>{entry.description}</p></details>}
+        {!text&&<details><summary>View the saved original itinerary description</summary><p>{visitorText(entry.description)}</p></details>}
         <small>to {time(entry.end_at)}</small>
       </div>
     </li>;})}</ol>

@@ -1,3 +1,4 @@
+import {visitorText,sourceDisplayName} from './visitor_text.ts';
 import {englishSavedReason} from './legacy_filter_reasons';
 import {planCheckState,pendingRevision} from './plan_check_state';
 import {ConfirmedRequirementsList} from './confirmed_requirements';
@@ -78,7 +79,7 @@ export function useSavedRead<T>(path:string,poll:(value:T)=>boolean,progress?:(v
   return {data,error,refresh:()=>setRetry(value=>value+1)};
 }
 
-function Sources({refs}:{refs:Source[]}){return refs.length?<details className="source-details"><summary>Source records ({refs.length})</summary><ul>{refs.map((ref,index)=><li key={index}><strong>{ref.dataset_file} · {ref.record_id}</strong><span>Source registration date {ref.provenance.source_date}</span>{(ref.valid_from||ref.valid_to)&&<span>Coverage: {ref.valid_from??'Unknown'} to {ref.valid_to??'Unknown'}</span>}</li>)}</ul></details>:<p className="muted">No source records were provided.</p>;}
+function Sources({refs}:{refs:Source[]}){return refs.length?<details className="source-details"><summary>Source records ({refs.length})</summary><ul>{refs.map((ref,index)=><li key={index}><strong>{sourceDisplayName(ref.dataset_file)} · {ref.record_id}</strong><span>Source registration date {ref.provenance.source_date}</span>{(ref.valid_from||ref.valid_to)&&<span>Coverage: {ref.valid_from??'Unknown'} to {ref.valid_to??'Unknown'}</span>}</li>)}</ul></details>:<p className="muted">No source records were provided.</p>;}
 function Blockers({items,review=false}:{items:Blocker[];review?:boolean}){return items.length?<div className="clarifications"><h3>Items to address</h3><ul>{[...new Set(items.map(item=>blockerText(item.code)))].map(text=><li key={text}>{text}</li>)}</ul>{review&&<details><summary>View check details</summary>{items.map((item,index)=><div key={index}><p><strong>{item.code}</strong> · {item.message}</p>{item.source_refs.length>0&&<Sources refs={item.source_refs}/>}</div>)}</details>}</div>:null;}
 
 export function NewPlanPrompt(){
@@ -289,7 +290,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
         {overBudget&&<li>Estimated trip cost exceeds budget by {aud(logistics?.budget_difference_cents)}.</li>}
         {[...qualityGroups.entries()].map(([text,names])=><li key={text}>{names.join(', ')}: {text}</li>)}
         {warnings.map(message=><li key={message}>{message}</li>)}
-        {hasSafetyIssue&&!qualityIssues.length&&!warnings.length&&<li>{onlyPreparationBlocked?'Equipment and transport preparations are incomplete. Address missing items on the Equipment page.':`Safety assessment${label(safety?.outcome)}, View risks and recommendations.`}</li>}
+        {hasSafetyIssue&&!qualityIssues.length&&!warnings.length&&<li>{onlyPreparationBlocked?'Equipment and transport preparations are incomplete. Address missing items on the Equipment page.':`Safety assessment: ${label(safety?.outcome)}. View risks and recommendations.`}</li>}
       </ul></div></div>
       {hasSafetyIssue&&<button className="secondary-button" onClick={()=>{const gear=onlyPreparationBlocked&&!qualityIssues.length;setSection(gear?'gear':'safety');tabRefs.current[gear?1:3]?.focus();}}>{onlyPreparationBlocked&&!qualityIssues.length?'View equipment and transport':'View safety information'}</button>}
     </section>}
@@ -326,7 +327,7 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
       </section>}
       {version&&!noMatch&&<TripPreparation value={data.preparation_summary}/>}
       {recommendation&&!noMatch&&<details className="panel recommendation-panel"><summary>Compare other recommended campsites <span>{recommendation.candidates.length} items</span></summary>
-        <ol className="candidate-list">{recommendation.candidates.map(item=><li key={item.campsite_id}><h3>#{item.rank} · {campName(item.campsite_id)}</h3><ul>{item.reasons.map((reason,index)=>{const text=englishSavedReason(reason);return <li key={index}>{displayProse(text)??text}</li>;})}</ul>{item.material_uncertainties.map((uncertainty,index)=><p className="muted" key={index}>Uncertain: {displayProse(uncertainty)??uncertainty}</p>)}</li>)}</ol>
+        <ol className="candidate-list">{recommendation.candidates.map(item=><li key={item.campsite_id}><h3>#{item.rank} · {campName(item.campsite_id)}</h3><ul>{item.reasons.map((reason,index)=>{const text=englishSavedReason(reason);return <li key={index}>{displayProse(text)??visitorText(text)}</li>;})}</ul>{item.material_uncertainties.map((uncertainty,index)=><p className="muted" key={index}>Uncertain: {displayProse(uncertainty)??visitorText(uncertainty)}</p>)}</li>)}</ol>
       </details>}
     </div>
     <div {...pane('gear')}><section className="panel"><div className="section-title"><span className="eyebrow">Departure preparation</span><h2>Equipment and logistics</h2></div>
@@ -350,14 +351,14 @@ export function PlanView({data,error,refresh,current,review=false,snapshot=false
     <div {...pane('history')}>
       <section className="panel progress-panel"><div className="section-title"><span className="eyebrow">Versions and runs</span><h2>Planning records</h2></div>
         {run?<><p>{label(run.operation)} · {label(run.status)}</p><ol className="progress-stages">{STAGES.map((stage,index)=>{const skipped=(noMatch&&run.status==='SUCCEEDED'&&index>0&&index<6)||(run.operation==='REASSESS'&&index===0);const currentStage=run.stage===stage&&!stepSaved[index]&&!skipped;return <li key={stage} className={stepSaved[index]?'stage-saved':currentStage?'stage-current':''}><span>{index+1}</span><strong>{label(stage)}</strong><small>{skipped?'Not required':stepSaved[index]?run.operation==='REASSESS'&&(index===1||index===2)?'Reuse saved':'Saved':currentStage?run.status==='FAILED'?'Stop here':'Current stage':'No outputs yet'}</small></li>;})}</ol>
-          <details><summary>View run records ({data.events.length})</summary>{data.events.length?<ol className="event-list">{data.events.map(event=><li key={event.id}>{time(event.created_at)} · {label(event.stage)} · {label(event.status)}{event.error&&<p>{event.error.message}</p>}</li>)}</ol>:<p className="muted">No run records yet.</p>}</details>
+          <details><summary>View run records ({data.events.length})</summary>{data.events.length?<ol className="event-list">{data.events.map(event=><li key={event.id}>{time(event.created_at)} · {label(event.stage)} · {label(event.status)}{event.error&&<p>{visitorText(event.error.message)}</p>}</li>)}</ol>:<p className="muted">No run records yet.</p>}</details>
         </>:<p className="muted">No plan registered yet.</p>}
       </section>
       <ModelRunDiagnostics allowed={data.can_view_model_diagnostics} value={data.model_diagnostics} currentRunId={run?.run_id}/>
-      <section className="panel"><h2>Review records</h2>{data.reviews.length?data.reviews.map(item=><article key={item.review_id}><h3>{item.decision==='APPROVE'?'Approved':item.decision==='REJECT'?'Rejected':'Request revision'}</h3><p>{item.reason}</p><small>Reviewer: {item.reviewer_user_id}</small></article>):<p className="muted">No review decision yet.</p>}</section>
+      <section className="panel"><h2>Review records</h2>{data.reviews.length?data.reviews.map(item=><article key={item.review_id}><h3>{item.decision==='APPROVE'?'Approved':item.decision==='REJECT'?'Rejected':'Request revision'}</h3><p>{visitorText(item.reason)}</p><small>Reviewer: {item.reviewer_user_id}</small></article>):<p className="muted">No review decision yet.</p>}</section>
       <section className="panel"><h2>Request for this trip</h2>{confirmed&&<><p>{requirements?.start_date} → {requirements?.end_date} · {requirements?.duration_nights} nights / {requirements?.duration_days} days · {aud(requirements?.budget_cents)}</p><ConfirmedRequirementsList requirements={confirmed.requirements} accessibility={confirmed.profile_snapshot.accessibility_requirements}/><details><summary>Profile used for this run</summary><ProfileSummary profile={confirmed.profile_snapshot} systemPreparation={!!data.preparation_summary}/></details></>}
         <details className="source-details"><summary>Record IDs and input fingerprints</summary><p className="identifier">{run?.run_id??'Not registered'}</p><p className="identifier">{version?.version_context.input_fingerprint??'No version fingerprint saved yet'}</p></details>
-        {recommendation&&recommendation.excluded_candidates.length>0&&<details className="source-details"><summary>Original exclusion reasons</summary>{recommendation.excluded_candidates.map(item=><article key={item.campsite_id}><h3>{campName(item.campsite_id)}</h3><ul>{item.reasons.map((reason,index)=><li key={index}>{reason}</li>)}</ul></article>)}</details>}
+        {recommendation&&recommendation.excluded_candidates.length>0&&<details className="source-details"><summary>Original exclusion reasons</summary>{recommendation.excluded_candidates.map(item=><article key={item.campsite_id}><h3>{campName(item.campsite_id)}</h3><ul>{item.reasons.map((reason,index)=><li key={index}>{visitorText(reason)}</li>)}</ul></article>)}</details>}
         {!review&&!snapshot&&<><h3>Saved plans</h3>{data.final_history.length?<ul className="plan-history-list">{data.final_history.map(item=><li key={item.final_id}><Link to={'/plans/'+item.plan_id+'/finals/'+item.final_id}>Version {item.version_number} · {item.is_current?'Current plan':'Historical plan'}<small>{time(item.finalised_at)}</small></Link></li>)}</ul>:<p className="muted">No final plan has been saved.</p>}
           <h3>Version and assessment history</h3><ul className="plan-history-list">{data.run_history.map(item=><li key={item.run_id}><Link to={'/plans/'+data.plan.plan_id+'?run_id='+encodeURIComponent(item.run_id)}>{item.version_number?`Version ${item.version_number}`:'No versions yet'} · {label(item.status)}<small>{time(item.created_at)}</small></Link>{item.run_id===data.plan.active_run_id&&<span className="tag">Current</span>}</li>)}</ul>
         </>}

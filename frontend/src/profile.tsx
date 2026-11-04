@@ -35,11 +35,11 @@ const EQUIPMENT_TYPES = [
 const LEVELS = [['BEGINNER','First time / Beginner'],['INTERMEDIATE','Some experience'],['EXPERIENCED','Experienced'],['ADVANCED','Advanced / Advanced']];
 const MODES = [['CAR','Car'],['PUBLIC_TRANSPORT','Public transport'],['WALKING','Walking'],['OTHER','Other']];
 export function PublicTransportNotice(){
-  return <p className="mode-notice">Check outbound, return and final connections to the campsite yourself. The system uses registered access flags and simulated return costs. It does not query actual services, last departures or live fares, and does not confirm ticket bookings.</p>;
+  return <p className="mode-notice">Check outbound, return and final connections to the campsite yourself. The system uses registered access flags and estimated return costs. It does not query actual services, last departures or live fares, and does not confirm ticket bookings.</p>;
 }
 export function SystemPreparationNotice({mode}:{mode:string}){
   if(mode==='CAR')return null;
-  return <p className="mode-notice">Public transport uses campsite access information and simulated return costs. Verify actual outbound, return and final connections after choosing a campsite. You do not need to plan a route first.</p>;
+  return <p className="mode-notice">Public transport uses campsite access information and estimated return costs. Verify actual outbound, return and final connections after choosing a campsite. You do not need to plan a route first.</p>;
 }
 export function TransportModeField({value,supported,onChange,error,guidance}:{
   value:string;supported:string[]|null;onChange:(value:string)=>void;error:string;guidance?:string;systemPreparation?:boolean;

@@ -15,11 +15,11 @@ export function TripPreparation({value}:{value:PreparationSummary|null|undefined
   const car=value.transport_type==='CAR';
   return <section className="panel" aria-label="Transport and meals for this trip">
     <h2>Transport and meals for this trip</h2>
-    <p>Departure point: {preparationOrigin(value.origin_label)}. The system filters using registered campsite access information. All costs below are simulated estimates.</p>
+    <p>Departure point: {preparationOrigin(value.origin_label)}. The system filters using registered campsite access information. All costs below are estimates.</p>
     <dl className="summary-list"><div><dt>Transport mode</dt><dd>{car?'Car':value.transport_type==='PUBLIC_TRANSPORT'?'Public transport':'To be confirmed'}</dd></div>
       <div><dt>{car?'Campsite access and vehicle capacity':'Campsite public-transport access information'}</dt><dd>{value.access_and_capacity===true?'Meets this check':value.access_and_capacity===false?'Does not meet this check':'Check incomplete or insufficient information'}</dd></div>
       {car&&<><div><dt>Confirmed vehicles for this trip</dt><dd>{value.vehicle_count??'Unknown'} vehicles</dd></div>
-        <div><dt>Combined return distance for all vehicles (simulated)</dt><dd>{value.estimated_total_vehicle_km??'Unknown'} km</dd></div></>}
+        <div><dt>Estimated combined return distance for all vehicles</dt><dd>{value.estimated_total_vehicle_km??'Unknown'} km</dd></div></>}
       <div><dt>Estimated transport cost{car?'(including parking)':'(return)'}</dt><dd>{value.estimated_transport_cents===null?'Unknown; cannot be treated as zero cost':aud(value.estimated_transport_cents)}</dd></div>
       <div><dt>Meal arrangement</dt><dd>{value.meal_mode==='SELF_CATERED'?'Self-catering; verify stove, fuel and cookware':value.meal_mode==='READY_TO_EAT'?'Ready-to-eat meals':'To be confirmed'}</dd></div>
     </dl>

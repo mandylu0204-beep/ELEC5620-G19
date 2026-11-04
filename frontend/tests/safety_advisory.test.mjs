@@ -15,6 +15,7 @@ const compiled=transpileModule(source,{fileName:fileURLToPath(componentUrl),
   compilerOptions:{module:ModuleKind.ESNext,jsx:JsxEmit.ReactJSX}}).outputText
   .replaceAll('"react/jsx-runtime"',JSON.stringify(pathToFileURL(require.resolve('react/jsx-runtime')).href))
   .replaceAll("'./safety_advisory'",JSON.stringify(new URL('../src/safety_advisory.ts',import.meta.url).href))
+  .replaceAll("'./visitor_text.ts'",JSON.stringify(new URL('../src/visitor_text.ts',import.meta.url).href))
   .replaceAll("'./display_facts'",JSON.stringify(new URL('../src/display_facts.ts',import.meta.url).href));
 const {SafetyAdvisoryPanel}=await import('data:text/javascript;base64,'+Buffer.from(compiled).toString('base64'));
 

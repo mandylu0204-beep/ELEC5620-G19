@@ -1,3 +1,4 @@
+import {visitorText} from './visitor_text.ts';
 import {englishRequestMessage} from './legacy_request_messages';
 import {dateFieldError,endDateMinimum,firstFutureDate} from './calendar_dates';
 import {RequirementChoices,type RequirementCatalogue} from './requirement_choices';
@@ -114,7 +115,7 @@ export function clarificationText(field:string,message:string,requirements:Requi
   if(unsupported)return `Cannot verify required condition: ${unsupported[1]}. Specify the facilities you need, or move nonessential requirements to preferences, then generate the summary.`;
   if(field==='duration_days'&&(message===`Please clarify ${field}.`||message==='Days must equal nights plus one.')&&requirements?.duration_nights!=null&&requirements.duration_days!=null&&requirements.duration_days!==requirements.duration_nights+1)
     return `${requirements.duration_nights} nights correspond to ${requirements.duration_nights+1} days; currently entered: ${requirements.duration_days} days. Please check.`;
-  return message===`Please clarify ${field}.`?`Please check ${FIELD_TITLES[field]??'this information'}.`:message;
+  return message===`Please clarify ${field}.`?`Please check ${FIELD_TITLES[field]??'this information'}.`:visitorText(message);
 }
 function focusRequestField(field:string) {
   const node=document.getElementById(FIELD_IDS[field]);
@@ -310,7 +311,7 @@ export function RequestDetail() {
           {systemPreparation?<SystemPreparationNotice mode={profile?.transport.transport_type??''}/>:profile?.transport.transport_type==='PUBLIC_TRANSPORT'&&<PublicTransportNotice/>}
           <CookingPreparationPanel value={record.cooking_preparation} stale={dirty}/>
           {record.cooking_preparation&&!record.planning_plan_id&&(!canHideCookingPreparation(record.cooking_preparation)||dirty)&&<Link className="text-link" to={'/profile?request_id='+encodeURIComponent(record.request_id)+'&focus=equipment.camping_stove'}>Complete cooking equipment ↗</Link>}
-          {record.summary?.uncertainties.filter(item=>item!=='This output is not a confirmation event.').map((item,index)=><p className="muted" key={index}>{item}</p>)}
+          {record.summary?.uncertainties.filter(item=>item!=='This output is not a confirmation event.').map((item,index)=><p className="muted" key={index}>{visitorText(item)}</p>)}
         </>:<div className="summary-placeholder"><span aria-hidden="true">⌁</span><h3>Generate a request summary first</h3><p>The summary shows dates, budget, group details and missing information.</p></div>}
         {record.error&&<p className="error-box" role="alert">{record.error.message}</p>}
         {!confirmed&&<div className="confirmation-actions"><p className="action-hint">{confirmationHint}</p>{updating&&<p id="replan-impact" className="action-hint">The plan will be regenerated from your changes. Campsite and itinerary may change.</p>}<label className="checkbox-label acknowledgement"><input type="checkbox" checked={acknowledged} disabled={busy||dirty||updateStale||record.status!=='AWAITING_CONFIRMATION'} aria-describedby="confirmation-hint" onChange={event=>setAcknowledged(event.target.checked)}/>I have read the requirements and profile for this trip and {updating?'confirm adoption of these changes and a new check.':'confirm the information above.'}</label><button className="primary-button" disabled={busy||dirty||updateStale||!acknowledged||record.status!=='AWAITING_CONFIRMATION'||updating&&tripTooLong} aria-describedby={updating?"confirmation-hint replan-impact":"confirmation-hint"} onClick={confirm}>{busy?'Processing…':updating?'Confirm changes and recheck':'Confirm and save requirements'} <span>✓</span></button>{updating&&<button className="secondary-button" disabled={busy} onClick={saveOnly}>Save changes without checking</button>}</div>}

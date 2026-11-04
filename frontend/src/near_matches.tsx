@@ -1,3 +1,4 @@
+import {visitorText} from './visitor_text.ts';
 import { Link } from 'react-router-dom';
 import { tripUpdatePath } from './trip_update';
 
@@ -13,7 +14,7 @@ export function NearMatches({value,planId,readOnly=false}:{value:RecommendationG
     <p>These  {value.near_matches.length}  campsites are closest to your requirements. The following conditions still need adjustment or verification.</p>
     {!readOnly&&planId&&<p>Would you like to change transport, dates, budget or other conditions? The system will not change confirmed requirements for you.<Link className="text-link" to={'/profile?plan_id='+encodeURIComponent(planId)+'&focus=transport.transport_type'}>Change transport ↗</Link> <Link className="text-link" to={tripUpdatePath(planId)}>Review and adjust this request ↗</Link></p>}
     <p className="muted">The prices below include campsite fees only.</p>
-    {value.metadata_note&&<p className="clarifications">{value.metadata_note}</p>}
+    {value.metadata_note&&<p className="clarifications">{visitorText(value.metadata_note)}</p>}
     <div className="near-match-grid">{value.near_matches.map(item=><article className="near-match-card" key={item.campsite_id}>
       <span className="tag">Comparison #{item.rank} · Not yet matched</span><h3>{item.name}</h3>
       {item.region&&<p className="muted">{item.region}</p>}
@@ -24,8 +25,8 @@ export function NearMatches({value,planId,readOnly=false}:{value:RecommendationG
         {issue.expected&&<p>Your requirement: {issue.expected}</p>}{issue.actual&&<p>Campsite information: {issue.actual}</p>}
         <p>{issue.detail}</p><p><strong>Possible adjustment: </strong>{issue.suggestion}</p>
       </li>)}</ul>
-      {item.matched_preferences.length>0&&<p>Known matching preferences: {item.matched_preferences.join(', ')}</p>}
-      {item.uncertainties.map((text,index)=><p className="muted" key={index}>{text}</p>)}
+      {item.matched_preferences.length>0&&<p>Known matching preferences: {item.matched_preferences.map(visitorText).join(', ')}</p>}
+      {item.uncertainties.map((text,index)=><p className="muted" key={index}>{visitorText(text)}</p>)}
       {item.source_ref&&<p className="muted">Information date: {item.source_ref.provenance.source_date}</p>}
       {planId&&!readOnly&&<Link className="text-link" to={tripUpdatePath(planId)}>Review the differences and adjust this request ↗</Link>}
     </article>)}</div>

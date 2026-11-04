@@ -1,3 +1,4 @@
+import {visitorText} from './visitor_text.ts';
 import { displayProse } from './display_facts';
 import { groupSafetyAdvice, safetyAdvice, type SafetyAdviceItem, type SafetyAudit, type SafetyAdviceBinding } from './safety_advisory';
 
@@ -7,13 +8,13 @@ function AdviceItems({items}:{items:SafetyAdviceItem[]}){
     localized!==null&&localized!==item.action||item.explanation!==item.action);
   return <>
     <ul className="safety-advice-items">{rows.map(({item,localized})=><li key={item.key}>
-      <p>{localized??item.action}</p>
+      <p>{localized??visitorText(item.action)}</p>
     </li>)}</ul>
     {originals.length>0&&<details><summary>View group details and saved originals</summary>
       <ul className="safety-advice-items">{originals.map(({item,localized,index})=><li key={item.key}>
         <span className="muted">Item {index+1}</span>
-        {localized!==null&&localized!==item.action&&<p>{item.action}</p>}
-        {item.explanation!==item.action&&<p>{item.explanation}</p>}
+        {localized!==null&&localized!==item.action&&<p>{visitorText(item.action)}</p>}
+        {item.explanation!==item.action&&<p>{visitorText(item.explanation)}</p>}
       </li>)}</ul>
     </details>}
   </>;
@@ -23,7 +24,7 @@ export function SafetyAdvisoryPanel({value,binding,outdated=false,historical=fal
   value:SafetyAudit|null|undefined;binding:SafetyAdviceBinding|null;outdated?:boolean;historical?:boolean}){
   const advice=safetyAdvice(value,binding);
   if(!advice)return null;
-  const actions=groupSafetyAdvice(advice.items.filter(item=>!item.informational));
+  const actions=groupSafetyAdvice(advice.items.filter(item=>!item.informational&&visitorText(item.action).trim()));
   const summary=displayProse(advice.summary);
   if(!actions.length)return null;
   const card=(group:typeof actions[number])=><li key={group.key}>

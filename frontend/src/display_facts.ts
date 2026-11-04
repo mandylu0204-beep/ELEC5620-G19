@@ -1,3 +1,4 @@
+import {visitorText} from './visitor_text.ts';
 // Read-only presentation of saved facts; never used to calculate eligibility.
 export type TentCapacity = {records:{quantity:number|null;capacity_per_tent:number|null;total_capacity:number|null;confirmed:boolean;unit:string}[];
   group_size:number|null;registered_tent_count:number|null;registered_capacity:number|null;
@@ -36,7 +37,7 @@ export function displayProse(text:string|undefined):string|null {
     'Recommendation is not booking availability or safety clearance.':'A recommendation does not confirm availability. Verify safety information before departure.',
   };
   if(!text)return null;
-  return known[text]??(/[\u3400-\u9fff]/u.test(text)?null:text);
+  return /[\u3400-\u9fff]/u.test(text)?null:visitorText(known[text]??text);
 }
 
 export const PROFILE_SAVED_NOTICE='Profile saved. The current plan still uses its original confirmed profile snapshot and has not been checked with the new information. Select Replan with latest profile, review and confirm the arrangements, then wait for the new check results. The original plan is retained.';
