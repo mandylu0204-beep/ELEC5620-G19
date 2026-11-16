@@ -206,6 +206,9 @@ def run(args):
             passed.append('Logout invalidates the session')
         for port in (args.backend_port,args.frontend_port):
             with socket.socket() as probe:
+                if os.name != 'nt':
+                    # TIME_WAIT connections do not mean a server is still running.
+                    probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 probe.bind(('127.0.0.1',port))
         passed.append('Owned services stopped and both ports released')
         report['status']='PASSED'

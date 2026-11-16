@@ -25,6 +25,10 @@ def main() -> int:
     for port in ports:
         try:
             with socket.socket() as probe:
+                if os.name != 'nt':
+                    # Match the servers' POSIX restart behavior after TIME_WAIT.
+                    # An active listener still prevents binding this port.
+                    probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 probe.bind(('127.0.0.1', port))
         except OSError:
             print(f'Port {port} is occupied. Choose another port; no existing process was stopped.', file=sys.stderr)
